@@ -1,0 +1,9 @@
+[package]
+name = "increment"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+risc0-zkvm = { version = "0.20", default-features = false }

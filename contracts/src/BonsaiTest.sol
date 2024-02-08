@@ -47,7 +47,7 @@ abstract contract BonsaiTest is Test, BonsaiCheats {
             // Use a long and unweildy environment variable name for overriding
             // the expected chain ID for the test relay so that it is hard to
             // trigger without thinking about it.
-            bonsaiTestRelay = new BonsaiTestRelay(vm.envOr("TEST_BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337)));
+            bonsaiTestRelay = new BonsaiTestRelay(vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337)));
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiTestRelay);
         } else {
             IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1);
@@ -59,7 +59,7 @@ abstract contract BonsaiTest is Test, BonsaiCheats {
 
     /// @notice Returns whether we are using the prover and verifier in dev-mode, or fully verifying.
     function devMode() internal view returns (bool) {
-        return vm.envOr("RISC0_DEV_MODE", true);
+        return vm.envOr("RISC0_DEV_MODE", false);
     }
 
     /// @notice Process a single callback request and invoke its receiver contract with the results.
