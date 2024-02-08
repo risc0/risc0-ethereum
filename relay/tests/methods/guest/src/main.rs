@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![no_main]
 #![no_std]
 
 use risc0_zkvm::guest::env;
@@ -20,5 +21,5 @@ risc0_zkvm::guest::entry!(main);
 
 fn main() {
     let x: u64 = env::read();
-    env::commit(x.checked_add(1));
+    env::commit(&x.checked_add(1));
 }
