@@ -84,8 +84,8 @@ pub(crate) async fn get_test_bonsai_server() -> (SessionId, MockServer) {
     };
 
     Mock::given(method("POST"))
-        .and(path(format!("inputs/upload")))
-        .respond_with(ResponseTemplate::new(200).set_body_json(&receipt_id))
+        .and(path("inputs/upload".to_string()))
+        .respond_with(ResponseTemplate::new(200).set_body_json(receipt_id))
         .mount(&server)
         .await;
 
@@ -96,7 +96,7 @@ pub(crate) async fn get_test_bonsai_server() -> (SessionId, MockServer) {
         .await;
 
     Mock::given(method("POST"))
-        .and(path(format!("snark/create")))
+        .and(path("snark/create".to_string()))
         .respond_with(ResponseTemplate::new(200).set_body_json(&create_snark_res))
         .mount(&server)
         .await;
@@ -108,7 +108,7 @@ pub(crate) async fn get_test_bonsai_server() -> (SessionId, MockServer) {
         .await;
 
     Mock::given(method("GET"))
-        .and(path(format!("fake/receipt/path")))
+        .and(path("fake/receipt/path".to_string()))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_bytes(bincode::serialize(&receipt_data_response).unwrap()),

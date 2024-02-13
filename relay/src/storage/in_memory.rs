@@ -245,7 +245,7 @@ mod tests {
 
     #[fixture]
     fn proof_id(#[default("test")] id: String) -> ProofID {
-        ProofID::new(id.into())
+        ProofID::new(id)
     }
 
     #[fixture]

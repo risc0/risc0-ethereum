@@ -71,7 +71,7 @@ where
             })?;
 
             let result: Result<T, anyhow::Error> =
-                serde_json::from_str(&json_str).context("failed to deserialize");
+                serde_json::from_str(json_str).context("failed to deserialize");
 
             let value = result.map_err(|err: anyhow::Error| {
                 (

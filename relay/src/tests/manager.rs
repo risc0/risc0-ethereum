@@ -195,7 +195,7 @@ async fn integration_test_completed_proof_manager() {
         .get_client()
         .await
         .expect("Failed to get client")
-        .get_logs(&filter)
+        .get_logs(filter)
         .await
         .expect("logs should be present");
 
