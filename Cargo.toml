@@ -1,8 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["contracts", "relay"]
+members = ["contracts", "relay", "relay/tests/methods"]
 
 [workspace.package]
+version = "0.7.0-alpha.1"
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://risczero.com/"
@@ -10,8 +11,8 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
-risc0-ethereum-contracts = { version = "0.1.0-alpha.1", default-features = false, path = "contracts" }
-bonsai-ethereum-relay = { version = "0.7.0-alpha.1", default-features = false, path = "relay" }
+risc0-ethereum-contracts = { version = "0.7.0-alpha.1", default-features = false, path = "contracts" }
+risc0-ethereum-relay = { version = "0.7.0-alpha.1", default-features = false, path = "relay" }
 
 bonsai-rest-api-mock = { version = "0.6.1", default-features = false }
 bonsai-sdk = { version = "0.6.1", default-features = false }

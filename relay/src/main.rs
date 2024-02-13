@@ -15,9 +15,9 @@
 use std::time::Duration;
 
 use anyhow::Result;
-use bonsai_ethereum_relay::{EthersClientConfig, Relayer};
 use clap::Parser;
 use ethers::core::types::Address;
+use risc0_ethereum_relay::{EthersClientConfig, Relayer};
 
 const DEFAULT_BONSAI_API_URL: &str = "http://localhost:8081";
 const DEFAULT_REST_API_PORT: &str = "8080";

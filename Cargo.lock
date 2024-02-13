@@ -619,54 +619,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bonsai-ethereum-relay"
-version = "0.7.0-alpha.1"
-dependencies = [
- "anyhow",
- "async-trait",
- "axum",
- "backoff",
- "bincode",
- "bonsai-ethereum-relay-test-methods",
- "bonsai-rest-api-mock",
- "bonsai-sdk",
- "bytemuck",
- "clap",
- "displaydoc",
- "ethers",
- "ethers-signers",
- "futures",
- "hex",
- "pin-project",
- "reqwest",
- "risc0-ethereum-contracts",
- "risc0-zkvm",
- "rstest",
- "serde",
- "serde_json",
- "serial_test",
- "thiserror",
- "time",
- "tokio",
- "tokio-stream",
- "tower-http",
- "tracing",
- "tracing-subscriber 0.3.18",
- "utoipa",
- "utoipa-swagger-ui",
- "uuid 1.7.0",
- "validator",
- "wiremock",
-]
-
-[[package]]
-name = "bonsai-ethereum-relay-test-methods"
-version = "0.1.0"
-dependencies = [
- "risc0-build",
-]
-
-[[package]]
 name = "bonsai-rest-api-mock"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3814,13 +3766,61 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "0.1.0-alpha.1"
+version = "0.7.0-alpha.1"
 dependencies = [
  "anyhow",
  "ethers",
  "hex",
  "risc0-zkvm",
  "tokio",
+]
+
+[[package]]
+name = "risc0-ethereum-relay"
+version = "0.7.0-alpha.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "backoff",
+ "bincode",
+ "bonsai-rest-api-mock",
+ "bonsai-sdk",
+ "bytemuck",
+ "clap",
+ "displaydoc",
+ "ethers",
+ "ethers-signers",
+ "futures",
+ "hex",
+ "pin-project",
+ "reqwest",
+ "risc0-ethereum-contracts",
+ "risc0-ethereum-relay-test-methods",
+ "risc0-zkvm",
+ "rstest",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "thiserror",
+ "time",
+ "tokio",
+ "tokio-stream",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber 0.3.18",
+ "utoipa",
+ "utoipa-swagger-ui",
+ "uuid 1.7.0",
+ "validator",
+ "wiremock",
+]
+
+[[package]]
+name = "risc0-ethereum-relay-test-methods"
+version = "0.7.0-alpha.1"
+dependencies = [
+ "risc0-build",
 ]
 
 [[package]]

@@ -1,14 +1,14 @@
-# Bonsai Ethereum Relay
+# RISC Zero Ethereum Relay
 
-This repository provides the `bonsai-ethereum-relay`, a tool to integrate Ethereum with Bonsai.
-It is coupled with an Ethereum Smart Contract able to relay the interaction from Ethereum to Bonsai and vice versa.
+This repository provides the `risc0-ethereum-relay`, a tool to integrate Ethereum with RISC Zero and the Bonsai proving service.
+It is coupled with an Ethereum Smart Contract able to relay the interaction from Ethereum to the RISC Zero zkVM and vice versa.
 
 ## Usage
 
 ```console
-A relayer to integrate Ethereum with Bonsai.
+A relayer to integrate Ethereum with RISC Zero and the Bonsai proving service.
 
-Usage: bonsai-ethereum-relay [OPTIONS] --contract-address <CONTRACT_ADDRESS> --eth-node-url <ETH_NODE_URL> --wallet-key-identifier <WALLET_KEY_IDENTIFIER>
+Usage: risc0-ethereum-relay [OPTIONS] --contract-address <CONTRACT_ADDRESS> --eth-node-url <ETH_NODE_URL> --wallet-key-identifier <WALLET_KEY_IDENTIFIER>
 
 Options:
   -p, --port <PORT>
@@ -16,7 +16,7 @@ Options:
       --rest-api
           Toggle to disable the relay REST API
       --contract-address <CONTRACT_ADDRESS>
-          Bonsai Relay contract address on Ethereum
+          Relay contract address on Ethereum
       --eth-node-url <ETH_NODE_URL>
           Ethereum Node endpoint
       --eth-chain-id <ETH_CHAIN_ID>
@@ -35,7 +35,7 @@ Options:
           Print version
 ```
 
-For additional instructions please refer to our [documentation] and our [Bonsai Foundry template].
+For additional instructions please refer to our [documentation] and our [Foundry template].
 
 [documentation]: https://dev.risczero.com/api/bonsai/bonsai-on-eth
-[Bonsai Foundry template]: https://github.com/risc0/bonsai-foundry-template
+[Foundry template]: https://github.com/risc0/bonsai-foundry-template

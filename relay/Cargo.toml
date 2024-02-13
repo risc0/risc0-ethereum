@@ -1,7 +1,7 @@
 [package]
-name = "bonsai-ethereum-relay"
+name = "risc0-ethereum-relay"
 description = "A relayer to integrate Ethereum with Bonsai."
-version = "0.7.0-alpha.1"
+version = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
 homepage = { workspace = true }
@@ -50,4 +50,4 @@ serial_test = "2.0"
 time = "0.3"
 uuid = { version = "1.3", features = ["v4", "serde"] }
 wiremock = "0.5"
-bonsai-ethereum-relay-test-methods = { path = "./tests/methods" }
+risc0-ethereum-relay-test-methods = { path = "./tests/methods" }

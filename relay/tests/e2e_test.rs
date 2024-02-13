@@ -14,14 +14,6 @@
 
 use std::{sync::Arc, time::SystemTime};
 
-use bonsai_ethereum_relay::{
-    sdk::{
-        client::{CallbackRequest, Client},
-        utils,
-    },
-    Relayer,
-};
-use bonsai_ethereum_relay_test_methods::{INCREMENT_ELF, INCREMENT_ID};
 use bonsai_sdk::{
     alpha::Client as BonsaiClient,
     alpha_async::{get_client_from_parts, session_status, upload_img},
@@ -31,6 +23,14 @@ use ethers::types::{Bytes, H256 as ethers_H256, U256};
 use risc0_ethereum_contracts::{
     testutils::Counter, BonsaiRelay, BonsaiTestRelay, RiscZeroGroth16Verifier,
 };
+use risc0_ethereum_relay::{
+    sdk::{
+        client::{CallbackRequest, Client},
+        utils,
+    },
+    Relayer,
+};
+use risc0_ethereum_relay_test_methods::{INCREMENT_ELF, INCREMENT_ID};
 use serial_test::serial;
 use tokio::time::{sleep, Duration};
 
@@ -80,7 +80,7 @@ async fn e2e_test_counter() {
             .await
             .expect("Failed to get ethers client"),
     );
-    let bonsai_relay_contract = match risc0_zkvm::is_dev_mode() {
+    let relay_contract = match risc0_zkvm::is_dev_mode() {
         true => BonsaiTestRelay::deploy(ethers_client.clone(), ethers_client.signer().chain_id())
             .expect("should be able to deploy the BonsaiTestRelay contract")
             .send()
@@ -126,10 +126,10 @@ async fn e2e_test_counter() {
         rest_api_port: "8080".to_string(),
         bonsai_api_url: get_bonsai_url(),
         bonsai_api_key: get_api_key(),
-        relay_contract_address: bonsai_relay_contract,
+        relay_contract_address: relay_contract,
     };
 
-    dbg!("starting bonsai relayer");
+    dbg!("starting relayer");
     tokio::spawn(relayer.run(ethers_client_config.clone()));
 
     // wait for relay to start
@@ -163,7 +163,7 @@ async fn e2e_test_counter() {
                 ethers_H256::from(image_id_bytes),
                 Bytes::from(input),
                 gas_limit,
-                bonsai_relay_contract,
+                relay_contract,
             ),
         )
         .expect("request_callback should be a function")
@@ -219,7 +219,7 @@ async fn e2e_test_counter_publish_mode() {
             .await
             .expect("Failed to get ethers client"),
     );
-    let bonsai_relay_contract = match risc0_zkvm::is_dev_mode() {
+    let relay_contract = match risc0_zkvm::is_dev_mode() {
         true => BonsaiTestRelay::deploy(ethers_client.clone(), ethers_client.signer().chain_id())
             .expect("should be able to deploy the BonsaiTestRelay contract")
             .send()
@@ -264,10 +264,10 @@ async fn e2e_test_counter_publish_mode() {
         rest_api_port: "8080".to_string(),
         bonsai_api_url: get_bonsai_url(),
         bonsai_api_key: get_api_key(),
-        relay_contract_address: bonsai_relay_contract,
+        relay_contract_address: relay_contract,
     };
 
-    dbg!("starting bonsai relayer");
+    dbg!("starting relayer");
     tokio::spawn(relayer.run(ethers_client_config.clone()));
 
     // wait for relay to start
