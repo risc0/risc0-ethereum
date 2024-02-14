@@ -113,10 +113,7 @@ abstract contract BonsaiCheats is CommonBase {
     ///     SNARK attesting to the correctness of the journal output.
     ///     URL and API key for Bonsai should be specified using the BONSAI_API_URL and
     ///     BONSAI_API_KEY environment variables.
-    function prove(
-        string memory elf_path,
-        bytes memory input
-    ) internal returns (bytes memory, bytes32, bytes memory) {
+    function prove(string memory elf_path, bytes memory input) internal returns (bytes memory, bytes32, bytes memory) {
         string[] memory imageRunnerInput = new string[](10);
         uint256 i = 0;
         imageRunnerInput[i++] = "cargo";
