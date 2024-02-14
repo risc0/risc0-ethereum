@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![no_main]
 #![no_std]
+#![no_main]
 
-use risc0_zkvm::guest::env;
+extern crate alloc;
+use alloc::vec;
 
-risc0_zkvm::guest::entry!(main);
+use risc0_zkvm::guest::{env, env::Read};
+
+risc0_zkvm::entry!(main);
 
 fn main() {
-    let x: u64 = env::read();
-    env::commit(&x.checked_add(1));
+    let mut len: u32 = 0;
+    env::stdin().read_slice(core::slice::from_mut(&mut len));
+    let mut slice = vec![0u8; len as usize];
+    env::stdin().read_slice(&mut slice);
+    env::commit_slice(&slice);
 }

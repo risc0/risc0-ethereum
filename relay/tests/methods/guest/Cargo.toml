@@ -1,5 +1,5 @@
 [package]
-name = "increment"
+name = "risc0-ethereum-relay-test-guests"
 version = "0.1.0"
 edition = "2021"
 

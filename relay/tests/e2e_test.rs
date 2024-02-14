@@ -30,7 +30,7 @@ use risc0_ethereum_relay::{
     },
     Relayer,
 };
-use risc0_ethereum_relay_test_methods::{INCREMENT_ELF, INCREMENT_ID};
+use risc0_ethereum_relay_test_methods::{SLICE_IO_ELF, SLICE_IO_ID};
 use serial_test::serial;
 use tokio::time::{sleep, Duration};
 
@@ -68,6 +68,7 @@ async fn get_bonsai_client(api_key: String) -> BonsaiClient {
 async fn e2e_test_counter() {
     // Get Anvil
     let anvil = utils::get_anvil();
+
     // Get client config
     let ethers_client_config = utils::get_ethers_client_config(anvil.as_ref())
         .await
@@ -78,6 +79,8 @@ async fn e2e_test_counter() {
             .await
             .expect("Failed to get ethers client"),
     );
+
+    // Deploy the relay contract, using either the test or fully verifying relay.
     let relay_contract = match risc0_zkvm::is_dev_mode() {
         true => BonsaiTestRelay::deploy(ethers_client.clone(), ethers_client.signer().chain_id())
             .expect("should be able to deploy the BonsaiTestRelay contract")
@@ -136,12 +139,12 @@ async fn e2e_test_counter() {
     // register elf
     let bonsai_client = get_bonsai_client(get_api_key()).await;
     // create the memoryImg, upload it and return the imageId
-    let image_id_bytes: [u8; 32] = bytemuck::cast(INCREMENT_ID);
+    let image_id_bytes: [u8; 32] = bytemuck::cast(SLICE_IO_ID);
     let image_id = hex::encode(image_id_bytes);
     upload_img(
         bonsai_client.clone(),
         image_id.clone(),
-        INCREMENT_ELF.to_vec(),
+        SLICE_IO_ELF.to_vec(),
     )
     .await
     .expect("unable to upload result");
@@ -274,12 +277,12 @@ async fn e2e_test_counter_publish_mode() {
     // register elf
     let bonsai_client = get_bonsai_client(get_api_key()).await;
     // create the memoryImg, upload it and return the imageId
-    let image_id_bytes: [u8; 32] = bytemuck::cast(INCREMENT_ID);
+    let image_id_bytes: [u8; 32] = bytemuck::cast(SLICE_IO_ID);
     let image_id = hex::encode(image_id_bytes);
     upload_img(
         bonsai_client.clone(),
         image_id.clone(),
-        INCREMENT_ELF.to_vec(),
+        SLICE_IO_ELF.to_vec(),
     )
     .await
     .expect("unable to upload result");
@@ -326,13 +329,6 @@ async fn e2e_test_counter_publish_mode() {
             .expect("a call to value should succeed");
 
         if value == expected_value {
-            // noticed in dev e2e tests, this condition returns true but the
-            // assertion at the end of the test fails. I believe this is because
-            // Infura does not ask the same node that returned the value for this
-            // call. Adding a sleep of 5 seconds to allow for nodes to sync and
-            // catch up.
-            dbg!("Success! Waiting 5 seconds for nodes to catch up...");
-            sleep(Duration::new(5, 0)).await;
             break;
         }
 

@@ -346,13 +346,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
-name = "increment"
-version = "0.1.0"
-dependencies = [
- "risc0-zkvm",
-]
-
-[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -531,6 +524,13 @@ checksum = "be79c89bcd18886b376073e3da22f8b7963247a42dce7b49cf3d09853f51641e"
 dependencies = [
  "bytemuck",
  "rand_core",
+]
+
+[[package]]
+name = "risc0-ethereum-relay-test-guests"
+version = "0.1.0"
+dependencies = [
+ "risc0-zkvm",
 ]
 
 [[package]]
