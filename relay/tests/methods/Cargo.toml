@@ -1,0 +1,11 @@
+[package]
+name = "risc0-ethereum-relay-test-methods"
+version = { workspace = true }
+edition = "2021"
+publish = false
+
+[build-dependencies]
+risc0-build = { workspace = true }
+
+[package.metadata.risc0]
+methods = ["guest"]
