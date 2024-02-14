@@ -27,7 +27,8 @@ pub(crate) async fn authorize(
 ) -> Result<Response, StatusCode> {
     if let Some(api_key) = headers
         .get(API_KEY_HEADER)
-        .and_then(|x| x.to_str().ok()).map(|x| x.to_string())
+        .and_then(|x| x.to_str().ok())
+        .map(|x| x.to_string())
     {
         req.extensions_mut().insert(api_key);
         Ok(next.run(req).await)
