@@ -11,6 +11,10 @@ repository = { workspace = true }
 anyhow = "1.0"
 
 [dependencies]
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+anyhow = { workspace = true }
+bonsai-sdk = { workspace = true }
 ethers = { version = "2.0", features = ["rustls", "ws"] }
 hex = { version = "0.4", optional = true }
 risc0-zkvm = { workspace = true, features = ["prove"], optional = true }
