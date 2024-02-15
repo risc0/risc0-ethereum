@@ -22,7 +22,7 @@ The two main contracts you need to start verifing receipts on Ethereum are:
 
 You can use these contracts in [Foundry] using the `forge install` command to add this repository as a [dependency][foundry-dependencies].
 
-```rust
+```bash
 forge install risc0/risc0-ethereum
 ```
 
