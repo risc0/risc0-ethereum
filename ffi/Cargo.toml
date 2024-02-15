@@ -1,0 +1,21 @@
+[package]
+name = "risc0-forge-ffi"
+description = "A tool to integrate forge-ffi with the risc0-zkVM."
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+alloy-primitives = { workspace = true }
+anyhow = { workspace = true }
+bincode = { workspace = true }
+bonsai-sdk = { workspace = true }
+clap = { version = "4.0", features = ["derive", "env"] }
+env_logger = { version = "0.10" }
+ethers = { version = "2.0" }
+hex = { version = "0.4" }
+log = { version = "0.4" }
+risc0-ethereum-contracts = { workspace = true }
+risc0-zkvm = { workspace = true, features = ["client"] }
