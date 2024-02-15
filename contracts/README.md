@@ -13,10 +13,13 @@ The two main contracts you need to start verifing receipts on Ethereum are:
 * [`IRiscZeroVerifier`]
 
   This is the interface you will use to interact with the RISC Zero verifier.
-  Verfier contracts will always implement tis interface, and may be implemented by a [Groth16 verifier][`RiscZeroGroth16Verifier`], by a mock implementation, and any other verifiers we provide in the future.
+  Verfier contracts will implement this interface.
+  Behind this interface may be the [Groth16 verifier][`RiscZeroGroth16Verifier`], a mock implementation, and any other verifier we provide in the future.
+
 * [`RiscZeroGroth16Verifier`]
 
-  This is the verifier contracts for RISC Zero's Groth16 proof implementation. It is the first verifier implementation we have implemented for on-chain verification, and this is the contract you will use in your application.
+  This is the verifier contract for [RISC Zero's Groth16 proof implementation][groth16-article].
+  It is the first verifier implementation we have implemented for on-chain verification, and this is the contract you will use in your deployed application.
 
 ## Using the Contracts with Foundry
 
@@ -33,3 +36,4 @@ forge install risc0/risc0-ethereum
 [foundry-dependencies]: https://book.getfoundry.sh/projects/dependencies
 [`IRiscZeroVerifier`]: ./src/IRiscZeroVerifier.sol
 [`RiscZeroGroth16Verifier`]: ./src/groth16/Groth16Verifier.sol
+[groth16-article]: https://www.risczero.com/news/on-chain-verification
