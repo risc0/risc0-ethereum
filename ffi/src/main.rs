@@ -19,7 +19,7 @@ use anyhow::{Context, Result};
 use bonsai_sdk::alpha as bonsai_sdk;
 use clap::Parser;
 use ethers::abi::Token;
-use risc0_ethereum_contracts::seal::Seal;
+use risc0_ethereum_contracts::groth16::Seal;
 use risc0_zkvm::{compute_image_id, default_executor, is_dev_mode, ExecutorEnv, Receipt};
 
 #[derive(Parser, Debug)]

@@ -34,7 +34,7 @@ abigen!(
     "$OUT_DIR/RiscZeroGroth16Verifier.sol/RiscZeroGroth16Verifier.json"
 );
 
-pub mod seal;
+pub mod groth16;
 
 pub mod testutils {
     use ethers::prelude::*;
