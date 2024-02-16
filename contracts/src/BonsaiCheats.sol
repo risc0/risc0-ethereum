@@ -107,6 +107,28 @@ abstract contract BonsaiCheats is CommonBase {
         return abi.decode(vm.ffi(imageRunnerInput), (bytes32[]));
     }
 
+    /// @notice Uploads all guest images defined in methods directory of this worksapce.
+    ///     URL and API key for Bonsai should be specified using the BONSAI_API_URL and
+    ///     BONSAI_API_KEY environment variables.
+    function upload(string[] memory binaryPaths) internal returns (bytes32[] memory) {
+        uint256 totalSize = 8 + binaryPaths.length;
+        string[] memory imageRunnerInput = new string[](totalSize);
+
+        uint256 i = 0;
+        imageRunnerInput[i++] = "cargo";
+        imageRunnerInput[i++] = "run";
+        imageRunnerInput[i++] = "--manifest-path";
+        imageRunnerInput[i++] = "lib/risc0-ethereum/ffi/Cargo.toml";
+        imageRunnerInput[i++] = "--bin";
+        imageRunnerInput[i++] = "risc0-forge-ffi";
+        imageRunnerInput[i++] = "-q";
+        imageRunnerInput[i++] = "upload";
+        for (uint256 j = 0; j < binaryPaths.length; j++) {
+            imageRunnerInput[i++] = binaryPaths[j];
+        }
+        return abi.decode(vm.ffi(imageRunnerInput), (bytes32[]));
+    }
+
     /// @notice Returns the journal, post state digest, and Groth16 seal, resulting from running the
     ///     guest with elf_path using input on the Bonsai proving service.
     /// @dev Uses the Bonsai proving service to run the guest and produce an on-chain verifiable
