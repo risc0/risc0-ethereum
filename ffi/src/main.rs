@@ -18,9 +18,11 @@ use alloy_primitives::FixedBytes;
 use anyhow::{Context, Result};
 use bonsai_sdk::alpha as bonsai_sdk;
 use clap::Parser;
-use ethers::abi::Token;
+use ethers::abi::{Hash, Token, Tokenizable};
 use risc0_ethereum_contracts::groth16::Seal;
-use risc0_zkvm::{compute_image_id, default_executor, is_dev_mode, ExecutorEnv, Receipt};
+use risc0_zkvm::{
+    compute_image_id, default_executor, is_dev_mode, sha::Digest, ExecutorEnv, Receipt,
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -32,6 +34,11 @@ enum Command {
 
         /// The hex encoded input to provide to the guest binary
         input: String,
+    },
+    /// Upload the RISC-V ELF binaries to Bonsai.
+    Upload {
+        /// The guest binaries path
+        guest_binaries_path: Vec<String>,
     },
 }
 
@@ -45,6 +52,9 @@ pub fn main() -> Result<()> {
             guest_binary_path,
             hex::decode(input.strip_prefix("0x").unwrap_or(&input))?,
         )?,
+        Command::Upload {
+            guest_binaries_path,
+        } => upload_ffi(guest_binaries_path)?,
     };
 
     Ok(())
@@ -67,6 +77,46 @@ fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
         .flush()
         .context("failed to flush stdout buffer")?;
     Ok(())
+}
+
+/// Uploads the RISC-V ELF binaries to Bonsai and prints on stdio
+/// their Ethereum ABI and hex encoded image IDs.
+/// URL and API key for Bonsai should be specified using the BONSAI_API_URL and
+/// BONSAI_API_KEY environment variables.
+fn upload_ffi(elf_paths: Vec<String>) -> Result<()> {
+    let image_ids = upload(elf_paths)?;
+
+    let output = hex::encode(ethers::abi::encode(&[Token::Array(
+        image_ids
+            .into_iter()
+            .map(|image_id| Hash::from(bytemuck::cast::<_, [u8; 32]>(image_id)).into_token())
+            .collect(),
+    )]));
+
+    // Forge test FFI calls expect hex encoded bytes sent to stdout
+    print!("{output}");
+    std::io::stdout()
+        .flush()
+        .context("failed to flush stdout buffer")?;
+    Ok(())
+}
+
+/// Uploads the RISC-V ELF binaries to Bonsai returning a list of uploaded image IDs.
+/// URL and API key for Bonsai should be specified using the BONSAI_API_URL and
+/// BONSAI_API_KEY environment variables.
+fn upload(elf_paths: Vec<String>) -> Result<Vec<Digest>> {
+    let client = bonsai_sdk::Client::from_env(risc0_zkvm::VERSION)?;
+
+    // Upload each guest binary.
+    let mut image_ids = Vec::<Digest>::new();
+    for elf_path in elf_paths {
+        let elf = std::fs::read(elf_path).unwrap();
+        // Compute the image_id, then upload the ELF with the image_id as its key.
+        let image_id = compute_image_id(&elf)?;
+        client.upload_img(&image_id.to_string(), elf)?;
+        image_ids.push(image_id);
+    }
+    Ok(image_ids)
 }
 
 /// Generates a snark proof as a triplet (`Vec<u8>`, `FixedBytes<32>`, `Vec<u8>)

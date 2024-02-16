@@ -4034,6 +4034,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "bonsai-sdk",
+ "bytemuck",
  "clap",
  "env_logger",
  "ethers",
