@@ -37,8 +37,8 @@ enum Command {
     },
     /// Upload the RISC-V ELF binaries to Bonsai.
     Upload {
-        /// The guest binaries path
-        guest_binaries_path: Vec<String>,
+        /// The guest binary paths
+        guest_binary_paths: Vec<String>,
     },
 }
 
@@ -53,7 +53,7 @@ pub fn main() -> Result<()> {
             hex::decode(input.strip_prefix("0x").unwrap_or(&input))?,
         )?,
         Command::Upload {
-            guest_binaries_path,
+            guest_binary_paths: guest_binaries_path,
         } => upload_ffi(guest_binaries_path)?,
     };
 
