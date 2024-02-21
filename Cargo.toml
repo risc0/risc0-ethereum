@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["contracts", "ffi", "relay", "relay/tests/methods"]
+members = ["build", "contracts", "ffi", "relay", "relay/tests/methods"]
 
 [workspace.package]
 version = "0.7.0-alpha.1"
@@ -22,4 +22,5 @@ bincode = { version = "1.3" }
 bonsai-rest-api-mock = { version = "0.6.1", default-features = false }
 bonsai-sdk = { version = "0.6.1", default-features = false }
 risc0-zkvm = { version = "0.20", default-features = false }
+risc0-zkp = { version = "0.20", default-features = false }
 risc0-build = { version = "0.20", default-features = false }

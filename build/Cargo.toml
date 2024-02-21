@@ -1,0 +1,15 @@
+[package]
+name = "risc0-build-ethereum"
+description = "RISC Zero build tools for Ethereum integration"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+risc0-build = { workspace = true }
+risc0-zkp = { workspace = true }
+
+[features]
+default = []
