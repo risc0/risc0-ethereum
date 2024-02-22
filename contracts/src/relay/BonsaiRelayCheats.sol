@@ -22,11 +22,13 @@ import {CommonBase} from "forge-std/Base.sol";
 import {console2} from "forge-std/console2.sol";
 import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
-import {IBonsaiRelay} from "./relay/IBonsaiRelay.sol";
-import {BonsaiTestRelay} from "./relay/BonsaiTestRelay.sol";
+import {RiscZeroCheats} from "../RiscZeroCheats.sol";
 
-/// @notice A base contract for testing a Bonsai callback receiver contract
-abstract contract BonsaiCheats is CommonBase {
+// NOTE: These are included for use in the BonsaiRelayTest contract. In their current form
+// they are not recommended for any other use as the current factoring makes assumptions
+// about a binary crate with a query subcommand being present in the current directory.
+/// @notice A base contract for Forge cheats useful in testing Bonsai relay applications.
+abstract contract BonsaiRelayCheats is RiscZeroCheats {
     using Strings2 for bytes;
 
     /// @notice Returns the journal resulting from running the guest with imageId using input.
@@ -105,27 +107,5 @@ abstract contract BonsaiCheats is CommonBase {
         imageRunnerInput[i++] = "-q";
         imageRunnerInput[i++] = "upload";
         return abi.decode(vm.ffi(imageRunnerInput), (bytes32[]));
-    }
-
-    /// @notice Returns the journal, post state digest, and Groth16 seal, resulting from running the
-    ///     guest with elf_path using input on the Bonsai proving service.
-    /// @dev Uses the Bonsai proving service to run the guest and produce an on-chain verifiable
-    ///     SNARK attesting to the correctness of the journal output.
-    ///     URL and API key for Bonsai should be specified using the BONSAI_API_URL and
-    ///     BONSAI_API_KEY environment variables.
-    function prove(string memory elf_path, bytes memory input) internal returns (bytes memory, bytes32, bytes memory) {
-        string[] memory imageRunnerInput = new string[](10);
-        uint256 i = 0;
-        imageRunnerInput[i++] = "cargo";
-        imageRunnerInput[i++] = "run";
-        imageRunnerInput[i++] = "--manifest-path";
-        imageRunnerInput[i++] = "lib/risc0-ethereum/ffi/Cargo.toml";
-        imageRunnerInput[i++] = "--bin";
-        imageRunnerInput[i++] = "risc0-forge-ffi";
-        imageRunnerInput[i++] = "-q";
-        imageRunnerInput[i++] = "prove";
-        imageRunnerInput[i++] = elf_path;
-        imageRunnerInput[i++] = input.toHexString();
-        return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes32, bytes));
     }
 }

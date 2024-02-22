@@ -3383,6 +3383,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
+name = "pretty_assertions"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af7cee1a6c8a5b9208b3cb1061f10c0cb689087b3d8ce85fb9d2dd7a29b6ba66"
+dependencies = [
+ "diff",
+ "yansi",
+]
+
+[[package]]
 name = "prettyplease"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3859,28 +3869,51 @@ checksum = "9d263c6370d7714d2a634b6d88deb3871d0fad1f9486a9da6d48139c1ac85b26"
 dependencies = [
  "anyhow",
  "elf",
- "risc0-zkp",
- "risc0-zkvm-platform",
+ "risc0-zkp 0.20.1",
+ "risc0-zkvm-platform 0.20.1",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "risc0-binfmt"
+version = "0.21.0-alpha.1"
+source = "git+https://github.com/risc0/risc0?rev=7f731662#7f731662eaeb2d91b332cf85d4cbd61c87fc5c67"
+dependencies = [
+ "anyhow",
+ "elf",
+ "risc0-zkp 0.21.0-alpha.1",
+ "risc0-zkvm-platform 0.21.0-alpha.1",
  "serde",
  "tracing",
 ]
 
 [[package]]
 name = "risc0-build"
-version = "0.20.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a636849a58335ebece68161006a53d5590a6698092c3ca8e8a40a7c0aa8a20fb"
+version = "0.21.0-alpha.1"
+source = "git+https://github.com/risc0/risc0?rev=7f731662#7f731662eaeb2d91b332cf85d4cbd61c87fc5c67"
 dependencies = [
  "anyhow",
  "cargo-platform",
  "cargo_metadata 0.17.0",
  "docker-generate",
- "risc0-binfmt",
- "risc0-zkp",
- "risc0-zkvm-platform",
+ "risc0-binfmt 0.21.0-alpha.1",
+ "risc0-zkp 0.21.0-alpha.1",
+ "risc0-zkvm-platform 0.21.0-alpha.1",
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "risc0-build-ethereum"
+version = "0.7.0-alpha.1"
+dependencies = [
+ "anyhow",
+ "hex",
+ "pretty_assertions",
+ "risc0-build",
+ "risc0-zkp 0.20.1",
 ]
 
 [[package]]
@@ -3909,8 +3942,8 @@ dependencies = [
  "rand 0.8.5",
  "rayon",
  "risc0-circuit-recursion-sys",
- "risc0-core",
- "risc0-zkp",
+ "risc0-core 0.20.1",
+ "risc0-zkp 0.20.1",
  "sha2 0.10.8",
  "tracing",
  "zip",
@@ -3924,7 +3957,7 @@ checksum = "b12fa422928ccae0ca6d39a3bdb784e417c65813f004b258f2113609095358ba"
 dependencies = [
  "glob",
  "risc0-build-kernel",
- "risc0-core",
+ "risc0-core 0.20.1",
 ]
 
 [[package]]
@@ -3937,9 +3970,9 @@ dependencies = [
  "rand 0.8.5",
  "rayon",
  "risc0-circuit-rv32im-sys",
- "risc0-core",
- "risc0-zkp",
- "risc0-zkvm-platform",
+ "risc0-core 0.20.1",
+ "risc0-zkp 0.20.1",
+ "risc0-zkvm-platform 0.20.1",
  "tracing",
 ]
 
@@ -3951,7 +3984,7 @@ checksum = "81a88e4b25e30eeb49adab83fe014110bec18e69dd63a47a5f36b00ac48fe373"
 dependencies = [
  "glob",
  "risc0-build-kernel",
- "risc0-core",
+ "risc0-core 0.20.1",
 ]
 
 [[package]]
@@ -3959,6 +3992,15 @@ name = "risc0-core"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be79c89bcd18886b376073e3da22f8b7963247a42dce7b49cf3d09853f51641e"
+dependencies = [
+ "bytemuck",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "risc0-core"
+version = "0.21.0-alpha.1"
+source = "git+https://github.com/risc0/risc0?rev=7f731662#7f731662eaeb2d91b332cf85d4cbd61c87fc5c67"
 dependencies = [
  "bytemuck",
  "rand_core 0.6.4",
@@ -4071,9 +4113,28 @@ dependencies = [
  "rand 0.8.5",
  "rand_core 0.6.4",
  "rayon",
- "risc0-core",
+ "risc0-core 0.20.1",
  "risc0-sys",
- "risc0-zkvm-platform",
+ "risc0-zkvm-platform 0.20.1",
+ "serde",
+ "sha2 0.10.8",
+ "tracing",
+]
+
+[[package]]
+name = "risc0-zkp"
+version = "0.21.0-alpha.1"
+source = "git+https://github.com/risc0/risc0?rev=7f731662#7f731662eaeb2d91b332cf85d4cbd61c87fc5c67"
+dependencies = [
+ "anyhow",
+ "blake2",
+ "bytemuck",
+ "digest 0.10.7",
+ "hex",
+ "paste",
+ "rand_core 0.6.4",
+ "risc0-core 0.21.0-alpha.1",
+ "risc0-zkvm-platform 0.21.0-alpha.1",
  "serde",
  "sha2 0.10.8",
  "tracing",
@@ -4108,12 +4169,12 @@ dependencies = [
  "prost-build",
  "protobuf-src",
  "rayon",
- "risc0-binfmt",
+ "risc0-binfmt 0.20.1",
  "risc0-circuit-recursion",
  "risc0-circuit-rv32im",
- "risc0-core",
- "risc0-zkp",
- "risc0-zkvm-platform",
+ "risc0-core 0.20.1",
+ "risc0-zkp 0.20.1",
+ "risc0-zkvm-platform 0.20.1",
  "rrs-lib",
  "rustc-demangle",
  "semver 1.0.21",
@@ -4134,6 +4195,11 @@ dependencies = [
  "getrandom 0.2.12",
  "libm",
 ]
+
+[[package]]
+name = "risc0-zkvm-platform"
+version = "0.21.0-alpha.1"
+source = "git+https://github.com/risc0/risc0?rev=7f731662#7f731662eaeb2d91b332cf85d4cbd61c87fc5c67"
 
 [[package]]
 name = "rlp"

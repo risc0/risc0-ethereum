@@ -17,7 +17,7 @@ anyhow = { workspace = true }
 bonsai-sdk = { workspace = true }
 ethers = { version = "2.0", features = ["rustls", "ws"] }
 hex = { version = "0.4", optional = true }
-risc0-zkvm = { workspace = true, features = ["prove"], optional = true }
+risc0-zkvm = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt"] }
@@ -27,4 +27,4 @@ doctest = false
 
 [features]
 default = []
-control-id = ["dep:risc0-zkvm", "dep:hex"]
+control-id = ["dep:risc0-zkvm", "dep:hex", "risc0-zkvm/prove"]
