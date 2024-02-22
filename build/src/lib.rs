@@ -12,9 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::HashMap, env, fs, process::Command};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
 
-use risc0_build::{DockerOptions, GuestOptions};
+use anyhow::{anyhow, bail, Context, Result};
+use risc0_build::GuestListEntry;
 use risc0_zkp::core::digest::Digest;
 
 const SOL_HEADER: &str = r#"// Copyright 2024 RISC Zero, Inc.
@@ -47,62 +53,118 @@ const ELF_LIB_HEADER: &str = r#"pragma solidity ^0.8.20;
 library Elf {
 "#;
 
-const SOLIDITY_IMAGE_ID_PATH: &str = "../contracts/ImageID.sol";
-const SOLIDITY_ELF_PATH: &str = "../tests/Elf.sol";
+/// Options for building and code generation.
+#[derive(Debug, Clone, Default)]
+#[non_exhaustive] // more options may be added in the future.
+pub struct Options {
+    /// Path the generated Solidity file with image ID information.
+    pub image_id_sol_path: Option<PathBuf>,
 
-fn main() {
-    let use_docker = env::var("RISC0_USE_DOCKER").ok().map(|_| DockerOptions {
-        root_dir: Some("../".into()),
-    });
+    /// Path the generated Solidity file with ELF information.
+    pub elf_sol_path: Option<PathBuf>,
+}
 
-    let methods = embed_methods_with_options(HashMap::from([(
-        "bonsai-starter-methods-guest",
-        GuestOptions {
-            features: Vec::new(),
-            use_docker,
-        },
-    )]));
+// Builder interface is provided to make it easy to add more intelligent default and additional
+// options without breaking backwards compatibility in the future.
+impl Options {
+    /// Add a path to generate the Solidity file with image ID information.
+    pub fn with_image_id_sol_path(mut self, path: impl AsRef<Path>) -> Self {
+        self.image_id_sol_path = Some(path.as_ref().to_owned());
+        self
+    }
 
-    let (image_ids, elfs): (Vec<_>, Vec<_>) = methods
+    /// Add a path to generate the Solidity file with ELF information.
+    pub fn with_elf_sol_path(mut self, path: impl AsRef<Path>) -> Self {
+        self.elf_sol_path = Some(path.as_ref().to_owned());
+        self
+    }
+}
+
+/// Generate Solidity files for integrating a RISC Zero project with Ethereum.
+pub fn generate_solidity_files(guests: &[GuestListEntry], opts: &Options) -> Result<()> {
+    let image_id_file_path = opts
+        .image_id_sol_path
+        .as_ref()
+        .ok_or(anyhow!("path for image ID Solidity file must be provided"))?;
+    fs::write(image_id_file_path, generate_image_id_sol(guests)?)
+        .with_context(|| format!("failed to save changes to {}", image_id_file_path.display()))?;
+
+    let elf_sol_path = opts.elf_sol_path.as_ref().ok_or(anyhow!(
+        "path for guest ELFs Solidity file must be provided"
+    ))?;
+    fs::write(elf_sol_path, generate_elf_sol(guests)?)
+        .with_context(|| format!("failed to save changes to {}", image_id_file_path.display()))?;
+
+    Ok(())
+}
+
+/// Generate source code for a Solidity library containing image IDs for the given guest programs.
+pub fn generate_image_id_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
+    // Assemble a list of image IDs.
+    let image_ids: Vec<_> = guests
         .iter()
-        .map(|method| {
-            let name = method.name.to_uppercase().replace('-', "_");
-            let image_id = hex::encode(Digest::from(method.image_id));
-            let image_id_declaration =
-                format!("bytes32 public constant {name}_ID = bytes32(0x{image_id});");
-
-            let elf_path = method.path.to_string();
-            let elf_declaration = format!("string public constant {name}_PATH = \"{elf_path}\";");
-
-            (image_id_declaration, elf_declaration)
+        .map(|guest| {
+            let name = guest.name.to_uppercase().replace('-', "_");
+            let image_id = hex::encode(Digest::from(guest.image_id));
+            format!("bytes32 public constant {name}_ID = bytes32(0x{image_id});")
         })
-        .unzip();
+        .collect();
 
-    let image_ids = image_ids.join("\n");
-    let elfs = elfs.join("\n");
+    let image_id_lines = image_ids.join("\n");
 
     // Building the final image_ID file content.
-    let file_content = format!("{SOL_HEADER}{IMAGE_ID_LIB_HEADER}\n{image_ids}\n}}");
-    fs::write(SOLIDITY_IMAGE_ID_PATH, file_content).unwrap_or_else(|err| {
-        panic!(
-            "failed to save changes to {}: {}",
-            SOLIDITY_IMAGE_ID_PATH, err
+    let file_content = format!("{SOL_HEADER}{IMAGE_ID_LIB_HEADER}\n{image_id_lines}\n}}");
+    forge_fmt(file_content.as_bytes()).context("failed to format image ID file")
+}
+
+/// Generate source code for a Solidity library containing local paths to the ELF files of guest
+/// programs. Note that these paths will only resolve on the build machine, and are intended only
+/// for test integration.
+pub fn generate_elf_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
+    // Assemble a list of paths to ELF files.
+    let elf_paths: Vec<_> = guests
+        .iter()
+        .map(|guest| {
+            let name = guest.name.to_uppercase().replace('-', "_");
+
+            let elf_path = guest.path.to_string();
+            format!("string public constant {name}_PATH = \"{elf_path}\";")
+        })
+        .collect();
+
+    // Building the final elf_path file content.
+    let elf_path_lines = elf_paths.join("\n");
+    let file_content = format!("{SOL_HEADER}{ELF_LIB_HEADER}\n{elf_path_lines}\n}}");
+    forge_fmt(file_content.as_bytes()).context("failed to format image ID file")
+}
+
+/// Uses forge fmt as a subprocess to format the given Solidity source.
+fn forge_fmt(src: &[u8]) -> Result<Vec<u8>> {
+    // Spawn `forge fmt`
+    let mut fmt_proc = Command::new("forge")
+        .args(["fmt", "-", "--raw"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .context("failed to spawn forge fmt")?;
+
+    // Write the source code as bytes to stdin.
+    fmt_proc
+        .stdin
+        .take()
+        .context("failed to take forge fmt stdin handle")?
+        .write_all(src)
+        .context("failed to write to forge fmt stdin")?;
+
+    let fmt_out = fmt_proc
+        .wait_with_output()
+        .context("failed to run forge fmt")?;
+
+    if !fmt_out.status.success() {
+        bail!(
+            "forge fmt on image ID file content exited with status {}",
+            fmt_out.status,
         );
-    });
+    }
 
-    // Building the final elf file content.
-    let file_content = format!("{SOL_HEADER}{ELF_LIB_HEADER}\n{elfs}\n}}");
-    fs::write(SOLIDITY_ELF_PATH, file_content).unwrap_or_else(|err| {
-        panic!("failed to save changes to {}: {}", SOLIDITY_ELF_PATH, err);
-    });
-
-    // use `forge fmt` to format the generated code
-    Command::new("forge")
-        .arg("fmt")
-        .arg(SOLIDITY_IMAGE_ID_PATH)
-        .arg(SOLIDITY_ELF_PATH)
-        .status()
-        .unwrap_or_else(|e| {
-            panic!("failed to format {SOLIDITY_IMAGE_ID_PATH}, {SOLIDITY_ELF_PATH}: {e}")
-        });
+    Ok(fmt_out.stdout)
 }

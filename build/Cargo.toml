@@ -8,8 +8,10 @@ homepage = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
+anyhow = { workspace = true }
 risc0-build = { workspace = true }
 risc0-zkp = { workspace = true }
+hex = "0.4" 
 
 [features]
 default = []
