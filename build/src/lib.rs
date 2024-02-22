@@ -144,6 +144,7 @@ fn forge_fmt(src: &[u8]) -> Result<Vec<u8>> {
     let mut fmt_proc = Command::new("forge")
         .args(["fmt", "-", "--raw"])
         .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
         .spawn()
         .context("failed to spawn forge fmt")?;
 
@@ -167,4 +168,72 @@ fn forge_fmt(src: &[u8]) -> Result<Vec<u8>> {
     }
 
     Ok(fmt_out.stdout)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::forge_fmt;
+    use pretty_assertions::assert_eq;
+
+    // Copied from https://solidity-by-example.org/first-app/
+    const FORMATTED_SRC: &str = r#"// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Counter {
+    uint256 public count;
+
+    // Function to get the current count
+    function get() public view returns (uint256) {
+        return count;
+    }
+
+    // Function to increment count by 1
+    function inc() public {
+        count += 1;
+    }
+
+    // Function to decrement count by 1
+    function dec() public {
+        // This function will fail if count = 0
+        count -= 1;
+    }
+}
+"#;
+
+    const UNFORMATTED_SRC: &str = r#"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Counter {
+    uint public  count;
+
+    // Function to get the current count
+    function get() public view returns (uint) {
+        return count;
+    }
+
+    // Function to increment count by 1
+    function inc()
+    public {
+        count
+         +=
+         1;
+    }
+
+// Function to decrement count by 1
+        function dec() public {
+            // This function will fail if count = 0
+count-=1;
+    }
+}
+
+"#;
+
+    #[test]
+    fn forge_fmt_works() {
+        assert_eq!(
+            String::from_utf8(forge_fmt(UNFORMATTED_SRC.as_bytes()).unwrap()).unwrap(),
+            String::from_utf8(FORMATTED_SRC.as_bytes().to_owned()).unwrap()
+        );
+    }
 }
