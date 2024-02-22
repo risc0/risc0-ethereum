@@ -20,16 +20,16 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
-import {IBonsaiRelay, Callback, CallbackAuthorization} from "./relay/IBonsaiRelay.sol";
-import {BonsaiRelay} from "./relay/BonsaiRelay.sol";
-import {BonsaiRelayQueueWrapper} from "./relay/BonsaiRelayQueueWrapper.sol";
-import {BonsaiTestRelay} from "./relay/BonsaiTestRelay.sol";
-import {BonsaiCheats} from "./BonsaiCheats.sol";
-import {IRiscZeroVerifier} from "./IRiscZeroVerifier.sol";
-import {ControlID, RiscZeroGroth16Verifier} from "./groth16/RiscZeroGroth16Verifier.sol";
+import {IBonsaiRelay, Callback, CallbackAuthorization} from "./IBonsaiRelay.sol";
+import {BonsaiRelay} from "./BonsaiRelay.sol";
+import {BonsaiRelayQueueWrapper} from "./BonsaiRelayQueueWrapper.sol";
+import {BonsaiTestRelay} from "./BonsaiTestRelay.sol";
+import {BonsaiRelayCheats} from "./BonsaiRelayCheats.sol";
+import {IRiscZeroVerifier} from "../IRiscZeroVerifier.sol";
+import {ControlID, RiscZeroGroth16Verifier} from "../groth16/RiscZeroGroth16Verifier.sol";
 
-/// @notice A base contract for testing a Bonsai callback receiver contract
-abstract contract BonsaiTest is Test, BonsaiCheats {
+/// @notice A base contract for testing a Bonsai relay callback receiver contract
+abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
     using Strings2 for bytes;
 
     BonsaiRelayQueueWrapper internal bonsaiRelay;
@@ -55,11 +55,6 @@ abstract contract BonsaiTest is Test, BonsaiCheats {
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiVerifyingRelay);
         }
         _;
-    }
-
-    /// @notice Returns whether we are using the prover and verifier in dev-mode, or fully verifying.
-    function devMode() internal view returns (bool) {
-        return vm.envOr("RISC0_DEV_MODE", false);
     }
 
     /// @notice Process a single callback request and invoke its receiver contract with the results.
