@@ -22,11 +22,17 @@ import {CommonBase} from "forge-std/Base.sol";
 import {console2} from "forge-std/console2.sol";
 import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
+import {MockRiscZeroVerifier} from "./MockRiscZeroVerifier.sol";
+import {ControlID, RiscZeroGroth16Verifier} from "./groth16/RiscZeroGroth16Verifier.sol";
+import {IRiscZeroVerifier} from "./IRiscZeroVerifier.sol";
+
 /// @notice A base contract for Forge cheats useful in testing RISC Zero applications.
 abstract contract RiscZeroCheats is CommonBase {
     using Strings2 for bytes;
 
     /// @notice Returns whether we are using the prover and verifier in dev-mode, or fully verifying.
+    /// @dev This environment variable, along with the respective options in the zkVM, are controlled
+    ///      with the `RISC0_DEV_MODE` environment variable.
     function devMode() internal view returns (bool) {
         return vm.envOr("RISC0_DEV_MODE", false);
     }
@@ -56,4 +62,18 @@ abstract contract RiscZeroCheats is CommonBase {
         imageRunnerInput[i++] = input.toHexString();
         return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes32, bytes));
     }
+
+    /// @notice Deploy either a test or fully verifying `RiscZeroGroth16Verifier` depending on `devMode()`.
+    function deployRiscZeroVerifier() internal returns (IRiscZeroVerifier) {
+        if (devMode()) {
+            IRiscZeroVerifier verifier = new MockRiscZeroVerifier();
+            console2.log("Deployed RiscZeroGroth16VerifierTest to", address(verifier));
+            return verifier;
+        } else {
+            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1);
+            console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+            return verifier;
+        }
+    }
+
 }
