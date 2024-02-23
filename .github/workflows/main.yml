@@ -129,7 +129,7 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@release-0.20
         with:
           key: macOS-default
-      - run: cargo install --force cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
+      - run: cargo install --force cargo-risczero@$RISC0_CRATE_VERSION
       - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
       - run: cargo doc --no-deps --workspace
       # TODO(#18) debug forge doc and get this working
