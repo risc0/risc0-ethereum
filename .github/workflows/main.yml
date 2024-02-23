@@ -57,11 +57,9 @@ jobs:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - run: cargo fmt --all --check
       - run: cargo fmt --all --check --manifest-path relay/tests/methods/guest/Cargo.toml
-      - run: cargo clippy
-        env:
-          RISC0_SKIP_BUILD: true
       - run: cargo sort --workspace --check
       - run: cargo sort --workspace --check relay/tests/methods/guest
+      - run: cargo clippy --workspace --exclude risc0-ethereum-relay-test-methods
       - run: forge fmt --check
         working-directory: contracts
       - uses: actions/setup-python@v4
