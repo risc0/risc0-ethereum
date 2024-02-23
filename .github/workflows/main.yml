@@ -104,19 +104,9 @@ jobs:
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - name: build workspace
-        run: |
-          cargo test -F $FEATURE --workspace --timings --no-run \
-            --exclude doc-test \
-            --exclude bonsai-ethereum-contracts \
-            --exclude bonsai-ethereum-relay \
-            --exclude bonsai-rest-api-mock
+        run: cargo test --workspace --timings --no-run
       - name: test workspace
-        run: |
-          cargo test -F $FEATURE -F prove --workspace --timings \
-            --exclude doc-test \
-            --exclude bonsai-ethereum-contracts \
-            --exclude bonsai-ethereum-relay \
-            --exclude bonsai-rest-api-mock
+        run: cargo test --workspace --timings
       - uses: actions/upload-artifact@v3
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
@@ -141,4 +131,7 @@ jobs:
           key: macOS-default
       - run: cargo install --force cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
       - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - run: cargo doc --no-deps --workspace
+      # TODO(#18) debug forge doc and get this working
+      #- run: forge doc --root contracts
       - run: sccache --show-stats
