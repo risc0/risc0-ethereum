@@ -93,7 +93,7 @@ jobs:
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
       - if: matrix.feature == 'cuda'
-      - uses: risc0/risc0/.github/actions/cuda@${{ env.RISC0_MONOREPO_REF }}
+        uses: risc0/risc0/.github/actions/cuda@${{ env.RISC0_MONOREPO_REF }}
       - uses: risc0/risc0/.github/actions/rustup@${{ env.RISC0_MONOREPO_REF }}
       - uses: risc0/risc0/.github/actions/sccache@${{ env.RISC0_MONOREPO_REF }}
         with:
