@@ -19,6 +19,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: v2024-01-31.1
   RISC0_MONOREPO_REF: release-0.20
+  RISC0_CRATE_VERSION: "0.20"
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -79,10 +80,10 @@ jobs:
         device: [cpu]
         include:
           - os: Linux
-            feature: default
+            feature: cuda
             device: nvidia_rtx_a5000
           - os: macOS
-            feature: default
+            feature: metal
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
@@ -98,8 +99,8 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@${{ env.RISC0_MONOREPO_REF }}
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      # TODO(victor) How to install cargo-risczero
-      - run: cargo run --bin cargo-risczero --no-default-features -- risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - run: cargo install --force cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
+      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
@@ -139,7 +140,6 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@${{ env.RISC0_MONOREPO_REF }}
         with:
           key: macOS-default
-      # TODO(victor): Figure out how to install cargo-risczro here
-      - run: cargo run --bin cargo-risczero --no-default-features -- risczero install --version $RISC0_TOOLCHAIN_VERSION
-      - run: cargo doc --no-deps --exclude=risc0-ethereum-relay-test-methods --workspace
+      - run: cargo install --force cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
+      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
       - run: sccache --show-stats
