@@ -75,5 +75,4 @@ abstract contract RiscZeroCheats is CommonBase {
             return verifier;
         }
     }
-
 }

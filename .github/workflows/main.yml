@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  merge_group:
+  pull_request:
+    branches: [main, "release-*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# this is needed to gain access via OIDC to the S3 bucket for caching
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RISC0_TOOLCHAIN_VERSION: v2024-01-31.1
+  RISC0_CRATE_VERSION: "^0.20"
+
+jobs:
+  # see: https://github.com/orgs/community/discussions/26822
+  main-status-check:
+    if: always()
+    needs:
+      - check
+      - doc
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all job status
+        # see https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#needs-context
+        # see https://stackoverflow.com/a/67532120/4907315
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history is required by license-check.py
+          fetch-depth: 0
+          submodules: recursive
+      - uses: risc0/risc0/.github/actions/rustup@release-0.20
+      - name: Install cargo-sort
+        uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
+        with:
+          crate: cargo-sort
+          version: "1.0"
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+        with:
+          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
+      - run: cargo fmt --all --check
+      - run: cargo fmt --all --check --manifest-path relay/tests/methods/guest/Cargo.toml
+      - run: cargo sort --workspace --check
+      - run: cargo sort --workspace --check relay/tests/methods/guest
+      - run: cargo clippy --workspace --exclude risc0-ethereum-relay-test-methods
+      - run: forge fmt --check
+        working-directory: contracts
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: python license-check.py
+
+  test:
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [Linux, macOS]
+        feature: [default]
+        device: [cpu]
+        include:
+          - os: Linux
+            feature: cuda
+            device: nvidia_rtx_a5000
+          - os: macOS
+            feature: metal
+            device: apple_m2_pro
+    env:
+      FEATURE: ${{ matrix.feature }}
+      RISC0_BUILD_LOCKED: 1
+      RUST_BACKTRACE: full
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@release-0.20
+      - uses: risc0/risc0/.github/actions/rustup@release-0.20
+      - uses: risc0/risc0/.github/actions/sccache@release-0.20
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
+      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
+      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+        with:
+          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
+      - name: build workspace
+        run: cargo test --workspace --timings --no-run
+      - name: test workspace
+        run: cargo test --workspace --timings
+      - uses: actions/upload-artifact@v3
+        with:
+          name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
+          path: target/cargo-timings/
+          retention-days: 5
+      - run: forge test -vvv
+        working-directory: contracts
+      - run: sccache --show-stats
+
+  doc:
+    runs-on: [self-hosted, prod, macOS, cpu]
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: risc0/risc0/.github/actions/rustup@release-0.20
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+        with:
+          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
+      - uses: risc0/risc0/.github/actions/sccache@release-0.20
+        with:
+          key: macOS-default
+      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
+      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - run: cargo doc --no-deps --workspace
+      # TODO(#18) debug forge doc and get this working
+      #- run: forge doc --root contracts
+      - run: sccache --show-stats
