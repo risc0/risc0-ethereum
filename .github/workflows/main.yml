@@ -18,6 +18,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: v2024-01-31.1
+  RISC0_MONOREPO_REF: release-0.20
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -42,7 +43,7 @@ jobs:
         with:
           # Full history is required by license-check.py
           fetch-depth: 0
-      - uses: ./.github/actions/rustup
+      - uses: risc0/risc0/.github/actions/rustup@${{ env.RISC0_MONOREPO_REF }}
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
@@ -92,9 +93,9 @@ jobs:
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
       - if: matrix.feature == 'cuda'
-        uses: ./.github/actions/cuda
-      - uses: ./.github/actions/rustup
-      - uses: ./.github/actions/sccache
+      - uses: risc0/risc0/.github/actions/cuda@${{ env.RISC0_MONOREPO_REF }}
+      - uses: risc0/risc0/.github/actions/rustup@${{ env.RISC0_MONOREPO_REF }}
+      - uses: risc0/risc0/.github/actions/sccache@${{ env.RISC0_MONOREPO_REF }}
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       # TODO(victor) How to install cargo-risczero
@@ -131,11 +132,11 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/rustup
+      - uses: risc0/risc0/.github/actions/rustup@${{ env.RISC0_MONOREPO_REF }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
-      - uses: ./.github/actions/sccache
+      - uses: risc0/risc0/.github/actions/sccache@${{ env.RISC0_MONOREPO_REF }}
         with:
           key: macOS-default
       # TODO(victor): Figure out how to install cargo-risczro here
