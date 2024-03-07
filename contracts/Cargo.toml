@@ -7,6 +7,10 @@ license = { workspace = true }
 homepage = { workspace = true }
 repository = { workspace = true }
 
+[[bin]]
+name = "risc0-forge-ffi"
+path = "../ffi"
+
 [build-dependencies]
 anyhow = "1.0"
 
