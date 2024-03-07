@@ -23,5 +23,5 @@ bincode = { version = "1.3" }
 bonsai-rest-api-mock = { path = "../risc0/bonsai/rest-api-mock", default-features = false }
 bonsai-sdk = { path = "../risc0/bonsai/sdk", default-features = false }
 risc0-build = { path = "../risc0/risc0/build", default-features = false }
-risc0-zkvm = { path = "../risc0/risc0/zkvm", default-features = false }
 risc0-zkp = { path = "../risc0/risc0/zkp", default-features = false }
+risc0-zkvm = { path = "../risc0/risc0/zkvm", default-features = false }
