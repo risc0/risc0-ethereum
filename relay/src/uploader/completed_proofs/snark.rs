@@ -15,13 +15,14 @@
 use std::time::Duration;
 
 use bonsai_sdk::{
-    alpha::{responses::Groth16Seal, Client, SessionId, SnarkId},
+    alpha::{Client, SessionId, SnarkId},
     alpha_async::{create_snark, snark_status},
 };
 use ethers::{
     abi::{Token, Tokenizable},
     types::U256,
 };
+use risc0_zkvm::Groth16Seal;
 
 use super::error::CompleteProofError;
 use crate::api;
