@@ -33,7 +33,7 @@ abstract contract RiscZeroCheats is CommonBase {
     /// @notice Returns whether we are using the prover and verifier in dev-mode, or fully verifying.
     /// @dev This environment variable, along with the respective options in the zkVM, are controlled
     ///      with the `RISC0_DEV_MODE` environment variable.
-    function devMode() internal returns (bool) {
+    function devMode() internal view returns (bool) {
         return vm.envOr("RISC0_DEV_MODE", false);
     }
 
