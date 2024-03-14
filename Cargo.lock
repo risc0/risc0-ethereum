@@ -3747,6 +3747,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "risc0-build-ethereum"
+version = "0.8.0-alpha.1"
+dependencies = [
+ "anyhow",
+ "hex",
+ "pretty_assertions",
+ "risc0-build",
+ "risc0-zkp",
+]
+
+[[package]]
 name = "risc0-build-kernel"
 version = "0.21.0"
 source = "git+https://github.com/risc0/risc0?branch=release-0.21#02fad7a498764d5c6cc851f246813b73b41c30b8"
@@ -3822,17 +3833,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "risc0-ethereum-build"
-version = "0.8.0-alpha.1"
-dependencies = [
- "anyhow",
- "hex",
- "pretty_assertions",
- "risc0-build",
- "risc0-zkp",
-]
-
-[[package]]
 name = "risc0-ethereum-contracts"
 version = "0.8.0-alpha.1"
 dependencies = [
@@ -3844,23 +3844,6 @@ dependencies = [
  "hex",
  "risc0-zkvm",
  "tokio",
-]
-
-[[package]]
-name = "risc0-ethereum-ffi"
-version = "0.8.0-alpha.1"
-dependencies = [
- "alloy-primitives",
- "anyhow",
- "bincode",
- "bonsai-sdk",
- "clap",
- "env_logger",
- "ethers",
- "hex",
- "log",
- "risc0-ethereum-contracts",
- "risc0-zkvm",
 ]
 
 [[package]]
@@ -3909,6 +3892,23 @@ name = "risc0-ethereum-relay-test-methods"
 version = "0.8.0-alpha.1"
 dependencies = [
  "risc0-build",
+]
+
+[[package]]
+name = "risc0-forge-ffi"
+version = "0.8.0-alpha.1"
+dependencies = [
+ "alloy-primitives",
+ "anyhow",
+ "bincode",
+ "bonsai-sdk",
+ "clap",
+ "env_logger",
+ "ethers",
+ "hex",
+ "log",
+ "risc0-ethereum-contracts",
+ "risc0-zkvm",
 ]
 
 [[package]]

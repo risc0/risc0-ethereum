@@ -11,10 +11,10 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
+risc0-build-ethereum = { version = "0.8.0-alpha.1", default-features = false, path = "build" }
 risc0-ethereum-contracts = { version = "0.8.0-alpha.1", default-features = false, path = "contracts" }
-risc0-ethereum-build = { version = "0.8.0-alpha.1", default-features = false, path = "build" }
-risc0-ethereum-ffi = { version = "0.8.0-alpha.1", default-features = false, path = "ffi" }
 risc0-ethereum-relay = { version = "0.8.0-alpha.1", default-features = false, path = "relay" }
+risc0-forge-ffi = { version = "0.8.0-alpha.1", default-features = false, path = "ffi" }
 
 alloy-primitives = { version = "0.6", default-features = false, features = ["rlp", "serde", "std"] }
 alloy-sol-types = { version = "0.6" }

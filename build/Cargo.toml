@@ -1,5 +1,5 @@
 [package]
-name = "risc0-ethereum-build"
+name = "risc0-build-ethereum"
 description = "RISC Zero build tools for Ethereum integration"
 version = { workspace = true }
 edition = { workspace = true }

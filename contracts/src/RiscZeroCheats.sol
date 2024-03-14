@@ -47,7 +47,10 @@ abstract contract RiscZeroCheats is CommonBase {
     ///       Uses the Bonsai proving service to run the guest and produce an on-chain verifiable
     ///       SNARK attesting to the correctness of the journal output. URL and API key for Bonsai
     ///       should be specified using the BONSAI_API_URL and BONSAI_API_KEY environment variables.
-    function prove(string memory elf_path, bytes memory input) internal returns (bytes memory, bytes32, bytes memory) {
+    function prove(
+        string memory elf_path,
+        bytes memory input
+    ) internal returns (bytes memory, bytes32, bytes memory) {
         string[] memory imageRunnerInput = new string[](10);
         uint256 i = 0;
         imageRunnerInput[i++] = "cargo";
@@ -55,7 +58,7 @@ abstract contract RiscZeroCheats is CommonBase {
         imageRunnerInput[i++] = "--manifest-path";
         imageRunnerInput[i++] = "lib/risc0-ethereum/ffi/Cargo.toml";
         imageRunnerInput[i++] = "--bin";
-        imageRunnerInput[i++] = "risc0-ethereum-ffi";
+        imageRunnerInput[i++] = "risc0-forge-ffi";
         imageRunnerInput[i++] = "-q";
         imageRunnerInput[i++] = "prove";
         imageRunnerInput[i++] = elf_path;
@@ -67,11 +70,20 @@ abstract contract RiscZeroCheats is CommonBase {
     function deployRiscZeroVerifier() internal returns (IRiscZeroVerifier) {
         if (devMode()) {
             IRiscZeroVerifier verifier = new MockRiscZeroVerifier();
-            console2.log("Deployed RiscZeroGroth16VerifierTest to", address(verifier));
+            console2.log(
+                "Deployed RiscZeroGroth16VerifierTest to",
+                address(verifier)
+            );
             return verifier;
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1);
-            console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
+                ControlID.CONTROL_ID_0,
+                ControlID.CONTROL_ID_1
+            );
+            console2.log(
+                "Deployed RiscZeroGroth16Verifier to",
+                address(verifier)
+            );
             return verifier;
         }
     }

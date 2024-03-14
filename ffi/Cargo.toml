@@ -1,5 +1,5 @@
 [package]
-name = "risc0-ethereum-ffi"
+name = "risc0-forge-ffi"
 description = "A tool to integrate forge-ffi with the risc0-zkVM."
 version = { workspace = true }
 edition = { workspace = true }
