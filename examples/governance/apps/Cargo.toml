@@ -1,0 +1,22 @@
+[package]
+name = "apps"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+anyhow = { workspace = true }
+bincode = { workspace = true }
+bonsai-sdk = { workspace = true }
+bytemuck = { workspace = true }
+clap = { version = "4.0", features = ["derive", "env"] }
+env_logger = { version = "0.10" }
+ethers = { workspace = true }
+hex = { workspace = true }
+log = { workspace = true }
+methods = { workspace = true }
+risc0-ethereum-contracts = { workspace = true }
+risc0-zkvm = { workspace = true }
+serde = { workspace = true }
+tokio = { version = "1.35", features = ["full"] }

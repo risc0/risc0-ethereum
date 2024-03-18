@@ -1,0 +1,143 @@
+name: main
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RUST_BACKTRACE: "1"
+  RISC0_CRATE_VERSION: "^0.20"
+  RISC0_TOOLCHAIN_VERSION: v2024-01-31.1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - name: checkout dummy commit (submodule bug workaround)
+        run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+
+      - name: clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Install rust
+        uses: risc0/risc0/.github/actions/rustup@release-0.20
+
+      - name: Install Foundry
+        uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+
+      - name: Install cargo-install
+        uses: risc0/cargo-install@v1
+        with:
+          crate: cargo-binstall
+
+      - name: Cargo binstall cargo-risczero
+        run: cargo binstall -y --force cargo-risczero@${{ env.RISC0_CRATE_VERSION }}
+
+      - name: risczero toolchain install
+        run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+
+      - name: build rust guest
+        run: cargo build
+
+      - name: build solidity contracts
+        run: forge build
+
+      - name: run tests
+        run: cargo test
+
+      - name: run foundry tests in dev mode
+        env:
+            RISC0_DEV_MODE: true
+        run: forge test -vvv
+
+  bonsai-integration:
+    name: test bonsai integration
+    runs-on: ubuntu-latest
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - name: checkout dummy commit (submodule bug workaround)
+        run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+
+      - name: clone repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install rust
+        uses: risc0/risc0/.github/actions/rustup@release-0.19
+
+      - name: Install Foundry
+        uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+
+      - name: Install cargo-install
+        uses: risc0/cargo-install@v1
+        with:
+          crate: cargo-binstall
+
+      - name: Cargo binstall cargo-risczero
+        run: cargo binstall -y --force cargo-risczero@${{ env.RISC0_CRATE_VERSION }}
+
+      - name: risczero toolchain install
+        run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+
+      - name: build rust guest
+        run: cargo build
+
+      - name: build solidity contracts
+        run: forge build
+
+      - name: run foundry tests with bonsai proving
+        env:
+          BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
+          BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
+          RISC0_DEV_MODE: false
+        run: forge test -vvv
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: install rust
+        uses: risc0/risc0/.github/actions/rustup@release-0.20
+
+      - name: install cargo-sort
+        uses: risc0/cargo-install@v1
+        with:
+          crate: cargo-sort
+          version: "=1.0.7"
+
+      - name: Install Foundry
+        uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+
+      - name: lint rust code
+        run: cargo fmt --all --check
+
+      - name: lint guest rust code
+        working-directory: methods/guest
+        run: cargo fmt --all --check
+
+      - name: lint cargo files
+        run: cargo sort --workspace --check
+
+      - name: lint guest cargo files
+        working-directory: methods/guest
+        run: cargo sort --workspace --check
+
+      - name: check solidity code formatting
+        run: forge fmt --check

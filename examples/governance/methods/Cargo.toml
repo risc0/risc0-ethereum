@@ -1,0 +1,27 @@
+[package]
+name = "methods"
+version = { workspace = true }
+edition = { workspace = true }
+
+[package.metadata.risc0]
+methods = ["guest"]
+
+[build-dependencies]
+hex = { workspace = true }
+risc0-build = { workspace = true }
+risc0-build-ethereum = { workspace = true }
+risc0-zkp = { workspace = true }
+
+[dependencies]
+risc0-build = { workspace = true, features = ["guest-list"] }
+
+[dev-dependencies]
+hex-literal = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+risc0-zkvm = { workspace = true, features = ["client"] }
+
+[features]
+default = []
+metal = ["risc0-zkvm/metal"]
+cuda = ["risc0-zkvm/cuda"]
