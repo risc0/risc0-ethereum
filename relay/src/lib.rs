@@ -15,7 +15,7 @@
 #![doc = include_str!("../README.md")]
 
 mod api;
-mod client_config;
+pub mod client_config;
 mod downloader;
 pub mod sdk;
 mod storage;
