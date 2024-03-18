@@ -1,7 +1,7 @@
 [profile.default]
 src = "contracts"
 out = "out"
-libs = ["lib"]
+libs = ["lib", "../../contracts"]
 test = "tests"
 ffi = true
 
