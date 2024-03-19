@@ -120,7 +120,7 @@ library OutputLib {
 
 /// @notice A receipt attesting to the execution of a guest program.
 /// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
-/// attesting to knowledge of a zkVM execution resulting the claim. The claim is a set of public
+/// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
 /// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
 /// image ID identifies the program that was executed, and the journal is the public data written
 /// by the program.
