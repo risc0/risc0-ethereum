@@ -7,3 +7,15 @@ edition = "2021"
 
 [dependencies]
 risc0-zkvm = { version = "0.21", default-features = false }
+
+[profile.release]
+lto = true
+opt-level = 3
+debug = 1
+
+[profile.release.package.risc0-ethereum-relay-test-guests]
+# Include debug symbols so we can test the profiler.
+debug = 1
+
+[package.metadata.release]
+release = false
