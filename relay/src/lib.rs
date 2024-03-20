@@ -15,6 +15,7 @@
 #![doc = include_str!("../README.md")]
 
 mod api;
+pub mod bonsai_rest_api_mock;
 pub mod client_config;
 mod downloader;
 pub mod sdk;
