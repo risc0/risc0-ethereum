@@ -88,7 +88,7 @@ impl Prover {
 
                 let mut env = ExecutorEnv::builder();
                 for receipt in receipts {
-                    if receipt.len() < 1 {
+                    if receipt.is_empty() {
                         continue;
                     }
                     let deserialized_receipt: Receipt = bincode::deserialize(&receipt)?;
