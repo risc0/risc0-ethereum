@@ -43,14 +43,11 @@ uuid = { version = "1.8", features = ["v4", "serde"] }
 validator = { version = "0.16", features = ["derive"] }
 
 [dev-dependencies]
-bincode = "1"
-bonsai-sdk = { workspace = true, features = ["async"] }
 bytemuck = "1.14"
 risc0-ethereum-relay-test-methods = { path = "./tests/methods" }
 rstest = "0.18"
 serial_test = "2.0"
 time = "0.3"
-uuid = { version = "1.8", features = ["v4", "serde"] }
 wiremock = "0.6"
 
 [features]
