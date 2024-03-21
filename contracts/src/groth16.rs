@@ -15,7 +15,7 @@
 use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolValue};
 use anyhow::{ensure, Result};
-use bonsai_sdk::alpha as bonsai_sdk;
+use risc0_zkvm::Groth16Seal;
 
 sol! {
     /// Groth16 seal construction from [RiscZeroGroth16Verifier.sol].
@@ -31,16 +31,16 @@ sol! {
 
 impl Seal {
     /// ABI encoding of the seal.
-    pub fn abi_encode(seal: bonsai_sdk::responses::Groth16Seal) -> Result<Vec<u8>> {
+    pub fn abi_encode(seal: Groth16Seal) -> Result<Vec<u8>> {
         let seal = Seal::try_from(seal)?;
         Ok(seal.abi_encode())
     }
 }
 
-impl TryFrom<bonsai_sdk::responses::Groth16Seal> for Seal {
+impl TryFrom<Groth16Seal> for Seal {
     type Error = anyhow::Error;
 
-    fn try_from(seal: bonsai_sdk::responses::Groth16Seal) -> Result<Self> {
+    fn try_from(seal: Groth16Seal) -> Result<Self> {
         ensure!(
             seal.a.len() == 2,
             "seal.a has invalid length: {}",
