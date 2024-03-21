@@ -25,6 +25,10 @@ use methods::FINALIZE_VOTES_ELF;
 
 // `IEvenNumber` interface automatically generated via the alloy `sol!` macro.
 sol! {
+    interface IBonsaiGovernor {
+        
+    }
+
     interface IEvenNumber {
         function set(uint256 x, bytes32 post_state_digest, bytes calldata seal);
     }
