@@ -50,7 +50,7 @@ contract RiscZeroGroth16VerifierTest is Test {
     IRiscZeroVerifier internal verifier;
 
     function setUp() external {
-        verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1);
+        verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.TODO_CODE_ID);
     }
 
     function testVerifyKnownGoodReceipt() external view {
