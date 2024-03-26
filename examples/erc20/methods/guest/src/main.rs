@@ -17,8 +17,10 @@
 
 use alloy_primitives::{address, Address};
 use alloy_sol_types::{sol, SolValue};
+use risc0_ethereum_view_call::{
+    config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallInput, ViewCall,
+};
 use risc0_zkvm::guest::env;
-use view_call::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallInput, ViewCall};
 
 risc0_zkvm::guest::entry!(main);
 
