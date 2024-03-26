@@ -46,7 +46,7 @@ validator = { version = "0.17", features = ["derive"] }
 bytemuck = "1.14"
 risc0-ethereum-relay-test-methods = { path = "./tests/methods" }
 rstest = "0.18"
-serial_test = "2.0"
+serial_test = "3.0"
 time = "0.3"
 wiremock = "0.6"
 
