@@ -11,3 +11,7 @@
 	path = lib/risc0-ethereum
 	url = https://github.com/risc0/risc0-ethereum
 	branch = release-0.7
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+	branch = release-v5.0
