@@ -109,9 +109,6 @@ fn main() -> Result<()> {
     );
 
     // Send an off-chain proof request to the Bonsai proving service.
-    // let mut input_data = to_vec(&input).unwrap();
-    // input_data.extend(to_vec(&account).unwrap());
-    // let input = bytemuck::cast_slice(&input_data).to_vec();
     let input = InputBuilder::new()
         .write(view_call_input)
         .unwrap()
