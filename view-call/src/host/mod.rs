@@ -73,19 +73,22 @@ impl<C: SolCall> ViewCall<C> {
         env: ViewCallEnv<ProofDb<P>, P::Header>,
     ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
         info!(
-            "preflight '{}' method by {} on {}",
+            "Executing preflight for '{}' with caller {} on contract {}",
             C::SIGNATURE,
             self.caller,
             self.contract
         );
+
+        // initialize the database and execute the transaction
         let mut db = env.db;
-        let returns = self
+        let transaction_result = self
             .transact(&mut db, env.cfg_env, env.header.inner())
             .map_err(|err| anyhow!(err))?;
 
+        // use the same provider as the database
         let provider = db.provider();
 
-        // get the EIP-1186 proofs for all accounts
+        // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
         for (address, storage_slots) in db.accounts() {
             let proof = provider.get_proof(
@@ -96,7 +99,7 @@ impl<C: SolCall> ViewCall<C> {
             proofs.push(proof);
         }
 
-        // create the sparse MPT of the state from the proofs
+        // build the sparse MPT for the state and verify against the header
         let state_nodes = proofs.iter().flat_map(|p| p.account_proof.iter());
         let state_trie =
             MerkleTrie::from_rlp_nodes(state_nodes).context("invalid account proof")?;
@@ -105,7 +108,7 @@ impl<C: SolCall> ViewCall<C> {
             "root of the state trie does not match the header"
         );
 
-        // create the sparse MPT of each account storage from the proofs
+        // build the sparse MPT for account storages and filter duplicates
         let mut storage_tries = HashMap::new();
         for proof in proofs {
             // skip non-existing accounts or accounts where no storage slots were requested
@@ -118,13 +121,12 @@ impl<C: SolCall> ViewCall<C> {
                 MerkleTrie::from_rlp_nodes(storage_nodes).context("invalid storage proof")?;
             storage_tries.insert(storage_trie.hash_slow(), storage_trie);
         }
-        // filter duplicate storage tries
         let storage_tries: Vec<_> = storage_tries.into_values().collect();
 
         // collect the bytecode of all referenced contracts
         let contracts: Vec<_> = db.contracts().values().cloned().collect();
 
-        // query all ancestor blocks
+        // retrieve ancestor block headers
         let mut ancestors = Vec::new();
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
@@ -154,6 +156,6 @@ impl<C: SolCall> ViewCall<C> {
             ancestors,
         };
 
-        Ok((input, returns))
+        Ok((input, transaction_result))
     }
 }

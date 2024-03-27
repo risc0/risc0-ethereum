@@ -53,26 +53,29 @@ impl<H: EvmHeader> ViewCallInput<H> {
     pub fn into_env(self) -> ViewCallEnv<StateDB, H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
-        assert_eq!(self.header.state_root(), &state_root, "state root mismatch");
+        assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
 
-        // compute the block hash of the header
+        // seal the header to compute its block hash
         let header = self.header.seal_slow();
 
-        // verify that the ancestors form a valid chain
+        // validate that ancestor headers form a valid chain
         let mut block_hashes = HashMap::with_capacity(self.ancestors.len() + 1);
         block_hashes.insert(header.number(), header.seal());
-        let mut prev = header.inner();
-        for current in &self.ancestors {
-            let current_hash = current.hash_slow();
-            assert!(
-                prev.parent_hash() == &current_hash,
-                "invalid chain: {} is not the parent of {}",
-                current.number(),
-                prev.number()
+
+        let mut previous_header = header.inner();
+        for ancestor in &self.ancestors {
+            let ancestor_hash = ancestor.hash_slow();
+            assert_eq!(
+                previous_header.parent_hash(),
+                &ancestor_hash,
+                "Invalid chain: block {} is not the parent of block {}",
+                ancestor.number(),
+                previous_header.number()
             );
-            block_hashes.insert(current.number(), current_hash);
-            prev = current;
+            block_hashes.insert(ancestor.number(), ancestor_hash);
+            previous_header = ancestor;
         }
+
         let db = StateDB::new(
             self.state_trie,
             self.storage_tries,

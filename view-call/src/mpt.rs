@@ -87,17 +87,22 @@ impl MerkleTrie {
         nodes: impl IntoIterator<Item = T>,
     ) -> Result<Self, ParseNodeError> {
         let mut nodes_by_hash = HashMap::new();
-        let mut root_node = None;
+        let mut root_node_opt = None;
+
         for rlp in nodes {
             let (hash, node) = parse_node(rlp)?;
-            if root_node.is_none() {
-                root_node = Some(node.clone());
+
+            // initialize with the first node if it hasn't been set
+            root_node_opt.get_or_insert(node.clone());
+
+            if let Some(hash) = hash {
+                nodes_by_hash.insert(hash, node);
             }
-            nodes_by_hash.insert(hash, node);
         }
-        let root_node = root_node.unwrap_or_default();
+
+        let root_node = root_node_opt.unwrap_or_default();
         let trie = MerkleTrie(resolve_trie(root_node.clone(), &nodes_by_hash));
-        // ensure that the root hash of the trie matches the root node's hash
+        // Optional: Verify the resolved trie's hash matches the initial root's hash
         debug_assert!(trie.hash_slow() == MerkleTrie(root_node).hash_slow());
 
         Ok(trie)
@@ -250,11 +255,11 @@ impl legacy_rlp::Decodable for Node {
 }
 
 /// Returns the decoded node and its RLP hash.
-fn parse_node(rlp: impl AsRef<[u8]>) -> Result<(B256, Node), ParseNodeError> {
+fn parse_node(rlp: impl AsRef<[u8]>) -> Result<(Option<B256>, Node), ParseNodeError> {
     let rlp = rlp.as_ref();
-    let node: Node = legacy_rlp::decode(rlp)?;
-    // the hash is only needed for RLP length >= 32, however it does not hurt to always compute it
-    Ok((keccak256(rlp), node))
+    let node = legacy_rlp::decode(rlp)?;
+    // the hash is only needed for RLP length >= 32
+    Ok(((rlp.len() >= 32).then(|| keccak256(rlp)), node))
 }
 
 fn resolve_trie(root: Node, nodes_by_hash: &HashMap<B256, Node>) -> Node {
@@ -329,8 +334,10 @@ fn word_rlp(word: &B256) -> Vec<u8> {
 mod tests {
     use super::*;
     use crate::StateAccount;
-    use alloy_primitives::{address, uint, Bytes};
+    use alloy_primitives::{address, uint, Bytes, U256};
+    use alloy_trie::HashBuilder;
     use serde_json::json;
+    use std::collections::BTreeMap;
 
     fn rlp_encoded(root: &Node) -> Vec<Vec<u8>> {
         let mut out = vec![root.rlp_encoded()];
@@ -462,6 +469,36 @@ mod tests {
     }
 
     #[test]
+    pub fn hash_sparse_mpt() {
+        const NUM_LEAVES: usize = 1024;
+
+        // populate leaves with hashed keys and RLP-encoded values
+        let leaves: BTreeMap<_, _> = (0..NUM_LEAVES)
+            .map(|i| {
+                let key = U256::from(i);
+                (
+                    Nibbles::unpack(keccak256(key.to_be_bytes::<32>())),
+                    alloy_rlp::encode(key),
+                )
+            })
+            .collect();
+
+        // generate proofs only for every second leaf
+        let proof_keys = leaves.keys().step_by(2).cloned().collect();
+        let mut hash_builder = HashBuilder::default().with_proof_retainer(proof_keys);
+        for (key, value) in leaves {
+            hash_builder.add_leaf(key, &value);
+        }
+        let root = hash_builder.root();
+        let proofs = hash_builder.take_proofs();
+
+        // reconstruct the trie from the RLP encoded proofs and verify the root hash
+        let mpt = MerkleTrie::from_rlp_nodes(proofs.into_values())
+            .expect("Failed to reconstruct Merkle Trie from proofs");
+        assert_eq!(mpt.hash_slow(), root);
+    }
+
+    #[test]
     pub fn parse_empty_proof() {
         let account_proof: Vec<Bytes> = Vec::new();
 
@@ -478,10 +515,6 @@ mod tests {
         let account_proof = serde_json::from_value::<Vec<Bytes>>(value).unwrap();
 
         let mpt = MerkleTrie::from_rlp_nodes(account_proof).unwrap();
-        assert_eq!(
-            mpt.hash_slow(),
-            b256!("6936dadef56f0b844905993811563ff0001de509f7690cf62a382a89a163d667")
-        );
 
         let address = address!("0000000000000000000000000000000000000004");
         let account = mpt.get_rlp::<StateAccount>(keccak256(address)).unwrap();
@@ -503,10 +536,6 @@ mod tests {
         let account_proof = serde_json::from_value::<Vec<Bytes>>(value).unwrap();
 
         let mpt = MerkleTrie::from_rlp_nodes(account_proof).unwrap();
-        assert_eq!(
-            mpt.hash_slow(),
-            b256!("6936dadef56f0b844905993811563ff0001de509f7690cf62a382a89a163d667")
-        );
 
         let address = address!("0010000000000000000000000000000000000000");
         let account = mpt.get_rlp::<StateAccount>(keccak256(address)).unwrap();

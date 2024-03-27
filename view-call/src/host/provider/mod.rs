@@ -23,9 +23,9 @@ mod file;
 pub use ethers::EthersProvider;
 pub use file::{CachedProvider, EthFileProvider, FileProvider};
 
-/// A trait for a provider that can fetch data for the Ethereum blockchain.
+/// A trait for providers that fetch data from the Ethereum blockchain.
 pub trait Provider {
-    type Error: StdError + Send + Sync + Debug + 'static;
+    type Error: StdError + Send + Sync + 'static;
     type Header: EvmHeader;
 
     fn get_block_header(&self, block: BlockNumber) -> Result<Option<Self::Header>, Self::Error>;
@@ -77,36 +77,32 @@ impl<H: EvmHeader> Provider for NullProvider<H> {
     type Error = Infallible;
     type Header = H;
 
-    fn get_block_header(&self, block: BlockNumber) -> Result<Option<Self::Header>, Self::Error> {
-        panic!("unexpected call to get_block_header({block})")
+    fn get_block_header(&self, _: BlockNumber) -> Result<Option<Self::Header>, Self::Error> {
+        panic!("Unexpected provider call")
     }
-    fn get_transaction_count(
-        &self,
-        address: Address,
-        block: BlockNumber,
-    ) -> Result<TxNumber, Self::Error> {
-        panic!("unexpected call to get_transaction_count({address}, {block})")
+    fn get_transaction_count(&self, _: Address, _: BlockNumber) -> Result<TxNumber, Self::Error> {
+        panic!("Unexpected provider call")
     }
-    fn get_balance(&self, address: Address, block: BlockNumber) -> Result<U256, Self::Error> {
-        panic!("unexpected call to get_balance({address}, {block})")
+    fn get_balance(&self, _: Address, _: BlockNumber) -> Result<U256, Self::Error> {
+        panic!("Unexpected provider call")
     }
-    fn get_code(&self, address: Address, block: BlockNumber) -> Result<Bytes, Self::Error> {
-        panic!("unexpected call to get_code({address}, {block})")
+    fn get_code(&self, _: Address, _: BlockNumber) -> Result<Bytes, Self::Error> {
+        panic!("Unexpected provider call")
     }
     fn get_storage_at(
         &self,
-        address: Address,
-        storage_slot: StorageKey,
-        block: BlockNumber,
+        _: Address,
+        _: StorageKey,
+        _: BlockNumber,
     ) -> Result<B256, Self::Error> {
-        panic!("unexpected call to get_storage_at({address}, {storage_slot}, {block})")
+        panic!("Unexpected provider call")
     }
     fn get_proof(
         &self,
-        address: Address,
-        storage_slots: Vec<StorageKey>,
-        block: BlockNumber,
+        _: Address,
+        _: Vec<StorageKey>,
+        _: BlockNumber,
     ) -> Result<EIP1186Proof, Self::Error> {
-        panic!("unexpected call to get_proof({address}, {storage_slots:?}, {block})")
+        panic!("Unexpected provider call")
     }
 }
