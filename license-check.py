@@ -31,6 +31,8 @@ EXTENSIONS = [
 SKIP_DIRS = [
     # Groth16 verifier implementation uses circom generated code under GPL3.
     str(Path.cwd()) + "/contracts/src/groth16",
+    str(Path.cwd()) + "/examples/erc20-counter/contracts/ERC20.sol",
+    str(Path.cwd()) + "/examples/erc20-counter/contracts/IERC20.sol",
 ]
 
 def check_header(expected_year, lines_actual):

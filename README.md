@@ -1,7 +1,7 @@
 # RISC Zero Ethereum
 
 [RISC Zero] is a zero-knowledge verifiable general computing platform, with [Ethereum] integration.
-This repository contains [Solidity verifier contracts][contracts], [Relay], and supporting libraries.
+This repository contains [Solidity verifier contracts][contracts], [Relay], [View Call] library, and supporting libraries.
 
 If you are looking to get started using RISC Zero in the application on Ethereum, the best place to look is the [Foundry template][template].
 
@@ -20,12 +20,18 @@ It is also possible to write your application without using the Relay.
 You can find and overview of how the Relay works, [in our documentation][relay-overview].
 Source code for the Relay is in the [relay] directory.
 
+## View Call
+A library to query Ethereum state, or any other EVM-based blockchain state. It leverages the [alloy] library to make its use Solidity-friendly.
+
+
 [RISC Zero]: https://github.com/risc0/risc0
 [Ethereum]: https://ethereum.org/
 [contracts]: ./contracts
 [relay]: ./relay
+[View Call]: ./view-call
 [template]: https://github.com/risc0/bonsai-foundry-template
 [dev.risczero.com]: https://dev.risczero.com
 [risc0-quickstart]: https://dev.risczero.com/api/zkvm/quickstart
 [bonsai-quickstart]: https://dev.risczero.com/api/bonsai/quickstart
 [relay-overview]: https://dev.risczero.com/api/bonsai/bonsai-on-eth#bonsai-relay
+[alloy]: https://github.com/alloy-rs
