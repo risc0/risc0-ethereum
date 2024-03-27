@@ -71,7 +71,7 @@ abstract contract RiscZeroCheats is CommonBase {
             return verifier;
         } else {
             IRiscZeroVerifier verifier =
-                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.TODO_CODE_ID);
+                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.RECURSION_PROGRAM_ID);
             console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
             return verifier;
         }
