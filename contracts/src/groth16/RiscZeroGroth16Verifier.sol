@@ -95,12 +95,12 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// obtained by running `cargo run --bin bonsai-ethereum-contracts -F control-id`
     uint256 public immutable CONTROL_ID_0;
     uint256 public immutable CONTROL_ID_1;
-    uint256 public immutable RECURSION_PROGRAM_ID;
+    uint256 public immutable BN254_CONTROL_ID;
 
-    constructor(uint256 control_id_0, uint256 control_id_1, uint256 recursion_program_id) {
+    constructor(uint256 control_id_0, uint256 control_id_1, uint256 bn254_control_id) {
         CONTROL_ID_0 = control_id_0;
         CONTROL_ID_1 = control_id_1;
-        RECURSION_PROGRAM_ID = recursion_program_id;
+        BN254_CONTROL_ID = bn254_control_id;
     }
 
     /// @notice splits a digest into two 128-bit words to use as public signal inputs.
@@ -136,6 +136,6 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
         (uint256 claim0, uint256 claim1) = splitDigest(receipt.claim.digest());
         Seal memory seal = abi.decode(receipt.seal, (Seal));
         return
-            this.verifyProof(seal.a, seal.b, seal.c, [CONTROL_ID_0, CONTROL_ID_1, claim0, claim1, RECURSION_PROGRAM_ID]);
+            this.verifyProof(seal.a, seal.b, seal.c, [CONTROL_ID_0, CONTROL_ID_1, claim0, claim1, BN254_CONTROL_ID]);
     }
 }

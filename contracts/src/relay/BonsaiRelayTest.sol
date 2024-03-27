@@ -51,7 +51,7 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiTestRelay);
         } else {
             IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
-                ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.RECURSION_PROGRAM_ID
+                ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.BN254_CONTROL_ID
             );
             bonsaiVerifyingRelay = new BonsaiRelay(verifier);
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiVerifyingRelay);
