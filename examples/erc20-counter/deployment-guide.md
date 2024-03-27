@@ -99,7 +99,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
     >
     > ```bash
-    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/Deploy.s.sol/1337/run-latest.json)
+    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/1337/run-latest.json)
     > ```
 
 ### Interact with your local deployment
@@ -180,7 +180,7 @@ You can deploy the Counter contract on a testnet such as `Sepolia` and run an en
     > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
     >
     > ```bash
-    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/Deploy.s.sol/11155111/run-latest.json)
+    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/11155111/run-latest.json)
     > ```
 
 ### Interact with your testnet deployment
