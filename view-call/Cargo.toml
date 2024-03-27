@@ -27,7 +27,8 @@ tokio = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy-trie = { workspace = true }
-serde_json = { workspace = true }
+risc0-ethereum-view-call = { path = ".", features = ["host"] }
+test-log = { workspace = true }
 
 [features]
 default = []
