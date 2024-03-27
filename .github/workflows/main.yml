@@ -146,7 +146,7 @@ jobs:
         run: cargo build
         working-directory: examples/erc20-counter
       - name: test erc20-Counter
-        run: ./test-local-deployment
+        run: ./test-local-deployment.sh
         env:
           BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
           BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
