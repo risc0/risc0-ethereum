@@ -129,6 +129,11 @@ jobs:
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install Ganache
+        run: npm install ganache --global
       - uses: risc0/risc0/.github/actions/sccache@release-0.21
         with:
           key: Linux-default
@@ -139,6 +144,12 @@ jobs:
         working-directory: examples/erc20
       - name: build erc20-Counter
         run: cargo build
+        working-directory: examples/erc20-counter
+      - name: test erc20-Counter
+        run: ./test-local-deployment
+        env:
+          BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
+          BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
         working-directory: examples/erc20-counter
       - run: sccache --show-stats
 
