@@ -50,8 +50,9 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             bonsaiTestRelay = new BonsaiTestRelay(vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337)));
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiTestRelay);
         } else {
-            IRiscZeroVerifier verifier =
-                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.RECURSION_PROGRAM_ID);
+            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
+                ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.RECURSION_PROGRAM_ID
+            );
             bonsaiVerifyingRelay = new BonsaiRelay(verifier);
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiVerifyingRelay);
         }
