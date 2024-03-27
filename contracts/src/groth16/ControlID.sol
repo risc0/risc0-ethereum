@@ -22,5 +22,5 @@ pragma solidity ^0.8.9;
 library ControlID {
     uint256 public constant CONTROL_ID_0 = 0x17da5b0946fcb1115de33dca38ca0d4c;
     uint256 public constant CONTROL_ID_1 = 0x4fa8b5b0563340e93606acfe2f6ab8d5;
-    uint256 public constant TODO_CODE_ID = 0x2793e3a11528690d665e95dc211752ea64a77b509aa87339e2ba5cec97bc09af;
+    uint256 public constant RECURSION_PROGRAM_ID = 0x2793e3a11528690d665e95dc211752ea64a77b509aa87339e2ba5cec97bc09af;
 }
