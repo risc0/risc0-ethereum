@@ -1,0 +1,42 @@
+[package]
+name = "risc0-ethereum-view-call"
+description = "A library to query Ethereum state, or any other EVM-based blockchain state within the RISC Zero zkVM."
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-rlp = { workspace = true }
+alloy-rlp-derive = { workspace = true }
+alloy-sol-types = { workspace = true }
+anyhow = { workspace = true }
+ethers-core = { workspace = true, optional = true }
+ethers-providers = { workspace = true, optional = true }
+log = { workspace = true, optional = true }
+nybbles = { workspace = true }
+once_cell = { workspace = true }
+revm = { workspace = true, features = ["serde"] }
+rlp = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, optional = true }
+
+[dev-dependencies]
+alloy-trie = { workspace = true }
+risc0-ethereum-view-call = { path = ".", features = ["host"] }
+test-log = { workspace = true }
+
+[features]
+default = []
+host = [
+    "dep:ethers-core",
+    "dep:ethers-providers",
+    "dep:log",
+    "dep:serde_json",
+    "dep:tokio",
+    "revm/ethersdb",
+]
