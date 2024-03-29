@@ -49,7 +49,7 @@ contract BonsaiGovernor is
         GovernorSettings(300, /* blocks */ 21000, /* blocks */ 0)
         GovernorVotes(token_)
         GovernorVotesQuorumFraction(20)
-        BonsaiLowLevelCallbackReceiver(relay_)
+        BonsaiLowLevelCallbackReceiver()
     {
     }
 
