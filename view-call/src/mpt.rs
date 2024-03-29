@@ -171,41 +171,36 @@ impl Node {
             }
             Node::Extension(prefix, child) => {
                 let path = prefix.encode_path_leaf(false);
-                let encoded = node_ref(child.rlp_encoded());
-                let mut out = encoded_header(true, path.length() + encoded.len());
+                let node_ref = NodeRef::from_node(child);
+                let mut out = encoded_header(true, path.length() + node_ref.length());
                 path.encode(&mut out);
-                out.put_slice(&encoded);
+                node_ref.encode(&mut out);
 
                 out
             }
             Node::Branch(children) => {
-                let mut encoded_children: [Option<Vec<u8>>; 16] = Default::default();
+                let mut child_refs: [NodeRef; 16] = Default::default();
                 let mut payload_length = 1; // start with 1 for the EMPTY_STRING_CODE at the end
 
                 for (i, child) in children.iter().enumerate() {
-                    if let Some(node) = child {
-                        let encoded = node_ref(node.rlp_encoded());
-                        payload_length += encoded.len();
-                        encoded_children[i] = Some(encoded);
-                    } else {
-                        // account for the EMPTY_STRING_CODE for missing children
-                        payload_length += 1;
+                    match child.as_deref() {
+                        Some(node) => {
+                            let node_ref = NodeRef::from_node(node);
+                            payload_length += node_ref.length();
+                            child_refs[i] = node_ref;
+                        }
+                        None => payload_length += 1,
                     }
                 }
 
                 let mut out = encoded_header(true, payload_length);
-                for child in &encoded_children {
-                    match child {
-                        Some(encoded) => out.extend_from_slice(encoded),
-                        None => out.push(EMPTY_STRING_CODE),
-                    }
-                }
+                child_refs.iter().for_each(|child| child.encode(&mut out));
                 // add an EMPTY_STRING_CODE for the missing value
                 out.push(EMPTY_STRING_CODE);
 
                 out
             }
-            Node::Digest(digest) => word_rlp(digest),
+            Node::Digest(digest) => alloy_rlp::encode(digest),
         }
     }
 }
@@ -254,6 +249,72 @@ impl legacy_rlp::Decodable for Node {
     }
 }
 
+/// Represents the way in which a node is referenced from within another node.
+#[derive(Default)]
+enum NodeRef<'a> {
+    #[default]
+    Empty,
+    Digest(&'a B256),
+    Node(Vec<u8>),
+}
+
+impl NodeRef<'_> {
+    #[inline]
+    fn from_node(node: &Node) -> NodeRef<'_> {
+        match node {
+            Node::Null => NodeRef::Empty,
+            Node::Digest(digest) => NodeRef::Digest(digest),
+            node => NodeRef::Node(node.rlp_encoded()),
+        }
+    }
+}
+
+impl Encodable for NodeRef<'_> {
+    #[inline]
+    fn encode(&self, out: &mut dyn BufMut) {
+        match self {
+            NodeRef::Empty => out.put_u8(EMPTY_STRING_CODE),
+            NodeRef::Digest(digest) => digest.encode(out),
+            NodeRef::Node(rlp) => {
+                if rlp.len() >= B256::len_bytes() {
+                    keccak256(rlp).encode(out);
+                } else {
+                    out.put_slice(rlp);
+                }
+            }
+        }
+    }
+    #[inline]
+    fn length(&self) -> usize {
+        // hash length + 1 byte for the RLP header
+        const DIGEST_LENGTH: usize = 1 + B256::len_bytes();
+
+        match self {
+            NodeRef::Empty => 1,
+            NodeRef::Digest(_) => DIGEST_LENGTH,
+            NodeRef::Node(rlp) => {
+                if rlp.len() >= B256::len_bytes() {
+                    DIGEST_LENGTH
+                } else {
+                    rlp.len()
+                }
+            }
+        }
+    }
+}
+
+#[inline]
+fn encoded_header(list: bool, payload_length: usize) -> Vec<u8> {
+    debug_assert!(payload_length > 0);
+    let header = Header {
+        list,
+        payload_length,
+    };
+    let mut out = Vec::with_capacity(header.length() + payload_length);
+    header.encode(&mut out);
+    out
+}
+
 /// Returns the decoded node and its RLP hash.
 fn parse_node(rlp: impl AsRef<[u8]>) -> Result<(Option<B256>, Node), ParseNodeError> {
     let rlp = rlp.as_ref();
@@ -285,18 +346,6 @@ fn resolve_trie(root: Node, nodes_by_hash: &HashMap<B256, Node>) -> Node {
 }
 
 #[inline]
-fn encoded_header(list: bool, payload_length: usize) -> Vec<u8> {
-    debug_assert!(payload_length > 0);
-    let header = Header {
-        list,
-        payload_length,
-    };
-    let mut out = Vec::with_capacity(header.length() + payload_length);
-    header.encode(&mut out);
-    out
-}
-
-#[inline]
 fn decode_path(path: impl AsRef<[u8]>) -> (Nibbles, bool) {
     let path = Nibbles::unpack(path);
     assert!(path.len() >= 2);
@@ -305,29 +354,6 @@ fn decode_path(path: impl AsRef<[u8]>) -> (Nibbles, bool) {
 
     let prefix = if odd_nibbles { &path[1..] } else { &path[2..] };
     (Nibbles::from_nibbles_unchecked(prefix), is_leaf)
-}
-
-/// Given an RLP encoded node x, returns either x or RLP(keccak(x)) whichever is shorter.
-/// This is exactly what is included, when one node is referenced within another node.
-#[inline]
-fn node_ref(rlp: Vec<u8>) -> Vec<u8> {
-    // if the RLP is shorter than 32 bytes or an encoded digest, it's already the reference
-    if rlp.len() < 32 || rlp[0] == EMPTY_STRING_CODE + 32 {
-        rlp
-    } else {
-        word_rlp(&keccak256(rlp))
-    }
-}
-
-/// Optimization for quick encoding of a 32-byte word as RLP.
-// https://github.com/alloy-rs/trie/blob/d28c078e546dcf71eb7ac663a60e2f987fdfecfb/src/nodes/mod.rs#L33
-#[inline]
-fn word_rlp(word: &B256) -> Vec<u8> {
-    // Gets optimized to alloc + write directly into it: https://godbolt.org/z/rfWGG6ebq
-    let mut arr = [0; 33];
-    arr[0] = EMPTY_STRING_CODE + 32;
-    arr[1..].copy_from_slice(word.as_slice());
-    arr.to_vec()
 }
 
 #[cfg(test)]
