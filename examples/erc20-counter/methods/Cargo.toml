@@ -1,5 +1,5 @@
 [package]
-name = "methods"
+name = "erc20-counter-methods"
 version = { workspace = true }
 edition = { workspace = true }
 

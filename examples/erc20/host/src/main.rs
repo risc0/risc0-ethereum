@@ -16,7 +16,7 @@ use alloy_primitives::{address, Address};
 use alloy_sol_types::{sol, SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use methods::METHOD_ELF;
+use erc20_methods::ERC20_GUEST_ELF;
 use risc0_ethereum_view_call::{
     config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall,
 };
@@ -74,7 +74,7 @@ fn main() -> Result<()> {
             .build()
             .context("Failed to build exec env")?;
         let exec = default_executor();
-        exec.execute(env, METHOD_ELF).context("failed to run executor")?
+        exec.execute(env, ERC20_GUEST_ELF).context("failed to run executor")?
     };
 
     // extract the proof from the session info and validate it
