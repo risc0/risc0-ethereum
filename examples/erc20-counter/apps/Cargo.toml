@@ -12,10 +12,10 @@ bonsai-sdk = { workspace = true }
 bytemuck = { workspace = true }
 clap = { version = "4.0", features = ["derive", "env"] }
 env_logger = { version = "0.10" }
+erc20-counter-methods = { workspace = true }
 ethers = { workspace = true }
 hex = { workspace = true }
 log = { workspace = true }
-methods = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-ethereum-view-call = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
