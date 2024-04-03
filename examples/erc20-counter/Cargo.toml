@@ -17,7 +17,7 @@ bytemuck = { version = "1.14" }
 ethers = { version = "2.0" }
 hex = { version = "0.4" }
 log = { version = "0.4" }
-methods = { path = "./methods" }
+erc20-counter-methods = { path = "./methods" }
 risc0-build = { version = "0.21", features = ["docker"] }
 risc0-build-ethereum = { path = "../../build" }
 risc0-ethereum-contracts = { path = "../../contracts" }
@@ -26,7 +26,6 @@ risc0-zkvm = { version = "0.21", default-features = false }
 risc0-zkp = { version = "0.21", default-features = false }
 serde = { version = "1.0", features = ["derive", "std"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
 
 [profile.release]
 debug = 1
