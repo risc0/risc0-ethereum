@@ -35,7 +35,8 @@ contract CounterrDeploy is Script {
 
         vm.startBroadcast(deployerKey);
 
-        IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1);
+        IRiscZeroVerifier verifier =
+            new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.BN254_CONTROL_ID);
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
         Counter counter = new Counter(verifier);
