@@ -60,7 +60,7 @@ export BONSAI_API_URL="BONSAI_URL" # provided with your api key
 
 ## Deploy Your Application
 
-When you're ready, follow the [deployment guide] to get your application running on [Sepolia].
+When you're ready, follow the [deployment guide] to get your application running on [Sepolia] or a local network.
 
 [Bonsai]: https://dev.bonsai.xyz/
 [Foundry]: https://getfoundry.sh/
@@ -74,7 +74,7 @@ When you're ready, follow the [deployment guide] to get your application running
 [app contract]: ./contracts/
 [cargo-binstall]: https://github.com/cargo-bins/cargo-binstall#cargo-binaryinstall
 [coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
-[deployment guide]: /deployment-guide.md
+[deployment guide]: ./deployment-guide.md
 [developer FAQ]: https://dev.risczero.com/faq#zkvm-application-design
 [image-id]: https://dev.risczero.com/terminology#image-id
 [install Rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html
