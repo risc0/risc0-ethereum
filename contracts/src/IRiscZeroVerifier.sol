@@ -151,5 +151,5 @@ interface IRiscZeroVerifier {
     /// valid a cryptographic proof of the execution with the given `claim`.
     /// @param receipt The receipt to be verified.
     /// @return true if the receipt passes the verification checks. The return code must be checked.
-    function verify_integrity(Receipt calldata receipt) external view returns (bool);
+    function verifyIntegrity(Receipt calldata receipt) external view returns (bool);
 }

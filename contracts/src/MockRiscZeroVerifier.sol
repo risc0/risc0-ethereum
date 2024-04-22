@@ -45,7 +45,7 @@ contract MockRiscZeroVerifier is IRiscZeroVerifier {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify_integrity(Receipt memory receipt) public pure returns (bool) {
+    function verifyIntegrity(Receipt memory receipt) public pure returns (bool) {
         // Require that the seal be specifically empty.
         // Reject if the caller may have sent a real seal.
         return receipt.seal.length == 0 && receipt.claim.postStateDigest == bytes32(0);
