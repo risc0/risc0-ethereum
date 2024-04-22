@@ -152,4 +152,6 @@ interface IRiscZeroVerifier {
     /// @param receipt The receipt to be verified.
     /// @return true if the receipt passes the verification checks. The return code must be checked.
     function verifyIntegrity(Receipt calldata receipt) external view returns (bool);
+
+    // TODO(victor): Think about adding a method that only takes the claim digest, testikng it as a way to save gas.
 }
