@@ -20,11 +20,11 @@ import {Test} from "forge-std/Test.sol";
 import {StdCheatsSafe} from "forge-std/StdCheats.sol";
 import {CommonBase} from "forge-std/Base.sol";
 import {console2} from "forge-std/console2.sol";
-import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
+import {ControlID, RiscZeroGroth16Verifier} from "../groth16/RiscZeroGroth16Verifier.sol";
+import {IRiscZeroVerifier} from "../IRiscZeroVerifier.sol";
 import {MockRiscZeroVerifier} from "./MockRiscZeroVerifier.sol";
-import {ControlID, RiscZeroGroth16Verifier} from "./groth16/RiscZeroGroth16Verifier.sol";
-import {IRiscZeroVerifier} from "./IRiscZeroVerifier.sol";
+import {Strings2} from "./utils/Strings2.sol";
 
 /// @notice A base contract for Forge cheats useful in testing RISC Zero applications.
 abstract contract RiscZeroCheats is CommonBase {
@@ -70,11 +70,8 @@ abstract contract RiscZeroCheats is CommonBase {
             console2.log("Deployed RiscZeroGroth16VerifierTest to", address(verifier));
             return verifier;
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
-                ControlID.CONTROL_ID_0,
-                ControlID.CONTROL_ID_1,
-                ControlID.BN254_CONTROL_ID
-            );
+            IRiscZeroVerifier verifier =
+                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.BN254_CONTROL_ID);
             console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
             return verifier;
         }

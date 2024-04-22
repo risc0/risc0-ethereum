@@ -27,7 +27,7 @@ import {
     ReceiptClaim,
     ReceiptClaimLib,
     SystemExitCode
-} from "./IRiscZeroVerifier.sol";
+} from "../IRiscZeroVerifier.sol";
 
 /// @notice Mock verifier contract for RISC Zero receipts of execution.
 contract MockRiscZeroVerifier is IRiscZeroVerifier {

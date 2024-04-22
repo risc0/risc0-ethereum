@@ -18,7 +18,6 @@ pragma solidity ^0.8.17;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
 import {IBonsaiRelay, Callback, CallbackAuthorization} from "./IBonsaiRelay.sol";
 import {BonsaiRelay} from "./BonsaiRelay.sol";
@@ -27,6 +26,7 @@ import {BonsaiTestRelay} from "./BonsaiTestRelay.sol";
 import {BonsaiRelayCheats} from "./BonsaiRelayCheats.sol";
 import {IRiscZeroVerifier} from "../IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../groth16/RiscZeroGroth16Verifier.sol";
+import {Strings2} from "../test/utils/Strings2.sol";
 
 /// @notice A base contract for testing a Bonsai relay callback receiver contract
 abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
@@ -47,16 +47,11 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             // Use a long and unweildy environment variable name for overriding
             // the expected chain ID for the test relay so that it is hard to
             // trigger without thinking about it.
-            bonsaiTestRelay = new BonsaiTestRelay(
-                vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337))
-            );
+            bonsaiTestRelay = new BonsaiTestRelay(vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337)));
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiTestRelay);
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
-                ControlID.CONTROL_ID_0,
-                ControlID.CONTROL_ID_1,
-                ControlID.BN254_CONTROL_ID
-            );
+            IRiscZeroVerifier verifier =
+                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.BN254_CONTROL_ID);
             bonsaiVerifyingRelay = new BonsaiRelay(verifier);
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiVerifyingRelay);
         }

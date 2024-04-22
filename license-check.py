@@ -43,7 +43,7 @@ def check_header(expected_year, lines_actual):
 
 
 def check_file(root, file):
-    cmd = ['git', 'log', '-1', '--format=%ad', '--date=format:%Y', file]
+    cmd = ['git', 'log', '-1', '--format=%ad', '--date=format:%Y', '--', file]
     expected_year = subprocess.check_output(cmd, encoding='UTF-8').strip()
     rel_path = file.relative_to(root)
     lines = file.read_text().splitlines()

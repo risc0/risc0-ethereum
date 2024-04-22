@@ -38,12 +38,12 @@ contract PausableVerifier is IRiscZeroVerifier, Ownable, Pausable {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(
-        bytes calldata seal,
-        bytes32 imageId,
-        bytes32 postStateDigest,
-        bytes32 journalDigest
-    ) external view whenNotPaused returns (bool) {
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
+        external
+        view
+        whenNotPaused
+        returns (bool)
+    {
         // Forward the call on to the wrapped contract.
         return verifier.verify(seal, imageId, postStateDigest, journalDigest);
     }

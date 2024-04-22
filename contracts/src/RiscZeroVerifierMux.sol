@@ -40,10 +40,10 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @notice Adds a verifier to the mux, such that it can receive receipt verification calls.
     function addVerifier(bytes4 identifier, IRiscZeroVerifier verifier) external onlyOwner {
         if (verifiers[identifier] == TOMBSTONE) {
-            revert IdentifierRemoved({ identifier: identifier });
+            revert IdentifierRemoved({identifier: identifier});
         }
         if (verifiers[identifier] != UNSET) {
-            revert IdentifierInUse({ identifier: identifier });
+            revert IdentifierInUse({identifier: identifier});
         }
         verifiers[identifier] = verifier;
     }
@@ -57,20 +57,19 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(
-        bytes calldata seal,
-        bytes32 imageId,
-        bytes32 postStateDigest,
-        bytes32 journalDigest
-    ) external view returns (bool) {
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
+        external
+        view
+        returns (bool)
+    {
         // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
-        bytes4 identifier = bytes4(seal[0:4]); 
+        bytes4 identifier = bytes4(seal[0:4]);
         IRiscZeroVerifier verifier = verifiers[identifier];
         if (verifier == UNSET) {
-            revert IdentifierUnknown({ identifier: identifier });
+            revert IdentifierUnknown({identifier: identifier});
         }
         if (verifier == TOMBSTONE) {
-            revert IdentifierRemoved({ identifier: identifier });
+            revert IdentifierRemoved({identifier: identifier});
         }
         return verifier.verify(seal, imageId, postStateDigest, journalDigest);
     }
@@ -78,19 +77,19 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @inheritdoc IRiscZeroVerifier
     function verifyIntegrity(Receipt memory receipt) external view returns (bool) {
         // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
-        bytes4 identifier = bytes4(0); 
+        bytes4 identifier = bytes4(0);
         // Copy the identifier using a loop, because slicing memory arrays is unsupported.
         // TODO(victor): Unclear if this is going to give the correct byte ordering.
-        for (uint i = 0; i < 4; i++) {
+        for (uint256 i = 0; i < 4; i++) {
             identifier |= bytes4(receipt.seal[i]) << (i * 8);
         }
 
         IRiscZeroVerifier verifier = verifiers[identifier];
         if (verifier == UNSET) {
-            revert IdentifierUnknown({ identifier: identifier });
+            revert IdentifierUnknown({identifier: identifier});
         }
         if (verifier == TOMBSTONE) {
-            revert IdentifierRemoved({ identifier: identifier });
+            revert IdentifierRemoved({identifier: identifier});
         }
         return verifier.verifyIntegrity(receipt);
     }
