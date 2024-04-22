@@ -114,6 +114,16 @@ contract RiscZeroGroth16VerifierTest is Test {
         );
         mangled_claim = TEST_RECEIPT_CLAIM;
 
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest() ^ bytes32(uint256(1)))),
+            "verification passed on mangled claim digest value (low bit)"
+        );
+
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest() ^ bytes32(uint256(1) << 255))),
+            "verification passed on mangled claim digest value (high bit)"
+        );
+
         // Just a quick sanity check
         require(verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())), "verification failed");
     }
