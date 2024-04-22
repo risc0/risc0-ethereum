@@ -16,7 +16,7 @@
 
 pragma solidity ^0.8.20;
 
-import {SafeCast} from "openzeppelin/contracts/utils/math/SafeCast.sol";
+import {BytesLib} from "solidity-bytes-utils/BytesLib.sol";
 
 import {
     ExitCode,
@@ -31,23 +31,42 @@ import {
 
 /// @notice Mock verifier contract for RISC Zero receipts of execution.
 contract MockRiscZeroVerifier is IRiscZeroVerifier {
+    using BytesLib for bytes;
+
+    /// @notice Identifier for this verifier
+    // TODO(victor): Fill in the description here.
+    bytes4 public immutable IDENTIFIER;
+
+    constructor(bytes32 salt) {
+        IDENTIFIER = bytes4(
+            keccak256(
+                abi.encode(
+                    // Identifier for the proof system.
+                    "RISC_ZERO_MOCK",
+                    // A salt provided to mock multiple, mutually incompatible verifiers.
+                    salt
+                )
+            )
+        );
+    }
+
     /// @inheritdoc IRiscZeroVerifier
     function verify(
         bytes calldata seal,
         bytes32,
         /*imageId*/
-        bytes32 postStateDigest,
+        bytes32, /*postStateDigest*/
         bytes32 /*journalDigest*/
-    ) public pure returns (bool) {
-        // Require that the seal be specifically empty.
+    ) public view returns (bool) {
+        // Require that the seal be exactly equal to the identifier.
         // Reject if the caller may have sent a real seal.
-        return seal.length == 0 && postStateDigest == bytes32(0);
+        return seal.equal(abi.encodePacked(IDENTIFIER));
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt memory receipt) public pure returns (bool) {
-        // Require that the seal be specifically empty.
+    function verifyIntegrity(Receipt calldata receipt) public view returns (bool) {
+        // Require that the seal be exactly equal to the identifier.
         // Reject if the caller may have sent a real seal.
-        return receipt.seal.length == 0 && receipt.claim.postStateDigest == bytes32(0);
+        return receipt.seal.equal(abi.encodePacked(IDENTIFIER));
     }
 }

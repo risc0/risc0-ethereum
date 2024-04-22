@@ -123,10 +123,11 @@ library OutputLib {
 /// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
 /// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
 /// image ID identifies the program that was executed, and the journal is the public data written
-/// by the program.
+/// by the program. Note that this struct only contains the claim digest, as can be obtained with
+/// the `digest()` function on `ReceiptClaimLib`.
 struct Receipt {
     bytes seal;
-    ReceiptClaim claim;
+    bytes32 claimDigest;
 }
 
 /// @notice Verifier interface for RISC Zero receipts of execution.
@@ -152,6 +153,4 @@ interface IRiscZeroVerifier {
     /// @param receipt The receipt to be verified.
     /// @return true if the receipt passes the verification checks. The return code must be checked.
     function verifyIntegrity(Receipt calldata receipt) external view returns (bool);
-
-    // TODO(victor): Think about adding a method that only takes the claim digest, testikng it as a way to save gas.
 }

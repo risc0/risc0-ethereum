@@ -97,10 +97,42 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     uint256 public immutable CONTROL_ID_1;
     uint256 public immutable BN254_CONTROL_ID;
 
+    /// @notice Identifier for this verifier
+    // TODO(victor): Fill in the description here.
+    bytes4 public immutable IDENTIFIER;
+
+    /// @notice Identifier for the Groth16 verification key encoded into the base contract.
+    /// @dev This value is computed at compile time, and it encoded in multiple levels because the
+    /// Soldity optimizer will fail if too many arguments are given to the abi.encode function.
+    bytes32 internal constant IDENTIFIER_GROTH16_VKEY = keccak256(
+        abi.encode(
+            abi.encode(alphax, alphay),
+            abi.encode(betax1, betax2, betay1, betay2),
+            abi.encode(gammax1, gammax2, gammay1, gammay2),
+            abi.encode(deltax1, deltax2, deltay1, deltay2),
+            abi.encode(IC0x, IC0y, IC1x, IC1y, IC2x, IC2y, IC3x, IC3y, IC4x, IC4y, IC5x, IC5y)
+        )
+    );
+
     constructor(uint256 control_id_0, uint256 control_id_1, uint256 bn254_control_id) {
         CONTROL_ID_0 = control_id_0;
         CONTROL_ID_1 = control_id_1;
         BN254_CONTROL_ID = bn254_control_id;
+
+        IDENTIFIER = bytes4(
+            keccak256(
+                abi.encode(
+                    // Identifier for the proof system.
+                    "RISC_ZERO_GROTH16",
+                    // Verification key binding the RISC Zero circuits.
+                    CONTROL_ID_0,
+                    CONTROL_ID_1,
+                    BN254_CONTROL_ID,
+                    // Groth16 verification key digest.
+                    IDENTIFIER_GROTH16_VKEY
+                )
+            )
+        );
     }
 
     /// @notice splits a digest into two 128-bit words to use as public signal inputs.
@@ -114,11 +146,11 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
 
     /// @inheritdoc IRiscZeroVerifier
     function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        public
+        external
         view
         returns (bool)
     {
-        Receipt memory receipt = Receipt(
+        return _verifyIntegrity(
             seal,
             ReceiptClaim(
                 imageId,
@@ -126,15 +158,22 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
                 ExitCode(SystemExitCode.Halted, 0),
                 bytes32(0),
                 Output(journalDigest, bytes32(0)).digest()
-            )
+            ).digest()
         );
-        return verifyIntegrity(receipt);
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt memory receipt) public view returns (bool) {
-        (uint256 claim0, uint256 claim1) = splitDigest(receipt.claim.digest());
-        Seal memory seal = abi.decode(receipt.seal, (Seal));
-        return this.verifyProof(seal.a, seal.b, seal.c, [CONTROL_ID_0, CONTROL_ID_1, claim0, claim1, BN254_CONTROL_ID]);
+    function verifyIntegrity(Receipt calldata receipt) external view returns (bool) {
+        return _verifyIntegrity(receipt.seal, receipt.claimDigest);
+    }
+
+    /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
+    function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
+        (uint256 claim0, uint256 claim1) = splitDigest(claimDigest);
+        // TODO(victor): Actually check the identifier
+        Seal memory decodedSeal = abi.decode(seal[4:], (Seal));
+        return this.verifyProof(
+            decodedSeal.a, decodedSeal.b, decodedSeal.c, [CONTROL_ID_0, CONTROL_ID_1, claim0, claim1, BN254_CONTROL_ID]
+        );
     }
 }

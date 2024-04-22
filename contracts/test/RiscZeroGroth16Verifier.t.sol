@@ -23,6 +23,7 @@ import {
     IRiscZeroVerifier,
     Output,
     OutputLib,
+    // Receipt needs to be renamed due to collision with type on the Test contract.
     Receipt as RiscZeroReceipt,
     ReceiptClaim,
     ReceiptClaimLib,
@@ -36,16 +37,15 @@ contract RiscZeroGroth16VerifierTest is Test {
     using OutputLib for Output;
     using ReceiptClaimLib for ReceiptClaim;
 
-    RiscZeroReceipt internal TEST_RECEIPT = RiscZeroReceipt(
-        TestReceipt.SEAL,
-        ReceiptClaim(
-            TestReceipt.IMAGE_ID,
-            TestReceipt.POST_DIGEST,
-            ExitCode(SystemExitCode.Halted, 0),
-            bytes32(0x0000000000000000000000000000000000000000000000000000000000000000),
-            Output(sha256(TestReceipt.JOURNAL), bytes32(0)).digest()
-        )
+    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaim(
+        TestReceipt.IMAGE_ID,
+        TestReceipt.POST_DIGEST,
+        ExitCode(SystemExitCode.Halted, 0),
+        bytes32(0x0000000000000000000000000000000000000000000000000000000000000000),
+        Output(sha256(TestReceipt.JOURNAL), bytes32(0)).digest()
     );
+
+    RiscZeroReceipt internal TEST_RECEIPT = RiscZeroReceipt(TestReceipt.SEAL, TEST_RECEIPT_CLAIM.digest());
 
     IRiscZeroVerifier internal verifier;
 
@@ -61,7 +61,7 @@ contract RiscZeroGroth16VerifierTest is Test {
     function testVerifyKnownGoodImageIdAndJournal() external view {
         require(
             verifier.verify(
-                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_RECEIPT.claim.postStateDigest, sha256(TestReceipt.JOURNAL)
+                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_RECEIPT_CLAIM.postStateDigest, sha256(TestReceipt.JOURNAL)
             ),
             "verification failed"
         );
@@ -69,33 +69,52 @@ contract RiscZeroGroth16VerifierTest is Test {
 
     // A no-so-thorough test to make sure changing the bits causes a failure.
     function testVerifyMangledReceipts() external view {
-        RiscZeroReceipt memory mangled = TEST_RECEIPT;
+        ReceiptClaim memory mangled_claim = TEST_RECEIPT_CLAIM;
+        bytes memory mangled_seal = TEST_RECEIPT.seal;
 
-        mangled.seal[0] ^= bytes1(uint8(1));
-        require(!verifier.verifyIntegrity(mangled), "verification passed on mangled seal value");
-        mangled = TEST_RECEIPT;
+        mangled_seal[4] ^= bytes1(uint8(1));
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())),
+            "verification passed on mangled seal value"
+        );
+        mangled_seal = TEST_RECEIPT.seal;
 
-        mangled.claim.preStateDigest ^= bytes32(uint256(1));
-        require(!verifier.verifyIntegrity(mangled), "verification passed on mangled preStateDigest value");
-        mangled = TEST_RECEIPT;
+        mangled_claim.preStateDigest ^= bytes32(uint256(1));
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())),
+            "verification passed on mangled preStateDigest value"
+        );
+        mangled_claim = TEST_RECEIPT_CLAIM;
 
-        mangled.claim.postStateDigest ^= bytes32(uint256(1));
-        require(!verifier.verifyIntegrity(mangled), "verification passed on mangled postStateDigest value");
-        mangled = TEST_RECEIPT;
+        mangled_claim.postStateDigest ^= bytes32(uint256(1));
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())),
+            "verification passed on mangled postStateDigest value"
+        );
+        mangled_claim = TEST_RECEIPT_CLAIM;
 
-        mangled.claim.exitCode = ExitCode(SystemExitCode.SystemSplit, 0);
-        require(!verifier.verifyIntegrity(mangled), "verification passed on mangled exitCode value");
-        mangled = TEST_RECEIPT;
+        mangled_claim.exitCode = ExitCode(SystemExitCode.SystemSplit, 0);
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())),
+            "verification passed on mangled exitCode value"
+        );
+        mangled_claim = TEST_RECEIPT_CLAIM;
 
-        mangled.claim.input ^= bytes32(uint256(1));
-        require(!verifier.verifyIntegrity(mangled), "verification passed on mangled input value");
-        mangled = TEST_RECEIPT;
+        mangled_claim.input ^= bytes32(uint256(1));
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())),
+            "verification passed on mangled input value"
+        );
+        mangled_claim = TEST_RECEIPT_CLAIM;
 
-        mangled.claim.output ^= bytes32(uint256(1));
-        require(!verifier.verifyIntegrity(mangled), "verification passed on mangled input value");
-        mangled = TEST_RECEIPT;
+        mangled_claim.output ^= bytes32(uint256(1));
+        require(
+            !verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())),
+            "verification passed on mangled output value"
+        );
+        mangled_claim = TEST_RECEIPT_CLAIM;
 
         // Just a quick sanity check
-        require(verifier.verifyIntegrity(mangled), "verification failed");
+        require(verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())), "verification failed");
     }
 }
