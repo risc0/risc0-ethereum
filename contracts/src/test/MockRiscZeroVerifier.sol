@@ -59,18 +59,7 @@ contract MockRiscZeroVerifier is IRiscZeroVerifier {
         view
         returns (bool)
     {
-        return this.verifyIntegrity(
-            Receipt(
-                seal,
-                ReceiptClaim(
-                    imageId,
-                    postStateDigest,
-                    ExitCode(SystemExitCode.Halted, 0),
-                    bytes32(0),
-                    Output(journalDigest, bytes32(0)).digest()
-                ).digest()
-            )
-        );
+        return this.verifyIntegrity(Receipt(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest()));
     }
 
     /// @inheritdoc IRiscZeroVerifier
@@ -86,15 +75,7 @@ contract MockRiscZeroVerifier is IRiscZeroVerifier {
         view
         returns (Receipt memory)
     {
-        return mockProve(
-            ReceiptClaim(
-                imageId,
-                postStateDigest,
-                ExitCode(SystemExitCode.Halted, 0),
-                bytes32(0),
-                Output(journalDigest, bytes32(0)).digest()
-            ).digest()
-        );
+        return mockProve(ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
     }
 
     /// @notice Construct a mock receipt for the given claim digest.

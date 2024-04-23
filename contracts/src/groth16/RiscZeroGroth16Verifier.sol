@@ -150,16 +150,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
         view
         returns (bool)
     {
-        return _verifyIntegrity(
-            seal,
-            ReceiptClaim(
-                imageId,
-                postStateDigest,
-                ExitCode(SystemExitCode.Halted, 0),
-                bytes32(0),
-                Output(journalDigest, bytes32(0)).digest()
-            ).digest()
-        );
+        return _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier

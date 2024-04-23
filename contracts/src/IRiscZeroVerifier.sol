@@ -16,6 +16,18 @@
 
 pragma solidity ^0.8.9;
 
+/// @notice A receipt attesting to the execution of a guest program.
+/// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
+/// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
+/// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
+/// image ID identifies the program that was executed, and the journal is the public data written
+/// by the program. Note that this struct only contains the claim digest, as can be obtained with
+/// the `digest()` function on `ReceiptClaimLib`.
+struct Receipt {
+    bytes seal;
+    bytes32 claimDigest;
+}
+
 /// @notice Public claims about a zkVM guest execution, such as the journal committed to by the guest.
 /// @dev Also includes important information such as the exit code and the starting and ending system
 /// state (i.e. the state of memory). `ReceiptClaim` is a "Merkle-ized struct" supporting
@@ -36,7 +48,32 @@ struct ReceiptClaim {
 }
 
 library ReceiptClaimLib {
+    using OutputLib for Output;
+
     bytes32 constant TAG_DIGEST = sha256("risc0.ReceiptClaim");
+
+    /// @notice Construct a ReceiptClaim from the given imageId, postStateDigest, and journalDigest.
+    ///         Returned ReceiptClaim will represent a successful execution of the zkVM, running
+    ///         the program committed by imageId and resulting in the journal specified by
+    ///         journalDigest.
+    /// @dev Input hash is set to all-zeros (i.e. no committed input), the exit code is (Halted, 0),
+    ///      and there are no assumptions (i.e. the receipt is unconditional).
+    /// @param imageId The identifier for the guest program.
+    /// @param postStateDigest A hash of the final memory state.
+    /// @param journalDigest The SHA-256 digest of the journal bytes.
+    function from(bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
+        internal
+        pure
+        returns (ReceiptClaim memory)
+    {
+        return ReceiptClaim(
+            imageId,
+            postStateDigest,
+            ExitCode(SystemExitCode.Halted, 0),
+            bytes32(0),
+            Output(journalDigest, bytes32(0)).digest()
+        );
+    }
 
     function digest(ReceiptClaim memory claim) internal pure returns (bytes32) {
         return sha256(
@@ -116,18 +153,6 @@ library OutputLib {
             )
         );
     }
-}
-
-/// @notice A receipt attesting to the execution of a guest program.
-/// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
-/// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
-/// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
-/// image ID identifies the program that was executed, and the journal is the public data written
-/// by the program. Note that this struct only contains the claim digest, as can be obtained with
-/// the `digest()` function on `ReceiptClaimLib`.
-struct Receipt {
-    bytes seal;
-    bytes32 claimDigest;
 }
 
 /// @notice Verifier interface for RISC Zero receipts of execution.
