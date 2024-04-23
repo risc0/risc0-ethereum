@@ -44,13 +44,8 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroVerifierEmergencyStop internal verifierEstop;
 
     bytes32 internal TEST_JOURNAL_DIGEST = sha256(TestReceipt.JOURNAL);
-    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaim(
-        TestReceipt.IMAGE_ID,
-        TestReceipt.POST_DIGEST,
-        ExitCode(SystemExitCode.Halted, 0),
-        bytes32(0x0000000000000000000000000000000000000000000000000000000000000000),
-        Output(TEST_JOURNAL_DIGEST, bytes32(0)).digest()
-    );
+    ReceiptClaim internal TEST_RECEIPT_CLAIM =
+        ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
     RiscZeroReceipt internal TEST_RECEIPT;
 
     function setUp() external {
@@ -62,9 +57,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
     function test_NormalOperation() external view {
         require(
-            verifierEstop.verify(
-                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, sha256(TestReceipt.JOURNAL)
-            ),
+            verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
             "verify failed under normal operation"
         );
         require(verifierEstop.verifyIntegrity(TEST_RECEIPT), "verifyIntegrity failed under normal operation");
@@ -73,9 +66,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     function test_RevertsWhenStopped() external {
         // Sanity check to make sure the contract started out working as expected.
         require(
-            verifierEstop.verify(
-                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, sha256(TestReceipt.JOURNAL)
-            ),
+            verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
             "verify failed under normal operation"
         );
         require(verifierEstop.verifyIntegrity(TEST_RECEIPT), "verifyIntegrity failed under normal operation");

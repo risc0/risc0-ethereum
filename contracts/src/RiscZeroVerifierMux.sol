@@ -54,7 +54,30 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     ///         other value, and can never be reused for a new verifier, in order to enfoce the
     ///         property that each identifier maps to at most one implementations across time.
     function removeVerifier(bytes4 identifier) external onlyOwner {
+        // Simple check to reduce the chance of accidents.
+        if (verifiers[identifier] == UNSET) {
+            revert IdentifierUnknown({identifier: identifier});
+        }
         verifiers[identifier] = TOMBSTONE;
+    }
+
+    /// @notice Get the associatied verifier, reverting if the identifier is unknown or removed.
+    function getVerifier(bytes4 identifier) public view returns (IRiscZeroVerifier) {
+        IRiscZeroVerifier verifier = verifiers[identifier];
+        if (verifier == UNSET) {
+            revert IdentifierUnknown({identifier: identifier});
+        }
+        if (verifier == TOMBSTONE) {
+            revert IdentifierRemoved({identifier: identifier});
+        }
+        return verifier;
+    }
+
+    /// @notice Get the associatied verifier, reverting if the identifier is unknown or removed.
+    function getVerifier(bytes calldata seal) public view returns (IRiscZeroVerifier) {
+        // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
+        // TODO(victor): Is this bounds checked?
+        return getVerifier(bytes4(seal[0:4]));
     }
 
     /// @inheritdoc IRiscZeroVerifier
@@ -63,29 +86,11 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
         view
         returns (bool)
     {
-        // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
-        bytes4 identifier = bytes4(seal[0:4]);
-        IRiscZeroVerifier verifier = verifiers[identifier];
-        if (verifier == UNSET) {
-            revert IdentifierUnknown({identifier: identifier});
-        }
-        if (verifier == TOMBSTONE) {
-            revert IdentifierRemoved({identifier: identifier});
-        }
-        return verifier.verify(seal, imageId, postStateDigest, journalDigest);
+        return getVerifier(seal).verify(seal, imageId, postStateDigest, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier
     function verifyIntegrity(Receipt calldata receipt) external view returns (bool) {
-        // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
-        bytes4 identifier = bytes4(receipt.seal[0:4]);
-        IRiscZeroVerifier verifier = verifiers[identifier];
-        if (verifier == UNSET) {
-            revert IdentifierUnknown({identifier: identifier});
-        }
-        if (verifier == TOMBSTONE) {
-            revert IdentifierRemoved({identifier: identifier});
-        }
-        return verifier.verifyIntegrity(receipt);
+        return getVerifier(receipt.seal).verifyIntegrity(receipt);
     }
 }

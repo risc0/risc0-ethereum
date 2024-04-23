@@ -59,14 +59,19 @@ contract MockRiscZeroVerifier is IRiscZeroVerifier {
         view
         returns (bool)
     {
-        return this.verifyIntegrity(Receipt(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest()));
+        return _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier
     function verifyIntegrity(Receipt calldata receipt) public view returns (bool) {
+        return _verifyIntegrity(receipt.seal, receipt.claimDigest);
+    }
+
+    /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
+    function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
         // Require that the seal be exactly equal to the identifier and claim digest.
         // Reject if the caller may have sent a real seal.
-        return receipt.seal.equal(abi.encodePacked(IDENTIFIER, receipt.claimDigest));
+        return seal.equal(abi.encodePacked(IDENTIFIER, claimDigest));
     }
 
     /// @notice Construct a mock receipt for the given image ID and journal.
