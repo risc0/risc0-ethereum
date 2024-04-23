@@ -25,6 +25,10 @@ import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     IRiscZeroVerifier immutable verifier;
 
+    /// @notice Error returned from calling estop with a receipt that cannot be verified as proof
+    /// of an exploit on the verifier contract. 
+    error InvalidProofOfExploit();
+
     constructor(IRiscZeroVerifier _verifier) Ownable(_msgSender()) {
         verifier = _verifier;
     }
@@ -44,8 +48,9 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     ///         When stopped, all calls to the verify and verifyIntegrity functions will revert.
     ///         Once stopped, this contract can never be restarted.
     function estop(Receipt calldata receipt) external {
-        require(receipt.claimDigest == bytes32(0), "receipt claim digest is non-zero");
-        require(verifyIntegrity(receipt), "receipt verification failed");
+        if (receipt.claimDigest != bytes32(0) || !verifyIntegrity(receipt)) {
+            revert InvalidProofOfExploit();
+        }
         _pause();
     }
 
