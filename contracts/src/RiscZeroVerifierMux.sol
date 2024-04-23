@@ -21,6 +21,7 @@ import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Multiplexer for IRiscZeroVerifier, allowing multiple implementations to be callable from a single address.
+// TODO(victor): Consider renaming "mux" to something else.
 contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @notice Mapping from 4-byte proof identifiers to verifier contracts.
     /// Used to route receipts to verifiers that are able to determine the validity of the receipt.

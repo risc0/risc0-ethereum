@@ -26,7 +26,7 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     IRiscZeroVerifier immutable verifier;
 
     /// @notice Error returned from calling estop with a receipt that cannot be verified as proof
-    /// of an exploit on the verifier contract. 
+    /// of an exploit on the verifier contract.
     error InvalidProofOfExploit();
 
     constructor(IRiscZeroVerifier _verifier) Ownable(_msgSender()) {

@@ -61,13 +61,23 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     }
 
     function test_NormalOperation() external view {
-        require(verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, sha256(TestReceipt.JOURNAL)), "verify failed under normal operation");
+        require(
+            verifierEstop.verify(
+                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, sha256(TestReceipt.JOURNAL)
+            ),
+            "verify failed under normal operation"
+        );
         require(verifierEstop.verifyIntegrity(TEST_RECEIPT), "verifyIntegrity failed under normal operation");
     }
 
     function test_RevertsWhenStopped() external {
         // Sanity check to make sure the contract started out working as expected.
-        require(verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, sha256(TestReceipt.JOURNAL)), "verify failed under normal operation");
+        require(
+            verifierEstop.verify(
+                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, sha256(TestReceipt.JOURNAL)
+            ),
+            "verify failed under normal operation"
+        );
         require(verifierEstop.verifyIntegrity(TEST_RECEIPT), "verifyIntegrity failed under normal operation");
 
         verifierEstop.estop();
@@ -79,7 +89,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierEstop.verifyIntegrity(TEST_RECEIPT);
     }
 
-    function test_OnlyOwnerCanEstopWithoutReceipt() external {
+    function test_OnlyOwnerCanEstopWithoutProof() external {
         verifierEstop.renounceOwnership();
 
         // Without an owner, trying to call estop() should revert.
@@ -90,7 +100,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     function test_EstopRequiresValidProofOfExploit() external {
         verifierEstop.renounceOwnership();
 
-        RiscZeroReceipt memory proofOfExploit = verifierMock.mockProve(bytes32(0)); 
+        RiscZeroReceipt memory proofOfExploit = verifierMock.mockProve(bytes32(0));
 
         // Ensure that using an invalid receipt results in a revert.
         vm.expectRevert(RiscZeroVerifierEmergencyStop.InvalidProofOfExploit.selector);
@@ -102,10 +112,10 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierEstop.estop(mangledProofOfExploit);
     }
 
-    function test_AnyoneCanEstopWithReceiptOfExploit() external {
+    function test_AnyoneCanEstopWithProofOfExploit() external {
         verifierEstop.renounceOwnership();
 
-        RiscZeroReceipt memory proofOfExploit = verifierMock.mockProve(bytes32(0)); 
+        RiscZeroReceipt memory proofOfExploit = verifierMock.mockProve(bytes32(0));
         verifierEstop.estop(proofOfExploit);
 
         // Now expect calls to verify to fail with an error indicating that the contract is paused.
