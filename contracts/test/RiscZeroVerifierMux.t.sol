@@ -31,7 +31,7 @@ import {
     ExitCode,
     SystemExitCode
 } from "../src/IRiscZeroVerifier.sol";
-import {MockRiscZeroVerifier} from "../src/test/MockRiscZeroVerifier.sol";
+import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {RiscZeroVerifierMux} from "../src/RiscZeroVerifierMux.sol";
 import {TestReceipt} from "./TestReceipt.sol";
 
@@ -49,15 +49,15 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     bytes4 internal IDENTIFIER_A;
     bytes4 internal IDENTIFIER_B;
 
-    MockRiscZeroVerifier internal verifierMockA;
-    MockRiscZeroVerifier internal verifierMockB;
+    RiscZeroMockVerifier internal verifierMockA;
+    RiscZeroMockVerifier internal verifierMockB;
     RiscZeroVerifierMux internal verifierMux;
 
     function setUp() external {
         verifierMux = new RiscZeroVerifierMux();
 
-        verifierMockA = new MockRiscZeroVerifier(bytes32(0));
-        verifierMockB = new MockRiscZeroVerifier(bytes32(uint256(1)));
+        verifierMockA = new RiscZeroMockVerifier(bytes32(0));
+        verifierMockB = new RiscZeroMockVerifier(bytes32(uint256(1)));
 
         TEST_RECEIPT_A = verifierMockA.mockProve(TEST_RECEIPT_CLAIM.digest());
         TEST_RECEIPT_B = verifierMockB.mockProve(TEST_RECEIPT_CLAIM.digest());

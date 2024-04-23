@@ -23,7 +23,7 @@ import {console2} from "forge-std/console2.sol";
 
 import {ControlID, RiscZeroGroth16Verifier} from "../groth16/RiscZeroGroth16Verifier.sol";
 import {IRiscZeroVerifier} from "../IRiscZeroVerifier.sol";
-import {MockRiscZeroVerifier} from "./MockRiscZeroVerifier.sol";
+import {RiscZeroMockVerifier} from "./RiscZeroMockVerifier.sol";
 import {Strings2} from "./utils/Strings2.sol";
 
 /// @notice A base contract for Forge cheats useful in testing RISC Zero applications.
@@ -66,8 +66,8 @@ abstract contract RiscZeroCheats is CommonBase {
     /// @notice Deploy either a test or fully verifying `RiscZeroGroth16Verifier` depending on `devMode()`.
     function deployRiscZeroVerifier() internal returns (IRiscZeroVerifier) {
         if (devMode()) {
-            // TODO(victor): Consider providing a non-zero salt here.
-            IRiscZeroVerifier verifier = new MockRiscZeroVerifier(bytes32(0));
+            // NOTE: Using a fixed salt of 0 for the identifier of the mock verifier.
+            IRiscZeroVerifier verifier = new RiscZeroMockVerifier(bytes32(0));
             console2.log("Deployed RiscZeroGroth16VerifierTest to", address(verifier));
             return verifier;
         } else {

@@ -32,7 +32,7 @@ import {
     ExitCode,
     SystemExitCode
 } from "../src/IRiscZeroVerifier.sol";
-import {MockRiscZeroVerifier} from "../src/test/MockRiscZeroVerifier.sol";
+import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 import {TestReceipt} from "./TestReceipt.sol";
 
@@ -40,7 +40,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     using OutputLib for Output;
     using ReceiptClaimLib for ReceiptClaim;
 
-    MockRiscZeroVerifier internal verifierMock;
+    RiscZeroMockVerifier internal verifierMock;
     RiscZeroVerifierEmergencyStop internal verifierEstop;
 
     bytes32 internal TEST_JOURNAL_DIGEST = sha256(TestReceipt.JOURNAL);
@@ -49,7 +49,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroReceipt internal TEST_RECEIPT;
 
     function setUp() external {
-        verifierMock = new MockRiscZeroVerifier(bytes32(0));
+        verifierMock = new RiscZeroMockVerifier(bytes32(0));
         verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock);
 
         TEST_RECEIPT = verifierMock.mockProve(TEST_RECEIPT_CLAIM.digest());
