@@ -76,7 +76,6 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @notice Get the associatied verifier, reverting if the identifier is unknown or removed.
     function getVerifier(bytes calldata seal) public view returns (IRiscZeroVerifier) {
         // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
-        // TODO(victor): Is this bounds checked?
         return getVerifier(bytes4(seal[0:4]));
     }
 

@@ -30,7 +30,6 @@ import {
 } from "../IRiscZeroVerifier.sol";
 
 /// @notice Mock verifier contract for RISC Zero receipts of execution.
-// TODO(victor): Rename to RiscZeroVerifierMock.
 contract RiscZeroMockVerifier is IRiscZeroVerifier {
     using ReceiptClaimLib for ReceiptClaim;
     using OutputLib for Output;
