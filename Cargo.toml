@@ -17,7 +17,7 @@ risc0-ethereum-relay = { version = "0.9.0-alpha.1", default-features = false, pa
 risc0-ethereum-view-call = { version = "0.9.0-alpha.1", default-features = false, path = "view-call" }
 risc0-forge-ffi = { version = "0.9.0-alpha.1", default-features = false, path = "ffi" }
 
-# risc0 monoreop dependencies
+# risc0 monorepo dependencies
 risc0-build = { version = "0.21", default-features = false }
 risc0-zkp = { version = "0.21", default-features = false }
 risc0-zkvm = { version = "0.21", default-features = false }
