@@ -33,7 +33,7 @@ import {
 } from "../IRiscZeroVerifier.sol";
 
 /// @notice reverse the byte order of the uint256 value.
-/// @dev Soldity uses a big-endian ABI encoding. Reversing the byte order before encoding
+/// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
 /// ensure that the encoded value will be little-endian.
 /// Written by k06a. https://ethereum.stackexchange.com/a/83627
 function reverseByteOrderUint256(uint256 input) pure returns (uint256 v) {
@@ -60,7 +60,7 @@ function reverseByteOrderUint256(uint256 input) pure returns (uint256 v) {
 }
 
 /// @notice reverse the byte order of the uint32 value.
-/// @dev Soldity uses a big-endian ABI encoding. Reversing the byte order before encoding
+/// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
 /// ensure that the encoded value will be little-endian.
 /// Written by k06a. https://ethereum.stackexchange.com/a/83627
 function reverseByteOrderUint32(uint32 input) pure returns (uint32 v) {
@@ -97,14 +97,18 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     uint256 public immutable CONTROL_ID_1;
     uint256 public immutable BN254_CONTROL_ID;
 
-    /// @notice Identifier for this verifier
-    // TODO(victor): Fill in the description here.
-    bytes4 public immutable IDENTIFIER;
+    /// @notice A short key attached to the seal to select the correct verifier implementation.
+    /// @dev A selector is not intended to be collision resistant, in that it is possible to find
+    ///      two preimages that result in the same selector. This is acceptable since it's purpose
+    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
+    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
+    ///      function selectors.
+    bytes4 public immutable SELECTOR;
 
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
     /// @dev This value is computed at compile time, and it encoded in multiple levels because the
-    /// Soldity optimizer will fail if too many arguments are given to the abi.encode function.
-    bytes32 internal constant IDENTIFIER_GROTH16_VKEY = keccak256(
+    /// Solidity optimizer will fail if too many arguments are given to the abi.encode function.
+    bytes32 internal constant SELECTOR_GROTH16_VKEY = keccak256(
         abi.encode(
             abi.encode(alphax, alphay),
             abi.encode(betax1, betax2, betay1, betay2),
@@ -119,7 +123,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
         CONTROL_ID_1 = control_id_1;
         BN254_CONTROL_ID = bn254_control_id;
 
-        IDENTIFIER = bytes4(
+        SELECTOR = bytes4(
             keccak256(
                 abi.encode(
                     // Identifier for the proof system.
@@ -129,7 +133,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
                     CONTROL_ID_1,
                     BN254_CONTROL_ID,
                     // Groth16 verification key digest.
-                    IDENTIFIER_GROTH16_VKEY
+                    SELECTOR_GROTH16_VKEY
                 )
             )
         );
@@ -161,7 +165,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
     function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
         (uint256 claim0, uint256 claim1) = splitDigest(claimDigest);
-        // TODO(victor): Actually check the identifier
+        // TODO(victor): Actually check the selector
         Seal memory decodedSeal = abi.decode(seal[4:], (Seal));
         return this.verifyProof(
             decodedSeal.a, decodedSeal.b, decodedSeal.c, [CONTROL_ID_0, CONTROL_ID_1, claim0, claim1, BN254_CONTROL_ID]

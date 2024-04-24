@@ -35,12 +35,16 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
     using OutputLib for Output;
     using BytesLib for bytes;
 
-    /// @notice Identifier for this verifier
-    // TODO(victor): Fill in the description here.
-    bytes4 public immutable IDENTIFIER;
+    /// @notice A short key attached to the seal to select the correct verifier implementation.
+    /// @dev A selector is not intended to be collision resistant, in that it is possible to find
+    ///      two preimages that result in the same selector. This is acceptable since it's purpose
+    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
+    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
+    ///      function selectors.
+    bytes4 public immutable SELECTOR;
 
     constructor(bytes32 salt) {
-        IDENTIFIER = bytes4(
+        SELECTOR = bytes4(
             keccak256(
                 abi.encode(
                     // Identifier for the proof system.
@@ -68,9 +72,9 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
 
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
     function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
-        // Require that the seal be exactly equal to the identifier and claim digest.
+        // Require that the seal be exactly equal to the selector and claim digest.
         // Reject if the caller may have sent a real seal.
-        return seal.equal(abi.encodePacked(IDENTIFIER, claimDigest));
+        return seal.equal(abi.encodePacked(SELECTOR, claimDigest));
     }
 
     /// @notice Construct a mock receipt for the given image ID and journal.
@@ -85,6 +89,6 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
     /// @notice Construct a mock receipt for the given claim digest.
     /// @dev You can calculate the claimDigest from a ReceiptClaim by using ReceiptClaimLib.
     function mockProve(bytes32 claimDigest) public view returns (Receipt memory) {
-        return Receipt(abi.encodePacked(IDENTIFIER, claimDigest), claimDigest);
+        return Receipt(abi.encodePacked(SELECTOR, claimDigest), claimDigest);
     }
 }

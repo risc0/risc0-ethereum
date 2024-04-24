@@ -23,7 +23,7 @@ import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 /// @notice Multiplexer for IRiscZeroVerifier, allowing multiple implementations to be callable from a single address.
 // TODO(victor): Consider renaming "mux" to something else.
 contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
-    /// @notice Mapping from 4-byte proof identifiers to verifier contracts.
+    /// @notice Mapping from 4-byte proof selector to verifier contracts.
     /// Used to route receipts to verifiers that are able to determine the validity of the receipt.
     mapping(bytes4 => IRiscZeroVerifier) public verifiers;
 
@@ -32,50 +32,50 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @notice A "tombstone" value used to mark verifier entries that have been removed from the mapping.
     IRiscZeroVerifier internal constant TOMBSTONE = IRiscZeroVerifier(address(1));
 
-    error IdentifierInUse(bytes4 identifier);
-    error IdentifierRemoved(bytes4 identifier);
-    error IdentifierUnknown(bytes4 identifier);
+    error SelectorInUse(bytes4 selector);
+    error SelectorRemoved(bytes4 selector);
+    error SelectorUnknown(bytes4 selector);
 
     constructor() Ownable(_msgSender()) {}
 
     /// @notice Adds a verifier to the mux, such that it can receive receipt verification calls.
-    function addVerifier(bytes4 identifier, IRiscZeroVerifier verifier) external onlyOwner {
-        if (verifiers[identifier] == TOMBSTONE) {
-            revert IdentifierRemoved({identifier: identifier});
+    function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external onlyOwner {
+        if (verifiers[selector] == TOMBSTONE) {
+            revert SelectorRemoved({selector: selector});
         }
-        if (verifiers[identifier] != UNSET) {
-            revert IdentifierInUse({identifier: identifier});
+        if (verifiers[selector] != UNSET) {
+            revert SelectorInUse({selector: selector});
         }
-        verifiers[identifier] = verifier;
+        verifiers[selector] = verifier;
     }
 
-    /// @notice Removes an identifier from the mux, such that it can no receive verification calls.
-    ///         Removing an identifier sets it to the tombstone value. It can never be set to any
+    /// @notice Removes an selector from the mux, such that it can no receive verification calls.
+    ///         Removing an selector sets it to the tombstone value. It can never be set to any
     ///         other value, and can never be reused for a new verifier, in order to enfoce the
-    ///         property that each identifier maps to at most one implementations across time.
-    function removeVerifier(bytes4 identifier) external onlyOwner {
+    ///         property that each selector maps to at most one implementations across time.
+    function removeVerifier(bytes4 selector) external onlyOwner {
         // Simple check to reduce the chance of accidents.
-        if (verifiers[identifier] == UNSET) {
-            revert IdentifierUnknown({identifier: identifier});
+        if (verifiers[selector] == UNSET) {
+            revert SelectorUnknown({selector: selector});
         }
-        verifiers[identifier] = TOMBSTONE;
+        verifiers[selector] = TOMBSTONE;
     }
 
-    /// @notice Get the associatied verifier, reverting if the identifier is unknown or removed.
-    function getVerifier(bytes4 identifier) public view returns (IRiscZeroVerifier) {
-        IRiscZeroVerifier verifier = verifiers[identifier];
+    /// @notice Get the associatied verifier, reverting if the selector is unknown or removed.
+    function getVerifier(bytes4 selector) public view returns (IRiscZeroVerifier) {
+        IRiscZeroVerifier verifier = verifiers[selector];
         if (verifier == UNSET) {
-            revert IdentifierUnknown({identifier: identifier});
+            revert SelectorUnknown({selector: selector});
         }
         if (verifier == TOMBSTONE) {
-            revert IdentifierRemoved({identifier: identifier});
+            revert SelectorRemoved({selector: selector});
         }
         return verifier;
     }
 
-    /// @notice Get the associatied verifier, reverting if the identifier is unknown or removed.
+    /// @notice Get the associatied verifier, reverting if the selector is unknown or removed.
     function getVerifier(bytes calldata seal) public view returns (IRiscZeroVerifier) {
-        // Use the first 4 bytes of the seal at the identifier to look up in the mapping.
+        // Use the first 4 bytes of the seal at the selector to look up in the mapping.
         return getVerifier(bytes4(seal[0:4]));
     }
 
