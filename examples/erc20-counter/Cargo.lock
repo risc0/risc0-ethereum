@@ -209,7 +209,7 @@ dependencies = [
  "hex",
  "log",
  "risc0-ethereum-contracts",
- "risc0-ethereum-view-call",
+ "risc0-steel",
  "risc0-zkvm",
  "serde",
  "tokio",
@@ -3446,7 +3446,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "risc0-ethereum-view-call"
+name = "risc0-groth16"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da1e9b8dae3f9c3862b6278b2812989a2f5a537975e5bd6a687f07cf1df68a36"
+dependencies = [
+ "anyhow",
+ "ark-bn254",
+ "ark-groth16",
+ "ark-serialize 0.4.2",
+ "hex",
+ "num-bigint",
+ "num-derive",
+ "num-traits",
+ "risc0-zkp",
+ "serde",
+]
+
+[[package]]
+name = "risc0-steel"
 version = "0.9.0-alpha.1"
 dependencies = [
  "alloy-primitives",
@@ -3465,24 +3483,6 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "risc0-groth16"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da1e9b8dae3f9c3862b6278b2812989a2f5a537975e5bd6a687f07cf1df68a36"
-dependencies = [
- "anyhow",
- "ark-bn254",
- "ark-groth16",
- "ark-serialize 0.4.2",
- "hex",
- "num-bigint",
- "num-derive",
- "num-traits",
- "risc0-zkp",
- "serde",
 ]
 
 [[package]]

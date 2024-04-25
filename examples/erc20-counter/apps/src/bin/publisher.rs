@@ -22,9 +22,7 @@ use anyhow::Result;
 use apps::{BonsaiProver, TxSender};
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
-use risc0_ethereum_view_call::{
-    config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall,
-};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
 use risc0_zkvm::serde::to_vec;
 use tracing_subscriber::EnvFilter;
 

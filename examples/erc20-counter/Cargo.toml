@@ -21,7 +21,7 @@ erc20-counter-methods = { path = "./methods" }
 risc0-build = { version = "0.21", features = ["docker"] }
 risc0-build-ethereum = { path = "../../build" }
 risc0-ethereum-contracts = { path = "../../contracts" }
-risc0-ethereum-view-call = { path = "../../view-call" }
+risc0-steel = { path = "../../steel" }
 risc0-zkvm = { version = "0.21", default-features = false }
 risc0-zkp = { version = "0.21", default-features = false }
 serde = { version = "1.0", features = ["derive", "std"] }

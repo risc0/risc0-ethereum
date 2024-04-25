@@ -17,7 +17,7 @@ ethers = { workspace = true }
 hex = { workspace = true }
 log = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
-risc0-ethereum-view-call = { workspace = true, features = ["host"] }
+risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
 serde = { workspace = true }
 tokio = { version = "1.35", features = ["full"] }

@@ -17,9 +17,7 @@ use alloy_sol_types::{sol, SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
-use risc0_ethereum_view_call::{
-    config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall,
-};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
 

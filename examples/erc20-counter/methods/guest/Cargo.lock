@@ -740,7 +740,7 @@ dependencies = [
  "ahash",
  "alloy-primitives",
  "alloy-sol-types",
- "risc0-ethereum-view-call",
+ "risc0-steel",
  "risc0-zkvm",
 ]
 
@@ -1460,23 +1460,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "risc0-ethereum-view-call"
-version = "0.9.0-alpha.1"
-dependencies = [
- "alloy-primitives",
- "alloy-rlp",
- "alloy-rlp-derive",
- "alloy-sol-types",
- "anyhow",
- "nybbles",
- "once_cell",
- "revm",
- "rlp",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "risc0-groth16"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1492,6 +1475,23 @@ dependencies = [
  "num-traits",
  "risc0-zkp",
  "serde",
+]
+
+[[package]]
+name = "risc0-steel"
+version = "0.9.0-alpha.1"
+dependencies = [
+ "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rlp-derive",
+ "alloy-sol-types",
+ "anyhow",
+ "nybbles",
+ "once_cell",
+ "revm",
+ "rlp",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

@@ -16,7 +16,7 @@ erc20-methods = { path = "methods" }
 nybbles = { version = "0.2.1", features = ["serde"] }
 once_cell = "1.19"
 revm = { version = "7.2", default-features = false, features = ["std"] }
-risc0-ethereum-view-call = { path = "../../view-call" }
+risc0-steel = { path = "../../steel" }
 risc0-zkvm = { version = "0.21.0", default-features = false }
 rlp = "0.5.2"
 serde = "1.0"

@@ -13,7 +13,7 @@ path = "src/bin/balance_of.rs"
 alloy-primitives = { version = "0.6" }
 alloy-sol-types = { version = "0.6" }
 risc0-zkvm = { version = "0.21.0", default-features = false, features = ["std"] }
-risc0-ethereum-view-call = { path = "../../../../view-call" }
+risc0-steel = { path = "../../../../steel" }
 
 # Force the `compile-time-rng` feature, to prevent `getrandom` from being used.
 ahash = { version = "0.8", default-features = false, features = ["compile-time-rng"] }
