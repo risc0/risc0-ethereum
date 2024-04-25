@@ -4382,6 +4382,7 @@ dependencies = [
  "nybbles",
  "once_cell",
  "revm",
+ "revm-primitives",
  "risc0-steel",
  "rlp",
  "serde",

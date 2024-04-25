@@ -19,6 +19,7 @@ log = { workspace = true, optional = true }
 nybbles = { workspace = true }
 once_cell = { workspace = true }
 revm = { workspace = true, features = ["serde"] }
+revm-primitives = { workspace = true }
 rlp = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
