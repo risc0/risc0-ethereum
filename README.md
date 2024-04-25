@@ -1,7 +1,3 @@
-> [!IMPORTANT]
-> `main` is the development branch for this repository.
-> Application developers should use the [latest release](https://github.com/risc0/risc0-ethereum/releases) instead.
-
 # RISC Zero Ethereum
 
 [RISC Zero] is a zero-knowledge verifiable general computing platform, with [Ethereum] integration.

@@ -3388,7 +3388,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "0.9.0-alpha.1"
+version = "0.10.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -3435,7 +3435,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "0.9.0-alpha.1"
+version = "0.10.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -3465,7 +3465,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "0.9.0-alpha.1"
+version = "0.10.0"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
