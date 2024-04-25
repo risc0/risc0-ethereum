@@ -4,12 +4,14 @@
 
    Release branches are initialized with a commit from `main`, and named `release-x.y` where `x.y` is the major and minor version.
    Patch version changes are committed to the release branch matching their major and minor version.
-    <!-- TODO: Does this work with branch protections -->
 
 2. Create two version bump PRs:
 
    * One PR should bump the version on the `release-x.y` branch.
-   * One PR should bump the version on the `main` branch to the next, unreleased, minor version.
+
+     Additionally remove the note at the top of `README.md` about being on the `main` branch.
+
+   * The other PR should bump the version on the `main` branch to the next, unreleased, minor version.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
@@ -19,7 +21,7 @@
 
    Crates currently published to `crates.io` are:
 
-   * `risc0-ethereum-view-call`
+   * `risc0-steel`
    * `risc0-build-ethereum`
 
    > NOTE: We intend to publish more of the crates in the future.
@@ -31,7 +33,15 @@
 
     <!-- TODO: Include instructions for the process including the emergency stop and index contracts, once those are ready -->
 
-   * Deploy the contract to Sepolia.
+   * Deploy the contract to Sepolia, and verify the source code.
+
+    Set the `ETHERSCAN_API_KEY` and `ETH_WALLET_PRIVATE_KEY` environment variables to an valid Etherscan API key and Sepolia private key respectively.
+
+     ```sh
+     # In the contracts directory
+     forge script script/DeployVerifier.s.sol:DeployVerifier --rpc-url $ALCHEMY_API_URL --broadcast --verify -vvvv
+     ```
+
    * Document the new address and version in the `dev.risczero.com` docs.
-   * Verify the source code on Etherescan.
-     <!-- TODO Include instructions on how to actually do this -->
+
+     [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
