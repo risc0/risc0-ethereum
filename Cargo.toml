@@ -32,6 +32,7 @@ log = "0.4"
 nybbles = { version = "0.2.1", features = ["serde"] }
 once_cell = "1.19"
 revm = { version = "7.2", default-features = false, features = ["std"] }
+revm-primitives = { version = "=3.1.0", default-features = false }
 risc0-build = { version = "0.21", default-features = false }
 risc0-zkp = { version = "0.21", default-features = false }
 risc0-zkvm = { version = "0.21", default-features = false }
