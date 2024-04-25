@@ -1,9 +1,9 @@
-# RISC Zero Ethereum View Call Proofs Library
-> ***WARNING***: This library is still in its experimental phase and under active development. Production use is not recommended until the software has matured sufficiently.
+# Steel -  A View Call Proofs Library for Ethereum
+> ***WARNING***: Steel is still in an experimental phase and under active development. Production use is not recommended until the software has matured sufficiently.
 
 In the realm of Ethereum and smart contracts, obtaining data directly from the blockchain without altering its state—known as "view calls"—is a fundamental operation. Traditionally, these operations, especially when it comes to proving and verifying off-chain computations, involve a degree of complexity: either via proof of storage mechanisms requiring detailed knowledge of slot indexes, or via query-specific circuit development.
-In contrast, this library abstracts away these complexities, allowing developers to query Ethereum's state by just defining the Solidity method they wish to call. 
-To demonstrate a simple instance of using the view call library, let's consider a basic yet common blockchain operation: querying the balance of an ERC-20 token for a specific address. You can find the full example [here](../examples/erc20/README.md).
+In contrast, Steel abstracts away these complexities, allowing developers to query Ethereum's state by just defining the Solidity method they wish to call. 
+To demonstrate a simple instance of using Steel, let's consider a basic yet common blockchain operation: querying the balance of an ERC-20 token for a specific address. You can find the full example [here](../examples/erc20/README.md).
 
 ## Guest Code
 Here is a snippet of the [relevant code](../examples/erc20/methods/guest/src/main.rs) of the guest:
@@ -66,7 +66,7 @@ let (input, returns) = ViewCall::new(CALL, CONTRACT)
 ```
 ## Ethereum Integration
 
-This library can be used in conjunction with the [Bonsai Foundry Template]. The Ethereum Contract that validates the Groth16 proof must also validate the `ViewCallEnv` commitment. This commitment is the ABI-encoded bytes of the following type:
+Steel can be used in conjunction with the [RISC Zero Foundry Template]. The Ethereum Contract that validates the Groth16 proof must also validate the `ViewCallEnv` commitment. This commitment is the ABI-encoded bytes of the following type:
 
 ```solidity
 struct BlockCommitment {
@@ -93,4 +93,4 @@ If the `blockhash` opcode is used for validation, the commitment must not be old
 
 [erc20]: ./examples/erc20/README.md
 [erc20-counter]: ./examples/erc20-counter/README.md
-[Bonsai Foundry Template]: https://github.com/risc0/bonsai-foundry-template
+[RISC Zero Foundry Template]: https://github.com/risc0/bonsai-foundry-template
