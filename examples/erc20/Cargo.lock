@@ -2642,7 +2642,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "0.9.0-alpha.1"
+version = "0.11.0-alpha.1"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
