@@ -4317,31 +4317,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "risc0-ethereum-view-call"
-version = "0.9.0-alpha.1"
-dependencies = [
- "alloy-primitives",
- "alloy-rlp",
- "alloy-rlp-derive",
- "alloy-sol-types",
- "alloy-trie",
- "anyhow",
- "ethers-core",
- "ethers-providers",
- "log",
- "nybbles",
- "once_cell",
- "revm",
- "risc0-ethereum-view-call",
- "rlp",
- "serde",
- "serde_json",
- "test-log",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "risc0-forge-ffi"
 version = "0.9.0-alpha.1"
 dependencies = [
@@ -4389,6 +4364,31 @@ checksum = "5be1d1ff7fe501c9f420654bc1ff7461909b85e7f8fb3698a8812c0a8a787306"
 dependencies = [
  "cc",
  "which",
+]
+
+[[package]]
+name = "risc0-steel"
+version = "0.9.0-alpha.1"
+dependencies = [
+ "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rlp-derive",
+ "alloy-sol-types",
+ "alloy-trie",
+ "anyhow",
+ "ethers-core",
+ "ethers-providers",
+ "log",
+ "nybbles",
+ "once_cell",
+ "revm",
+ "risc0-steel",
+ "rlp",
+ "serde",
+ "serde_json",
+ "test-log",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

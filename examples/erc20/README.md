@@ -1,9 +1,12 @@
 # ERC20 Example
-We provide an example that uses the ERC20 interface's `balanceOf` method.
+
+**An example that uses the ERC20 interface's `balanceOf` method.**
+
 > ***WARNING***: This software is still experimental, we do not recommend it for production use.
 
 ## Prerequisites
-To get started, you need to have Rust installed. If you haven't done so, follow the instructions [here][install-rust]. 
+
+To get started, you need to have Rust installed. If you haven't done so, follow the instructions [here][install-rust].
 
 Next, install the `cargo risczero` tool. We'll use `cargo binstall` to facilitate this. Detailed instructions can be found at [cargo-binstall].
 
@@ -21,6 +24,7 @@ cargo risczero install
 You'll also need access to an Ethereum RPC node, such as through [Alchemy](www.alchemy.com).
 
 ## Run the example
+
 To run the example, which queries the USDT balance of `0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4` on Sepolia, execute the following command:
 
 ```bash
@@ -29,7 +33,7 @@ RPC_URL=https://eth-sepolia.g.alchemy.com/v2/<API_KEY> RUST_LOG=info cargo run -
 
 The output should resemble the following:
 
-```
+```text
 2024-03-12T11:06:14.549457Z  INFO view_call::host: preflight 'balanceOf(address)' method by 0xf08A50178dfcDe18524640EA6618a1f965821715 on 0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0
 For block 5470081 `balanceOf(address)` returns: 399534748753251
 Running the guest with the constructed input:
@@ -42,6 +46,7 @@ View call result: 399534748753251
 ```
 
 ### Guest Code
+
 Here is a snippet of the [relevant code](./methods/guest/src/main.rs) of the guest:
 
 ```rust

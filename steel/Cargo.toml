@@ -1,6 +1,6 @@
 [package]
-name = "risc0-ethereum-view-call"
-description = "A library to query Ethereum state, or any other EVM-based blockchain state within the RISC Zero zkVM."
+name = "risc0-steel"
+description = "Query Ethereum state, or any other EVM-based blockchain state within the RISC Zero zkVM."
 version = { workspace = true }
 edition = { workspace = true }
 license = { workspace = true }
@@ -27,7 +27,7 @@ tokio = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy-trie = { workspace = true }
-risc0-ethereum-view-call = { path = ".", features = ["host"] }
+risc0-steel = { path = ".", features = ["host"] }
 test-log = { workspace = true }
 
 [features]

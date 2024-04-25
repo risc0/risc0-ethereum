@@ -1,11 +1,16 @@
-# RISC Zero Ethereum View Call Proofs Library
+# Steel - Ethereum View Calls in RISC Zero
+
 > ***WARNING***: This library is still in its experimental phase and under active development. Production use is not recommended until the software has matured sufficiently.
 
-In the realm of Ethereum and smart contracts, obtaining data directly from the blockchain without altering its state—known as "view calls"—is a fundamental operation. Traditionally, these operations, especially when it comes to proving and verifying off-chain computations, involve a degree of complexity: either via proof of storage mechanisms requiring detailed knowledge of slot indexes, or via query-specific circuit development.
-In contrast, this library abstracts away these complexities, allowing developers to query Ethereum's state by just defining the Solidity method they wish to call. 
-To demonstrate a simple instance of using the view call library, let's consider a basic yet common blockchain operation: querying the balance of an ERC-20 token for a specific address. You can find the full example [here](../examples/erc20/README.md).
+In the realm of Ethereum and smart contracts, obtaining data directly from the blockchain without altering its state—known as "view calls" — are a fundamental operation.
+Traditionally, these operations, especially when it comes to proving and verifying off-chain computations, involve a degree of complexity: either via proof of storage mechanisms requiring detailed knowledge of slot indexes, or via query-specific circuit development.
+
+In contrast, this library abstracts away these complexities, allowing developers to query Ethereum's state by just defining the Solidity method they wish to call.
+To demonstrate a simple instance of using the view call library, let's consider possibly the most common view call: querying the balance of an ERC-20 token for a specific address.
+You can find the full example [here](../examples/erc20/README.md).
 
 ## Guest Code
+
 Here is a snippet of the [relevant code](../examples/erc20/methods/guest/src/main.rs) of the guest:
 
 ```rust
@@ -64,6 +69,7 @@ let (input, returns) = ViewCall::new(CALL, CONTRACT)
     .with_caller(CALLER)
     .preflight(env)?;
 ```
+
 ## Ethereum Integration
 
 This library can be used in conjunction with the [Bonsai Foundry Template]. The Ethereum Contract that validates the Groth16 proof must also validate the `ViewCallEnv` commitment. This commitment is the ABI-encoded bytes of the following type:
@@ -87,10 +93,16 @@ function validate(bytes calldata journal, bytes32 postStateDigest, bytes calldat
 
 We also provide an example, [erc20-counter], showcasing such integration.
 
-### Limitations
+### Getting the verified block hash
 
-If the `blockhash` opcode is used for validation, the commitment must not be older than 256 blocks. Given a block time of 12 seconds, this allows just over 50 minutes to create the proof and ensure that the validating transaction is included in a block.
+If the `blockhash` opcode is used for validation, the commitment must not be older than 256 blocks.
+Given a block time of 12 seconds, this allows just over 50 minutes to create the proof and ensure that the validating transaction is included in a block.
+In many cases, this will work just fine: even very large computations such as proving an entire Ethereum block can be done in well under 50 minutes with sufficient resources.
 
-[erc20]: ./examples/erc20/README.md
+When a verified block hash older than 256 blocks is needed on-chain, a number of strategies can be used:
+
+* When the block hash that will be needed is known ahead of time (e.g. when initiating a proposal for governance), that block hash can be saved to contract state.
+* Another approach is to use RISC Zero to prove the hash chain from the block that was queried up until a block in the most recent 256.
+
 [erc20-counter]: ./examples/erc20-counter/README.md
 [Bonsai Foundry Template]: https://github.com/risc0/bonsai-foundry-template
