@@ -24,6 +24,8 @@
    * `risc0-steel`
    * `risc0-build-ethereum`
 
+   <br/>
+
    > NOTE: We intend to publish more of the crates in the future.
    > Blocking issue is that the other crates depend on building Solidity smart contracts as part of a `build.rs` script, which makes it incompatible with `crates.io`.
 
@@ -35,7 +37,7 @@
 
    * Deploy the contract to Sepolia, and verify the source code.
 
-    Set the `ETHERSCAN_API_KEY` and `ETH_WALLET_PRIVATE_KEY` environment variables to an valid Etherscan API key and Sepolia private key respectively.
+     Set the `ETHERSCAN_API_KEY` and `ETH_WALLET_PRIVATE_KEY` environment variables to an valid Etherscan API key and Sepolia private key respectively.
 
      ```sh
      # In the contracts directory
