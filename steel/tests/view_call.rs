@@ -41,14 +41,14 @@ fn erc20_balance_of() {
 
     // run the preflight
     let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
-    let (input, _) = ViewCall::new(call.clone(), contract)
-        .preflight(env)
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    env.preflight(ViewCall::new(call.clone(), contract))
         .unwrap();
+    let input = env.into_zkvm_input().unwrap();
 
     // execute the call
-    let env = input.into_env();
-    let result = ViewCall::new(call, contract).execute(env);
+    let mut env = input.into_env();
+    let result = env.execute(ViewCall::new(call, contract));
     assert_eq!(result._0, uint!(3000000000000000_U256));
 }
 
@@ -88,17 +88,14 @@ fn uniswap_exact_output_single() {
 
     // run the preflight
     let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
-    let (input, _) = ViewCall::new(call.clone(), contract)
-        .with_caller(caller)
-        .preflight(env)
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    env.preflight(ViewCall::new(call.clone(), contract).with_caller(caller))
         .unwrap();
+    let input = env.into_zkvm_input().unwrap();
 
     // execute the call
-    let env = input.into_env();
-    let result = ViewCall::new(call, contract)
-        .with_caller(caller)
-        .execute(env);
+    let mut env = input.into_env();
+    let result = env.execute(ViewCall::new(call, contract).with_caller(caller));
     assert_eq!(result.amountIn, uint!(112537714517_U256));
 }
 
@@ -107,10 +104,8 @@ fn uniswap_exact_output_single() {
 fn golden(call: impl SolCall, contract: Address, caller: Address) {
     let client = EthersClient::new_client("<RPC-URL>", 3, 500).unwrap();
     let provider = CachedProvider::new(RPC_CACHE_FILE.into(), EthersProvider::new(client)).unwrap();
-    let env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
 
-    ViewCall::new(call, contract)
-        .with_caller(caller)
-        .preflight(env)
+    env.preflight(ViewCall::new(call, contract).with_caller(caller))
         .unwrap();
 }

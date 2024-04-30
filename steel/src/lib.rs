@@ -136,6 +136,58 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
     pub fn header(&self) -> &H {
         self.header.inner()
     }
+
+    pub fn execute<C>(&mut self, view_call: ViewCall<C>) -> C::Return
+    where
+        <D as Database>::Error: Debug,
+        C: SolCall,
+    {
+        self.transact(view_call).unwrap()
+    }
+
+    fn transact<C>(&mut self, view_call: ViewCall<C>) -> Result<C::Return, String>
+    where
+        <D as Database>::Error: Debug,
+        C: SolCall,
+    {
+        let mut evm = Evm::builder()
+            .with_db(&mut self.db)
+            .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
+            .modify_block_env(|blk_env| self.header.fill_block_env(blk_env))
+            .build();
+
+        let tx_env = evm.tx_mut();
+        tx_env.caller = view_call.caller;
+        tx_env.gas_limit = ViewCall::<C>::GAS_LIMIT;
+        tx_env.transact_to = TransactTo::call(view_call.contract);
+        tx_env.value = U256::ZERO;
+        tx_env.data = view_call.call.abi_encode().into();
+
+        let ResultAndState { result, .. } = evm
+            .transact_preverified()
+            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
+        let ExecutionResult::Success { reason, output, .. } = result else {
+            return Err(format!("Call '{}' failed", C::SIGNATURE));
+        };
+        // there must be a return value to decode
+        if reason != SuccessReason::Return {
+            return Err(format!(
+                "Call '{}' did not return: {:?}",
+                C::SIGNATURE,
+                reason
+            ));
+        }
+        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+            format!(
+                "Call '{}' returned invalid type; expected '{}': {:?}",
+                C::SIGNATURE,
+                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
+                err
+            )
+        })?;
+
+        Ok(returns)
+    }
 }
 
 /// A view call to an Ethereum contract.
@@ -166,62 +218,63 @@ impl<C: SolCall> ViewCall<C> {
 
     /// Executes the view call using the given environment.
     #[inline]
-    pub fn execute<D: Database, H: EvmHeader>(self, env: ViewCallEnv<D, H>) -> C::Return
+    // TODO update deprecate notice
+    #[deprecated(since = "0.11.0", note = "TODO")]
+    pub fn execute<D: Database, H: EvmHeader>(self, mut env: ViewCallEnv<D, H>) -> C::Return
     where
         <D as Database>::Error: Debug,
     {
-        self.transact(env.db, env.cfg_env, env.header.inner())
-            .unwrap()
+        env.execute(self)
     }
 
-    /// Transacts a transaction corresponding to the call data.
-    fn transact<D: Database, H: EvmHeader>(
-        &self,
-        db: D,
-        cfg_env: CfgEnvWithHandlerCfg,
-        header: &H,
-    ) -> Result<C::Return, String>
-    where
-        <D as Database>::Error: Debug,
-    {
-        let mut evm = Evm::builder()
-            .with_db(db)
-            .with_cfg_env_with_handler_cfg(cfg_env)
-            .modify_block_env(|blk_env| header.fill_block_env(blk_env))
-            .build();
+    // /// Transacts a transaction corresponding to the call data.
+    // fn transact<D: Database, H: EvmHeader>(
+    //     &self,
+    //     db: D,
+    //     cfg_env: CfgEnvWithHandlerCfg,
+    //     header: &H,
+    // ) -> Result<C::Return, String>
+    // where
+    //     <D as Database>::Error: Debug,
+    // {
+    //     let mut evm = Evm::builder()
+    //         .with_db(db)
+    //         .with_cfg_env_with_handler_cfg(cfg_env)
+    //         .modify_block_env(|blk_env| header.fill_block_env(blk_env))
+    //         .build();
 
-        let tx_env = evm.tx_mut();
-        tx_env.caller = self.caller;
-        tx_env.gas_limit = Self::GAS_LIMIT;
-        tx_env.transact_to = TransactTo::call(self.contract);
-        tx_env.value = U256::ZERO;
-        tx_env.data = self.call.abi_encode().into();
+    //     let tx_env = evm.tx_mut();
+    //     tx_env.caller = self.caller;
+    //     tx_env.gas_limit = Self::GAS_LIMIT;
+    //     tx_env.transact_to = TransactTo::call(self.contract);
+    //     tx_env.value = U256::ZERO;
+    //     tx_env.data = self.call.abi_encode().into();
 
-        let ResultAndState { result, .. } = evm
-            .transact_preverified()
-            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
-        let ExecutionResult::Success { reason, output, .. } = result else {
-            return Err(format!("Call '{}' failed", C::SIGNATURE));
-        };
-        // there must be a return value to decode
-        if reason != SuccessReason::Return {
-            return Err(format!(
-                "Call '{}' did not return: {:?}",
-                C::SIGNATURE,
-                reason
-            ));
-        }
-        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
-            format!(
-                "Call '{}' returned invalid type; expected '{}': {:?}",
-                C::SIGNATURE,
-                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
-                err
-            )
-        })?;
+    //     let ResultAndState { result, .. } = evm
+    //         .transact_preverified()
+    //         .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
+    //     let ExecutionResult::Success { reason, output, .. } = result else {
+    //         return Err(format!("Call '{}' failed", C::SIGNATURE));
+    //     };
+    //     // there must be a return value to decode
+    //     if reason != SuccessReason::Return {
+    //         return Err(format!(
+    //             "Call '{}' did not return: {:?}",
+    //             C::SIGNATURE,
+    //             reason
+    //         ));
+    //     }
+    //     let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+    //         format!(
+    //             "Call '{}' returned invalid type; expected '{}': {:?}",
+    //             C::SIGNATURE,
+    //             <C::ReturnTuple<'_> as SolType>::SOL_NAME,
+    //             err
+    //         )
+    //     })?;
 
-        Ok(returns)
-    }
+    //     Ok(returns)
+    // }
 }
 
 /// A simple read-only EVM database.
