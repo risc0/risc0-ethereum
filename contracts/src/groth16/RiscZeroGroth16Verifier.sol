@@ -114,7 +114,12 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
             abi.encode(betax1, betax2, betay1, betay2),
             abi.encode(gammax1, gammax2, gammay1, gammay2),
             abi.encode(deltax1, deltax2, deltay1, deltay2),
-            abi.encode(IC0x, IC0y, IC1x, IC1y, IC2x, IC2y, IC3x, IC3y, IC4x, IC4y, IC5x, IC5y)
+            abi.encode(IC0x, IC0y),
+            abi.encode(IC1x, IC1y),
+            abi.encode(IC2x, IC2y),
+            abi.encode(IC3x, IC3y),
+            abi.encode(IC4x, IC4y),
+            abi.encode(IC5x, IC5y)
         )
     );
 
