@@ -226,55 +226,6 @@ impl<C: SolCall> ViewCall<C> {
     {
         env.execute(self)
     }
-
-    // /// Transacts a transaction corresponding to the call data.
-    // fn transact<D: Database, H: EvmHeader>(
-    //     &self,
-    //     db: D,
-    //     cfg_env: CfgEnvWithHandlerCfg,
-    //     header: &H,
-    // ) -> Result<C::Return, String>
-    // where
-    //     <D as Database>::Error: Debug,
-    // {
-    //     let mut evm = Evm::builder()
-    //         .with_db(db)
-    //         .with_cfg_env_with_handler_cfg(cfg_env)
-    //         .modify_block_env(|blk_env| header.fill_block_env(blk_env))
-    //         .build();
-
-    //     let tx_env = evm.tx_mut();
-    //     tx_env.caller = self.caller;
-    //     tx_env.gas_limit = Self::GAS_LIMIT;
-    //     tx_env.transact_to = TransactTo::call(self.contract);
-    //     tx_env.value = U256::ZERO;
-    //     tx_env.data = self.call.abi_encode().into();
-
-    //     let ResultAndState { result, .. } = evm
-    //         .transact_preverified()
-    //         .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
-    //     let ExecutionResult::Success { reason, output, .. } = result else {
-    //         return Err(format!("Call '{}' failed", C::SIGNATURE));
-    //     };
-    //     // there must be a return value to decode
-    //     if reason != SuccessReason::Return {
-    //         return Err(format!(
-    //             "Call '{}' did not return: {:?}",
-    //             C::SIGNATURE,
-    //             reason
-    //         ));
-    //     }
-    //     let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
-    //         format!(
-    //             "Call '{}' returned invalid type; expected '{}': {:?}",
-    //             C::SIGNATURE,
-    //             <C::ReturnTuple<'_> as SolType>::SOL_NAME,
-    //             err
-    //         )
-    //     })?;
-
-    //     Ok(returns)
-    // }
 }
 
 /// A simple read-only EVM database.
