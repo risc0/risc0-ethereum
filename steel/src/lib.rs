@@ -17,13 +17,14 @@ use alloy_primitives::{
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use alloy_sol_types::{sol, SolCall, SolType};
+use elsa::FrozenMap;
 use revm::{
     db::WrapDatabaseRef,
     primitives::{
-        db::Database, AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult,
-        HashMap, ResultAndState, SpecId, SuccessReason, TransactTo,
+        AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap,
+        ResultAndState, SpecId, SuccessReason, TransactTo,
     },
-    DatabaseRef, Evm,
+    Database, DatabaseRef, Evm,
 };
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, fmt::Debug, rc::Rc};
@@ -103,7 +104,7 @@ pub struct ViewCallEnv<D, H: EvmHeader> {
     header: Sealed<H>,
 }
 
-impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
+impl<D, H: EvmHeader> ViewCallEnv<D, H> {
     /// Creates a new view call environment.
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
@@ -139,38 +140,36 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
     }
 
     /// Execute the call on the [ViewCallEnv]. This might modify the database
-    pub fn execute<C>(&mut self, view_call: ViewCall<C>) -> C::Return
+    pub fn execute<C>(&self, view_call: ViewCall<C>) -> C::Return
     where
-        <D as Database>::Error: Debug,
+        D: DatabaseRef,
+        <D as DatabaseRef>::Error: Debug,
         C: SolCall,
     {
-        self.transact(view_call).unwrap()
+        self.transact_ref(view_call).unwrap()
     }
 
     /// Executes a view call using the [ViewCallEnv].
+    fn transact_ref<C>(&self, view_call: ViewCall<C>) -> Result<C::Return, String>
+    where
+        D: DatabaseRef,
+        <D as DatabaseRef>::Error: Debug,
+        C: SolCall,
+    {
+        view_call.transact_internal(
+            WrapDatabaseRef(&self.db),
+            self.cfg_env.clone(),
+            self.header.inner(),
+        )
+    }
+    /// Executes a view call using the [ViewCallEnv].
     fn transact<C>(&mut self, view_call: ViewCall<C>) -> Result<C::Return, String>
     where
+        D: Database,
         <D as Database>::Error: Debug,
         C: SolCall,
     {
         view_call.transact_internal(&mut self.db, self.cfg_env.clone(), self.header.inner())
-    }
-}
-
-impl<D: DatabaseRef, H: EvmHeader> ViewCallEnv<D, H> {
-    /// Execute the view call without modifying the [ViewCallEnv] or db within.
-    pub fn execute_ref<C>(&self, view_call: ViewCall<C>) -> C::Return
-    where
-        <D as DatabaseRef>::Error: Debug,
-        C: SolCall,
-    {
-        view_call
-            .transact_internal(
-                WrapDatabaseRef(&self.db),
-                self.cfg_env.clone(),
-                self.header.inner(),
-            )
-            .unwrap()
     }
 }
 
@@ -206,9 +205,9 @@ impl<C: SolCall> ViewCall<C> {
         since = "0.11.0",
         note = "please use `env.execute(..)` (ViewCallEnv::execute) instead"
     )]
-    pub fn execute<D: Database, H: EvmHeader>(self, mut env: ViewCallEnv<D, H>) -> C::Return
+    pub fn execute<D: DatabaseRef, H: EvmHeader>(self, mut env: ViewCallEnv<D, H>) -> C::Return
     where
-        <D as Database>::Error: Debug,
+        <D as DatabaseRef>::Error: Debug,
     {
         env.execute(self)
     }
@@ -276,7 +275,8 @@ pub struct StateDB {
     contracts: HashMap<B256, Bytes>,
     block_hashes: HashMap<u64, B256>,
 
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
+    // TODO Cache to avoid rehashing the keccak address?
+    account_storage: FrozenMap<Address, Box<Option<Rc<MerkleTrie>>>>,
 }
 
 impl StateDB {
@@ -300,17 +300,17 @@ impl StateDB {
             contracts,
             storage_tries,
             block_hashes,
-            account_storage: HashMap::new(),
+            account_storage: Default::default(),
         }
     }
 }
 
-impl Database for StateDB {
+impl DatabaseRef for StateDB {
     /// The database does not return any errors.
     type Error = Infallible;
 
     #[inline]
-    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+    fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         let account = self
             .state_trie
             .get_rlp::<StateAccount>(keccak256(address))
@@ -320,7 +320,7 @@ impl Database for StateDB {
                 // link storage trie to the account, if it exists
                 if let Some(storage_trie) = self.storage_tries.get(&account.storage_root) {
                     self.account_storage
-                        .insert(address, Some(storage_trie.clone()));
+                        .insert(address, Box::new(Some(storage_trie.clone())));
                 }
 
                 Ok(Some(AccountInfo {
@@ -331,7 +331,7 @@ impl Database for StateDB {
                 }))
             }
             None => {
-                self.account_storage.insert(address, None);
+                self.account_storage.insert(address, Box::new(None));
 
                 Ok(None)
             }
@@ -339,7 +339,7 @@ impl Database for StateDB {
     }
 
     #[inline]
-    fn code_by_hash(&mut self, hash: B256) -> Result<Bytecode, Self::Error> {
+    fn code_by_hash_ref(&self, hash: B256) -> Result<Bytecode, Self::Error> {
         let code = self
             .contracts
             .get(&hash)
@@ -348,7 +348,7 @@ impl Database for StateDB {
     }
 
     #[inline]
-    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
+    fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
         let storage = self
             .account_storage
             .get(&address)
@@ -365,7 +365,7 @@ impl Database for StateDB {
     }
 
     #[inline]
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
+    fn block_hash_ref(&self, number: U256) -> Result<B256, Self::Error> {
         // block number is never bigger then u64::MAX
         let number: u64 = number.to();
         let hash = self
