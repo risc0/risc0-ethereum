@@ -163,6 +163,7 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
         )
     }
     /// Executes a view call using the [ViewCallEnv].
+    #[cfg(feature = "host")]
     fn transact<C>(&mut self, view_call: ViewCall<C>) -> Result<C::Return, String>
     where
         D: Database,

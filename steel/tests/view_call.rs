@@ -47,7 +47,7 @@ fn erc20_balance_of() {
     let input = env.into_zkvm_input().unwrap();
 
     // execute the call
-    let mut env = input.into_env();
+    let env = input.into_env();
     let result = env.execute(ViewCall::new(call, contract));
     assert_eq!(result._0, uint!(3000000000000000_U256));
 }
@@ -94,7 +94,7 @@ fn uniswap_exact_output_single() {
     let input = env.into_zkvm_input().unwrap();
 
     // execute the call
-    let mut env = input.into_env();
+    let env = input.into_env();
     let result = env.execute(ViewCall::new(call, contract).with_caller(caller));
     assert_eq!(result.amountIn, uint!(112537714517_U256));
 }

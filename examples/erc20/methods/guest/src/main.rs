@@ -50,7 +50,7 @@ fn main() {
     // Converts the input into a `ViewCallEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
     // header provided in the input.
-    let mut view_call_env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    let view_call_env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     // Commit the block hash and number used when deriving `view_call_env` to the journal.
     env::commit_slice(&view_call_env.block_commitment().abi_encode());
 
