@@ -806,26 +806,14 @@ dependencies = [
 
 [[package]]
 name = "bonsai-sdk"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e0f26687ed447c77b1a40a3665bf88e8327b6de65a74f521544bd225982f589"
-dependencies = [
- "reqwest",
- "risc0-groth16 0.21.0",
- "serde",
- "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "bonsai-sdk"
 version = "0.8.0-rc.1"
 source = "git+https://github.com/risc0/risc0?branch=main#5a1a3f15f0d58d840abbaf751e3408dc7e07ae5d"
 dependencies = [
  "reqwest",
- "risc0-groth16 0.22.0-alpha.1",
+ "risc0-groth16",
  "serde",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -4176,8 +4164,8 @@ source = "git+https://github.com/risc0/risc0?branch=main#5a1a3f15f0d58d840abbaf7
 dependencies = [
  "anyhow",
  "elf",
- "risc0-zkp 0.22.0-alpha.1",
- "risc0-zkvm-platform 0.22.0-alpha.1",
+ "risc0-zkp",
+ "risc0-zkvm-platform",
  "serde",
  "tracing",
 ]
@@ -4193,8 +4181,8 @@ dependencies = [
  "dirs",
  "docker-generate",
  "risc0-binfmt",
- "risc0-zkp 0.22.0-alpha.1",
- "risc0-zkvm-platform 0.22.0-alpha.1",
+ "risc0-zkp",
+ "risc0-zkvm-platform",
  "serde",
  "serde_json",
  "tempfile",
@@ -4208,7 +4196,7 @@ dependencies = [
  "hex",
  "pretty_assertions",
  "risc0-build",
- "risc0-zkp 0.22.0-alpha.1",
+ "risc0-zkp",
 ]
 
 [[package]]
@@ -4238,8 +4226,8 @@ dependencies = [
  "rand",
  "rayon",
  "risc0-circuit-recursion-sys",
- "risc0-core 0.22.0-alpha.1",
- "risc0-zkp 0.22.0-alpha.1",
+ "risc0-core",
+ "risc0-zkp",
  "sha2 0.10.8",
  "tracing",
  "zip",
@@ -4252,7 +4240,7 @@ source = "git+https://github.com/risc0/risc0?branch=main#5a1a3f15f0d58d840abbaf7
 dependencies = [
  "glob",
  "risc0-build-kernel",
- "risc0-core 0.22.0-alpha.1",
+ "risc0-core",
 ]
 
 [[package]]
@@ -4274,9 +4262,9 @@ dependencies = [
  "rayon",
  "risc0-binfmt",
  "risc0-circuit-rv32im-sys",
- "risc0-core 0.22.0-alpha.1",
- "risc0-zkp 0.22.0-alpha.1",
- "risc0-zkvm-platform 0.22.0-alpha.1",
+ "risc0-core",
+ "risc0-zkp",
+ "risc0-zkvm-platform",
  "serde",
  "sha2 0.10.8",
  "tracing",
@@ -4289,17 +4277,7 @@ source = "git+https://github.com/risc0/risc0?branch=main#5a1a3f15f0d58d840abbaf7
 dependencies = [
  "glob",
  "risc0-build-kernel",
- "risc0-core 0.22.0-alpha.1",
-]
-
-[[package]]
-name = "risc0-core"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02e0cbd09d03c23b572b66cd96a56143adb22bf895aca89c1a153ccebedaa0b4"
-dependencies = [
- "bytemuck",
- "rand_core",
+ "risc0-core",
 ]
 
 [[package]]
@@ -4318,7 +4296,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
- "bonsai-sdk 0.7.0",
+ "bonsai-sdk",
  "ethers",
  "hex",
  "risc0-zkvm",
@@ -4334,7 +4312,7 @@ dependencies = [
  "axum",
  "backoff",
  "bincode",
- "bonsai-sdk 0.7.0",
+ "bonsai-sdk",
  "bytemuck",
  "clap",
  "displaydoc",
@@ -4379,7 +4357,7 @@ dependencies = [
  "alloy-primitives",
  "anyhow",
  "bincode",
- "bonsai-sdk 0.7.0",
+ "bonsai-sdk",
  "clap",
  "env_logger 0.10.2",
  "ethers",
@@ -4387,23 +4365,6 @@ dependencies = [
  "log",
  "risc0-ethereum-contracts",
  "risc0-zkvm",
-]
-
-[[package]]
-name = "risc0-groth16"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da1e9b8dae3f9c3862b6278b2812989a2f5a537975e5bd6a687f07cf1df68a36"
-dependencies = [
- "anyhow",
- "ark-bn254",
- "ark-groth16",
- "ark-serialize 0.4.2",
- "hex",
- "num-bigint 0.4.4",
- "num-derive",
- "risc0-zkp 0.21.0",
- "serde",
 ]
 
 [[package]]
@@ -4420,8 +4381,8 @@ dependencies = [
  "num-bigint 0.4.4",
  "num-derive",
  "num-traits",
- "risc0-core 0.22.0-alpha.1",
- "risc0-zkp 0.22.0-alpha.1",
+ "risc0-core",
+ "risc0-zkp",
  "serde",
  "serde_json",
  "tempfile",
@@ -4476,26 +4437,6 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkp"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b96b035f744ecaaa7e9809c699bc85cf669cbab6f297f141d918e9b4c8098b79"
-dependencies = [
- "anyhow",
- "blake2",
- "bytemuck",
- "digest 0.10.7",
- "hex",
- "paste",
- "rand_core",
- "risc0-core 0.21.0",
- "risc0-zkvm-platform 0.21.0",
- "serde",
- "sha2 0.10.8",
- "tracing",
-]
-
-[[package]]
-name = "risc0-zkp"
 version = "0.22.0-alpha.1"
 source = "git+https://github.com/risc0/risc0?branch=main#5a1a3f15f0d58d840abbaf751e3408dc7e07ae5d"
 dependencies = [
@@ -4514,9 +4455,9 @@ dependencies = [
  "rand",
  "rand_core",
  "rayon",
- "risc0-core 0.22.0-alpha.1",
+ "risc0-core",
  "risc0-sys",
- "risc0-zkvm-platform 0.22.0-alpha.1",
+ "risc0-zkvm-platform",
  "serde",
  "sha2 0.10.8",
  "tracing",
@@ -4530,7 +4471,7 @@ dependencies = [
  "addr2line",
  "anyhow",
  "bincode",
- "bonsai-sdk 0.8.0-rc.1",
+ "bonsai-sdk",
  "bytemuck",
  "bytes",
  "cfg-if",
@@ -4547,10 +4488,10 @@ dependencies = [
  "risc0-binfmt",
  "risc0-circuit-recursion",
  "risc0-circuit-rv32im",
- "risc0-core 0.22.0-alpha.1",
- "risc0-groth16 0.22.0-alpha.1",
- "risc0-zkp 0.22.0-alpha.1",
- "risc0-zkvm-platform 0.22.0-alpha.1",
+ "risc0-core",
+ "risc0-groth16",
+ "risc0-zkp",
+ "risc0-zkvm-platform",
  "rrs-lib",
  "rustc-demangle",
  "semver 1.0.22",
@@ -4560,12 +4501,6 @@ dependencies = [
  "tracing",
  "typetag",
 ]
-
-[[package]]
-name = "risc0-zkvm-platform"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03b6378c9e407be18a1560ed030fd87fb6056293c56263efac46c507ae97e0d7"
 
 [[package]]
 name = "risc0-zkvm-platform"
