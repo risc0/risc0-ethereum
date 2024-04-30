@@ -13,14 +13,14 @@ You can also find the documentation for RISC Zero, including guides for [writing
 
 ## Contracts
 
-RISC Zero's Ethereum contracts, including the on-chain verifier, can be found in the [contracts] directory.
+RISC Zero's Ethereum contracts, including the on-chain verifier for all RISC Zero Groth16 proofs, can be found in the [contracts] directory.
 
 ## Steel
 
-A library to query Ethereum state, or any other EVM-based blockchain state.
-It leverages the [alloy], giving developers a familiar and high quality interface for querying ethereum by making view calls.
+A powerful library for querying and generating verifiable proofs over Ethereum or other EVM-based blockchain state. It leverages [alloy], giving developers a familiar and high quality interface for querying Ethereum via view calls. Steel makes it easy to securely move execution off chain saving gas and unlocking new use cases on Ethereum.
 
-You can install [Steel] with `cargo add risc0-steel`, check out the exmaples in the [examples directory](./examples/erc20-counter).
+
+You can install [Steel] with `cargo add risc0-steel`, check out the examples in the [examples directory](./examples/erc20-counter).
 
 ## Relay
 
