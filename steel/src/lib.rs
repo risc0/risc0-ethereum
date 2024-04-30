@@ -18,11 +18,12 @@ use alloy_primitives::{
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use alloy_sol_types::{sol, SolCall, SolType};
 use revm::{
+    db::WrapDatabaseRef,
     primitives::{
         db::Database, AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult,
         HashMap, ResultAndState, SpecId, SuccessReason, TransactTo,
     },
-    Evm,
+    DatabaseRef, Evm,
 };
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, fmt::Debug, rc::Rc};
@@ -96,7 +97,7 @@ sol! {
 }
 
 /// The [ViewCall] is configured from this object.
-pub struct ViewCallEnv<D: Database, H: EvmHeader> {
+pub struct ViewCallEnv<D, H: EvmHeader> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
@@ -137,6 +138,7 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
         self.header.inner()
     }
 
+    /// Execute the call on the [ViewCallEnv]. This might modify the database
     pub fn execute<C>(&mut self, view_call: ViewCall<C>) -> C::Return
     where
         <D as Database>::Error: Debug,
@@ -145,48 +147,30 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
         self.transact(view_call).unwrap()
     }
 
+    /// Executes a view call using the [ViewCallEnv].
     fn transact<C>(&mut self, view_call: ViewCall<C>) -> Result<C::Return, String>
     where
         <D as Database>::Error: Debug,
         C: SolCall,
     {
-        let mut evm = Evm::builder()
-            .with_db(&mut self.db)
-            .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
-            .modify_block_env(|blk_env| self.header.fill_block_env(blk_env))
-            .build();
+        view_call.transact_internal(&mut self.db, self.cfg_env.clone(), self.header.inner())
+    }
+}
 
-        let tx_env = evm.tx_mut();
-        tx_env.caller = view_call.caller;
-        tx_env.gas_limit = ViewCall::<C>::GAS_LIMIT;
-        tx_env.transact_to = TransactTo::call(view_call.contract);
-        tx_env.value = U256::ZERO;
-        tx_env.data = view_call.call.abi_encode().into();
-
-        let ResultAndState { result, .. } = evm
-            .transact_preverified()
-            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
-        let ExecutionResult::Success { reason, output, .. } = result else {
-            return Err(format!("Call '{}' failed", C::SIGNATURE));
-        };
-        // there must be a return value to decode
-        if reason != SuccessReason::Return {
-            return Err(format!(
-                "Call '{}' did not return: {:?}",
-                C::SIGNATURE,
-                reason
-            ));
-        }
-        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
-            format!(
-                "Call '{}' returned invalid type; expected '{}': {:?}",
-                C::SIGNATURE,
-                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
-                err
+impl<D: DatabaseRef, H: EvmHeader> ViewCallEnv<D, H> {
+    /// Execute the view call without modifying the [ViewCallEnv] or db within.
+    pub fn execute_ref<C>(&self, view_call: ViewCall<C>) -> C::Return
+    where
+        <D as DatabaseRef>::Error: Debug,
+        C: SolCall,
+    {
+        view_call
+            .transact_internal(
+                WrapDatabaseRef(&self.db),
+                self.cfg_env.clone(),
+                self.header.inner(),
             )
-        })?;
-
-        Ok(returns)
+            .unwrap()
     }
 }
 
@@ -227,6 +211,58 @@ impl<C: SolCall> ViewCall<C> {
         <D as Database>::Error: Debug,
     {
         env.execute(self)
+    }
+
+    /// Executes a view call using context from the [ViewCallEnv].
+    fn transact_internal<D, H>(
+        self,
+        db: D,
+        cfg_env: CfgEnvWithHandlerCfg,
+        header: &H,
+    ) -> Result<C::Return, String>
+    where
+        D: Database,
+        H: EvmHeader,
+        <D as Database>::Error: Debug,
+        C: SolCall,
+    {
+        let mut evm = Evm::builder()
+            .with_db(db)
+            .with_cfg_env_with_handler_cfg(cfg_env)
+            .modify_block_env(|blk_env| header.fill_block_env(blk_env))
+            .build();
+
+        let tx_env = evm.tx_mut();
+        tx_env.caller = self.caller;
+        tx_env.gas_limit = ViewCall::<C>::GAS_LIMIT;
+        tx_env.transact_to = TransactTo::call(self.contract);
+        tx_env.value = U256::ZERO;
+        tx_env.data = self.call.abi_encode().into();
+
+        let ResultAndState { result, .. } = evm
+            .transact_preverified()
+            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
+        let ExecutionResult::Success { reason, output, .. } = result else {
+            return Err(format!("Call '{}' failed", C::SIGNATURE));
+        };
+        // there must be a return value to decode
+        if reason != SuccessReason::Return {
+            return Err(format!(
+                "Call '{}' did not return: {:?}",
+                C::SIGNATURE,
+                reason
+            ));
+        }
+        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+            format!(
+                "Call '{}' returned invalid type; expected '{}': {:?}",
+                C::SIGNATURE,
+                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
+                err
+            )
+        })?;
+
+        Ok(returns)
     }
 }
 
