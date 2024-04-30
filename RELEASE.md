@@ -11,7 +11,7 @@
 
      * Bump the version of all crates in the workspace to `x.y.z`.
      * Remove the note at the top of `README.md` about being on the `main` branch.
-     * Change the reference for all `risc0` crates (e.g. `risc0-zkvm`) to the latest monorepo release.
+     * Change the reference for all `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
 
    * The other PR should bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
 
