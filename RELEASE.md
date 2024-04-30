@@ -7,11 +7,13 @@
 
 2. Create two version bump PRs:
 
-   * One PR should bump the version on the `release-x.y` branch.
+   * One PR should be to the `release-x.y` branch and do the following:
 
-     Additionally remove the note at the top of `README.md` about being on the `main` branch.
+     * Bump the version of all crates in the workspace to `x.y.z`.
+     * Remove the note at the top of `README.md` about being on the `main` branch.
+     * Change the reference for all `risc0` crates (e.g. `risc0-zkvm`) to the latest monorepo release.
 
-   * The other PR should bump the version on the `main` branch to the next, unreleased, minor version.
+   * The other PR should bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
