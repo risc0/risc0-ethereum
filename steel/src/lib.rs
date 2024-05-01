@@ -89,6 +89,7 @@ impl<H: EvmHeader> ViewCallInput<H> {
 
 sol! {
     /// Solidity struct representing the committed block used for validation.
+    #[derive(Debug, PartialEq, Eq)]
     struct BlockCommitment {
         bytes32 blockHash;
         uint blockNumber;

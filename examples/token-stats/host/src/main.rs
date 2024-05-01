@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy_sol_types::{SolCall, SolValue};
+use alloy_sol_types::SolValue;
 use anyhow::{Context, Result};
 use clap::Parser;
-use core::{CToken, CONTRACT};
+use core::{APRCommitment, CToken, CONTRACT};
 use methods::TOKEN_STATS_ELF;
-use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
+use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthViewCallEnv, ViewCall};
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
 
@@ -41,19 +41,13 @@ fn main() -> Result<()> {
     // chain configuration.
     let mut env =
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
-    let number = env.header().number();
-    let commitment = env.block_commitment();
+    let block_commitment = env.block_commitment();
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let returns = env.preflight(ViewCall::new(CToken::supplyRatePerBlockCall {}, CONTRACT))?;
+    let utilization = env.preflight(ViewCall::new(CToken::getUtilizationCall {}, CONTRACT))?._0;
+    env.preflight(ViewCall::new(CToken::getSupplyRateCall { utilization }, CONTRACT))?._0;
     let input = env.into_zkvm_input()?;
-    println!(
-        "For block {} `{}` returns: {}",
-        number,
-        CToken::supplyRatePerBlockCall::SIGNATURE,
-        returns._0,
-    );
 
     println!("Running the guest with the constructed input:");
     let session_info = {
@@ -66,9 +60,12 @@ fn main() -> Result<()> {
         exec.execute(env, TOKEN_STATS_ELF).context("failed to run executor")?
     };
 
-    // extract the proof from the session info and validate it
-    let bytes = session_info.journal.as_ref();
-    assert_eq!(&bytes[..64], &commitment.abi_encode());
+    let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes, true)?;
+    assert_eq!(block_commitment, apr_commit.commitment);
+
+    // Calculation is handling `/ 10^18 * 100` to match precision for a percentage.
+    let apr = apr_commit.annualSupplyRate as f64 / 10f64.powi(16);
+    println!("Proven APR calculated is: {}%", apr);
 
     Ok(())
 }
