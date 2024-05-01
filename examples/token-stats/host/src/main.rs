@@ -15,7 +15,7 @@
 use alloy_sol_types::{SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use core::{CALL, CALLER, CONTRACT};
+use core::{CToken, CONTRACT};
 use methods::TOKEN_STATS_ELF;
 use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
 use risc0_zkvm::{default_executor, ExecutorEnv};
@@ -39,20 +39,20 @@ fn main() -> Result<()> {
     // Create a view call environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
-    let env =
+    let mut env =
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     let number = env.header().number();
     let commitment = env.block_commitment();
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let (input, returns) = ViewCall::new(CALL, CONTRACT).with_caller(CALLER).preflight(env)?;
+    let returns = env.preflight(ViewCall::new(CToken::supplyRatePerBlockCall {}, CONTRACT))?;
+    let input = env.into_zkvm_input()?;
     println!(
-        "For block {} `{}` returns: {}/{}",
+        "For block {} `{}` returns: {}",
         number,
-        core::IUniswapV2Pair::getReservesCall::SIGNATURE,
-        returns.reserve0,
-        returns.reserve1
+        CToken::supplyRatePerBlockCall::SIGNATURE,
+        returns._0,
     );
 
     println!("Running the guest with the constructed input:");
