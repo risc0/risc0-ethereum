@@ -17,11 +17,13 @@ use alloy_sol_types::sol;
 use risc0_steel::BlockCommitment;
 
 /// Address of Compound USDC.
+/// 
+/// https://etherscan.io/address/0x9743591b23b83ed41e6abcc84016a4c7702c706e#code
 pub const CONTRACT: Address = address!("c3d688B66703497DAA19211EEdff47f25384cdc3");
 
 sol! {
-    /// Simplified interface of Uniswap pair contract using only what is needed.
-    interface CToken {
+    /// Simplified interface of the Compound Finance Comet contract
+    interface CometMainInterface {
         function getSupplyRate(uint utilization) virtual public view returns (uint64);
         function getUtilization() public view returns (uint);
     }

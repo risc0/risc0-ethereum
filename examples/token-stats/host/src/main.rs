@@ -15,7 +15,7 @@
 use alloy_sol_types::SolValue;
 use anyhow::{Context, Result};
 use clap::Parser;
-use core::{APRCommitment, CToken, CONTRACT};
+use core::{APRCommitment, CometMainInterface, CONTRACT};
 use methods::TOKEN_STATS_ELF;
 use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthViewCallEnv, ViewCall};
 use risc0_zkvm::{default_executor, ExecutorEnv};
@@ -45,8 +45,10 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let utilization = env.preflight(ViewCall::new(CToken::getUtilizationCall {}, CONTRACT))?._0;
-    env.preflight(ViewCall::new(CToken::getSupplyRateCall { utilization }, CONTRACT))?._0;
+    let utilization =
+        env.preflight(ViewCall::new(CometMainInterface::getUtilizationCall {}, CONTRACT))?._0;
+    env.preflight(ViewCall::new(CometMainInterface::getSupplyRateCall { utilization }, CONTRACT))?
+        ._0;
     let input = env.into_zkvm_input()?;
 
     println!("Running the guest with the constructed input:");
