@@ -218,8 +218,10 @@ impl<C: SolCall> ViewCall<C> {
 
     /// Executes the view call using the given environment.
     #[inline]
-    // TODO update deprecate notice
-    #[deprecated(since = "0.11.0", note = "TODO")]
+    #[deprecated(
+        since = "0.11.0",
+        note = "please use `env.execute(..)` (ViewCallEnv::execute) instead"
+    )]
     pub fn execute<D: Database, H: EvmHeader>(self, mut env: ViewCallEnv<D, H>) -> C::Return
     where
         <D as Database>::Error: Debug,

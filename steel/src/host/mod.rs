@@ -68,8 +68,10 @@ impl<C: SolCall> ViewCall<C> {
     /// Executes the call to derive the corresponding [ViewCallInput].
     ///
     /// This method is used to preflight the call and get the required input for the guest.
-    // TODO
-    #[deprecated(since = "0.11.0", note = "TODO write note")]
+    #[deprecated(
+        since = "0.11.0",
+        note = "please use `env.preflight(..)` (ViewCallEnv::preflight) instead"
+    )]
     pub fn preflight<P: Provider>(
         self,
         mut env: ViewCallEnv<ProofDb<P>, P::Header>,
@@ -91,7 +93,9 @@ impl<C: SolCall> ViewCall<C> {
 }
 
 impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    // TODO docs/rename maybe
+    /// Executes the call to derive the corresponding [ViewCallInput].
+    ///
+    /// This method is used to preflight the call and get the required input for the guest.
     pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return> {
         info!(
             "Executing preflight for '{}' with caller {} on contract {}",
@@ -104,7 +108,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         self.transact(view_call).map_err(|err| anyhow!(err))
     }
 
-    // TODO this name probably isn't great
+    /// Convert the env into input that can be passed to the guest program.
     pub fn into_zkvm_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
         let db = &self.db;
         // retrieve EIP-1186 proofs for all accounts
