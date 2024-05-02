@@ -84,7 +84,7 @@ impl<C: SolCall> ViewCall<C> {
         );
 
         // initialize the database and execute the transaction
-        let transaction_result = env.transact(self).map_err(|err| anyhow!(err))?;
+        let transaction_result = env.preflight(self)?;
 
         let input = env.into_zkvm_input()?;
 
