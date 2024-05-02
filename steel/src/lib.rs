@@ -136,17 +136,6 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
     pub fn header(&self) -> &H {
         self.header.inner()
     }
-
-    /// Executes a view call using the [ViewCallEnv].
-    #[cfg(feature = "host")]
-    fn transact<C>(&mut self, view_call: ViewCall<C>) -> Result<C::Return, String>
-    where
-        D: Database,
-        <D as Database>::Error: Debug,
-        C: SolCall,
-    {
-        view_call.transact_internal(&mut self.db, self.cfg_env.clone(), self.header.inner())
-    }
 }
 
 impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
@@ -157,7 +146,7 @@ impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
     {
         let db = WrapStateDb::new(&self.db);
         view_call
-            .transact_internal(db, self.cfg_env.clone(), self.header.inner())
+            .transact(db, self.cfg_env.clone(), self.header.inner())
             .unwrap()
     }
 }
@@ -199,7 +188,7 @@ impl<C: SolCall> ViewCall<C> {
     }
 
     /// Executes a view call using context from the [ViewCallEnv].
-    fn transact_internal<D, H>(
+    fn transact<D, H>(
         self,
         db: D,
         cfg_env: CfgEnvWithHandlerCfg,
@@ -209,7 +198,6 @@ impl<C: SolCall> ViewCall<C> {
         D: Database,
         H: EvmHeader,
         <D as Database>::Error: Debug,
-        C: SolCall,
     {
         let mut evm = Evm::builder()
             .with_db(db)
@@ -219,7 +207,7 @@ impl<C: SolCall> ViewCall<C> {
 
         let tx_env = evm.tx_mut();
         tx_env.caller = self.caller;
-        tx_env.gas_limit = ViewCall::<C>::GAS_LIMIT;
+        tx_env.gas_limit = Self::GAS_LIMIT;
         tx_env.transact_to = TransactTo::call(self.contract);
         tx_env.value = U256::ZERO;
         tx_env.data = self.call.abi_encode().into();

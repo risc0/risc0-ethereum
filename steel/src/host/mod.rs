@@ -76,13 +76,6 @@ impl<C: SolCall> ViewCall<C> {
         self,
         mut env: ViewCallEnv<ProofDb<P>, P::Header>,
     ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
-        info!(
-            "Executing preflight for '{}' with caller {} on contract {}",
-            C::SIGNATURE,
-            self.caller,
-            self.contract
-        );
-
         // initialize the database and execute the transaction
         let transaction_result = env.preflight(self)?;
 
@@ -105,7 +98,9 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         );
 
         // initialize the database and execute the transaction
-        self.transact(view_call).map_err(|err| anyhow!(err))
+        view_call
+            .transact(&mut self.db, self.cfg_env.clone(), self.header.inner())
+            .map_err(|err| anyhow!(err))
     }
 
     /// Convert the env into input that can be passed to the guest program.
