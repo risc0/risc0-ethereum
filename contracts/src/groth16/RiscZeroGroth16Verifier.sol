@@ -108,6 +108,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// chunks. These values can be derived from the digest by splitting the digest in half and
     /// then reversing the bytes of each.
     function splitDigest(bytes32 digest) internal pure returns (uint256, uint256) {
+        // reversed has the numberic value of interpretting the digest as a little-endian number.
         uint256 reversed = reverseByteOrderUint256(uint256(digest));
         return (uint256(uint128(uint256(reversed))), uint256(reversed >> 128));
     }
