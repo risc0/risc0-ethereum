@@ -50,7 +50,7 @@ impl<H: EvmHeader> ViewCallInput<H> {
     /// Converts the input into a [ViewCallEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
-    pub fn into_env(self) -> ViewCallEnv<StateDb, H> {
+    pub fn into_env(self) -> ViewCallEnv<StateDB, H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
         assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
@@ -76,7 +76,7 @@ impl<H: EvmHeader> ViewCallInput<H> {
             previous_header = ancestor;
         }
 
-        let db = StateDb::new(
+        let db = StateDB::new(
             self.state_trie,
             self.storage_tries,
             self.contracts,
@@ -149,7 +149,7 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
     }
 }
 
-impl<H: EvmHeader> ViewCallEnv<StateDb, H> {
+impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
     /// Execute the call on the [ViewCallEnv]. This might modify the database
     pub fn execute<C>(&self, view_call: ViewCall<C>) -> C::Return
     where
@@ -194,7 +194,7 @@ impl<C: SolCall> ViewCall<C> {
         since = "0.11.0",
         note = "please use `env.execute(..)` (ViewCallEnv::execute) instead"
     )]
-    pub fn execute<H: EvmHeader>(self, env: ViewCallEnv<StateDb, H>) -> C::Return {
+    pub fn execute<H: EvmHeader>(self, env: ViewCallEnv<StateDB, H>) -> C::Return {
         env.execute(self)
     }
 
@@ -255,14 +255,14 @@ impl<C: SolCall> ViewCall<C> {
 ///
 /// It is backed by a single [MerkleTrie] for the accounts and one [MerkleTrie] each for the
 /// accounts' storages. It panics when data is queried that is not contained in the tries.
-pub struct StateDb {
+pub struct StateDB {
     state_trie: MerkleTrie,
     storage_tries: HashMap<B256, Rc<MerkleTrie>>,
     contracts: HashMap<B256, Bytes>,
     block_hashes: HashMap<u64, B256>,
 }
 
-impl StateDb {
+impl StateDB {
     /// Creates a new state database from the given tries.
     pub fn new(
         state_trie: MerkleTrie,
@@ -314,13 +314,13 @@ impl StateDb {
 }
 
 pub struct WrapStateDb<'a> {
-    inner: &'a StateDb,
+    inner: &'a StateDB,
     account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
 }
 
 impl<'a> WrapStateDb<'a> {
     /// Creates a new [Database] from the given [StateDb].
-    fn new(inner: &'a StateDb) -> Self {
+    fn new(inner: &'a StateDB) -> Self {
         Self {
             inner,
             account_storage: HashMap::new(),
