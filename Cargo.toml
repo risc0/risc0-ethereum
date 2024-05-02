@@ -42,4 +42,3 @@ test-log = "0.2.15"
 thiserror = "1.0"
 tokio = { version = "1.35" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-elsa = "1.10"
