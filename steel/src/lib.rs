@@ -313,7 +313,7 @@ impl StateDB {
     }
 }
 
-pub struct WrapStateDb<'a> {
+struct WrapStateDb<'a> {
     inner: &'a StateDB,
     account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
 }
