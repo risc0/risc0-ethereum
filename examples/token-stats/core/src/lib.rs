@@ -34,5 +34,6 @@ sol! {
     struct APRCommitment {
         BlockCommitment commitment;
         uint64 annualSupplyRate;
+        uint256 queryHeight;
     }
 }
