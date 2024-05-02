@@ -1,4 +1,6 @@
-# Steel - Ethereum View Calls in RISC Zero
+![Steel banner](./steel-banner.png)
+
+# Steel - Hardened off-chain Execution for EVM dapps
 
 > ***WARNING***: This library is still in its experimental phase and under active development. Production use is not recommended until the software has matured sufficiently.
 
