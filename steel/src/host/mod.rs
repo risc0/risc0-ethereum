@@ -106,10 +106,14 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
     /// Convert the env into input that can be passed to the guest program.
     pub fn into_zkvm_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
         let db = &self.db;
+
+        // use the same provider as the database
+        let provider = db.provider();
+
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
         for (address, storage_slots) in db.accounts() {
-            let proof = db.provider().get_proof(
+            let proof = provider.get_proof(
                 *address,
                 storage_slots.iter().map(|v| B256::from(*v)).collect(),
                 db.block_number(),
@@ -149,8 +153,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
             for number in (block_hash_min_number..db.block_number()).rev() {
-                let header = db
-                    .provider()
+                let header = provider
                     .get_block_header(number)?
                     .with_context(|| format!("block {number} not found"))?;
                 ancestors.push(header);
