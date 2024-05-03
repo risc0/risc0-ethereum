@@ -108,24 +108,26 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
     /// @dev This value is computed at compile time, and it encoded in multiple levels because the
     /// Solidity optimizer will fail if too many arguments are given to the abi.encode function.
-    bytes32 internal constant SELECTOR_GROTH16_VKEY = keccak256(
-        abi.encode(
-            abi.encode(alphax, alphay),
-            abi.encode(betax1, betax2, betay1, betay2),
-            abi.encode(gammax1, gammax2, gammay1, gammay2),
-            abi.encode(deltax1, deltax2, deltay1, deltay2),
-            abi.encode(IC0x, IC0y),
-            abi.encode(IC1x, IC1y),
-            abi.encode(IC2x, IC2y),
-            abi.encode(IC3x, IC3y),
-            abi.encode(IC4x, IC4y),
-            abi.encode(IC5x, IC5y)
-        )
+    bytes32 internal constant SELECTOR_GROTH16_VKEY = sha256(
+        abi.encodePacked(""/* DO NOT MERGE
+            // tag
+            sha256("risc0_groth16.VerifyingKey"),
+            // down
+            abi.encodePacked(alphax, alphay),
+            abi.encodePacked(betax1, betax2, betay1, betay2),
+            abi.encodePacked(gammax1, gammax2, gammay1, gammay2),
+            abi.encodePacked(deltax1, deltax2, deltay1, deltay2),
+            abi.encodePacked(IC5x, IC5y),
+            abi.encodePacked(IC4x, IC4y),
+            abi.encodePacked(IC3x, IC3y),
+            abi.encodePacked(IC2x, IC2y),
+            abi.encodePacked(IC1x, IC1y),
+            abi.encodePacked(IC0x, IC0y)
+        */)
     );
 
-    constructor(uint256 control_id_0, uint256 control_id_1, uint256 bn254_control_id) {
-        CONTROL_ID_0 = control_id_0;
-        CONTROL_ID_1 = control_id_1;
+    constructor(uint256 control_root, uint256 bn254_control_id) {
+        (CONTROL_ID_0, CONTROL_ID_1) = splitDigest(bytes32(control_root));
         BN254_CONTROL_ID = bn254_control_id;
 
         SELECTOR = bytes4(
