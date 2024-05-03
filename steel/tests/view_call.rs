@@ -16,7 +16,7 @@
 
 use alloy_primitives::{address, uint, Address, BlockNumber, U256};
 use alloy_sol_types::{sol, SolCall};
-use risc0_ethereum_view_call::{
+use risc0_steel::{
     ethereum::EthViewCallEnv,
     host::{
         provider::{CachedProvider, EthFileProvider, EthersProvider},

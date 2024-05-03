@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["build", "contracts", "ffi", "relay", "relay/tests/methods", "view-call"]
+members = ["build", "contracts", "ffi", "relay", "relay/tests/methods", "steel"]
 
 [workspace.package]
-version = "0.9.0-alpha.1"
+version = "0.11.0-alpha.1"
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://risczero.com/"
@@ -11,11 +11,11 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
-risc0-build-ethereum = { version = "0.9.0-alpha.1", default-features = false, path = "build" }
-risc0-ethereum-contracts = { version = "0.9.0-alpha.1", default-features = false, path = "contracts" }
-risc0-ethereum-relay = { version = "0.9.0-alpha.1", default-features = false, path = "relay" }
-risc0-ethereum-view-call = { version = "0.9.0-alpha.1", default-features = false, path = "view-call" }
-risc0-forge-ffi = { version = "0.9.0-alpha.1", default-features = false, path = "ffi" }
+risc0-build-ethereum = { version = "0.11.0-alpha.1", default-features = false, path = "build" }
+risc0-ethereum-contracts = { version = "0.11.0-alpha.1", default-features = false, path = "contracts" }
+risc0-ethereum-relay = { version = "0.11.0-alpha.1", default-features = false, path = "relay" }
+risc0-steel = { version = "0.11.0-alpha.1", default-features = false, path = "steel" }
+risc0-forge-ffi = { version = "0.11.0-alpha.1", default-features = false, path = "ffi" }
 
 alloy-primitives = { version = "0.6.4", features = ["serde", "rlp", "std"] }
 alloy-rlp = { version = "0.3.4", default-features = false }

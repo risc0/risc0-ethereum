@@ -47,16 +47,11 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             // Use a long and unweildy environment variable name for overriding
             // the expected chain ID for the test relay so that it is hard to
             // trigger without thinking about it.
-            bonsaiTestRelay = new BonsaiTestRelay(
-                vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337))
-            );
+            bonsaiTestRelay = new BonsaiTestRelay(vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337)));
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiTestRelay);
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
-                ControlID.CONTROL_ID_0,
-                ControlID.CONTROL_ID_1,
-                ControlID.BN254_CONTROL_ID
-            );
+            IRiscZeroVerifier verifier =
+                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.BN254_CONTROL_ID);
             bonsaiVerifyingRelay = new BonsaiRelay(verifier);
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiVerifyingRelay);
         }
