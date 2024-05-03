@@ -93,9 +93,9 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     ///
     /// New releases of RISC Zero's zkVM require updating these values. These values can be
     /// obtained by running `cargo run --bin bonsai-ethereum-contracts -F control-id`
-    uint256 public immutable CONTROL_ID_0;
-    uint256 public immutable CONTROL_ID_1;
-    uint256 public immutable BN254_CONTROL_ID;
+    bytes16 public immutable CONTROL_ID_0;
+    bytes16 public immutable CONTROL_ID_1;
+    bytes32 public immutable BN254_CONTROL_ID;
 
     /// @notice A short key attached to the seal to select the correct verifier implementation.
     /// @dev A selector is not intended to be collision resistant, in that it is possible to find
@@ -126,8 +126,8 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
         */)
     );
 
-    constructor(uint256 control_root, uint256 bn254_control_id) {
-        (CONTROL_ID_0, CONTROL_ID_1) = splitDigest(bytes32(control_root));
+    constructor(bytes32 control_root, bytes32 bn254_control_id) {
+        (CONTROL_ID_0, CONTROL_ID_1) = splitDigest(control_root);
         BN254_CONTROL_ID = bn254_control_id;
 
         SELECTOR = bytes4(
@@ -150,9 +150,9 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// @dev RISC Zero's Circom verifier circuit takes each of two hash digests in two 128-bit
     /// chunks. These values can be derived from the digest by splitting the digest in half and
     /// then reversing the bytes of each.
-    function splitDigest(bytes32 digest) internal pure returns (uint256, uint256) {
+    function splitDigest(bytes32 digest) internal pure returns (bytes16, bytes16) {
         uint256 reversed = reverseByteOrderUint256(uint256(digest));
-        return (uint256(uint128(uint256(reversed))), uint256(reversed >> 128));
+        return (bytes16(uint128(reversed)), bytes16(uint128(reversed >> 128)));
     }
 
     /// @inheritdoc IRiscZeroVerifier
@@ -171,11 +171,11 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
 
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
     function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
-        (uint256 claim0, uint256 claim1) = splitDigest(claimDigest);
+        (bytes16 claim0, bytes16 claim1) = splitDigest(claimDigest);
         // TODO(victor): Actually check the selector
         Seal memory decodedSeal = abi.decode(seal[4:], (Seal));
         return this.verifyProof(
-            decodedSeal.a, decodedSeal.b, decodedSeal.c, [CONTROL_ID_0, CONTROL_ID_1, claim0, claim1, BN254_CONTROL_ID]
+            decodedSeal.a, decodedSeal.b, decodedSeal.c, [uint256(uint128(CONTROL_ID_0)), uint256(uint128(CONTROL_ID_1)), uint256(uint128(claim0)), uint256(uint128(claim1)), uint256(BN254_CONTROL_ID)]
         );
     }
 }
