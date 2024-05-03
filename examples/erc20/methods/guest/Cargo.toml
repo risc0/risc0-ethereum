@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 alloy-primitives = { version = "0.6" }
 alloy-sol-types = { version = "0.6" }
-risc0-ethereum-view-call = { path = "../../../../view-call" }
+risc0-steel = { path = "../../../../steel" }
 risc0-zkvm = { version = "0.21.0", default-features = false, features = ["std"] }
 
 # Force the `compile-time-rng` feature, to prevent `getrandom` from being used.

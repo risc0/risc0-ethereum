@@ -209,7 +209,7 @@ dependencies = [
  "hex",
  "log",
  "risc0-ethereum-contracts",
- "risc0-ethereum-view-call",
+ "risc0-steel",
  "risc0-zkvm",
  "serde",
  "tokio",
@@ -3388,7 +3388,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "0.9.0-alpha.1"
+version = "0.11.0-alpha.1"
 dependencies = [
  "anyhow",
  "hex",
@@ -3435,7 +3435,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "0.9.0-alpha.1"
+version = "0.11.0-alpha.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -3443,28 +3443,6 @@ dependencies = [
  "bonsai-sdk",
  "ethers",
  "risc0-zkvm",
-]
-
-[[package]]
-name = "risc0-ethereum-view-call"
-version = "0.9.0-alpha.1"
-dependencies = [
- "alloy-primitives",
- "alloy-rlp",
- "alloy-rlp-derive",
- "alloy-sol-types",
- "anyhow",
- "ethers-core",
- "ethers-providers",
- "log",
- "nybbles",
- "once_cell",
- "revm",
- "rlp",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -3483,6 +3461,28 @@ dependencies = [
  "num-traits",
  "risc0-zkp",
  "serde",
+]
+
+[[package]]
+name = "risc0-steel"
+version = "0.11.0-alpha.1"
+dependencies = [
+ "alloy-primitives",
+ "alloy-rlp",
+ "alloy-rlp-derive",
+ "alloy-sol-types",
+ "anyhow",
+ "ethers-core",
+ "ethers-providers",
+ "log",
+ "nybbles",
+ "once_cell",
+ "revm",
+ "rlp",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
