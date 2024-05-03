@@ -109,7 +109,8 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// @dev This value is computed at compile time, and it encoded in multiple levels because the
     /// Solidity optimizer will fail if too many arguments are given to the abi.encode function.
     bytes32 internal constant SELECTOR_GROTH16_VKEY = sha256(
-        abi.encodePacked(""/* DO NOT MERGE
+        abi.encodePacked(
+            "" /* DO NOT MERGE
             // tag
             sha256("risc0_groth16.VerifyingKey"),
             // down
@@ -123,7 +124,8 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
             abi.encodePacked(IC2x, IC2y),
             abi.encodePacked(IC1x, IC1y),
             abi.encodePacked(IC0x, IC0y)
-        */)
+                 */
+        )
     );
 
     constructor(bytes32 control_root, bytes32 bn254_control_id) {
@@ -175,7 +177,16 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
         // TODO(victor): Actually check the selector
         Seal memory decodedSeal = abi.decode(seal[4:], (Seal));
         return this.verifyProof(
-            decodedSeal.a, decodedSeal.b, decodedSeal.c, [uint256(uint128(CONTROL_ID_0)), uint256(uint128(CONTROL_ID_1)), uint256(uint128(claim0)), uint256(uint128(claim1)), uint256(BN254_CONTROL_ID)]
+            decodedSeal.a,
+            decodedSeal.b,
+            decodedSeal.c,
+            [
+                uint256(uint128(CONTROL_ID_0)),
+                uint256(uint128(CONTROL_ID_1)),
+                uint256(uint128(claim0)),
+                uint256(uint128(claim1)),
+                uint256(BN254_CONTROL_ID)
+            ]
         );
     }
 }
