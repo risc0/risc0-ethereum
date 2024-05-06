@@ -47,7 +47,7 @@ contract RiscZeroGroth16VerifierTest is Test {
 
     RiscZeroReceipt internal TEST_RECEIPT = RiscZeroReceipt(TestReceipt.SEAL, TEST_RECEIPT_CLAIM.digest());
 
-    IRiscZeroVerifier internal verifier;
+    RiscZeroGroth16Verifier internal verifier;
 
     function setUp() external {
         verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
@@ -125,5 +125,9 @@ contract RiscZeroGroth16VerifierTest is Test {
 
         // Just a quick sanity check
         require(verifier.verifyIntegrity(RiscZeroReceipt(mangled_seal, mangled_claim.digest())), "verification failed");
+    }
+
+    function testSelectorIsStable() external view {
+        require(verifier.SELECTOR() == hex"7beca612");
     }
 }

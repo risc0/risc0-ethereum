@@ -31,6 +31,7 @@ import {
     ReceiptClaimLib,
     SystemExitCode
 } from "../IRiscZeroVerifier.sol";
+import {StructHash} from "../StructHash.sol";
 
 /// @notice reverse the byte order of the uint256 value.
 /// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
@@ -108,41 +109,46 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
     /// @dev This value is computed at compile time, and it encoded in multiple levels because the
     /// Solidity optimizer will fail if too many arguments are given to the abi.encode function.
-    bytes32 internal constant SELECTOR_GROTH16_VKEY = sha256(
-        abi.encodePacked(
-            "" /* DO NOT MERGE
-            // tag
-            sha256("risc0_groth16.VerifyingKey"),
-            // down
-            abi.encodePacked(alphax, alphay),
-            abi.encodePacked(betax1, betax2, betay1, betay2),
-            abi.encodePacked(gammax1, gammax2, gammay1, gammay2),
-            abi.encodePacked(deltax1, deltax2, deltay1, deltay2),
-            abi.encodePacked(IC5x, IC5y),
-            abi.encodePacked(IC4x, IC4y),
-            abi.encodePacked(IC3x, IC3y),
-            abi.encodePacked(IC2x, IC2y),
-            abi.encodePacked(IC1x, IC1y),
-            abi.encodePacked(IC0x, IC0y)
-                 */
-        )
-    );
+    function verifier_key_digest() internal pure returns (bytes32) {
+        bytes32[] memory ic_digests = new bytes32[](6);
+        ic_digests[0] = sha256(abi.encodePacked(IC0x, IC0y));
+        ic_digests[1] = sha256(abi.encodePacked(IC1x, IC1y));
+        ic_digests[2] = sha256(abi.encodePacked(IC2x, IC2y));
+        ic_digests[3] = sha256(abi.encodePacked(IC3x, IC3y));
+        ic_digests[4] = sha256(abi.encodePacked(IC4x, IC4y));
+        ic_digests[5] = sha256(abi.encodePacked(IC5x, IC5y));
+
+        return sha256(
+            abi.encodePacked(
+                // tag
+                sha256("risc0_groth16.VerifyingKey"),
+                // down
+                sha256(abi.encodePacked(alphax, alphay)),
+                sha256(abi.encodePacked(betax1, betax2, betay1, betay2)),
+                sha256(abi.encodePacked(gammax1, gammax2, gammay1, gammay2)),
+                sha256(abi.encodePacked(deltax1, deltax2, deltay1, deltay2)),
+                StructHash.taggedList(sha256("risc0_groth16.VerifyingKey.IC"), ic_digests),
+                // down length
+                uint16(5) << 8
+            )
+        );
+    }
 
     constructor(bytes32 control_root, bytes32 bn254_control_id) {
         (CONTROL_ID_0, CONTROL_ID_1) = splitDigest(control_root);
         BN254_CONTROL_ID = bn254_control_id;
 
         SELECTOR = bytes4(
-            keccak256(
-                abi.encode(
-                    // Identifier for the proof system.
-                    "RISC_ZERO_GROTH16",
-                    // Verification key binding the RISC Zero circuits.
-                    CONTROL_ID_0,
-                    CONTROL_ID_1,
-                    BN254_CONTROL_ID,
-                    // Groth16 verification key digest.
-                    SELECTOR_GROTH16_VKEY
+            sha256(
+                abi.encodePacked(
+                    // tag
+                    sha256("risc0.CompactReceiptVerifierInfo"),
+                    // down
+                    control_root,
+                    bn254_control_id,
+                    verifier_key_digest(),
+                    // down length
+                    uint16(3) << 8
                 )
             )
         );
