@@ -1,3 +1,2 @@
 forge-std/=../lib/forge-std/src/
 openzeppelin/=../lib/openzeppelin-contracts/
-solidity-bytes-utils/=../lib/solidity-bytes-utils/contracts/

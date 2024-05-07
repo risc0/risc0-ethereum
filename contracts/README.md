@@ -37,5 +37,3 @@ forge install risc0/risc0-ethereum
 [`IRiscZeroVerifier`]: ./src/IRiscZeroVerifier.sol
 [`RiscZeroGroth16Verifier`]: ./src/groth16/Groth16Verifier.sol
 [groth16-article]: https://www.risczero.com/news/on-chain-verification
-
-<!-- DO NOT MERGE: Remove solidity-bytes-utils -->
