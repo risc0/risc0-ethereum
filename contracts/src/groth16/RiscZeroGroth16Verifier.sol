@@ -93,19 +93,27 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     using OutputLib for Output;
     using SafeCast for uint256;
 
-    /// @notice Control ID hash for the identity_p254 predicate decomposed by `splitDigest`.
-    /// @dev This value controls what set of recursion programs, and therefore what version of the
-    /// zkVM circuit, will be accepted by this contract. Each instance of this verifier contract
-    /// will accept a single release of the RISC Zero circuits.
+    /// @notice Control root hash binding the set of circuits in the RISC Zero system.
+    /// @dev This value controls what set of recursion programs (e.g. lift, join, resolve), and
+    /// therefore what version of the zkVM circuit, will be accepted by this contract. Each
+    /// instance of this verifier contract will accept a single release of the RISC Zero circuits.
     ///
     /// New releases of RISC Zero's zkVM require updating these values. These values can be
-    /// obtained by running `cargo run --bin bonsai-ethereum-contracts -F control-id`
-    bytes16 public immutable CONTROL_ID_0;
-    bytes16 public immutable CONTROL_ID_1;
+    /// calculated from the [risc0 monorepo][1] using: `cargo xtask bootstrap`.
+    /// 
+    /// [1]: https://github.com/risc0/risc0
+    bytes16 public immutable CONTROL_ROOT_0;
+    bytes16 public immutable CONTROL_ROOT_1;
     bytes32 public immutable BN254_CONTROL_ID;
 
     /// @notice A short key attached to the seal to select the correct verifier implementation.
-    /// @dev A selector is not intended to be collision resistant, in that it is possible to find
+    /// @dev The selector is taken from the hash of the verifier parameters including the Groth16
+    ///      verification key and the control IDs that commit to the RISC Zero circuits. If two
+    ///      receipts have different selectors (i.e. different verifier parameters), then it can
+    ///      generally be assumed that they need distinct verifier implementations. This is used as
+    ///      part of the RISC Zero versioning mechanism.
+    ///      
+    ///      A selector is not intended to be collision resistant, in that it is possible to find
     ///      two preimages that result in the same selector. This is acceptable since it's purpose
     ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
     ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
@@ -113,8 +121,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     bytes4 public immutable SELECTOR;
 
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
-    /// @dev This value is computed at compile time, and it encoded in multiple levels because the
-    /// Solidity optimizer will fail if too many arguments are given to the abi.encode function.
+    /// @dev This value is computed at compile time.
     function verifier_key_digest() internal pure returns (bytes32) {
         bytes32[] memory ic_digests = new bytes32[](6);
         ic_digests[0] = sha256(abi.encodePacked(IC0x, IC0y));
@@ -141,7 +148,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     }
 
     constructor(bytes32 control_root, bytes32 bn254_control_id) {
-        (CONTROL_ID_0, CONTROL_ID_1) = splitDigest(control_root);
+        (CONTROL_ROOT_0, CONTROL_ROOT_1) = splitDigest(control_root);
         BN254_CONTROL_ID = bn254_control_id;
 
         SELECTOR = bytes4(
@@ -160,7 +167,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
         );
     }
 
-    /// @notice splits a digest into two 128-bit words to use as public signal inputs.
+    /// @notice splits a digest into two 128-bit halves to use as public signal inputs.
     /// @dev RISC Zero's Circom verifier circuit takes each of two hash digests in two 128-bit
     /// chunks. These values can be derived from the digest by splitting the digest in half and
     /// then reversing the bytes of each.
@@ -184,7 +191,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
 
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
     function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view {
-        // Check that the seal has a matching selector. Mismatch generally  indicates that the
+        // Check that the seal has a matching selector. Mismatch generally indicates that the
         // prover and this verifier are using different parameters, and so the verification
         // will not succeed.
         if (SELECTOR != bytes4(seal[:4])) {
@@ -199,8 +206,8 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
             decodedSeal.b,
             decodedSeal.c,
             [
-                uint256(uint128(CONTROL_ID_0)),
-                uint256(uint128(CONTROL_ID_1)),
+                uint256(uint128(CONTROL_ROOT_0)),
+                uint256(uint128(CONTROL_ROOT_1)),
                 uint256(uint128(claim0)),
                 uint256(uint128(claim1)),
                 uint256(BN254_CONTROL_ID)

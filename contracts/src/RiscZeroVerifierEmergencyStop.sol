@@ -21,11 +21,11 @@ import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
-/// @notice Wrapper for an IRiscZeroVerifier contracts with emergency stop function.
+/// @notice Wrapper for an IRiscZeroVerifier contract, providing emergency stop function.
 contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     IRiscZeroVerifier immutable verifier;
 
-    /// @notice Error returned from calling estop with a receipt that cannot be verified as proof
+    /// @notice Error raised when calling estop with a receipt that cannot be verified as proof
     /// of an exploit on the verifier contract.
     error InvalidProofOfExploit();
 

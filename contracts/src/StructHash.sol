@@ -30,7 +30,7 @@ function reverseByteOrderUint16(uint16 input) pure returns (uint16 v) {
 }
 
 /// @notice Structural hashing routines used for RISC Zero data structures.
-///
+/// @dev
 /// StructHash implements hashing for structs, incorporating type tags for domain separation.
 /// The goals of this library are:
 /// * Collision resistance: it should not be possible to find two semantically distinct values that
@@ -38,7 +38,7 @@ function reverseByteOrderUint16(uint16 input) pure returns (uint16 v) {
 /// * Simplicity: implementations should be simple to understand and write, as these methods must
 ///   be implemented in multiple languages and environments, including zkSNARK circuits.
 /// * Incremental openings: it should be possible to incrementally open a nested struct without
-///   needing to open extra fields (i.e. the struct should be "Merkle-ized").
+///   needing to open (very many) extra fields (i.e. the struct should be "Merkle-ized").
 library StructHash {
     using SafeCast for uint256;
 

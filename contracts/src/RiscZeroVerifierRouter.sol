@@ -20,10 +20,10 @@ import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
-/// @notice Multiplexer for IRiscZeroVerifier, allowing multiple implementations to be callable from a single address.
+/// @notice Router for IRiscZeroVerifier, allowing multiple implementations to be accessible behind a single address.
 contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
-    /// @notice Mapping from 4-byte proof selector to verifier contracts.
-    /// Used to route receipts to verifiers that are able to determine the validity of the receipt.
+    /// @notice Mapping from 4-byte verifier selector to verifier contracts.
+    ///         Used to route receipts to verifiers that are able to check the receipt.
     mapping(bytes4 => IRiscZeroVerifier) public verifiers;
 
     /// @notice Value of an entry that has never been set.
@@ -56,12 +56,14 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
         verifiers[selector] = verifier;
     }
 
-    /// @notice Removes an selector from the router, such that it can no receive verification calls.
-    ///         Removing an selector sets it to the tombstone value. It can never be set to any
+    /// @notice Removes verifier from the router, such that it can no receive verification calls.
+    ///         Removing a selector sets it to the tombstone value. It can never be set to any
     ///         other value, and can never be reused for a new verifier, in order to enfoce the
-    ///         property that each selector maps to at most one implementations across time.
+    ///         property that each selector maps to at most one implementation across time.
     function removeVerifier(bytes4 selector) external onlyOwner {
         // Simple check to reduce the chance of accidents.
+        // NOTE: If there ever _is_ a reason to remove a selector that has never been set, the owner
+        // can call addVerifier with the tombstone address.
         if (verifiers[selector] == UNSET) {
             revert SelectorUnknown({selector: selector});
         }
