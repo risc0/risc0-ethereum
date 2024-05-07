@@ -67,7 +67,7 @@ abstract contract RiscZeroCheats is CommonBase {
     function deployRiscZeroVerifier() internal returns (IRiscZeroVerifier) {
         if (devMode()) {
             // NOTE: Using a fixed salt of 0 for the selector of the mock verifier.
-            IRiscZeroVerifier verifier = new RiscZeroMockVerifier(bytes32(0));
+            IRiscZeroVerifier verifier = new RiscZeroMockVerifier(bytes4(0));
             console2.log("Deployed RiscZeroGroth16VerifierTest to", address(verifier));
             return verifier;
         } else {

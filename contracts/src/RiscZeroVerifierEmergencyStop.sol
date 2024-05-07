@@ -48,9 +48,11 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     ///         When stopped, all calls to the verify and verifyIntegrity functions will revert.
     ///         Once stopped, this contract can never be restarted.
     function estop(Receipt calldata receipt) external {
-        if (receipt.claimDigest != bytes32(0) || !verifyIntegrity(receipt)) {
+        if (receipt.claimDigest != bytes32(0)) {
             revert InvalidProofOfExploit();
         }
+        // Check that the proof of exploit receipt really does verify.
+        verifyIntegrity(receipt);
         _pause();
     }
 
@@ -59,15 +61,14 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
         external
         view
         whenNotPaused
-        returns (bool)
     {
         // Forward the call on to the wrapped contract.
-        return verifier.verify(seal, imageId, postStateDigest, journalDigest);
+        verifier.verify(seal, imageId, postStateDigest, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) public view whenNotPaused returns (bool) {
+    function verifyIntegrity(Receipt calldata receipt) public view whenNotPaused {
         // Forward the call on to the wrapped contract.
-        return verifier.verifyIntegrity(receipt);
+        verifier.verifyIntegrity(receipt);
     }
 }

@@ -30,7 +30,8 @@ import {
     ReceiptClaim,
     ReceiptClaimLib,
     ExitCode,
-    SystemExitCode
+    SystemExitCode,
+    VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
@@ -49,27 +50,21 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroReceipt internal TEST_RECEIPT;
 
     function setUp() external {
-        verifierMock = new RiscZeroMockVerifier(bytes32(0));
+        verifierMock = new RiscZeroMockVerifier(bytes4(0));
         verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock);
 
         TEST_RECEIPT = verifierMock.mockProve(TEST_RECEIPT_CLAIM.digest());
     }
 
     function test_NormalOperation() external view {
-        require(
-            verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verify failed under normal operation"
-        );
-        require(verifierEstop.verifyIntegrity(TEST_RECEIPT), "verifyIntegrity failed under normal operation");
+        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierEstop.verifyIntegrity(TEST_RECEIPT);
     }
 
     function test_RevertsWhenStopped() external {
         // Sanity check to make sure the contract started out working as expected.
-        require(
-            verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verify failed under normal operation"
-        );
-        require(verifierEstop.verifyIntegrity(TEST_RECEIPT), "verifyIntegrity failed under normal operation");
+        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierEstop.verifyIntegrity(TEST_RECEIPT);
 
         verifierEstop.estop();
 
@@ -93,13 +88,13 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         RiscZeroReceipt memory proofOfExploit = verifierMock.mockProve(bytes32(0));
 
-        // Ensure that using an invalid receipt results in a revert.
+        // Ensure that using a valid receipt for a non-exploit execution results in a revert.
         vm.expectRevert(RiscZeroVerifierEmergencyStop.InvalidProofOfExploit.selector);
         verifierEstop.estop(TEST_RECEIPT);
 
         RiscZeroReceipt memory mangledProofOfExploit = proofOfExploit;
         mangledProofOfExploit.seal[4] ^= bytes1(uint8(1));
-        vm.expectRevert(RiscZeroVerifierEmergencyStop.InvalidProofOfExploit.selector);
+        vm.expectRevert(VerificationFailed.selector);
         verifierEstop.estop(mangledProofOfExploit);
     }
 

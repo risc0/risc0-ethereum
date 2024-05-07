@@ -29,7 +29,8 @@ import {
     ReceiptClaim,
     ReceiptClaimLib,
     ExitCode,
-    SystemExitCode
+    SystemExitCode,
+    VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {RiscZeroVerifierMux} from "../src/RiscZeroVerifierMux.sol";
@@ -56,8 +57,8 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     function setUp() external {
         verifierMux = new RiscZeroVerifierMux();
 
-        verifierMockA = new RiscZeroMockVerifier(bytes32(0));
-        verifierMockB = new RiscZeroMockVerifier(bytes32(uint256(1)));
+        verifierMockA = new RiscZeroMockVerifier(bytes4(0));
+        verifierMockB = new RiscZeroMockVerifier(bytes4(uint32(1)));
 
         TEST_RECEIPT_A = verifierMockA.mockProve(TEST_RECEIPT_CLAIM.digest());
         TEST_RECEIPT_B = verifierMockB.mockProve(TEST_RECEIPT_CLAIM.digest());
@@ -95,8 +96,9 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         verifierMux.addVerifier(SELECTOR_A, verifierMockA);
 
-        require(verifierMux.verifyIntegrity(TEST_RECEIPT_A), "verification of test receipt A failed");
-        require(!verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A), "verification of mangled test receipt A passed");
+        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_B));
         verifierMux.verifyIntegrity(TEST_RECEIPT_B);
@@ -118,11 +120,13 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierMux.addVerifier(SELECTOR_A, verifierMockA);
         verifierMux.addVerifier(SELECTOR_B, verifierMockB);
 
-        require(verifierMux.verifyIntegrity(TEST_RECEIPT_A), "verification of test receipt A failed");
-        require(!verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A), "verification of mangled test receipt A passed");
+        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        require(verifierMux.verifyIntegrity(TEST_RECEIPT_B), "verification of test receipt B failed");
-        require(!verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_B), "verification of mangled test receipt B passed");
+        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
     }
 
     function test_RemoveVerifierVerifyIntegrity() external {
@@ -142,16 +146,19 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierMux.addVerifier(SELECTOR_A, verifierMockA);
         verifierMux.addVerifier(SELECTOR_B, verifierMockB);
 
-        require(verifierMux.verifyIntegrity(TEST_RECEIPT_A), "verification of test receipt A failed");
-        require(!verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A), "verification of mangled test receipt A passed");
+        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        require(verifierMux.verifyIntegrity(TEST_RECEIPT_B), "verification of test receipt B failed");
-        require(!verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_B), "verification of mangled test receipt B passed");
+        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
 
         verifierMux.removeVerifier(SELECTOR_B);
 
-        require(verifierMux.verifyIntegrity(TEST_RECEIPT_A), "verification of test receipt A failed");
-        require(!verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A), "verification of mangled test receipt A passed");
+        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorRemoved.selector, SELECTOR_B));
         verifierMux.verifyIntegrity(TEST_RECEIPT_B);
@@ -193,15 +200,10 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         verifierMux.addVerifier(SELECTOR_A, verifierMockA);
 
-        require(
-            verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verification of test receipt A failed"
-        );
-        require(
-            !verifierMux.verify(
-                TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-            ),
-            "verification of mangled test receipt A passed"
+        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verify(
+            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_B));
@@ -248,26 +250,16 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierMux.addVerifier(SELECTOR_A, verifierMockA);
         verifierMux.addVerifier(SELECTOR_B, verifierMockB);
 
-        require(
-            verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verification of test receipt A failed"
-        );
-        require(
-            !verifierMux.verify(
-                TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-            ),
-            "verification of mangled test receipt A passed"
+        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verify(
+            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        require(
-            verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verification of test receipt B failed"
-        );
-        require(
-            !verifierMux.verify(
-                TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-            ),
-            "verification of mangled test receipt B passed"
+        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verify(
+            TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
     }
 
@@ -312,39 +304,24 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierMux.addVerifier(SELECTOR_A, verifierMockA);
         verifierMux.addVerifier(SELECTOR_B, verifierMockB);
 
-        require(
-            verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verification of test receipt A failed"
-        );
-        require(
-            !verifierMux.verify(
-                TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-            ),
-            "verification of mangled test receipt A passed"
+        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verify(
+            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        require(
-            verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verification of test receipt B failed"
-        );
-        require(
-            !verifierMux.verify(
-                TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-            ),
-            "verification of mangled test receipt B passed"
+        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verify(
+            TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
         verifierMux.removeVerifier(SELECTOR_B);
 
-        require(
-            verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST),
-            "verification of test receipt A failed"
-        );
-        require(
-            !verifierMux.verify(
-                TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-            ),
-            "verification of mangled test receipt A passed"
+        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(VerificationFailed.selector);
+        verifierMux.verify(
+            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorRemoved.selector, SELECTOR_B));

@@ -29,7 +29,8 @@ import {
     Receipt,
     ReceiptClaim,
     ReceiptClaimLib,
-    SystemExitCode
+    SystemExitCode,
+    VerificationFailed
 } from "../IRiscZeroVerifier.sol";
 import {StructHash} from "../StructHash.sol";
 
@@ -80,6 +81,11 @@ struct Seal {
     uint256[2][2] b;
     uint256[2] c;
 }
+
+/// @notice Error raised when this verifier receives a receipt with a selector that does not match
+///         its own. The selector value is calculated from the verifier parameters, and so this
+///         usually indicates a mismatch between the version of the prover and this verifier.
+error SelectorMismatch(bytes4 received, bytes4 expected);
 
 /// @notice Groth16 verifier contract for RISC Zero receipts of execution.
 contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
@@ -167,22 +173,28 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
         external
         view
-        returns (bool)
     {
-        return _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
+        _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) external view returns (bool) {
+    function verifyIntegrity(Receipt calldata receipt) external view {
         return _verifyIntegrity(receipt.seal, receipt.claimDigest);
     }
 
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
-    function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
+    function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view {
+        // Check that the seal has a matching selector. Mismatch generally  indicates that the
+        // prover and this verifier are using different parameters, and so the verification
+        // will not succeed.
+        if (SELECTOR != bytes4(seal[:4])) {
+            revert SelectorMismatch({received: bytes4(seal[:4]), expected: SELECTOR});
+        }
+
+        // Run the Groth16 verify procedure.
         (bytes16 claim0, bytes16 claim1) = splitDigest(claimDigest);
-        // TODO(victor): Actually check the selector
         Seal memory decodedSeal = abi.decode(seal[4:], (Seal));
-        return this.verifyProof(
+        bool verified = this.verifyProof(
             decodedSeal.a,
             decodedSeal.b,
             decodedSeal.c,
@@ -194,5 +206,10 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
                 uint256(BN254_CONTROL_ID)
             ]
         );
+
+        // Revert is verification failed.
+        if (!verified) {
+            revert VerificationFailed();
+        }
     }
 }

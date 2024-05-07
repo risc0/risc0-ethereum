@@ -21,7 +21,7 @@ import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Multiplexer for IRiscZeroVerifier, allowing multiple implementations to be callable from a single address.
-// TODO(victor): Consider renaming "mux" to something else.
+// TODO(victor): Change the name of Mux to Router
 contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @notice Mapping from 4-byte proof selector to verifier contracts.
     /// Used to route receipts to verifiers that are able to determine the validity of the receipt.
@@ -32,9 +32,17 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     /// @notice A "tombstone" value used to mark verifier entries that have been removed from the mapping.
     IRiscZeroVerifier internal constant TOMBSTONE = IRiscZeroVerifier(address(1));
 
-    error SelectorInUse(bytes4 selector);
-    error SelectorRemoved(bytes4 selector);
+    /// @notice Error raised when attempting to verify a receipt with a selector that is not
+    ///         registered on this router. Generally, this indicates a version mismatch where the
+    ///         prover generated a receipt with version of the zkVM that does not match any
+    ///         registered version on this router contract.
     error SelectorUnknown(bytes4 selector);
+    /// @notice Error raised when attempting to add a verifier for a selector that is already registered.
+    error SelectorInUse(bytes4 selector);
+    /// @notice Error raised when attempting to verify a receipt with a selector that has been
+    ///         removed, or attempting to add a new verifier with a selector that was previously
+    ///         registered and then removed.
+    error SelectorRemoved(bytes4 selector);
 
     constructor() Ownable(_msgSender()) {}
 
@@ -83,13 +91,12 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
     function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
         external
         view
-        returns (bool)
     {
-        return getVerifier(seal).verify(seal, imageId, postStateDigest, journalDigest);
+        getVerifier(seal).verify(seal, imageId, postStateDigest, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) external view returns (bool) {
-        return getVerifier(receipt.seal).verifyIntegrity(receipt);
+    function verifyIntegrity(Receipt calldata receipt) external view {
+        getVerifier(receipt.seal).verifyIntegrity(receipt);
     }
 }

@@ -16,8 +16,6 @@
 
 pragma solidity ^0.8.20;
 
-import {BytesLib} from "solidity-bytes-utils/BytesLib.sol";
-
 import {
     ExitCode,
     IRiscZeroVerifier,
@@ -26,14 +24,19 @@ import {
     Receipt,
     ReceiptClaim,
     ReceiptClaimLib,
-    SystemExitCode
+    SystemExitCode,
+    VerificationFailed
 } from "../IRiscZeroVerifier.sol";
+
+/// @notice Error raised when this verifier receives a receipt with a selector that does not match
+///         its own. The selector value is calculated from the verifier parameters, and so this
+///         usually indicates a mismatch between the version of the prover and this verifier.
+error SelectorMismatch(bytes4 received, bytes4 expected);
 
 /// @notice Mock verifier contract for RISC Zero receipts of execution.
 contract RiscZeroMockVerifier is IRiscZeroVerifier {
     using ReceiptClaimLib for ReceiptClaim;
     using OutputLib for Output;
-    using BytesLib for bytes;
 
     /// @notice A short key attached to the seal to select the correct verifier implementation.
     /// @dev A selector is not intended to be collision resistant, in that it is possible to find
@@ -43,38 +46,33 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
     ///      function selectors.
     bytes4 public immutable SELECTOR;
 
-    constructor(bytes32 salt) {
-        SELECTOR = bytes4(
-            keccak256(
-                abi.encode(
-                    // Identifier for the proof system.
-                    "RISC_ZERO_MOCK",
-                    // A salt provided to mock multiple, mutually incompatible verifiers.
-                    salt
-                )
-            )
-        );
+    constructor(bytes4 selector) {
+        SELECTOR = selector;
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        public
-        view
-        returns (bool)
-    {
-        return _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest) public view {
+        _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) public view returns (bool) {
-        return _verifyIntegrity(receipt.seal, receipt.claimDigest);
+    function verifyIntegrity(Receipt calldata receipt) public view {
+        _verifyIntegrity(receipt.seal, receipt.claimDigest);
     }
 
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
-    function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view returns (bool) {
-        // Require that the seal be exactly equal to the selector and claim digest.
-        // Reject if the caller may have sent a real seal.
-        return seal.equal(abi.encodePacked(SELECTOR, claimDigest));
+    function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view {
+        // Check that the seal has a matching selector. Mismatch generally  indicates that the
+        // prover and this verifier are using different parameters, and so the verification
+        // will not succeed.
+        if (SELECTOR != bytes4(seal[:4])) {
+            revert SelectorMismatch({received: bytes4(seal[:4]), expected: SELECTOR});
+        }
+
+        // Require that the rest of the seal be exactly equal to the claim digest.
+        if (keccak256(seal[4:]) != keccak256(abi.encodePacked(claimDigest))) {
+            revert VerificationFailed();
+        }
     }
 
     /// @notice Construct a mock receipt for the given image ID and journal.

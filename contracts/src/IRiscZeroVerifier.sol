@@ -155,10 +155,13 @@ library OutputLib {
     }
 }
 
+/// @notice Error raised when cryptographic verification of the zero-knowledge proof fails.
+error VerificationFailed();
+
 /// @notice Verifier interface for RISC Zero receipts of execution.
 interface IRiscZeroVerifier {
     /// @notice Verify that the given seal is a valid RISC Zero proof of execution with the
-    ///     given image ID, post-state digest, and journal digest.
+    ///     given image ID, post-state digest, and journal digest. Reverts on failure.
     /// @dev This method additionally ensures that the input hash is all-zeros (i.e. no
     /// committed input), the exit code is (Halted, 0), and there are no assumptions (i.e. the
     /// receipt is unconditional).
@@ -167,15 +170,12 @@ interface IRiscZeroVerifier {
     /// @param postStateDigest A hash of the final memory state. Required to run the verifier, but
     ///     otherwise can be left unconstrained for most use cases.
     /// @param journalDigest The SHA-256 digest of the journal bytes.
-    /// @return true if the receipt passes the verification checks. The return code must be checked.
     function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
         external
-        view
-        returns (bool);
+        view;
 
     /// @notice Verify that the given receipt is a valid RISC Zero receipt, ensuring the `seal` is
-    /// valid a cryptographic proof of the execution with the given `claim`.
+    /// valid a cryptographic proof of the execution with the given `claim`. Reverts on failure.
     /// @param receipt The receipt to be verified.
-    /// @return true if the receipt passes the verification checks. The return code must be checked.
-    function verifyIntegrity(Receipt calldata receipt) external view returns (bool);
+    function verifyIntegrity(Receipt calldata receipt) external view;
 }
