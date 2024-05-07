@@ -21,8 +21,7 @@ import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Multiplexer for IRiscZeroVerifier, allowing multiple implementations to be callable from a single address.
-// TODO(victor): Change the name of Mux to Router
-contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
+contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
     /// @notice Mapping from 4-byte proof selector to verifier contracts.
     /// Used to route receipts to verifiers that are able to determine the validity of the receipt.
     mapping(bytes4 => IRiscZeroVerifier) public verifiers;
@@ -46,7 +45,7 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
 
     constructor() Ownable(_msgSender()) {}
 
-    /// @notice Adds a verifier to the mux, such that it can receive receipt verification calls.
+    /// @notice Adds a verifier to the router, such that it can receive receipt verification calls.
     function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external onlyOwner {
         if (verifiers[selector] == TOMBSTONE) {
             revert SelectorRemoved({selector: selector});
@@ -57,7 +56,7 @@ contract RiscZeroVerifierMux is IRiscZeroVerifier, Ownable {
         verifiers[selector] = verifier;
     }
 
-    /// @notice Removes an selector from the mux, such that it can no receive verification calls.
+    /// @notice Removes an selector from the router, such that it can no receive verification calls.
     ///         Removing an selector sets it to the tombstone value. It can never be set to any
     ///         other value, and can never be reused for a new verifier, in order to enfoce the
     ///         property that each selector maps to at most one implementations across time.

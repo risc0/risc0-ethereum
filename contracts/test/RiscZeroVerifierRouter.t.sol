@@ -33,7 +33,7 @@ import {
     VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
-import {RiscZeroVerifierMux} from "../src/RiscZeroVerifierMux.sol";
+import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {TestReceipt} from "./TestReceipt.sol";
 
 contract RiscZeroVerifierEmergencyStopTest is Test {
@@ -52,10 +52,10 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
     RiscZeroMockVerifier internal verifierMockA;
     RiscZeroMockVerifier internal verifierMockB;
-    RiscZeroVerifierMux internal verifierMux;
+    RiscZeroVerifierRouter internal verifierRouter;
 
     function setUp() external {
-        verifierMux = new RiscZeroVerifierMux();
+        verifierRouter = new RiscZeroVerifierRouter();
 
         verifierMockA = new RiscZeroMockVerifier(bytes4(0));
         verifierMockB = new RiscZeroMockVerifier(bytes4(uint32(1)));
@@ -72,17 +72,17 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         SELECTOR_B = verifierMockB.SELECTOR();
     }
 
-    function test_EmptyMuxVerifyIntegrity() external {
+    function test_EmptyRouterVerifyIntegrity() external {
         // Expect no calls to be made to the verifier controlled.
         vm.expectCall(address(verifierMockA), new bytes(0), 0);
         vm.expectCall(address(verifierMockB), new bytes(0), 0);
 
-        // Empty mux should always revert with selector unknown.
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_A));
-        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        // Empty router should always revert with selector unknown.
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_B));
-        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
     }
 
     function test_SingleVerifierVerifyIntegrity() external {
@@ -94,14 +94,14 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         );
         vm.expectCall(address(verifierMockB), new bytes(0), 0);
 
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_B));
-        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
     }
 
     function test_TwoVerifiersVerifyIntegrity() external {
@@ -117,16 +117,16 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
             address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_MANGLED_RECEIPT_B), 1
         );
 
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
-        verifierMux.addVerifier(SELECTOR_B, verifierMockB);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
+        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
     }
 
     function test_RemoveVerifierVerifyIntegrity() external {
@@ -143,38 +143,38 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
             address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_MANGLED_RECEIPT_B), 1
         );
 
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
-        verifierMux.addVerifier(SELECTOR_B, verifierMockB);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
+        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
 
-        verifierMux.removeVerifier(SELECTOR_B);
+        verifierRouter.removeVerifier(SELECTOR_B);
 
-        verifierMux.verifyIntegrity(TEST_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorRemoved.selector, SELECTOR_B));
-        verifierMux.verifyIntegrity(TEST_RECEIPT_B);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_B));
+        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
     }
 
-    function test_EmptyMuxVerify() external {
+    function test_EmptyRouterVerify() external {
         // Expect no calls to be made to the verifier controlled.
         vm.expectCall(address(verifierMockA), new bytes(0), 0);
         vm.expectCall(address(verifierMockB), new bytes(0), 0);
 
-        // Empty mux should always revert with selector unknown.
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_A));
-        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        // Empty router should always revert with selector unknown.
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_B));
-        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
     }
 
     function test_SingleVerifierVerify() external {
@@ -198,16 +198,16 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         );
         vm.expectCall(address(verifierMockB), new bytes(0), 0);
 
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verify(
+        verifierRouter.verify(
             TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_B));
-        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
     }
 
     function test_TwoVerifiersVerify() external {
@@ -247,18 +247,18 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
             1
         );
 
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
-        verifierMux.addVerifier(SELECTOR_B, verifierMockB);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verify(
+        verifierRouter.verify(
             TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verify(
+        verifierRouter.verify(
             TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
     }
@@ -301,68 +301,68 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
             1
         );
 
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
-        verifierMux.addVerifier(SELECTOR_B, verifierMockB);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verify(
+        verifierRouter.verify(
             TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verify(
+        verifierRouter.verify(
             TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        verifierMux.removeVerifier(SELECTOR_B);
+        verifierRouter.removeVerifier(SELECTOR_B);
 
-        verifierMux.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierMux.verify(
+        verifierRouter.verify(
             TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
         );
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorRemoved.selector, SELECTOR_B));
-        verifierMux.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_B));
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
     }
 
     function test_OnlyOwnerCanAddVerifier() external {
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierMux.renounceOwnership();
+        verifierRouter.renounceOwnership();
 
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this)));
-        verifierMux.addVerifier(SELECTOR_B, verifierMockB);
+        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
     }
 
     function test_OnlyOwnerCanRemoveVerifier() external {
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierMux.renounceOwnership();
+        verifierRouter.renounceOwnership();
 
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this)));
-        verifierMux.removeVerifier(SELECTOR_A);
+        verifierRouter.removeVerifier(SELECTOR_A);
     }
 
     function test_VerifierCanOnlyBeAddedOnce() external {
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorInUse.selector, SELECTOR_A));
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorInUse.selector, SELECTOR_A));
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
     }
 
     function test_VerifierCannotBeAddedAfterRemove() external {
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
-        verifierMux.removeVerifier(SELECTOR_A);
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        verifierRouter.removeVerifier(SELECTOR_A);
 
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorRemoved.selector, SELECTOR_A));
-        verifierMux.addVerifier(SELECTOR_A, verifierMockA);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_A));
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
     }
 
     function test_UnsetVerifierCannotBeRemoved() external {
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierMux.SelectorUnknown.selector, SELECTOR_A));
-        verifierMux.removeVerifier(SELECTOR_A);
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
+        verifierRouter.removeVerifier(SELECTOR_A);
     }
 }

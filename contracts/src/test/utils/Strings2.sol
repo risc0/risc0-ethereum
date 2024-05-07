@@ -26,8 +26,6 @@ pragma solidity ^0.8.4;
 
 library Strings2 {
     ///@dev converts bytes array to its ASCII hex string representation
-    /// TODO: Definitely more efficient way to do this by processing multiple (16?) bytes at once
-    /// but really a helper function for the tests, efficiency not key.
     function toHexString(bytes memory input) public pure returns (string memory) {
         require(input.length < type(uint256).max / 2 - 1);
         bytes16 symbols = "0123456789abcdef";
