@@ -59,9 +59,9 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testVerifyKnownGoodImageIdAndJournal() external view {
-            verifier.verify(
-                TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_RECEIPT_CLAIM.postStateDigest, sha256(TestReceipt.JOURNAL)
-            );
+        verifier.verify(
+            TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_RECEIPT_CLAIM.postStateDigest, sha256(TestReceipt.JOURNAL)
+        );
     }
 
     function expectVerificationFailure(bytes memory seal, ReceiptClaim memory claim) internal {

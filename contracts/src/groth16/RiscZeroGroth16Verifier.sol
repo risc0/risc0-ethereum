@@ -100,7 +100,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     ///
     /// New releases of RISC Zero's zkVM require updating these values. These values can be
     /// calculated from the [risc0 monorepo][1] using: `cargo xtask bootstrap`.
-    /// 
+    ///
     /// [1]: https://github.com/risc0/risc0
     bytes16 public immutable CONTROL_ROOT_0;
     bytes16 public immutable CONTROL_ROOT_1;
@@ -112,7 +112,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     ///      receipts have different selectors (i.e. different verifier parameters), then it can
     ///      generally be assumed that they need distinct verifier implementations. This is used as
     ///      part of the RISC Zero versioning mechanism.
-    ///      
+    ///
     ///      A selector is not intended to be collision resistant, in that it is possible to find
     ///      two preimages that result in the same selector. This is acceptable since it's purpose
     ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
