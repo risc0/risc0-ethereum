@@ -18,7 +18,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: v2024-02-08.1
-  RISC0_CRATE_VERSION: "^0.21"
+  RISC0_MONOREPO_REF: "main"
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -102,9 +102,10 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-        # TODO(victor) install cargo-risczero from main
-      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
-      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: $RISC0_MONOREPO_REF
+          toolchain-version: $RISC0_TOOLCHAIN_VERSION
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
@@ -141,8 +142,10 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: Linux-default
-      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
-      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: $RISC0_MONOREPO_REF
+          toolchain-version: $RISC0_TOOLCHAIN_VERSION
       - name: build erc20
         run: cargo build --locked
         working-directory: examples/erc20
@@ -172,8 +175,10 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: macOS-default
-      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
-      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: $RISC0_MONOREPO_REF
+          toolchain-version: $RISC0_TOOLCHAIN_VERSION
       - run: cargo doc --locked --no-deps --workspace
       # TODO(#18) debug forge doc and get this working
       #- run: forge doc --root contracts
