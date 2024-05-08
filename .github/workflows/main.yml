@@ -88,7 +88,6 @@ jobs:
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
-      RISC0_BUILD_LOCKED: 1
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
