@@ -104,8 +104,9 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: $RISC0_MONOREPO_REF
-          toolchain-version: $RISC0_TOOLCHAIN_VERSION
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
@@ -123,14 +124,27 @@ jobs:
       - run: sccache --show-stats
 
   examples:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    strategy:
+      fail-fast: false
+      # Run only on Linux with GPU. Additional coverage is marginal, and GPU is fastest.
+      matrix:
+        include:
+          - os: Linux
+            feature: cuda
+            device: nvidia_rtx_a5000
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
@@ -144,8 +158,9 @@ jobs:
           key: Linux-default
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: $RISC0_MONOREPO_REF
-          toolchain-version: $RISC0_TOOLCHAIN_VERSION
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
       - name: build erc20
         run: cargo build --locked
         working-directory: examples/erc20
@@ -169,16 +184,16 @@ jobs:
         with:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-        with:
-          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: macOS-default
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+        with:
+          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: $RISC0_MONOREPO_REF
-          toolchain-version: $RISC0_TOOLCHAIN_VERSION
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
       - run: cargo doc --locked --no-deps --workspace
       # TODO(#18) debug forge doc and get this working
       #- run: forge doc --root contracts
