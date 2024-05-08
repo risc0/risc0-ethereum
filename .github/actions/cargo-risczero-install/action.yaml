@@ -28,7 +28,10 @@ runs:
       - name: install cargo-risczero
         run: cargo install --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
         working-directory: tmp/risc0
+        shell: bash
       - name: install toolchains
         run: cargo risczero install
+        shell: bash
       - name: cleanup
         run: rm -rf tmp
+        shell: bash
