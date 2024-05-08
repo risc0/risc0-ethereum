@@ -9,9 +9,12 @@
 
    * One PR should be to the `release-x.y` branch and do the following:
 
+     <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
      * Bump the version of all crates in the workspace to `x.y.z`.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Change the reference for all `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
+     * Run `cargo update` in all workspaces. (You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`)
+     * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
    * The other PR should bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
 
