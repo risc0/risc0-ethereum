@@ -56,9 +56,9 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
         verifiers[selector] = verifier;
     }
 
-    /// @notice Removes verifier from the router, such that it can no receive verification calls.
+    /// @notice Removes verifier from the router, such that it can not receive verification calls.
     ///         Removing a selector sets it to the tombstone value. It can never be set to any
-    ///         other value, and can never be reused for a new verifier, in order to enfoce the
+    ///         other value, and can never be reused for a new verifier, in order to enforce the
     ///         property that each selector maps to at most one implementation across time.
     function removeVerifier(bytes4 selector) external onlyOwner {
         // Simple check to reduce the chance of accidents.
