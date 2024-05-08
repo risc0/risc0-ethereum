@@ -3,10 +3,10 @@ resolver = "2"
 members = ["host", "methods"]
 
 [workspace.dependencies]
-alloy-primitives = { version = "0.6.4", features = ["serde", "rlp", "std"] }
+alloy-primitives = { version = "0.7", features = ["serde", "rlp", "std"] }
 alloy-rlp = { version = "0.3.4", default-features = false }
 alloy-rlp-derive = { version = "0.3.4", default-features = false }
-alloy-sol-types = { version = "0.6.4" }
+alloy-sol-types = { version = "0.7" }
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive", "env"] }
 ethers-core = "2.0"
