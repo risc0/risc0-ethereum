@@ -60,7 +60,7 @@ jobs:
       - run: cargo fmt --all --check --manifest-path relay/tests/methods/guest/Cargo.toml
       - run: cargo sort --workspace --check
       - run: cargo sort --workspace --check relay/tests/methods/guest
-      - run: cargo clippy --locked --workspace --exclude risc0-ethereum-relay-test-methods
+      - run: cargo clippy --workspace --exclude risc0-ethereum-relay-test-methods
       - run: forge fmt --check
         working-directory: contracts
       - uses: actions/setup-python@v4
@@ -111,9 +111,9 @@ jobs:
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - name: build workspace
-        run: cargo test --locked --workspace --timings --no-run
+        run: cargo test --workspace --timings --no-run
       - name: test workspace
-        run: cargo test --locked --workspace --timings
+        run: cargo test --workspace --timings
       - uses: actions/upload-artifact@v3
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
@@ -162,10 +162,10 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - name: build erc20
-        run: cargo build --locked
+        run: cargo build
         working-directory: examples/erc20
       - name: build erc20-Counter
-        run: cargo build --locked
+        run: cargo build
         working-directory: examples/erc20-counter
       - name: test erc20-Counter
         run: ./test-local-deployment.sh
@@ -194,7 +194,7 @@ jobs:
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-      - run: cargo doc --locked --no-deps --workspace
+      - run: cargo doc --no-deps --workspace
       # TODO(#18) debug forge doc and get this working
       #- run: forge doc --root contracts
       - run: sccache --show-stats
