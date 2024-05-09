@@ -177,3 +177,25 @@ jobs:
       # TODO(#18) debug forge doc and get this working
       #- run: forge doc --root contracts
       - run: sccache --show-stats
+
+  # Run as a separate job because we need to install a different set of tools.
+  # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
+  docs.rs:
+    runs-on: [self-hosted, prod, macOS, cpu]
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: risc0/risc0/.github/actions/rustup@release-0.21
+        with:
+          # Building with docs.rs config requires the nightly toolchain.
+          toolchain: nightly
+      - run: cargo +nightly doc -p risc0-steel --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+      - run: cargo +nightly doc -p risc0-build-ethereum --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+      - run: sccache --show-stats
