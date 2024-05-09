@@ -30,7 +30,7 @@ runs:
         working-directory: tmp/risc0
         shell: bash
       - name: install toolchains
-        run: cargo risczero install
+        run: cargo risczero install --version ${{ inputs.toolchain-version }}
         shell: bash
       - name: cleanup
         run: rm -rf tmp
