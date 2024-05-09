@@ -180,7 +180,7 @@ jobs:
 
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
-  docs.rs:
+  docs-rs:
     runs-on: [self-hosted, prod, macOS, cpu]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
