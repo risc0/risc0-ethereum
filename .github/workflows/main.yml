@@ -27,6 +27,7 @@ jobs:
     needs:
       - check
       - doc
+      - docs-rs
       - test
     runs-on: ubuntu-latest
     steps:
@@ -198,4 +199,3 @@ jobs:
       - run: cargo +nightly doc -p risc0-build-ethereum --all-features --no-deps
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
-      - run: sccache --show-stats
