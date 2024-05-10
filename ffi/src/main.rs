@@ -14,7 +14,6 @@
 
 use std::{io::Write, time::Duration};
 
-use alloy_primitives::FixedBytes;
 use anyhow::{Context, Result};
 use bonsai_sdk::alpha as bonsai_sdk;
 use clap::Parser;
@@ -53,12 +52,8 @@ pub fn main() -> Result<()> {
 /// Prints on stdio the Ethereum ABI and hex encoded proof.
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let elf = std::fs::read(elf_path).unwrap();
-    let (journal, post_state_digest, seal) = prove(&elf, &input)?;
-    let calldata = vec![
-        Token::Bytes(journal),
-        Token::FixedBytes(post_state_digest.to_vec()),
-        Token::Bytes(seal),
-    ];
+    let (journal, seal) = prove(&elf, &input)?;
+    let calldata = vec![Token::Bytes(journal), Token::Bytes(seal)];
     let output = hex::encode(ethers::abi::encode(&calldata));
 
     // Forge test FFI calls expect hex encoded bytes sent to stdout
@@ -73,7 +68,7 @@ fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
 /// for the given elf and input.
 /// When `RISC0_DEV_MODE` is set, executes the elf locally,
 /// as opposed to sending the proof request to the Bonsai service.
-fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     match is_dev_mode() {
         true => DevModeProver::prove(elf, input),
         false => BonsaiProver::prove(elf, input),
@@ -81,13 +76,13 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)>
 }
 
 trait Prover {
-    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)>;
+    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)>;
 }
 
 struct DevModeProver {}
 
 impl DevModeProver {
-    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         let env = ExecutorEnv::builder()
             .write_slice(input)
             .build()
@@ -95,17 +90,13 @@ impl DevModeProver {
         let exec = default_executor();
         let session_info = exec.execute(env, elf).context("Failed to run executor")?;
 
-        Ok((
-            session_info.journal.bytes,
-            FixedBytes::<32>::default(),
-            Vec::new(),
-        ))
+        Ok((session_info.journal.bytes, Vec::new()))
     }
 }
 
 struct BonsaiProver {}
 impl BonsaiProver {
-    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         let client = bonsai_sdk::Client::from_env(risc0_zkvm::VERSION)?;
 
         // Compute the image_id, then upload the ELF with the image_id as its key.
@@ -178,13 +169,8 @@ impl BonsaiProver {
         log::debug!("Snark proof!: {snark:?}");
 
         let seal = Seal::abi_encode(snark).context("Read seal")?;
-        let post_state_digest: FixedBytes<32> = snark_receipt
-            .post_state_digest
-            .as_slice()
-            .try_into()
-            .context("Read post_state_digest")?;
         let journal = snark_receipt.journal;
 
-        Ok((journal, post_state_digest, seal))
+        Ok((journal, seal))
     }
 }

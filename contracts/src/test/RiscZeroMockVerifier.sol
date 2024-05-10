@@ -51,8 +51,8 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest) public view {
-        _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) public view {
+        _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier
@@ -76,12 +76,8 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
     }
 
     /// @notice Construct a mock receipt for the given image ID and journal.
-    function mockProve(bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        public
-        view
-        returns (Receipt memory)
-    {
-        return mockProve(ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
+    function mockProve(bytes32 imageId, bytes32 journalDigest) public view returns (Receipt memory) {
+        return mockProve(ReceiptClaimLib.from(imageId, journalDigest).digest());
     }
 
     /// @notice Construct a mock receipt for the given claim digest.

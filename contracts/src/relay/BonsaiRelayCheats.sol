@@ -55,7 +55,7 @@ abstract contract BonsaiRelayCheats is RiscZeroCheats {
     ///     BONSAI_API_KEY environment variables.
     function queryImageOutputAndSeal(bytes32 imageId, bytes memory input)
         internal
-        returns (bytes memory, bytes32, bytes memory)
+        returns (bytes memory, bytes memory)
     {
         string[] memory imageRunnerInput = new string[](6);
         uint256 i = 0;
@@ -65,7 +65,7 @@ abstract contract BonsaiRelayCheats is RiscZeroCheats {
         imageRunnerInput[i++] = "query";
         imageRunnerInput[i++] = abi.encodePacked(imageId).toHexString();
         imageRunnerInput[i++] = input.toHexString();
-        return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes32, bytes));
+        return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes));
     }
 
     /// @notice Returns the image id of the guest with the specified name.

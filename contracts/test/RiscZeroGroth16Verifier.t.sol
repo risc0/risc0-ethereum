@@ -20,6 +20,7 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 
 import {
+    ExitCode,
     IRiscZeroVerifier,
     Output,
     OutputLib,
@@ -27,8 +28,9 @@ import {
     Receipt as RiscZeroReceipt,
     ReceiptClaim,
     ReceiptClaimLib,
-    ExitCode,
     SystemExitCode,
+    SystemState,
+    SystemStateLib,
     VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
@@ -37,10 +39,11 @@ import {TestReceipt} from "./TestReceipt.sol";
 contract RiscZeroGroth16VerifierTest is Test {
     using OutputLib for Output;
     using ReceiptClaimLib for ReceiptClaim;
+    using SystemStateLib for SystemState;
 
     ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaim(
         TestReceipt.IMAGE_ID,
-        TestReceipt.POST_DIGEST,
+        SystemState(0, bytes32(0)).digest(),
         ExitCode(SystemExitCode.Halted, 0),
         bytes32(0x0000000000000000000000000000000000000000000000000000000000000000),
         Output(sha256(TestReceipt.JOURNAL), bytes32(0)).digest()
@@ -59,9 +62,7 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testVerifyKnownGoodImageIdAndJournal() external view {
-        verifier.verify(
-            TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_RECEIPT_CLAIM.postStateDigest, sha256(TestReceipt.JOURNAL)
-        );
+        verifier.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, sha256(TestReceipt.JOURNAL));
     }
 
     function expectVerificationFailure(bytes memory seal, ReceiptClaim memory claim) internal {
@@ -120,6 +121,6 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testSelectorIsStable() external view {
-        require(verifier.SELECTOR() == hex"7beca612");
+        require(verifier.SELECTOR() == hex"ac59b966");
     }
 }

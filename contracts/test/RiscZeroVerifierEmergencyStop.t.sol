@@ -45,32 +45,31 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroVerifierEmergencyStop internal verifierEstop;
 
     bytes32 internal TEST_JOURNAL_DIGEST = sha256(TestReceipt.JOURNAL);
-    ReceiptClaim internal TEST_RECEIPT_CLAIM =
-        ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     RiscZeroReceipt internal TEST_RECEIPT;
 
     function setUp() external {
         verifierMock = new RiscZeroMockVerifier(bytes4(0));
-        verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock);
+        verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock, address(this));
 
         TEST_RECEIPT = verifierMock.mockProve(TEST_RECEIPT_CLAIM.digest());
     }
 
     function test_NormalOperation() external view {
-        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         verifierEstop.verifyIntegrity(TEST_RECEIPT);
     }
 
     function test_RevertsWhenStopped() external {
         // Sanity check to make sure the contract started out working as expected.
-        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         verifierEstop.verifyIntegrity(TEST_RECEIPT);
 
         verifierEstop.estop();
 
         // Now expect calls to verify to fail with an error indicating that the contract is paused.
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         verifierEstop.verifyIntegrity(TEST_RECEIPT);
     }
@@ -106,7 +105,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         // Now expect calls to verify to fail with an error indicating that the contract is paused.
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierEstop.verify(TEST_RECEIPT.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         verifierEstop.verifyIntegrity(TEST_RECEIPT);
     }

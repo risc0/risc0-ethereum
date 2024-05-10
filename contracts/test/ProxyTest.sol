@@ -32,7 +32,6 @@ contract Proxy {
     /// @notice Data required to authorize a callback to be sent through the relay.
     struct CallbackAuthorization {
         bytes seal;
-        bytes32 postStateDigest;
     }
 
     /// @notice Callback data, provided by the Relay service.

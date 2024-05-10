@@ -43,7 +43,7 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
     ///         registered and then removed.
     error SelectorRemoved(bytes4 selector);
 
-    constructor() Ownable(_msgSender()) {}
+    constructor(address admin) Ownable(admin) {}
 
     /// @notice Adds a verifier to the router, such that it can receive receipt verification calls.
     function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external onlyOwner {
@@ -89,11 +89,8 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        external
-        view
-    {
-        getVerifier(seal).verify(seal, imageId, postStateDigest, journalDigest);
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view {
+        getVerifier(seal).verify(seal, imageId, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier

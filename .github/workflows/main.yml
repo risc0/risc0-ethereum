@@ -169,15 +169,16 @@ jobs:
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
-      - uses: risc0/risc0/.github/actions/sccache@release-0.21
-        with:
-          key: macOS-default
+      # TODO(#106) Re-enable sccache
+      # - uses: risc0/risc0/.github/actions/sccache@release-0.21
+      #   with:
+      #     key: macOS-default
       - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
       - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
       - run: cargo doc --no-deps --workspace
       # TODO(#18) debug forge doc and get this working
       #- run: forge doc --root contracts
-      - run: sccache --show-stats
+      #- run: sccache --show-stats
 
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.

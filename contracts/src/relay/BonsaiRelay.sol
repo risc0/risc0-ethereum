@@ -51,7 +51,7 @@ contract BonsaiRelay is IBonsaiRelay {
         view
         returns (bool)
     {
-        try verifier.verify(auth.seal, imageId, auth.postStateDigest, sha256(journal)) {
+        try verifier.verify(auth.seal, imageId, sha256(journal)) {
             return true;
         } catch {
             return false;

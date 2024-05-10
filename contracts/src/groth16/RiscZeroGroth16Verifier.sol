@@ -33,47 +33,7 @@ import {
     VerificationFailed
 } from "../IRiscZeroVerifier.sol";
 import {StructHash} from "../StructHash.sol";
-
-/// @notice reverse the byte order of the uint256 value.
-/// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
-/// ensure that the encoded value will be little-endian.
-/// Written by k06a. https://ethereum.stackexchange.com/a/83627
-function reverseByteOrderUint256(uint256 input) pure returns (uint256 v) {
-    v = input;
-
-    // swap bytes
-    v = ((v & 0xFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00) >> 8)
-        | ((v & 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF) << 8);
-
-    // swap 2-byte long pairs
-    v = ((v & 0xFFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000) >> 16)
-        | ((v & 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF) << 16);
-
-    // swap 4-byte long pairs
-    v = ((v & 0xFFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000) >> 32)
-        | ((v & 0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF) << 32);
-
-    // swap 8-byte long pairs
-    v = ((v & 0xFFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF0000000000000000) >> 64)
-        | ((v & 0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF) << 64);
-
-    // swap 16-byte long pairs
-    v = (v >> 128) | (v << 128);
-}
-
-/// @notice reverse the byte order of the uint32 value.
-/// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
-/// ensure that the encoded value will be little-endian.
-/// Written by k06a. https://ethereum.stackexchange.com/a/83627
-function reverseByteOrderUint32(uint32 input) pure returns (uint32 v) {
-    v = input;
-
-    // swap bytes
-    v = ((v & 0xFF00FF00) >> 8) | ((v & 0x00FF00FF) << 8);
-
-    // swap 2-byte long pairs
-    v = (v >> 16) | (v << 16);
-}
+import {reverseByteOrderUint256, reverseByteOrderUint32} from "../Util.sol";
 
 /// @notice A Groth16 seal over the claimed receipt claim.
 struct Seal {
@@ -155,7 +115,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
             sha256(
                 abi.encodePacked(
                     // tag
-                    sha256("risc0.CompactReceiptVerifierInfo"),
+                    sha256("risc0.CompactReceiptVerifierParameters"),
                     // down
                     control_root,
                     bn254_control_id,
@@ -177,11 +137,8 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        external
-        view
-    {
-        _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, postStateDigest, journalDigest).digest());
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view {
+        _verifyIntegrity(seal, ReceiptClaimLib.from(imageId, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier

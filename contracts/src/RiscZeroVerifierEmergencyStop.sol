@@ -29,7 +29,7 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     /// of an exploit on the verifier contract.
     error InvalidProofOfExploit();
 
-    constructor(IRiscZeroVerifier _verifier) Ownable(_msgSender()) {
+    constructor(IRiscZeroVerifier _verifier, address guardian) Ownable(guardian) {
         verifier = _verifier;
     }
 
@@ -57,13 +57,9 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        external
-        view
-        whenNotPaused
-    {
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view whenNotPaused {
         // Forward the call on to the wrapped contract.
-        verifier.verify(seal, imageId, postStateDigest, journalDigest);
+        verifier.verify(seal, imageId, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier

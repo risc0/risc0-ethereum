@@ -41,8 +41,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     using ReceiptClaimLib for ReceiptClaim;
 
     bytes32 internal TEST_JOURNAL_DIGEST = sha256(TestReceipt.JOURNAL);
-    ReceiptClaim internal TEST_RECEIPT_CLAIM =
-        ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     RiscZeroReceipt internal TEST_RECEIPT_A;
     RiscZeroReceipt internal TEST_RECEIPT_B;
     RiscZeroReceipt internal TEST_MANGLED_RECEIPT_A;
@@ -55,7 +54,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroVerifierRouter internal verifierRouter;
 
     function setUp() external {
-        verifierRouter = new RiscZeroVerifierRouter();
+        verifierRouter = new RiscZeroVerifierRouter(address(this));
 
         verifierMockA = new RiscZeroMockVerifier(bytes4(0));
         verifierMockB = new RiscZeroMockVerifier(bytes4(uint32(1)));
@@ -171,10 +170,10 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         // Empty router should always revert with selector unknown.
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_SingleVerifierVerify() external {
@@ -182,17 +181,13 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.expectCall(address(verifierMockA), new bytes(0), 2);
         vm.expectCall(
             address(verifierMockA),
-            abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
-            ),
+            abi.encodeCall(IRiscZeroVerifier.verify, (TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)),
             1
         );
         vm.expectCall(
             address(verifierMockA),
             abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
+                IRiscZeroVerifier.verify, (TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)
             ),
             1
         );
@@ -200,14 +195,12 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(
-            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-        );
+        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_TwoVerifiersVerify() external {
@@ -215,34 +208,26 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.expectCall(address(verifierMockA), new bytes(0), 2);
         vm.expectCall(
             address(verifierMockA),
-            abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
-            ),
+            abi.encodeCall(IRiscZeroVerifier.verify, (TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)),
             1
         );
         vm.expectCall(
             address(verifierMockA),
             abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
+                IRiscZeroVerifier.verify, (TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)
             ),
             1
         );
         vm.expectCall(address(verifierMockB), new bytes(0), 2);
         vm.expectCall(
             address(verifierMockB),
-            abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
-            ),
+            abi.encodeCall(IRiscZeroVerifier.verify, (TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)),
             1
         );
         vm.expectCall(
             address(verifierMockB),
             abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
+                IRiscZeroVerifier.verify, (TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)
             ),
             1
         );
@@ -250,17 +235,13 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
         verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(
-            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-        );
+        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(
-            TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-        );
+        verifierRouter.verify(TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_RemoveVerifierVerify() external {
@@ -269,34 +250,26 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.expectCall(address(verifierMockA), new bytes(0), 4);
         vm.expectCall(
             address(verifierMockA),
-            abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
-            ),
+            abi.encodeCall(IRiscZeroVerifier.verify, (TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)),
             2
         );
         vm.expectCall(
             address(verifierMockA),
             abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
+                IRiscZeroVerifier.verify, (TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)
             ),
             2
         );
         vm.expectCall(address(verifierMockB), new bytes(0), 2);
         vm.expectCall(
             address(verifierMockB),
-            abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
-            ),
+            abi.encodeCall(IRiscZeroVerifier.verify, (TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)),
             1
         );
         vm.expectCall(
             address(verifierMockB),
             abi.encodeCall(
-                IRiscZeroVerifier.verify,
-                (TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST)
+                IRiscZeroVerifier.verify, (TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST)
             ),
             1
         );
@@ -304,28 +277,22 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
         verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(
-            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-        );
+        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(
-            TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-        );
+        verifierRouter.verify(TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         verifierRouter.removeVerifier(SELECTOR_B);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(
-            TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST
-        );
+        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_B));
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TestReceipt.POST_DIGEST, TEST_JOURNAL_DIGEST);
+        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_OnlyOwnerCanAddVerifier() external {
