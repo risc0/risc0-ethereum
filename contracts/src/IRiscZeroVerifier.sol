@@ -51,7 +51,6 @@ struct ReceiptClaim {
 
 library ReceiptClaimLib {
     using OutputLib for Output;
-    using SystemStateLib for SystemState;
 
     bytes32 constant TAG_DIGEST = sha256("risc0.ReceiptClaim");
 
@@ -67,7 +66,7 @@ library ReceiptClaimLib {
     function from(bytes32 imageId, bytes32 journalDigest) internal pure returns (ReceiptClaim memory) {
         return ReceiptClaim(
             imageId,
-            SystemState(0, bytes32(0)).digest(),
+            SystemStateLib.ZERO_DIGEST,
             ExitCode(SystemExitCode.Halted, 0),
             bytes32(0),
             Output(journalDigest, bytes32(0)).digest()
@@ -108,6 +107,9 @@ struct SystemState {
 
 library SystemStateLib {
     bytes32 constant TAG_DIGEST = sha256("risc0.SystemState");
+
+    /// @notice Digest of the SystemState with pc and merkle_root set to zero.
+    bytes32 constant ZERO_DIGEST = SystemState(0, bytes32(0)).digest();
 
     function digest(SystemState memory state) internal pure returns (bytes32) {
         return sha256(
