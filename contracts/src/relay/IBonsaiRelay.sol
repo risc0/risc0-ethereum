@@ -20,10 +20,6 @@ pragma solidity ^0.8.17;
 struct CallbackAuthorization {
     /// @notice SNARK proof acting as the cryptographic seal over the execution results.
     bytes seal;
-    /// @notice Digest of the zkVM SystemState after execution.
-    /// @dev The relay does not additionally check any property of this digest, but needs the
-    /// digest in order to reconstruct the ReceiptClaim hash to which the proof is linked.
-    bytes32 postStateDigest;
 }
 
 /// @notice Callback data, provided by the Relay service.

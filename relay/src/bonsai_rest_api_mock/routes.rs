@@ -151,7 +151,6 @@ pub(crate) async fn snark_status(
                         b: vec![],
                         c: vec![],
                     },
-                    post_state_digest: vec![],
                     journal: receipt.journal.bytes,
                 }),
                 error_msg: None,

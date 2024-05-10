@@ -57,13 +57,9 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        external
-        view
-        whenNotPaused
-    {
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view whenNotPaused {
         // Forward the call on to the wrapped contract.
-        verifier.verify(seal, imageId, postStateDigest, journalDigest);
+        verifier.verify(seal, imageId, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier

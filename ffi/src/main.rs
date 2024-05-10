@@ -53,12 +53,8 @@ pub fn main() -> Result<()> {
 /// Prints on stdio the Ethereum ABI and hex encoded proof.
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let elf = std::fs::read(elf_path).unwrap();
-    let (journal, post_state_digest, seal) = prove(&elf, &input)?;
-    let calldata = vec![
-        Token::Bytes(journal),
-        Token::FixedBytes(post_state_digest.to_vec()),
-        Token::Bytes(seal),
-    ];
+    let (journal, seal) = prove(&elf, &input)?;
+    let calldata = vec![Token::Bytes(journal), Token::Bytes(seal)];
     let output = hex::encode(ethers::abi::encode(&calldata));
 
     // Forge test FFI calls expect hex encoded bytes sent to stdout
@@ -105,7 +101,7 @@ impl DevModeProver {
 
 struct BonsaiProver {}
 impl BonsaiProver {
-    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         let client = bonsai_sdk::Client::from_env(risc0_zkvm::VERSION)?;
 
         // Compute the image_id, then upload the ELF with the image_id as its key.
@@ -178,13 +174,8 @@ impl BonsaiProver {
         log::debug!("Snark proof!: {snark:?}");
 
         let seal = Seal::abi_encode(snark).context("Read seal")?;
-        let post_state_digest: FixedBytes<32> = snark_receipt
-            .post_state_digest
-            .as_slice()
-            .try_into()
-            .context("Read post_state_digest")?;
         let journal = snark_receipt.journal;
 
-        Ok((journal, post_state_digest, seal))
+        Ok((journal, seal))
     }
 }

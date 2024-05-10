@@ -57,15 +57,6 @@ pub(crate) async fn get_complete_proof(
         })?]),
     };
 
-    let post_state_digest: [u8; 32] = match dev_mode {
-        false => snark_receipt.post_state_digest.try_into().map_err(|_err| {
-            CompleteProofError::SnarkFailed {
-                id: bonsai_proof_id.clone(),
-            }
-        })?,
-        true => [0u8; 32],
-    };
-
     let payload = [
         callback_request.function_selector.as_slice(),
         snark_receipt.journal.as_slice(),
@@ -74,10 +65,7 @@ pub(crate) async fn get_complete_proof(
     .concat();
     let gas_limit = callback_request.gas_limit;
 
-    let auth = CallbackAuthorization {
-        seal: seal.into(),
-        post_state_digest,
-    };
+    let auth = CallbackAuthorization { seal: seal.into() };
     let ethereum_callback = Callback {
         auth,
         payload: payload.into(),

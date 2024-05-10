@@ -87,11 +87,11 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             bytes memory journal = queryImageOutput(imageId, input);
             payload = abi.encodePacked(functionSelector, journal, imageId);
             // Set the seal to be the empty seal.
-            auth = CallbackAuthorization(new bytes(0), bytes32(0));
+            auth = CallbackAuthorization(new bytes(0));
         } else {
-            (bytes memory journal, bytes32 postStateDigest, bytes memory seal) = queryImageOutputAndSeal(imageId, input);
+            (bytes memory journal, bytes memory seal) = queryImageOutputAndSeal(imageId, input);
             payload = abi.encodePacked(functionSelector, journal, imageId);
-            auth = CallbackAuthorization(seal, postStateDigest);
+            auth = CallbackAuthorization(seal);
         }
         Callback memory callback = Callback(auth, callbackContract, payload, gasLimit);
         vm.resumeGasMetering();

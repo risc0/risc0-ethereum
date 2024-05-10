@@ -70,7 +70,6 @@ pub(crate) async fn get_test_bonsai_server() -> (SessionId, MockServer) {
     let c = vec![zeroes.clone(), zeroes.clone()];
     let dummy_snark = Some(SnarkReceipt {
         snark: Groth16Seal { a, b, c },
-        post_state_digest: vec![],
         journal: vec![],
     });
     let snark_status_res = SnarkStatusRes {

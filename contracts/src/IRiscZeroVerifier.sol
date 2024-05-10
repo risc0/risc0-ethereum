@@ -52,23 +52,19 @@ library ReceiptClaimLib {
 
     bytes32 constant TAG_DIGEST = sha256("risc0.ReceiptClaim");
 
-    /// @notice Construct a ReceiptClaim from the given imageId, postStateDigest, and journalDigest.
+    /// @notice Construct a ReceiptClaim from the given imageId and journalDigest.
     ///         Returned ReceiptClaim will represent a successful execution of the zkVM, running
     ///         the program committed by imageId and resulting in the journal specified by
     ///         journalDigest.
-    /// @dev Input hash is set to all-zeros (i.e. no committed input), the exit code is (Halted, 0),
-    ///      and there are no assumptions (i.e. the receipt is unconditional).
     /// @param imageId The identifier for the guest program.
-    /// @param postStateDigest A hash of the final memory state.
     /// @param journalDigest The SHA-256 digest of the journal bytes.
-    function from(bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        internal
-        pure
-        returns (ReceiptClaim memory)
-    {
+    /// @dev Input hash and postStateDigest are set to all-zeros (i.e. no committed input, or
+    ///      final memory state), the exit code is (Halted, 0), and there are no assumptions
+    ///      (i.e. the receipt is unconditional).
+    function from(bytes32 imageId, bytes32 journalDigest) internal pure returns (ReceiptClaim memory) {
         return ReceiptClaim(
             imageId,
-            postStateDigest,
+            bytes32(0),
             ExitCode(SystemExitCode.Halted, 0),
             bytes32(0),
             Output(journalDigest, bytes32(0)).digest()
@@ -161,18 +157,14 @@ error VerificationFailed();
 /// @notice Verifier interface for RISC Zero receipts of execution.
 interface IRiscZeroVerifier {
     /// @notice Verify that the given seal is a valid RISC Zero proof of execution with the
-    ///     given image ID, post-state digest, and journal digest. Reverts on failure.
+    ///     given image ID and journal digest. Reverts on failure.
     /// @dev This method additionally ensures that the input hash is all-zeros (i.e. no
     /// committed input), the exit code is (Halted, 0), and there are no assumptions (i.e. the
     /// receipt is unconditional).
     /// @param seal The encoded cryptographic proof (i.e. SNARK).
     /// @param imageId The identifier for the guest program.
-    /// @param postStateDigest A hash of the final memory state. Required to run the verifier, but
-    ///     otherwise can be left unconstrained for most use cases.
     /// @param journalDigest The SHA-256 digest of the journal bytes.
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
-        external
-        view;
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view;
 
     /// @notice Verify that the given receipt is a valid RISC Zero receipt, ensuring the `seal` is
     /// valid a cryptographic proof of the execution with the given `claim`. Reverts on failure.

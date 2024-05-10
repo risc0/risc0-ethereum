@@ -48,11 +48,11 @@ contract Counter {
     ///
     /// The view call proof must be generated off-chain using RISC0-zkVM and submitted here.
     /// This function performs the proof verification process.
-    function increment(bytes calldata journal, bytes32 postStateDigest, bytes calldata seal) public {
+    function increment(bytes calldata journal, bytes calldata seal) public {
         // Construct the expected journal data. Verify will fail if journal does not match.
         BlockCommitment memory commitment = abi.decode(journal, (BlockCommitment));
         require(blockhash(commitment.blockNumber) == commitment.blockHash);
-        require(verifier.verify(seal, imageId, postStateDigest, sha256(journal)));
+        require(verifier.verify(seal, imageId, sha256(journal)));
         counter = counter + 1;
     }
 
