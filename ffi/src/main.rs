@@ -14,7 +14,6 @@
 
 use std::{io::Write, time::Duration};
 
-use alloy_primitives::FixedBytes;
 use anyhow::{Context, Result};
 use bonsai_sdk::alpha as bonsai_sdk;
 use clap::Parser;
@@ -69,7 +68,7 @@ fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
 /// for the given elf and input.
 /// When `RISC0_DEV_MODE` is set, executes the elf locally,
 /// as opposed to sending the proof request to the Bonsai service.
-fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     match is_dev_mode() {
         true => DevModeProver::prove(elf, input),
         false => BonsaiProver::prove(elf, input),
@@ -77,13 +76,13 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)>
 }
 
 trait Prover {
-    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)>;
+    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)>;
 }
 
 struct DevModeProver {}
 
 impl DevModeProver {
-    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+    fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         let env = ExecutorEnv::builder()
             .write_slice(input)
             .build()
@@ -91,11 +90,7 @@ impl DevModeProver {
         let exec = default_executor();
         let session_info = exec.execute(env, elf).context("Failed to run executor")?;
 
-        Ok((
-            session_info.journal.bytes,
-            FixedBytes::<32>::default(),
-            Vec::new(),
-        ))
+        Ok((session_info.journal.bytes, Vec::new()))
     }
 }
 
