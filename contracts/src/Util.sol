@@ -14,6 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+pragma solidity ^0.8.9;
+
 /// @notice reverse the byte order of the uint256 value.
 /// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
 /// ensure that the encoded value will be little-endian.

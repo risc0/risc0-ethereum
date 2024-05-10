@@ -16,7 +16,7 @@
 
 pragma solidity ^0.8.9;
 
-import {reverseByteOrderUint32} from './Util.sol';
+import {reverseByteOrderUint32} from "./Util.sol";
 
 /// @notice A receipt attesting to the execution of a guest program.
 /// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
@@ -51,8 +51,23 @@ struct ReceiptClaim {
 
 library ReceiptClaimLib {
     using OutputLib for Output;
+    using SystemStateLib for SystemState;
 
     bytes32 constant TAG_DIGEST = sha256("risc0.ReceiptClaim");
+
+    // Define a constant to ensure hashing is done at compile time. Can't use the
+    // SystemStateLib.digest method here because the Solidity compiler complains.
+    bytes32 private constant SYSTEM_STATE_ZERO_DIGEST = sha256(
+        abi.encodePacked(
+            SystemStateLib.TAG_DIGEST,
+            // down
+            bytes32(0),
+            // data
+            uint32(0),
+            // down.length
+            uint16(1) << 8
+        )
+    );
 
     /// @notice Construct a ReceiptClaim from the given imageId and journalDigest.
     ///         Returned ReceiptClaim will represent a successful execution of the zkVM, running
@@ -66,7 +81,7 @@ library ReceiptClaimLib {
     function from(bytes32 imageId, bytes32 journalDigest) internal pure returns (ReceiptClaim memory) {
         return ReceiptClaim(
             imageId,
-            SystemStateLib.ZERO_DIGEST,
+            SYSTEM_STATE_ZERO_DIGEST,
             ExitCode(SystemExitCode.Halted, 0),
             bytes32(0),
             Output(journalDigest, bytes32(0)).digest()
@@ -100,16 +115,12 @@ library ReceiptClaimLib {
 struct SystemState {
     /// @notice Program counter.
     uint32 pc;
-
     /// @notice Root hash of a merkle tree which confirms the integrity of the memory image.
     bytes32 merkle_root;
 }
 
 library SystemStateLib {
     bytes32 constant TAG_DIGEST = sha256("risc0.SystemState");
-
-    /// @notice Digest of the SystemState with pc and merkle_root set to zero.
-    bytes32 constant ZERO_DIGEST = SystemState(0, bytes32(0)).digest();
 
     function digest(SystemState memory state) internal pure returns (bytes32) {
         return sha256(

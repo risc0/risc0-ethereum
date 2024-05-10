@@ -18,7 +18,7 @@ pragma solidity ^0.8.9;
 
 import {SafeCast} from "openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import {reverseByteOrderUint16} from './Util.sol';
+import {reverseByteOrderUint16} from "./Util.sol";
 
 /// @notice Structural hashing routines used for RISC Zero data structures.
 /// @dev

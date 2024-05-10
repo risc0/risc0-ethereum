@@ -33,7 +33,7 @@ import {
     VerificationFailed
 } from "../IRiscZeroVerifier.sol";
 import {StructHash} from "../StructHash.sol";
-import {reverseByteOrderUint256, reverseByteOrderUint32} from '../Util.sol';
+import {reverseByteOrderUint256, reverseByteOrderUint32} from "../Util.sol";
 
 /// @notice A Groth16 seal over the claimed receipt claim.
 struct Seal {
