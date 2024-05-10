@@ -18,16 +18,7 @@ pragma solidity ^0.8.9;
 
 import {SafeCast} from "openzeppelin/contracts/utils/math/SafeCast.sol";
 
-/// @notice reverse the byte order of the uint16 value.
-/// @dev Solidity uses a big-endian ABI encoding. Reversing the byte order before encoding
-/// ensure that the encoded value will be little-endian.
-/// Written by k06a. https://ethereum.stackexchange.com/a/83627
-function reverseByteOrderUint16(uint16 input) pure returns (uint16 v) {
-    v = input;
-
-    // swap bytes
-    v = (v >> 8) | ((v & 0x00FF) << 8);
-}
+import {reverseByteOrderUint16} from './Util.sol';
 
 /// @notice Structural hashing routines used for RISC Zero data structures.
 /// @dev
