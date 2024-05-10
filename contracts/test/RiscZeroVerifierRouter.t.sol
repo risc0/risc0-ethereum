@@ -54,7 +54,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroVerifierRouter internal verifierRouter;
 
     function setUp() external {
-        verifierRouter = new RiscZeroVerifierRouter();
+        verifierRouter = new RiscZeroVerifierRouter(address(this));
 
         verifierMockA = new RiscZeroMockVerifier(bytes4(0));
         verifierMockB = new RiscZeroMockVerifier(bytes4(uint32(1)));

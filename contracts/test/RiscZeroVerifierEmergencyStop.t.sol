@@ -50,7 +50,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
     function setUp() external {
         verifierMock = new RiscZeroMockVerifier(bytes4(0));
-        verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock);
+        verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock, address(this));
 
         TEST_RECEIPT = verifierMock.mockProve(TEST_RECEIPT_CLAIM.digest());
     }

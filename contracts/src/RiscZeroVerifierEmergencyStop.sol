@@ -29,7 +29,7 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     /// of an exploit on the verifier contract.
     error InvalidProofOfExploit();
 
-    constructor(IRiscZeroVerifier _verifier) Ownable(_msgSender()) {
+    constructor(IRiscZeroVerifier _verifier, address guardian) Ownable(guardian) {
         verifier = _verifier;
     }
 
