@@ -100,9 +100,10 @@ jobs:
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@release-0.21
       - uses: risc0/risc0/.github/actions/rustup@release-0.21
-      - uses: risc0/risc0/.github/actions/sccache@release-0.21
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
+      # DO NOT MERGE
+      #- uses: risc0/risc0/.github/actions/sccache@release-0.21
+      #  with:
+      #    key: ${{ matrix.os }}-${{ matrix.feature }}
       - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
       - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
@@ -119,7 +120,7 @@ jobs:
           retention-days: 5
       - run: forge test -vvv
         working-directory: contracts
-      - run: sccache --show-stats
+      #- run: sccache --show-stats
 
   examples:
     runs-on: ubuntu-latest
