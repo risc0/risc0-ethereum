@@ -20,9 +20,9 @@ import {Test} from "forge-std/Test.sol";
 import {StdCheatsSafe} from "forge-std/StdCheats.sol";
 import {CommonBase} from "forge-std/Base.sol";
 import {console2} from "forge-std/console2.sol";
-import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
-import {RiscZeroCheats} from "../RiscZeroCheats.sol";
+import {Strings2} from "../test/utils/Strings2.sol";
+import {RiscZeroCheats} from "../test/RiscZeroCheats.sol";
 
 // NOTE: These are included for use in the BonsaiRelayTest contract. In their current form
 // they are not recommended for any other use as the current factoring makes assumptions

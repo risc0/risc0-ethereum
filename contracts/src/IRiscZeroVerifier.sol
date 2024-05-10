@@ -16,6 +16,18 @@
 
 pragma solidity ^0.8.9;
 
+/// @notice A receipt attesting to the execution of a guest program.
+/// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
+/// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
+/// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
+/// image ID identifies the program that was executed, and the journal is the public data written
+/// by the program. Note that this struct only contains the claim digest, as can be obtained with
+/// the `digest()` function on `ReceiptClaimLib`.
+struct Receipt {
+    bytes seal;
+    bytes32 claimDigest;
+}
+
 /// @notice Public claims about a zkVM guest execution, such as the journal committed to by the guest.
 /// @dev Also includes important information such as the exit code and the starting and ending system
 /// state (i.e. the state of memory). `ReceiptClaim` is a "Merkle-ized struct" supporting
@@ -36,7 +48,32 @@ struct ReceiptClaim {
 }
 
 library ReceiptClaimLib {
+    using OutputLib for Output;
+
     bytes32 constant TAG_DIGEST = sha256("risc0.ReceiptClaim");
+
+    /// @notice Construct a ReceiptClaim from the given imageId, postStateDigest, and journalDigest.
+    ///         Returned ReceiptClaim will represent a successful execution of the zkVM, running
+    ///         the program committed by imageId and resulting in the journal specified by
+    ///         journalDigest.
+    /// @dev Input hash is set to all-zeros (i.e. no committed input), the exit code is (Halted, 0),
+    ///      and there are no assumptions (i.e. the receipt is unconditional).
+    /// @param imageId The identifier for the guest program.
+    /// @param postStateDigest A hash of the final memory state.
+    /// @param journalDigest The SHA-256 digest of the journal bytes.
+    function from(bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
+        internal
+        pure
+        returns (ReceiptClaim memory)
+    {
+        return ReceiptClaim(
+            imageId,
+            postStateDigest,
+            ExitCode(SystemExitCode.Halted, 0),
+            bytes32(0),
+            Output(journalDigest, bytes32(0)).digest()
+        );
+    }
 
     function digest(ReceiptClaim memory claim) internal pure returns (bytes32) {
         return sha256(
@@ -118,21 +155,13 @@ library OutputLib {
     }
 }
 
-/// @notice A receipt attesting to the execution of a guest program.
-/// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
-/// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
-/// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
-/// image ID identifies the program that was executed, and the journal is the public data written
-/// by the program.
-struct Receipt {
-    bytes seal;
-    ReceiptClaim claim;
-}
+/// @notice Error raised when cryptographic verification of the zero-knowledge proof fails.
+error VerificationFailed();
 
 /// @notice Verifier interface for RISC Zero receipts of execution.
 interface IRiscZeroVerifier {
     /// @notice Verify that the given seal is a valid RISC Zero proof of execution with the
-    ///     given image ID, post-state digest, and journal digest.
+    ///     given image ID, post-state digest, and journal digest. Reverts on failure.
     /// @dev This method additionally ensures that the input hash is all-zeros (i.e. no
     /// committed input), the exit code is (Halted, 0), and there are no assumptions (i.e. the
     /// receipt is unconditional).
@@ -141,15 +170,12 @@ interface IRiscZeroVerifier {
     /// @param postStateDigest A hash of the final memory state. Required to run the verifier, but
     ///     otherwise can be left unconstrained for most use cases.
     /// @param journalDigest The SHA-256 digest of the journal bytes.
-    /// @return true if the receipt passes the verification checks. The return code must be checked.
     function verify(bytes calldata seal, bytes32 imageId, bytes32 postStateDigest, bytes32 journalDigest)
         external
-        view
-        returns (bool);
+        view;
 
     /// @notice Verify that the given receipt is a valid RISC Zero receipt, ensuring the `seal` is
-    /// valid a cryptographic proof of the execution with the given `claim`.
+    /// valid a cryptographic proof of the execution with the given `claim`. Reverts on failure.
     /// @param receipt The receipt to be verified.
-    /// @return true if the receipt passes the verification checks. The return code must be checked.
-    function verify_integrity(Receipt calldata receipt) external view returns (bool);
+    function verifyIntegrity(Receipt calldata receipt) external view;
 }
