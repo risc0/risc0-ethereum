@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
 use alloy_primitives::{
     b256, keccak256, Address, BlockNumber, Bytes, Sealable, Sealed, TxNumber, B256, U256,
 };

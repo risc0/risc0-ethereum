@@ -126,5 +126,6 @@ pub(crate) trait Storage {
         proof_id: ProofID,
         new_state: ProofRequestState,
     ) -> Result<()>;
+    #[cfg(test)]
     async fn get_proof_request_state(&self, proof_id: ProofID) -> Result<ProofRequestState>;
 }
