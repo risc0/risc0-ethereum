@@ -34,17 +34,19 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
     }
 
     /// @notice Initiate an emergency stop of the wrapped verifier contract.
-    ///         This method can only be used by guardian address assigned as owner of this contract.
+    ///         Can only be used by the guardian address assigned as owner of this contract.
+    ///
     ///         When stopped, all calls to the verify and verifyIntegrity functions will revert.
     ///         Once stopped, this contract can never be restarted.
     function estop() external onlyOwner {
         _pause();
     }
 
-    /// @notice Initiate an emergency stop of the wrapped verifier contract.
+    /// @notice Initiate an emergency stop of the wrapped verifier contract, via the circuit breaker.
     ///         This method can be called by anyone who can produce a verifying proof for a receipt
     ///         claim digest of all zeroes. The existence of such a proof demonstrates a critical
     ///         vulnerability in the proof system.
+    ///
     ///         When stopped, all calls to the verify and verifyIntegrity functions will revert.
     ///         Once stopped, this contract can never be restarted.
     function estop(Receipt calldata receipt) external {
