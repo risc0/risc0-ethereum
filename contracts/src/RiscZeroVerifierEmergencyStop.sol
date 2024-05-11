@@ -33,7 +33,7 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
         verifier = _verifier;
     }
 
-    /// @notice Initiate an emergency stop of the wrapped verifier contract.
+    /// @notice Initiate an emergency stop of the verifier contract.
     ///         Can only be used by the guardian address assigned as owner of this contract.
     ///
     ///         When stopped, all calls to the verify and verifyIntegrity functions will revert.
@@ -42,7 +42,7 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
         _pause();
     }
 
-    /// @notice Initiate an emergency stop of the wrapped verifier contract, via the circuit breaker.
+    /// @notice Initiate an emergency stop of the verifier contract, via the "circuit breaker".
     ///         This method can be called by anyone who can produce a verifying proof for a receipt
     ///         claim digest of all zeroes. The existence of such a proof demonstrates a critical
     ///         vulnerability in the proof system.
