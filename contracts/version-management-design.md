@@ -57,7 +57,7 @@ flowchart LR
 
 Base verifier implementations, such as [RiscZeroGroth16Verifier](./src/groth16/RiscZeroGroth16Verifier.sol), implement cryptographic verification of proofs.
 Verifier implementations are generally implemented to be stateless and immutable.
-Each base implementation has an associated 4-byte selector value, derived from a hash of a label and it's parameters (e.g. Groth16 vkey, and RISC Zero [control root][term-control-root]).
+Each base implementation has an associated 4-byte selector value, derived from a hash of a label and its parameters (e.g. Groth16 vkey, and RISC Zero [control root][term-control-root]).
 
 More verifier contracts will be deployed over time, and may add new zkVM circuits, recursion programs, proof systems (e.g. fflonk), batching methods etc.
 
