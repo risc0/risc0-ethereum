@@ -17,18 +17,27 @@ flowchart LR
     router["RiscZeroVerifierRouter [managed]"]
     appRouter["RiscZeroVerifierRouter [app]"]
     
-    subgraph impls[RiscZeroEmergencyStop]
-      groth16v1["RiscZeroGroth16Verifier [v1]"]
-      aggv1["RiscZeroAggregateVerifier [v1]"]
-      groth16v2["RiscZeroGroth16Verifier [v2]"]
-
-      fflonkv1["RiscZeroFflonkVerifier [v1]"]
+    subgraph emergencyStops["Emergency Stop Proxies"]
+      groth16v1ES["RiscZeroEmergencyStop"]
+      aggv1ES["RiscZeroEmergencyStop"]
+      groth16v2ES["RiscZeroEmergencyStop"]
+      fflonkv1ES["RiscZeroEmergencyStop"]
     end
+    
+    groth16v1["RiscZeroGroth16Verifier [v1]"]
+    aggv1["RiscZeroAggregateVerifier [v1]"]
+    groth16v2["RiscZeroGroth16Verifier [v2]"]
+    fflonkv1["RiscZeroFflonkVerifier [v1]"]
 
-    router --> groth16v1
-    router & appRouter --> groth16v2
-    router --> aggv1
-    router & appRouter --> fflonkv1
+    router --> groth16v1ES
+    router & appRouter --> groth16v2ES
+    router --> aggv1ES
+    router & appRouter --> fflonkv1ES
+    
+    groth16v1ES --> groth16v1
+    groth16v2ES --> groth16v2
+    aggv1ES --> aggv1
+    fflonkv1ES --> fflonkv1
   end
   timelock[TimelockController]
   multisig["RISC Zero Multisig"]
@@ -37,7 +46,7 @@ flowchart LR
   timelock -- admin --> router
   appAdmin -- admin --> appRouter
   multisig -- proposer --> timelock
-  multisig -- guardian --> impls
+  multisig -- guardian --> emergencyStops
 ```
 
 ### Base verifier implementations
