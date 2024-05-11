@@ -29,15 +29,15 @@ flowchart LR
     groth16v2["RiscZeroGroth16Verifier [v2]"]
     fflonkv1["RiscZeroFflonkVerifier [v1]"]
 
-    router --> groth16v1ES
-    router & appRouter --> groth16v2ES
-    router --> aggv1ES
-    router & appRouter --> fflonkv1ES
+    router -- calls --> groth16v1ES
+    router & appRouter -- calls --> groth16v2ES
+    router -- calls --> aggv1ES
+    router & appRouter -- calls --> fflonkv1ES
     
-    groth16v1ES --> groth16v1
-    groth16v2ES --> groth16v2
-    aggv1ES --> aggv1
-    fflonkv1ES --> fflonkv1
+    groth16v1ES -- calls --> groth16v1
+    groth16v2ES -- calls --> groth16v2
+    aggv1ES -- calls --> aggv1
+    fflonkv1ES -- calls --> fflonkv1
   end
   timelock[TimelockController]
   multisig["RISC Zero Multisig"]
