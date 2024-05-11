@@ -14,8 +14,10 @@ title: Smart Contract Relationships
 ---
 flowchart LR
   subgraph IRiscZeroVerifier
-    router["RiscZeroVerifierRouter [managed]"]
-    appRouter["RiscZeroVerifierRouter [app]"]
+    subgraph emergencyStops["Routers"]
+        router["RiscZeroVerifierRouter [managed]"]
+        appRouter["RiscZeroVerifierRouter [app]"]
+    end
     
     subgraph emergencyStops["Emergency Stop Proxies"]
       groth16v1ES["RiscZeroEmergencyStop"]
@@ -24,10 +26,12 @@ flowchart LR
       fflonkv1ES["RiscZeroEmergencyStop"]
     end
     
-    groth16v1["RiscZeroGroth16Verifier [v1]"]
-    aggv1["RiscZeroAggregateVerifier [v1]"]
-    groth16v2["RiscZeroGroth16Verifier [v2]"]
-    fflonkv1["RiscZeroFflonkVerifier [v1]"]
+    subgraph emergencyStops["Base Implementations"]
+        groth16v1["RiscZeroGroth16Verifier [v1]"]
+        aggv1["RiscZeroAggregateVerifier [v1]"]
+        groth16v2["RiscZeroGroth16Verifier [v2]"]
+        fflonkv1["RiscZeroFflonkVerifier [v1]"]
+    end
 
     router -- calls --> groth16v1ES
     router & appRouter -- calls --> groth16v2ES
