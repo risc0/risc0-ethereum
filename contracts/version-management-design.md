@@ -14,19 +14,19 @@ title: Smart Contract Relationships
 ---
 flowchart LR
   subgraph IRiscZeroVerifier
-    subgraph emergencyStops["Routers"]
+    subgraph routers["Routers"]
         router["RiscZeroVerifierRouter [managed]"]
         appRouter["RiscZeroVerifierRouter [app]"]
     end
-    
+
     subgraph emergencyStops["Emergency Stop Proxies"]
       groth16v1ES["RiscZeroEmergencyStop"]
       aggv1ES["RiscZeroEmergencyStop"]
       groth16v2ES["RiscZeroEmergencyStop"]
       fflonkv1ES["RiscZeroEmergencyStop"]
     end
-    
-    subgraph emergencyStops["Base Implementations"]
+
+    subgraph impls["Base Implementations"]
         groth16v1["RiscZeroGroth16Verifier [v1]"]
         aggv1["RiscZeroAggregateVerifier [v1]"]
         groth16v2["RiscZeroGroth16Verifier [v2]"]
@@ -37,7 +37,7 @@ flowchart LR
     router & appRouter -- calls --> groth16v2ES
     router -- calls --> aggv1ES
     router & appRouter -- calls --> fflonkv1ES
-    
+
     groth16v1ES -- calls --> groth16v1
     groth16v2ES -- calls --> groth16v2
     aggv1ES -- calls --> aggv1
@@ -46,7 +46,7 @@ flowchart LR
   timelock[TimelockController]
   multisig["RISC Zero Multisig"]
   appAdmin[App Admin]
-  
+
   timelock -- admin --> router
   appAdmin -- admin --> appRouter
   multisig -- proposer --> timelock
