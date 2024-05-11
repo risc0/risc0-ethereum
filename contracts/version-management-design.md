@@ -20,10 +20,10 @@ flowchart LR
     end
 
     subgraph emergencyStops["Emergency Stop Proxies"]
-      groth16v1ES["RiscZeroEmergencyStop"]
-      aggv1ES["RiscZeroEmergencyStop"]
-      groth16v2ES["RiscZeroEmergencyStop"]
-      fflonkv1ES["RiscZeroEmergencyStop"]
+      groth16v1ES["RiscZeroVerifierEmergencyStop"]
+      aggv1ES["RiscZeroVerifierEmergencyStop"]
+      groth16v2ES["RiscZeroVerifierEmergencyStop"]
+      fflonkv1ES["RiscZeroVerifierEmergencyStop"]
     end
 
     subgraph impls["Base Implementations"]
@@ -63,7 +63,7 @@ More verifier contracts will be deployed over time, and may add new zkVM circuit
 
 ### Emergency stop
 
-Each base verifier can have an associated [RiscZeroEmergencyStop](./src/RiscZeroVerifierEmergencyStop.sol) contract.
+Each base verifier can have an associated [RiscZeroVerifierEmergencyStop](./src/RiscZeroVerifierEmergencyStop.sol) contract.
 This contract acts as a proxy, with the addition of an emergency stop function.
 When the emergency stop is activated, this proxy will be permanently disabled, and revert on all verify calls.
 
@@ -103,7 +103,7 @@ Here are some available usage patterns:
 
 - Use a specific version of the RISC Zero verifier, with a shutdown mechanism.
 
-  Using a `RiscZeroEmergencyStop` contract as a proxy to the verifier accomplishes this.
+  Using a `RiscZeroVerifierEmergencyStop` contract as a proxy to the verifier accomplishes this.
   Application developers can choose to use an emergency stop proxy deployed and managed by RISC Zero, or can deploy their own.
 
 - Use a list of RISC Zero verifiers, with the ability to add and remove versions from the list. Each version may also support emergency shutdown.
