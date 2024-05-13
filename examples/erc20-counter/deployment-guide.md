@@ -13,28 +13,20 @@ You can either:
 
 You can deploy your contracts and run an end-to-end test or demo as follows:
 
-1. Install `ganache`: 
-    You must first install [Node.js] >= v16.0.0 and npm >= 7.10.0.
-    To install Ganache globally, run:
-    ```
-    npm install ganache --global
-    ```
-
-2. Start a local testnet with `ganache` by running:
+1. Start a local testnet with `anvil` by running:
 
     ```bash
-    ganache
+    anvil
     ```
 
-    Once ganache is started, look at its logs and copy any of the Private Keys. You'll need one for the next step.
-    Then, keep it running in the terminal, and switch to a new terminal.
+   Once anvil is started, keep it running in the terminal, and switch to a new terminal.
 
 2. Set your environment variables:
     > ***Note:*** *This requires having access to a Bonsai API Key. To request an API key [complete the form here](https://bonsai.xyz/apply).*
 
     ```bash
-    # Ganache sets up a number of private keys, use the one you copied during the previous step.
-    export ETH_WALLET_PRIVATE_KEY="YOUR_GANACHE_PRIVATE_KEY"
+    # Anvil sets up a number of default wallets, and this private key is one of them.
+    export ETH_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
     export BONSAI_API_KEY="YOUR_API_KEY" # see form linked in the previous section
     export BONSAI_API_URL="BONSAI_API_URL" # provided with your api key
     ```
@@ -51,7 +43,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
     >
     > ```bash
-    > export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20") | .contractAddress' ./broadcast/DeployERC20.s.sol/1337/run-latest.json)
+    > export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20") | .contractAddress' ./broadcast/DeployERC20.s.sol/31337/run-latest.json)
     > ```
 
 5. Mint some Toyken:
@@ -99,7 +91,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
     >
     > ```bash
-    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/1337/run-latest.json)
+    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
     > ```
 
 ### Interact with your local deployment
@@ -114,7 +106,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 
     ```bash
     cargo run --bin publisher -- \
-        --chain-id=1337 \
+        --chain-id=31337 \
         --rpc-url=http://localhost:8545 \
         --contract=${COUNTER_ADDRESS:?} \
         --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4

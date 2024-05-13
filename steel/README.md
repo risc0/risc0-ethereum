@@ -89,7 +89,7 @@ Here's an example of how to implement the validation:
 function validate(bytes calldata journal, bytes calldata seal) public {
     BlockCommitment memory commitment = abi.decode(journal, (BlockCommitment));
     require(blockhash(commitment.blockNumber) == commitment.blockHash);
-    require(verifier.verify(seal, imageId, sha256(journal)));
+    verifier.verify(seal, imageId, sha256(journal));
 }
 ```
 
