@@ -19,11 +19,13 @@
 use alloy_primitives::{address, Address};
 use alloy_sol_types::{sol, SolCall, SolInterface};
 use anyhow::Result;
-use apps::{BonsaiProver, TxSender};
+use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
-use risc0_zkvm::serde::to_vec;
+use risc0_zkvm::{
+    default_prover, serde::to_vec, sha::Digestible, ExecutorEnv, ProverOpts, VerifierContext,
+};
 use tracing_subscriber::EnvFilter;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
@@ -113,13 +115,28 @@ fn main() -> Result<()> {
         .write(account)
         .unwrap()
         .bytes();
-    let (journal, post_state_digest, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
+
+    let env = ExecutorEnv::builder().write_slice(&input).build().unwrap();
+    let ctx = VerifierContext::default();
+    let receipt = default_prover()
+        .prove_with_ctx(env, &ctx, BALANCE_OF_ELF, &ProverOpts::compact())
+        .unwrap()
+        .receipt;
 
     // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
-        journal: journal.into(),
-        post_state_digest,
-        seal: seal.into(),
+        journal: receipt.journal.bytes.clone().into(),
+        post_state_digest: receipt
+            .claim()
+            .unwrap()
+            .post
+            .digest()
+            .as_bytes()
+            .to_vec()
+            .as_slice()
+            .try_into()
+            .unwrap(),
+        seal: receipt.inner.compact().unwrap().seal.clone().into(),
     })
     .abi_encode();
 
