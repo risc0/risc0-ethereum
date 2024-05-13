@@ -107,19 +107,16 @@ impl Prover {
                 let session = exec
                     .execute(env, elf)
                     .context("Executor failed to generate a successful session")?;
-
-                let receipt = Receipt {
-                    inner: InnerReceipt::Fake {
-                        claim: ReceiptClaim {
-                            pre: MaybePruned::Pruned(Digest::ZERO),
-                            post: MaybePruned::Pruned(Digest::ZERO),
-                            exit_code: session.exit_code,
-                            input: Digest::ZERO,
-                            output: None.into(),
-                        },
+                let inner = InnerReceipt::Fake {
+                    claim: ReceiptClaim {
+                        pre: MaybePruned::Pruned(Digest::ZERO),
+                        post: MaybePruned::Pruned(Digest::ZERO),
+                        exit_code: session.exit_code,
+                        input: MaybePruned::Pruned(Digest::ZERO),
+                        output: None.into(),
                     },
-                    journal: session.journal,
                 };
+                let receipt = Receipt::new(inner, session.journal.bytes);
                 let receipt_bytes = bincode::serialize(&receipt)?;
                 self.storage
                     .write()?
