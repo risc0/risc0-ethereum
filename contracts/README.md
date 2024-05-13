@@ -50,7 +50,7 @@ forge install risc0/risc0-ethereum
 [Foundry]: https://book.getfoundry.sh/
 [foundry-dependencies]: https://book.getfoundry.sh/projects/dependencies
 [`IRiscZeroVerifier`]: ./src/IRiscZeroVerifier.sol
-[`RiscZeroGroth16Verifier`]: ./src/groth16/Groth16Verifier.sol
+[`RiscZeroGroth16Verifier`]: ./src/groth16/RiscZeroGroth16Verifier.sol
 [`RiscZeroVerifierEmergencyStop`]: ./src/RiscZeroVerifierEmergencyStop.sol
 [`RiscZeroVerifierRouter`]: ./src/RiscZeroVerifierRouter.sol
 [groth16-article]: https://www.risczero.com/news/on-chain-verification
