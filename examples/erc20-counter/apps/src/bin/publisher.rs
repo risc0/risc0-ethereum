@@ -42,7 +42,7 @@ sol! {
 // `ICounter` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface ICounter {
-        function increment(bytes calldata journal, bytes32 post_state_digest, bytes calldata seal);
+        function increment(bytes calldata journal, calldata seal);
     }
 }
 
@@ -126,16 +126,6 @@ fn main() -> Result<()> {
     // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
         journal: receipt.journal.bytes.clone().into(),
-        post_state_digest: receipt
-            .claim()
-            .unwrap()
-            .post
-            .digest()
-            .as_bytes()
-            .to_vec()
-            .as_slice()
-            .try_into()
-            .unwrap(),
         seal: receipt.inner.compact().unwrap().seal.clone().into(),
     })
     .abi_encode();
