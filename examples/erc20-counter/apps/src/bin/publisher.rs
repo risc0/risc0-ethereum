@@ -23,9 +23,7 @@ use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
-use risc0_zkvm::{
-    default_prover, serde::to_vec, sha::Digestible, ExecutorEnv, ProverOpts, VerifierContext,
-};
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
@@ -42,7 +40,7 @@ sol! {
 // `ICounter` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface ICounter {
-        function increment(bytes calldata journal, calldata seal);
+        function increment(bytes calldata journal, bytes calldata seal);
     }
 }
 
@@ -108,15 +106,14 @@ fn main() -> Result<()> {
         returns._0
     );
 
-    // Send an off-chain proof request to the Bonsai proving service.
-    let input = InputBuilder::new()
-        .write(view_call_input)
+    let env = ExecutorEnv::builder()
+        .write(&view_call_input)
         .unwrap()
-        .write(account)
+        .write(&account)
         .unwrap()
-        .bytes();
+        .build()
+        .unwrap();
 
-    let env = ExecutorEnv::builder().write_slice(&input).build().unwrap();
     let ctx = VerifierContext::default();
     let receipt = default_prover()
         .prove_with_ctx(env, &ctx, BALANCE_OF_ELF, &ProverOpts::compact())
@@ -135,23 +132,4 @@ fn main() -> Result<()> {
     runtime.block_on(tx_sender.send(calldata))?;
 
     Ok(())
-}
-
-pub struct InputBuilder {
-    input: Vec<u32>,
-}
-
-impl InputBuilder {
-    pub fn new() -> Self {
-        InputBuilder { input: Vec::new() }
-    }
-
-    pub fn write(mut self, input: impl serde::Serialize) -> Result<Self> {
-        self.input.extend(to_vec(&input)?);
-        Ok(self)
-    }
-
-    pub fn bytes(self) -> Vec<u8> {
-        bytemuck::cast_slice(&self.input).to_vec()
-    }
 }
