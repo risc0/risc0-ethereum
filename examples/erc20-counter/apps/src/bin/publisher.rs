@@ -132,7 +132,7 @@ fn main() -> Result<()> {
     // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
         journal: receipt.journal.bytes.clone().into(),
-        seal: seal.into(),
+        seal: selector_seal.into(),
     })
     .abi_encode();
 
