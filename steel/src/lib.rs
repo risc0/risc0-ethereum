@@ -31,7 +31,6 @@ use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, fmt::Debug, mem, rc::Rc};
 
 pub mod config;
-pub mod db;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
