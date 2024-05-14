@@ -176,8 +176,7 @@ jobs:
       - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
       - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
       - run: cargo doc --no-deps --workspace
-      # TODO(#18) debug forge doc and get this working
-      #- run: forge doc --root contracts
+      - run: forge doc
       #- run: sccache --show-stats
 
   # Run as a separate job because we need to install a different set of tools.
