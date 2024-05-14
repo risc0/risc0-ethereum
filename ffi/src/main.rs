@@ -55,7 +55,7 @@ fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let (journal, seal) = prove(&elf, &input)?;
     let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
     let selector = &verifier_parameters_digest.as_bytes()[..4];
-    // Create a new vector with the capacity to hold both digest and seal
+    // Create a new vector with the capacity to hold both selector and seal
     let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
     selector_seal.extend_from_slice(selector);
     selector_seal.extend_from_slice(&seal);

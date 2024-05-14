@@ -23,7 +23,9 @@ use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
-use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{
+    default_prover, sha::Digestible, CompactReceipt, ExecutorEnv, ProverOpts, VerifierContext,
+};
 use tracing_subscriber::EnvFilter;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
@@ -119,11 +121,18 @@ fn main() -> Result<()> {
         .prove_with_ctx(env, &ctx, BALANCE_OF_ELF, &ProverOpts::compact())
         .unwrap()
         .receipt;
+    let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
+    let selector = &verifier_parameters_digest.as_bytes()[..4];
+    let seal = receipt.inner.compact().unwrap().seal.clone();
+    // Create a new vector with the capacity to hold both selector and seal
+    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+    selector_seal.extend_from_slice(selector);
+    selector_seal.extend_from_slice(&seal);
 
     // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
         journal: receipt.journal.bytes.clone().into(),
-        seal: receipt.inner.compact().unwrap().seal.clone().into(),
+        seal: seal.into(),
     })
     .abi_encode();
 
