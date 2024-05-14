@@ -71,6 +71,7 @@ cargo run --bin publisher -- \
     --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
 
 # Attempt to verify counter value as part of the script logic
+echo "Verifying state..."
 COUNTER_VALUE=$(cast call --rpc-url http://localhost:8545 ${COUNTER_ADDRESS:?} 'get()(uint256)')
 if [ "$COUNTER_VALUE" != "1" ]; then
     echo "Counter value is not 1 as expected, but $COUNTER_VALUE."
