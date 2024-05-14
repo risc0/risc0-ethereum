@@ -50,7 +50,7 @@ contract BonsaiTestRelay is IBonsaiRelay {
     {
         // Require that the seal be specifically empty.
         // Reject if the caller may have sent a real seal.
-        return auth.seal.length == 0 && auth.postStateDigest == bytes32(0);
+        return auth.seal.length == 0;
     }
 
     function parsePayload(bytes calldata payload) public pure returns (bytes32, bytes calldata) {

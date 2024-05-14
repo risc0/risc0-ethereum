@@ -36,6 +36,11 @@ contract BonsaiRelayQueueWrapper is IBonsaiRelay, Proxy, Test {
         wrapped = wrapped_;
     }
 
+    // Receive function added to satisfy Solidity compiler warning.
+    receive() external payable {
+        payable(address(wrapped)).transfer(msg.value);
+    }
+
     function _implementation() internal view override returns (address) {
         return address(wrapped);
     }
