@@ -55,11 +55,11 @@ fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let (journal, seal) = prove(&elf, &input)?;
     let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
     let selector = &verifier_parameters_digest.as_bytes()[..4];
-    let calldata = vec![
-        Token::Bytes(journal),
-        Token::Bytes(selector.to_vec()),
-        Token::Bytes(seal),
-    ];
+    // Create a new vector with the capacity to hold both digest and seal
+    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+    selector_seal.extend_from_slice(selector);
+    selector_seal.extend_from_slice(&seal);
+    let calldata = vec![Token::Bytes(journal), Token::Bytes(selector_seal)];
     let output = hex::encode(ethers::abi::encode(&calldata));
 
     // Forge test FFI calls expect hex encoded bytes sent to stdout
