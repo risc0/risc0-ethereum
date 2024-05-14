@@ -14,7 +14,7 @@
 
 use super::{EIP1186Proof, NullProvider, Provider};
 use crate::{ethereum::EthBlockHeader, EvmHeader};
-use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, TxNumber, B256, U256};
+use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, StorageValue, TxNumber, U256};
 use anyhow::Context;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
@@ -155,17 +155,17 @@ where
     fn get_storage_at(
         &self,
         address: Address,
-        storage_slot: StorageKey,
+        key: StorageKey,
         block: BlockNumber,
-    ) -> Result<B256, Self::Error> {
+    ) -> Result<StorageValue, Self::Error> {
         match self.cache.borrow_mut().storage.entry(StorageQuery {
             block_no: block,
             address,
-            index: storage_slot,
+            key,
         }) {
             Entry::Occupied(entry) => Ok(*entry.get()),
             Entry::Vacant(entry) => {
-                let storage = self.inner.get_storage_at(address, storage_slot, block)?;
+                let storage = self.inner.get_storage_at(address, key, block)?;
                 Ok(*entry.insert(storage))
             }
         }
@@ -174,17 +174,17 @@ where
     fn get_proof(
         &self,
         address: Address,
-        storage_slots: Vec<StorageKey>,
+        storage_keys: Vec<StorageKey>,
         block: BlockNumber,
     ) -> Result<EIP1186Proof, Self::Error> {
         match self.cache.borrow_mut().proofs.entry(ProofQuery {
             block_no: block,
             address,
-            indices: storage_slots.iter().cloned().collect(),
+            storage_keys: storage_keys.iter().cloned().collect(),
         }) {
             Entry::Occupied(entry) => Ok(entry.get().clone()),
             Entry::Vacant(entry) => {
-                let proof = self.inner.get_proof(address, storage_slots, block)?;
+                let proof = self.inner.get_proof(address, storage_keys, block)?;
                 Ok(entry.insert(proof).clone())
             }
         }
@@ -208,7 +208,7 @@ struct JsonCache<H: DeserializeOwned + Serialize> {
     #[serde(with = "ordered_map")]
     code: HashMap<AccountQuery, Bytes>,
     #[serde(with = "ordered_map")]
-    storage: HashMap<StorageQuery, B256>,
+    storage: HashMap<StorageQuery, StorageValue>,
 }
 
 impl<H: DeserializeOwned + Serialize> JsonCache<H> {
@@ -272,14 +272,14 @@ struct BlockQuery {
 struct ProofQuery {
     block_no: BlockNumber,
     address: Address,
-    indices: BTreeSet<B256>,
+    storage_keys: BTreeSet<StorageKey>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 struct StorageQuery {
     block_no: BlockNumber,
     address: Address,
-    index: B256,
+    key: StorageKey,
 }
 
 /// A serde helper to serialize a HashMap into a vector sorted by key
