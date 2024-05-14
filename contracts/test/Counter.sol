@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: Apache-2.0
+
 pragma solidity ^0.8.17;
 
 import {IBonsaiRelay} from "../src/relay/IBonsaiRelay.sol";
