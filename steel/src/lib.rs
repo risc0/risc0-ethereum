@@ -28,7 +28,7 @@ use revm::{
     Database, Evm,
 };
 use serde::{Deserialize, Serialize};
-use std::{convert::Infallible, fmt::Debug, rc::Rc};
+use std::{convert::Infallible, fmt::Debug, mem, rc::Rc};
 
 pub mod config;
 pub mod db;
@@ -162,11 +162,19 @@ pub struct ViewCall<C: SolCall> {
 }
 
 impl<C: SolCall> ViewCall<C> {
+    /// Compile-time assertion that the call C has a return value.
+    const RETURNS: () = assert!(
+        mem::size_of::<C::Return>() > 0,
+        "Function call must have a return value"
+    );
     /// The default gas limit for view calls.
     const GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new view call to the given contract.
     pub fn new(call: C, contract: Address) -> Self {
+        #[allow(clippy::let_unit_value)]
+        let _ = Self::RETURNS;
+
         Self {
             call,
             contract,
