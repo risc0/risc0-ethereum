@@ -22,10 +22,10 @@ use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use alloy_sol_types::{sol, SolCall, SolType};
 use revm::{
     primitives::{
-        db::Database, AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult,
-        HashMap, ResultAndState, SpecId, SuccessReason, TransactTo,
+        AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap,
+        ResultAndState, SpecId, SuccessReason, TransactTo,
     },
-    Evm,
+    Database, Evm,
 };
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, fmt::Debug, rc::Rc};
@@ -99,13 +99,13 @@ sol! {
 }
 
 /// The [ViewCall] is configured from this object.
-pub struct ViewCallEnv<D: Database, H: EvmHeader> {
+pub struct ViewCallEnv<D, H: EvmHeader> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
 }
 
-impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
+impl<D, H: EvmHeader> ViewCallEnv<D, H> {
     /// Creates a new view call environment.
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
@@ -141,6 +141,19 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
     }
 }
 
+impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
+    /// Execute the call on the [ViewCallEnv]. This might modify the database
+    pub fn execute<C>(&self, view_call: ViewCall<C>) -> C::Return
+    where
+        C: SolCall,
+    {
+        let db = WrapStateDb::new(&self.db);
+        view_call
+            .transact(db, self.cfg_env.clone(), self.header.inner())
+            .unwrap()
+    }
+}
+
 /// A view call to an Ethereum contract.
 pub struct ViewCall<C: SolCall> {
     call: C,
@@ -169,22 +182,24 @@ impl<C: SolCall> ViewCall<C> {
 
     /// Executes the view call using the given environment.
     #[inline]
-    pub fn execute<D: Database, H: EvmHeader>(self, env: ViewCallEnv<D, H>) -> C::Return
-    where
-        <D as Database>::Error: Debug,
-    {
-        self.transact(env.db, env.cfg_env, env.header.inner())
-            .unwrap()
+    #[deprecated(
+        since = "0.11.0",
+        note = "please use `env.execute(..)` (ViewCallEnv::execute) instead"
+    )]
+    pub fn execute<H: EvmHeader>(self, env: ViewCallEnv<StateDB, H>) -> C::Return {
+        env.execute(self)
     }
 
-    /// Transacts a transaction corresponding to the call data.
-    fn transact<D: Database, H: EvmHeader>(
-        &self,
+    /// Executes a view call using context from the [ViewCallEnv].
+    fn transact<D, H>(
+        self,
         db: D,
         cfg_env: CfgEnvWithHandlerCfg,
         header: &H,
     ) -> Result<C::Return, String>
     where
+        D: Database,
+        H: EvmHeader,
         <D as Database>::Error: Debug,
     {
         let mut evm = Evm::builder()
@@ -236,8 +251,6 @@ pub struct StateDB {
     storage_tries: HashMap<B256, Rc<MerkleTrie>>,
     contracts: HashMap<B256, Bytes>,
     block_hashes: HashMap<u64, B256>,
-
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
 }
 
 impl StateDB {
@@ -261,25 +274,63 @@ impl StateDB {
             contracts,
             storage_tries,
             block_hashes,
+        }
+    }
+
+    fn account(&self, address: Address) -> Option<StateAccount> {
+        self.state_trie
+            .get_rlp(keccak256(address))
+            .expect("invalid state value")
+    }
+
+    fn code_by_hash(&self, hash: B256) -> &Bytes {
+        self.contracts
+            .get(&hash)
+            .unwrap_or_else(|| panic!("code not found: {}", hash))
+    }
+
+    fn block_hash(&self, number: U256) -> B256 {
+        // block number is never bigger then u64::MAX
+        let number: u64 = number.to();
+        let hash = self
+            .block_hashes
+            .get(&number)
+            .unwrap_or_else(|| panic!("block not found: {}", number));
+        *hash
+    }
+
+    fn storage_trie(&self, root: &B256) -> Option<&Rc<MerkleTrie>> {
+        self.storage_tries.get(root)
+    }
+}
+
+struct WrapStateDb<'a> {
+    inner: &'a StateDB,
+    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
+}
+
+impl<'a> WrapStateDb<'a> {
+    /// Creates a new [Database] from the given [StateDb].
+    fn new(inner: &'a StateDB) -> Self {
+        Self {
+            inner,
             account_storage: HashMap::new(),
         }
     }
 }
 
-impl Database for StateDB {
+impl Database for WrapStateDb<'_> {
     /// The database does not return any errors.
     type Error = Infallible;
 
+    /// Get basic account information.
     #[inline]
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let account = self
-            .state_trie
-            .get_rlp::<StateAccount>(keccak256(address))
-            .expect("invalid state value");
+        let account = self.inner.account(address);
         match account {
             Some(account) => {
                 // link storage trie to the account, if it exists
-                if let Some(storage_trie) = self.storage_tries.get(&account.storage_root) {
+                if let Some(storage_trie) = self.inner.storage_trie(&account.storage_root) {
                     self.account_storage
                         .insert(address, Some(storage_trie.clone()));
                 }
@@ -299,15 +350,14 @@ impl Database for StateDB {
         }
     }
 
+    /// Get account code by its hash.
     #[inline]
-    fn code_by_hash(&mut self, hash: B256) -> Result<Bytecode, Self::Error> {
-        let code = self
-            .contracts
-            .get(&hash)
-            .unwrap_or_else(|| panic!("code not found: {}", hash));
+    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
+        let code = self.inner.code_by_hash(code_hash);
         Ok(Bytecode::new_raw(code.clone()))
     }
 
+    /// Get storage value of address at index.
     #[inline]
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
         let storage = self
@@ -325,15 +375,10 @@ impl Database for StateDB {
         }
     }
 
+    /// Get block hash by block number.
     #[inline]
     fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
-        // block number is never bigger then u64::MAX
-        let number: u64 = number.to();
-        let hash = self
-            .block_hashes
-            .get(&number)
-            .unwrap_or_else(|| panic!("block not found: {}", number));
-        Ok(*hash)
+        Ok(self.inner.block_hash(number))
     }
 }
 
