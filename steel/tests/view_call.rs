@@ -14,7 +14,7 @@
 
 #![cfg(feature = "host")]
 
-use alloy_primitives::{address, uint, Address, BlockNumber, U256};
+use alloy_primitives::{address, uint, BlockNumber, U256};
 use alloy_sol_types::{sol, SolCall};
 use risc0_steel::{
     ethereum::EthViewCallEnv,
@@ -41,15 +41,45 @@ fn erc20_balance_of() {
 
     // run the preflight
     let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
-    let (input, _) = ViewCall::new(call.clone(), contract)
-        .preflight(env)
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    env.preflight(ViewCall::new(call.clone(), contract))
         .unwrap();
+    let input = env.into_zkvm_input().unwrap();
 
     // execute the call
     let env = input.into_env();
-    let result = ViewCall::new(call, contract).execute(env);
+    let result = env.execute(ViewCall::new(call, contract));
     assert_eq!(result._0, uint!(3000000000000000_U256));
+}
+
+#[test]
+fn erc20_multi_balance_of() {
+    let contract = address!("dAC17F958D2ee523a2206206994597C13D831ec7"); // USDT
+    sol! {
+        function balanceOf(address account) external view returns (uint);
+    }
+    let call = balanceOfCall {
+        account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"), // Binance 8
+    };
+    let call2 = balanceOfCall {
+        account: address!("5a52E96BAcdaBb82fd05763E25335261B270Efcb"), // Binance 28
+    };
+
+    // run the preflight
+    let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    env.preflight(ViewCall::new(call.clone(), contract))
+        .unwrap();
+    env.preflight(ViewCall::new(call2.clone(), contract))
+        .unwrap();
+    let input = env.into_zkvm_input().unwrap();
+
+    // execute the call
+    let env = input.into_env();
+    let result = env.execute(ViewCall::new(call, contract));
+    let result2 = env.execute(ViewCall::new(call2, contract));
+    assert_eq!(result._0, uint!(3000000000000000_U256));
+    assert_eq!(result2._0, uint!(0x38d7ea4c68000_U256));
 }
 
 #[test]
@@ -88,29 +118,26 @@ fn uniswap_exact_output_single() {
 
     // run the preflight
     let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
-    let (input, _) = ViewCall::new(call.clone(), contract)
-        .with_caller(caller)
-        .preflight(env)
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    env.preflight(ViewCall::new(call.clone(), contract).with_caller(caller))
         .unwrap();
+    let input = env.into_zkvm_input().unwrap();
 
     // execute the call
     let env = input.into_env();
-    let result = ViewCall::new(call, contract)
-        .with_caller(caller)
-        .execute(env);
+    let result = env.execute(ViewCall::new(call, contract).with_caller(caller));
     assert_eq!(result.amountIn, uint!(112537714517_U256));
 }
 
 /// Adds the required RPC data to the cache file.
 #[allow(dead_code)]
-fn golden(call: impl SolCall, contract: Address, caller: Address) {
+fn golden<C: SolCall>(calls: impl IntoIterator<Item = ViewCall<C>>) {
     let client = EthersClient::new_client("<RPC-URL>", 3, 500).unwrap();
     let provider = CachedProvider::new(RPC_CACHE_FILE.into(), EthersProvider::new(client)).unwrap();
-    let env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
+    let mut env = EthViewCallEnv::from_provider(provider, BLOCK).unwrap();
 
-    ViewCall::new(call, contract)
-        .with_caller(caller)
-        .preflight(env)
-        .unwrap();
+    for call in calls {
+        env.preflight(call).unwrap();
+    }
+    env.into_zkvm_input().unwrap();
 }
