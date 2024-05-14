@@ -75,7 +75,7 @@ pub struct BonsaiProver {}
 impl BonsaiProver {
     /// Generates a snark proof as a triplet (`Vec<u8>`, `FixedBytes<32>`,
     /// `Vec<u8>) for the given elf and input.
-    pub fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, FixedBytes<32>, Vec<u8>)> {
+    pub fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         let client = bonsai_sdk::Client::from_env(risc0_zkvm::VERSION)?;
 
         // Compute the image_id, then upload the ELF with the image_id as its key.
@@ -148,13 +148,8 @@ impl BonsaiProver {
         log::debug!("Snark proof!: {snark:?}");
 
         let seal = Seal::abi_encode(snark).context("Read seal")?;
-        let post_state_digest: FixedBytes<32> = snark_receipt
-            .post_state_digest
-            .as_slice()
-            .try_into()
-            .context("Read post_state_digest")?;
         let journal = snark_receipt.journal;
 
-        Ok((journal, post_state_digest, seal))
+        Ok((journal, seal))
     }
 }

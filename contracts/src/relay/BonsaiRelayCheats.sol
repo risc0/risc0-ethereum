@@ -20,9 +20,9 @@ import {Test} from "forge-std/Test.sol";
 import {StdCheatsSafe} from "forge-std/StdCheats.sol";
 import {CommonBase} from "forge-std/Base.sol";
 import {console2} from "forge-std/console2.sol";
-import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
-import {RiscZeroCheats} from "../RiscZeroCheats.sol";
+import {Strings2} from "../test/utils/Strings2.sol";
+import {RiscZeroCheats} from "../test/RiscZeroCheats.sol";
 
 // NOTE: These are included for use in the BonsaiRelayTest contract. In their current form
 // they are not recommended for any other use as the current factoring makes assumptions
@@ -55,7 +55,7 @@ abstract contract BonsaiRelayCheats is RiscZeroCheats {
     ///     BONSAI_API_KEY environment variables.
     function queryImageOutputAndSeal(bytes32 imageId, bytes memory input)
         internal
-        returns (bytes memory, bytes32, bytes memory)
+        returns (bytes memory, bytes memory)
     {
         string[] memory imageRunnerInput = new string[](6);
         uint256 i = 0;
@@ -65,7 +65,7 @@ abstract contract BonsaiRelayCheats is RiscZeroCheats {
         imageRunnerInput[i++] = "query";
         imageRunnerInput[i++] = abi.encodePacked(imageId).toHexString();
         imageRunnerInput[i++] = input.toHexString();
-        return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes32, bytes));
+        return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes));
     }
 
     /// @notice Returns the image id of the guest with the specified name.
