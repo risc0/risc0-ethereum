@@ -17,7 +17,9 @@ use std::io::Write;
 use anyhow::{Context, Result};
 use clap::Parser;
 use ethers::abi::Token;
-use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{
+    default_prover, sha::Digestible, CompactReceipt, ExecutorEnv, ProverOpts, VerifierContext,
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -51,7 +53,13 @@ pub fn main() -> Result<()> {
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let elf = std::fs::read(elf_path).unwrap();
     let (journal, seal) = prove(&elf, &input)?;
-    let calldata = vec![Token::Bytes(journal), Token::Bytes(seal)];
+    let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
+    let selector = &verifier_parameters_digest.as_bytes()[..4];
+    let calldata = vec![
+        Token::Bytes(journal),
+        Token::Bytes(selector.to_vec()),
+        Token::Bytes(seal),
+    ];
     let output = hex::encode(ethers::abi::encode(&calldata));
 
     // Forge test FFI calls expect hex encoded bytes sent to stdout
