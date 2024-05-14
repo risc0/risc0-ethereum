@@ -17,9 +17,8 @@ use std::io::Write;
 use anyhow::{Context, Result};
 use clap::Parser;
 use ethers::abi::Token;
-use risc0_zkvm::{
-    default_prover, sha::Digestible, CompactReceipt, ExecutorEnv, ProverOpts, VerifierContext,
-};
+use risc0_ethereum_contracts::groth16::Seal;
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -53,13 +52,7 @@ pub fn main() -> Result<()> {
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let elf = std::fs::read(elf_path).unwrap();
     let (journal, seal) = prove(&elf, &input)?;
-    let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
-    let selector = &verifier_parameters_digest.as_bytes()[..4];
-    // Create a new vector with the capacity to hold both selector and seal
-    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
-    selector_seal.extend_from_slice(selector);
-    selector_seal.extend_from_slice(&seal);
-    let calldata = vec![Token::Bytes(journal), Token::Bytes(selector_seal)];
+    let calldata = vec![Token::Bytes(journal), Token::Bytes(seal)];
     let output = hex::encode(ethers::abi::encode(&calldata));
 
     // Forge test FFI calls expect hex encoded bytes sent to stdout
@@ -82,6 +75,6 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         .receipt;
 
     let journal = receipt.journal.bytes;
-    let seal = receipt.inner.compact()?.seal.clone();
+    let seal = Seal::abi_encode(receipt.inner.compact()?.seal.clone())?;
     Ok((journal, seal))
 }
