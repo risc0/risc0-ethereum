@@ -102,7 +102,7 @@ impl<P: Provider> Database for ProviderDb<P> {
             .get_storage_at(address, index.into(), self.block_number)
             .map_err(ProviderDbError::Provider)?;
 
-        Ok(storage.into())
+        Ok(storage)
     }
 
     fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
