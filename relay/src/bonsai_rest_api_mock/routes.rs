@@ -23,7 +23,10 @@ use bonsai_sdk::alpha::responses::{
     CreateSessRes, ImgUploadRes, ProofReq, SessionStatusRes, SnarkReceipt, SnarkReq,
     SnarkStatusRes, UploadRes,
 };
-use risc0_zkvm::{Groth16Seal, Receipt};
+use risc0_zkvm::{
+    sha::{Digest, Digestible},
+    Groth16Seal, Receipt, SystemState,
+};
 use tracing::info;
 
 use super::{
@@ -151,7 +154,14 @@ pub(crate) async fn snark_status(
                         b: vec![],
                         c: vec![],
                     },
-                    post_state_digest: vec![],
+                    // TODO(victor): Remove this from here and from the BonsaiSDK.
+                    post_state_digest: SystemState {
+                        pc: 0,
+                        merkle_root: Digest::ZERO,
+                    }
+                    .digest()
+                    .as_bytes()
+                    .to_vec(),
                     journal: receipt.journal.bytes,
                 }),
                 error_msg: None,

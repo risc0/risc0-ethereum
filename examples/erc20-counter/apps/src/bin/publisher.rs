@@ -40,7 +40,7 @@ sol! {
 // `ICounter` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface ICounter {
-        function increment(bytes calldata journal, bytes32 post_state_digest, bytes calldata seal);
+        function increment(bytes calldata journal, calldata seal);
     }
 }
 
@@ -88,7 +88,7 @@ fn main() -> Result<()> {
     // Create a view call environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
-    let env =
+    let mut env =
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
 
@@ -98,7 +98,8 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let (view_call_input, returns) = ViewCall::new(call, CONTRACT).preflight(env)?;
+    let returns = env.preflight(ViewCall::new(call, CONTRACT))?;
+    let view_call_input = env.into_zkvm_input()?;
     println!(
         "For block {} `{}` returns: {}",
         number,
@@ -113,15 +114,11 @@ fn main() -> Result<()> {
         .write(account)
         .unwrap()
         .bytes();
-    let (journal, post_state_digest, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
+    let (journal, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
 
-    // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
-    let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
-        journal: journal.into(),
-        post_state_digest,
-        seal: seal.into(),
-    })
-    .abi_encode();
+    // Encode the function call for `ICounter.increment(journal, seal)`.
+    let calldata =
+        ICounter::ICounterCalls::increment(ICounter::incrementCall { journal, seal }).abi_encode();
 
     // Send the calldata to Ethereum.
     let runtime = tokio::runtime::Runtime::new()?;

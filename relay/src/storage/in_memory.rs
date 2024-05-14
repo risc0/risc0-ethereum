@@ -171,6 +171,7 @@ impl Storage for InMemoryStorage {
         Ok(hashmap.values().cloned().collect())
     }
 
+    #[cfg(test)]
     async fn get_proof_request_state(&self, proof_id: ProofID) -> Result<ProofRequestState, Error> {
         match self.proof_states.read()?.get(&proof_id.uuid) {
             Some(state) => Ok(*state),
