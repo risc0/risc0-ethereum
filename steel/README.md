@@ -85,10 +85,10 @@ struct BlockCommitment {
 Here's an example of how to implement the validation:
 
 ```solidity
-function validate(bytes calldata journal, bytes32 postStateDigest, bytes calldata seal) public {
+function validate(bytes calldata journal, bytes calldata seal) public {
     BlockCommitment memory commitment = abi.decode(journal, (BlockCommitment));
     require(blockhash(commitment.blockNumber) == commitment.blockHash);
-    require(verifier.verify(seal, imageId, postStateDigest, sha256(journal)));
+    require(verifier.verify(seal, imageId, sha256(journal)));
 }
 ```
 

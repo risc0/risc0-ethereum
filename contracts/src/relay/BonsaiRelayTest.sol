@@ -18,7 +18,6 @@ pragma solidity ^0.8.17;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {Strings2} from "murky/differential_testing/test/utils/Strings2.sol";
 
 import {IBonsaiRelay, Callback, CallbackAuthorization} from "./IBonsaiRelay.sol";
 import {BonsaiRelay} from "./BonsaiRelay.sol";
@@ -27,6 +26,7 @@ import {BonsaiTestRelay} from "./BonsaiTestRelay.sol";
 import {BonsaiRelayCheats} from "./BonsaiRelayCheats.sol";
 import {IRiscZeroVerifier} from "../IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../groth16/RiscZeroGroth16Verifier.sol";
+import {Strings2} from "../test/utils/Strings2.sol";
 
 /// @notice A base contract for testing a Bonsai relay callback receiver contract
 abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
@@ -50,8 +50,7 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             bonsaiTestRelay = new BonsaiTestRelay(vm.envOr("BONSAI_TEST_RELAY_EXPECTED_CHAIN_ID", uint256(31337)));
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiTestRelay);
         } else {
-            IRiscZeroVerifier verifier =
-                new RiscZeroGroth16Verifier(ControlID.CONTROL_ID_0, ControlID.CONTROL_ID_1, ControlID.BN254_CONTROL_ID);
+            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
             bonsaiVerifyingRelay = new BonsaiRelay(verifier);
             bonsaiRelay = new BonsaiRelayQueueWrapper(bonsaiVerifyingRelay);
         }
@@ -88,11 +87,11 @@ abstract contract BonsaiRelayTest is Test, BonsaiRelayCheats {
             bytes memory journal = queryImageOutput(imageId, input);
             payload = abi.encodePacked(functionSelector, journal, imageId);
             // Set the seal to be the empty seal.
-            auth = CallbackAuthorization(new bytes(0), bytes32(0));
+            auth = CallbackAuthorization(new bytes(0));
         } else {
-            (bytes memory journal, bytes32 postStateDigest, bytes memory seal) = queryImageOutputAndSeal(imageId, input);
+            (bytes memory journal, bytes memory seal) = queryImageOutputAndSeal(imageId, input);
             payload = abi.encodePacked(functionSelector, journal, imageId);
-            auth = CallbackAuthorization(seal, postStateDigest);
+            auth = CallbackAuthorization(seal);
         }
         Callback memory callback = Callback(auth, callbackContract, payload, gasLimit);
         vm.resumeGasMetering();
