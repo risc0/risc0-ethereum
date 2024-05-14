@@ -40,7 +40,7 @@ sol! {
 // `ICounter` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface ICounter {
-        function increment(bytes calldata journal, calldata seal);
+        function increment(bytes calldata journal, bytes calldata seal);
     }
 }
 
