@@ -154,6 +154,7 @@ impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
 }
 
 /// A view call to an Ethereum contract.
+#[derive(Debug, Clone)]
 pub struct ViewCall<C: SolCall> {
     call: C,
     contract: Address,
