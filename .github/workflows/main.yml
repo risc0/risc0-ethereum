@@ -17,8 +17,8 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: v2024-02-08.1
-  RISC0_MONOREPO_REF: "main"
+  RISC0_TOOLCHAIN_VERSION: v2024-04-22.0
+  RISC0_MONOREPO_REF: "capossele/compact_pb"
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -161,9 +161,6 @@ jobs:
         working-directory: examples/erc20-counter
       - name: test erc20-Counter
         run: ./test-local-deployment.sh
-        env:
-          BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
-          BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
         working-directory: examples/erc20-counter
       - run: sccache --show-stats
 
