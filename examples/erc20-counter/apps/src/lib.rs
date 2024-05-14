@@ -22,7 +22,6 @@
 
 use std::time::Duration;
 
-use alloy_primitives::FixedBytes;
 use anyhow::{Context, Result};
 use bonsai_sdk::alpha as bonsai_sdk;
 use ethers::prelude::*;

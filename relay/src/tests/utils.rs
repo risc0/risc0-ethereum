@@ -19,7 +19,7 @@ use bonsai_sdk::alpha::{
 use ethers::types::{Address, Bytes, H256};
 use risc0_ethereum_contracts::i_bonsai_relay::CallbackRequestFilter;
 use risc0_zkvm::{
-    sha::Digest, ExitCode, Groth16Seal, InnerReceipt, Journal, MaybePruned, Receipt, ReceiptClaim,
+    sha::Digest, ExitCode, Groth16Seal, InnerReceipt, MaybePruned, Receipt, ReceiptClaim,
 };
 use uuid::Uuid;
 use wiremock::{
@@ -45,18 +45,16 @@ pub(crate) async fn get_test_bonsai_server() -> (SessionId, MockServer) {
         state: None,
     };
 
-    let receipt_data_response = Receipt {
-        journal: Journal::new(vec![]),
-        inner: InnerReceipt::Fake {
-            claim: ReceiptClaim {
-                pre: MaybePruned::Pruned(Digest::ZERO),
-                post: MaybePruned::Pruned(Digest::ZERO),
-                exit_code: ExitCode::Halted(0),
-                input: Digest::ZERO,
-                output: None.into(),
-            },
+    let inner = InnerReceipt::Fake {
+        claim: ReceiptClaim {
+            pre: MaybePruned::Pruned(Digest::ZERO),
+            post: MaybePruned::Pruned(Digest::ZERO),
+            exit_code: ExitCode::Halted(0),
+            input: MaybePruned::Pruned(Digest::ZERO),
+            output: None.into(),
         },
     };
+    let receipt_data_response = Receipt::new(inner, vec![]);
 
     let create_snark_res = CreateSessRes {
         uuid: receipt_id.to_string(),
