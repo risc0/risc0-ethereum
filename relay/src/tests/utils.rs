@@ -19,7 +19,7 @@ use bonsai_sdk::alpha::{
 use ethers::types::{Address, Bytes, H256};
 use risc0_ethereum_contracts::i_bonsai_relay::CallbackRequestFilter;
 use risc0_zkvm::{
-    sha::Digest, ExitCode, Groth16Seal, InnerReceipt, Journal, MaybePruned, Receipt, ReceiptClaim,
+    sha::Digest, ExitCode, Groth16Seal, InnerReceipt, MaybePruned, Receipt, ReceiptClaim,
 };
 use uuid::Uuid;
 use wiremock::{
