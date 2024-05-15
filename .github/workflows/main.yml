@@ -17,7 +17,7 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: v2024-02-08.1
+  RISC0_TOOLCHAIN_VERSION: v2024-04-22.0
   RISC0_MONOREPO_REF: "main"
 
 jobs:
@@ -90,8 +90,6 @@ jobs:
     env:
       FEATURE: ${{ matrix.feature }}
       RUST_BACKTRACE: full
-      # DO NOT MERGE
-      SCCACHE_RECACHE: true
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
