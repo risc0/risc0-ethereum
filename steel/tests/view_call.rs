@@ -116,7 +116,7 @@ fn uniswap_exact_output_single() {
         },
     };
 
-    let view_call = ViewCall::new(call, contract).with_caller(caller);
+    let view_call = ViewCall::new(call, contract).from(caller);
     let result = eth_call(view_call, block);
     assert_eq!(result.amountIn, uint!(112537714517_U256));
 }
@@ -217,7 +217,18 @@ fn chainid() {
         ViewCall::new(ViewCallTest::testChainidCall {}, VIEW_CALL_TEST_CONTRACT),
         VIEW_CALL_TEST_BLOCK,
     );
-    assert_eq!(result._0, uint!(11155111_U256),);
+    assert_eq!(result._0, uint!(11155111_U256));
+}
+
+#[test]
+fn gasprice() {
+    let gas_price = uint!(42_U256);
+    let result = eth_call(
+        ViewCall::new(ViewCallTest::testGaspriceCall {}, VIEW_CALL_TEST_CONTRACT)
+            .gas_price(gas_price),
+        VIEW_CALL_TEST_BLOCK,
+    );
+    assert_eq!(result._0, gas_price);
 }
 
 #[test]
@@ -229,7 +240,7 @@ fn multi_contract_calls() {
         ),
         VIEW_CALL_TEST_BLOCK,
     );
-    assert_eq!(result._0, uint!(84_U256),);
+    assert_eq!(result._0, uint!(84_U256));
 }
 
 #[test]
