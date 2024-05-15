@@ -75,6 +75,6 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         .receipt;
 
     let journal = receipt.journal.bytes;
-    let seal = Seal::abi_encode(receipt.inner.compact()?.seal.clone())?;
+    let seal = Seal::encode(receipt.inner.compact()?.seal.clone())?;
     Ok((journal, seal))
 }

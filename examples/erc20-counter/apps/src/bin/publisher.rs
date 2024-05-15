@@ -122,7 +122,8 @@ fn main() -> Result<()> {
         )?
         .receipt;
 
-    let seal = Seal::abi_encode(receipt.inner.compact()?.seal.clone())?;
+    // Encode the seal with the selector
+    let seal = Seal::encode(receipt.inner.compact()?.seal.clone())?;
 
     // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {

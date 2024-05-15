@@ -21,6 +21,11 @@ pub struct Seal {}
 impl Seal {
     /// ABI encoding of the seal.
     pub fn abi_encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+        Ok(Self::encode(seal)?.abi_encode())
+    }
+
+    /// encoding of the seal with selector.
+    pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
         let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
         let selector = &verifier_parameters_digest.as_bytes()[..4];
         // Create a new vector with the capacity to hold both selector and seal
@@ -28,6 +33,6 @@ impl Seal {
         selector_seal.extend_from_slice(selector);
         selector_seal.extend_from_slice(&seal);
 
-        Ok(selector_seal.abi_encode())
+        Ok(selector_seal)
     }
 }
