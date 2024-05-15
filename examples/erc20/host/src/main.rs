@@ -64,7 +64,7 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let returns = env.preflight(ViewCall::new(CALL, CONTRACT).with_caller(CALLER))?;
+    let returns = env.preflight(ViewCall::new(CALL, CONTRACT).from(CALLER))?;
     let input = env.into_zkvm_input()?;
     println!(
         "For block {} `{}` returns: {}",

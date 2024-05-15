@@ -31,8 +31,8 @@ runs:
         shell: bash
       - name: install r0vm
         run: cargo install --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
-        working-directory: tmp/risc0
         shell: bash
+        working-directory: tmp/risc0
       - name: install toolchains
         run: cargo risczero install --version ${{ inputs.toolchain-version }}
         shell: bash
