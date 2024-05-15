@@ -88,7 +88,7 @@ fn main() -> Result<()> {
     // Create a view call environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
-    let env =
+    let mut env =
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
 
@@ -98,7 +98,8 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let (view_call_input, returns) = ViewCall::new(call, CONTRACT).preflight(env)?;
+    let returns = env.preflight(ViewCall::new(call, CONTRACT))?;
+    let view_call_input = env.into_zkvm_input()?;
     println!(
         "For block {} `{}` returns: {}",
         number,

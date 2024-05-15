@@ -68,32 +68,54 @@ impl<C: SolCall> ViewCall<C> {
     /// Executes the call to derive the corresponding [ViewCallInput].
     ///
     /// This method is used to preflight the call and get the required input for the guest.
+    #[deprecated(
+        since = "0.11.0",
+        note = "please use `env.preflight(..)` (ViewCallEnv::preflight) instead"
+    )]
     pub fn preflight<P: Provider>(
         self,
-        env: ViewCallEnv<ProofDb<P>, P::Header>,
+        mut env: ViewCallEnv<ProofDb<P>, P::Header>,
     ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
+        // initialize the database and execute the transaction
+        let transaction_result = env.preflight(self)?;
+
+        let input = env.into_zkvm_input()?;
+
+        Ok((input, transaction_result))
+    }
+}
+
+impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
+    /// Executes the call to derive the corresponding [ViewCallInput].
+    ///
+    /// This method is used to preflight the call and get the required input for the guest.
+    pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return> {
         info!(
             "Executing preflight for '{}' with caller {} on contract {}",
             C::SIGNATURE,
-            self.caller,
-            self.contract
+            view_call.caller,
+            view_call.contract
         );
 
         // initialize the database and execute the transaction
-        let mut db = env.db;
-        let transaction_result = self
-            .transact(&mut db, env.cfg_env, env.header.inner())
-            .map_err(|err| anyhow!(err))?;
+        view_call
+            .transact(&mut self.db, self.cfg_env.clone(), self.header.inner())
+            .map_err(|err| anyhow!(err))
+    }
+
+    /// Convert the env into input that can be passed to the guest program.
+    pub fn into_zkvm_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
+        let db = &self.db;
 
         // use the same provider as the database
         let provider = db.provider();
 
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
-        for (address, storage_slots) in db.accounts() {
+        for (address, storage_keys) in db.accounts() {
             let proof = provider.get_proof(
                 *address,
-                storage_slots.iter().map(|v| B256::from(*v)).collect(),
+                storage_keys.iter().map(|v| B256::from(*v)).collect(),
                 db.block_number(),
             )?;
             proofs.push(proof);
@@ -104,7 +126,7 @@ impl<C: SolCall> ViewCall<C> {
         let state_trie =
             MerkleTrie::from_rlp_nodes(state_nodes).context("invalid account proof")?;
         ensure!(
-            env.header.state_root() == &state_trie.hash_slow(),
+            self.header.state_root() == &state_trie.hash_slow(),
             "root of the state trie does not match the header"
         );
 
@@ -147,15 +169,13 @@ impl<C: SolCall> ViewCall<C> {
         debug!("contracts: {}", contracts.len());
         debug!("blocks: {}", ancestors.len());
 
-        let header = env.header.into_inner();
-        let input = ViewCallInput {
+        let header = self.header.into_inner();
+        Ok(ViewCallInput {
             header,
             state_trie,
             storage_tries,
             contracts,
             ancestors,
-        };
-
-        Ok((input, transaction_result))
+        })
     }
 }
