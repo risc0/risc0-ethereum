@@ -52,7 +52,7 @@ contract Counter {
         // Construct the expected journal data. Verify will fail if journal does not match.
         BlockCommitment memory commitment = abi.decode(journal, (BlockCommitment));
         require(blockhash(commitment.blockNumber) == commitment.blockHash);
-        require(verifier.verify(seal, imageId, sha256(journal)));
+        verifier.verify(seal, imageId, sha256(journal));
         counter = counter + 1;
     }
 

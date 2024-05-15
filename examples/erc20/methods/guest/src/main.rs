@@ -35,8 +35,9 @@ sol! {
 }
 
 /// Function to call, implements [SolCall] trait.
-const CALL: IERC20::balanceOfCall =
-    IERC20::balanceOfCall { account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4") };
+const CALL: IERC20::balanceOfCall = IERC20::balanceOfCall {
+    account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4"),
+};
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 const CONTRACT: Address = address!("aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0");
