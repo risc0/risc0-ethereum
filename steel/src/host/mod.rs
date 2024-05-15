@@ -112,10 +112,10 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
 
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
-        for (address, storage_slots) in db.accounts() {
+        for (address, storage_keys) in db.accounts() {
             let proof = provider.get_proof(
                 *address,
-                storage_slots.iter().map(|v| B256::from(*v)).collect(),
+                storage_keys.iter().map(|v| B256::from(*v)).collect(),
                 db.block_number(),
             )?;
             proofs.push(proof);

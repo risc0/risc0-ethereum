@@ -31,7 +31,6 @@ use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, fmt::Debug, mem, rc::Rc};
 
 pub mod config;
-pub mod db;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
@@ -155,6 +154,7 @@ impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
 }
 
 /// A view call to an Ethereum contract.
+#[derive(Debug, Clone)]
 pub struct ViewCall<C: SolCall> {
     call: C,
     contract: Address,
