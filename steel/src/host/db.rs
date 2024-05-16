@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{EvmHeader, ViewCallEnv};
 use super::provider::Provider;
+use crate::{EvmHeader, ViewCallEnv};
 use alloy_primitives::{Address, Bytes, Sealable, B256, U256};
 use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, HashSet, KECCAK_EMPTY},
