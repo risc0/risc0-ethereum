@@ -322,9 +322,9 @@ pub(crate) mod private {
     use crate::{MerkleTrie, StateDB};
 
     pub trait SteelEnv<'a> {
-        type Ext;
         type Db: revm::Database;
-        fn into_evm(self) -> Evm<'a, Self::Ext, Self::Db>
+
+        fn into_evm(self) -> Evm<'a, (), Self::Db>
         where
             <Self::Db as Database>::Error: Debug;
     }
@@ -333,11 +333,9 @@ pub(crate) mod private {
     where
         H: EvmHeader,
     {
-        type Ext = ();
-
         type Db = WrapStateDb<'a>;
 
-        fn into_evm(self) -> Evm<'a, Self::Ext, Self::Db> {
+        fn into_evm(self) -> Evm<'a, (), Self::Db> {
             Evm::builder()
                 .with_db(WrapStateDb::new(&self.db))
                 .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
@@ -352,11 +350,9 @@ pub(crate) mod private {
         H: EvmHeader,
         P: Provider,
     {
-        type Ext = ();
-
         type Db = &'a mut ProofDb<P>;
 
-        fn into_evm(self) -> Evm<'a, Self::Ext, Self::Db> {
+        fn into_evm(self) -> Evm<'a, (), Self::Db> {
             Evm::builder()
                 .with_db(&mut self.db)
                 .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
