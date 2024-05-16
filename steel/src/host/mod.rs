@@ -68,16 +68,21 @@ impl<C: SolCall> ViewCall<C> {
     /// Executes the call to derive the corresponding [ViewCallInput].
     ///
     /// This method is used to preflight the call and get the required input for the guest.
-    #[deprecated(
-        since = "0.11.0",
-        note = "please use `env.preflight(..)` (ViewCallEnv::preflight) instead"
-    )]
+    #[deprecated(since = "0.11.0", note = "please use `Contract::preflight` instead")]
     pub fn preflight<P: Provider>(
         self,
         mut env: ViewCallEnv<ProofDb<P>, P::Header>,
     ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
         // initialize the database and execute the transaction
-        let transaction_result = env.preflight(self)?;
+        info!(
+            "Executing preflight for '{}' with caller {} on contract {}",
+            C::SIGNATURE,
+            self.caller,
+            self.contract
+        );
+
+        // initialize the database and execute the transaction
+        let transaction_result = self.transact(&mut env).map_err(|err| anyhow!(err))?;
 
         let input = env.into_zkvm_input()?;
 
@@ -86,25 +91,6 @@ impl<C: SolCall> ViewCall<C> {
 }
 
 impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    /// Executes the call using context from the environment.
-    ///
-    /// This method is used to preflight the call. It will retrieve all necessary chain state data
-    /// using the specified [Provider].
-    pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return>
-    where
-        P::Header: EvmHeader,
-    {
-        info!(
-            "Executing preflight for '{}' with caller {} on contract {}",
-            C::SIGNATURE,
-            view_call.caller,
-            view_call.contract
-        );
-
-        // initialize the database and execute the transaction
-        view_call.transact(self).map_err(|err| anyhow!(err))
-    }
-
     /// Converts the environment into a [ViewCallInput].
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can

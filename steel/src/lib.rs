@@ -54,7 +54,7 @@ impl<H: EvmHeader> ViewCallInput<H> {
     /// Converts the input into a [ViewCallEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
-    pub fn into_env(self) -> ViewCallEnv<StateDB, H> {
+    pub fn into_env(self) -> GuestViewCallEnv<H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
         assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
@@ -98,7 +98,6 @@ sol! {
         uint blockNumber;
     }
 }
-
 
 #[cfg(feature = "host")]
 type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
@@ -147,18 +146,6 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
     }
 }
 
-impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
-    /// Executes the call using context from the environment.
-    #[inline]
-    pub fn execute<C: SolCall>(&self, view_call: ViewCall<C>) -> C::Return {
-        ViewCallBuilder {
-            transaction: view_call,
-            env: self,
-        }
-        .call()
-    }
-}
-
 pub(crate) mod private {
     use super::*;
 
@@ -170,7 +157,7 @@ pub(crate) mod private {
             <Self::Db as Database>::Error: Debug;
     }
 
-    impl<'a, H> SteelEnv<'a> for &'a ViewCallEnv<StateDB, H>
+    impl<'a, H> SteelEnv<'a> for &'a GuestViewCallEnv<H>
     where
         H: EvmHeader,
     {
@@ -517,12 +504,13 @@ impl<C: SolCall> ViewCall<C> {
 
     /// Executes the view call using the given environment.
     #[inline]
-    #[deprecated(
-        since = "0.11.0",
-        note = "please use `env.execute(..)` (ViewCallEnv::execute) instead"
-    )]
-    pub fn execute<H: EvmHeader>(self, env: ViewCallEnv<StateDB, H>) -> C::Return {
-        env.execute(self)
+    #[deprecated(since = "0.11.0", note = "please use `Contract::new` instead")]
+    pub fn execute<H: EvmHeader>(self, env: GuestViewCallEnv<H>) -> C::Return {
+        ViewCallBuilder {
+            transaction: self,
+            env: &env,
+        }
+        .call()
     }
 
     /// Executes the call for the provided state.

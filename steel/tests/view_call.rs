@@ -23,7 +23,7 @@ use risc0_steel::{
         provider::{CachedProvider, EthFileProvider, EthersProvider},
         EthersClient,
     },
-    Contract, ViewCall, ViewCallBuilder,
+    Contract, ViewCallBuilder,
 };
 use std::fmt::Debug;
 use test_log::test;
@@ -332,13 +332,14 @@ where
 
 /// Adds the required RPC data to the cache file.
 #[allow(dead_code)]
-fn golden<C: SolCall>(calls: impl IntoIterator<Item = ViewCall<C>>, block: u64) {
+fn golden<C: SolCall>(calls: impl IntoIterator<Item = C>, address: Address, block: u64) {
     let client = EthersClient::new_client("<RPC-URL>", 3, 500).unwrap();
     let provider = CachedProvider::new(RPC_CACHE_FILE.into(), EthersProvider::new(client)).unwrap();
     let mut env = EthViewCallEnv::from_provider(provider, block).unwrap();
 
+    let mut contract = Contract::preflight(address, &mut env);
     for call in calls {
-        env.preflight(call).unwrap();
+        contract.call_builder(&call).call().unwrap();
     }
     env.into_zkvm_input().unwrap();
 }
