@@ -94,6 +94,7 @@ sol! {
     }
 }
 
+/// Alias for readability, do not make public.
 pub(crate) type GuestViewCallEnv<H> = ViewCallEnv<StateDB, H>;
 
 /// The [ViewCall] is configured from this object.

@@ -31,6 +31,7 @@ use revm::primitives::HashMap;
 pub mod db;
 pub mod provider;
 
+/// Alias for readability, do not make public.
 #[cfg(feature = "host")]
 pub(crate) type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
 
