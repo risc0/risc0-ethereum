@@ -83,7 +83,7 @@ impl<'a, H> Contract<&'a GuestViewCallEnv<H>> {
 #[cfg(feature = "host")]
 impl<'a, P, H> Contract<&'a mut HostViewCallEnv<P, H>>
 where
-    P: crate::host::provider::Provider,
+    P: Provider,
 {
     /// Constructor to initialize a [ViewCallEnv] outside of the guest program. When calling
     /// functions on the contract, the data needed will be fetched through the [Provider], and
@@ -323,7 +323,7 @@ mod private {
 
     pub trait SteelEnv<'a> {
         type Db: revm::Database;
-        
+
         fn into_evm(self) -> Evm<'a, (), Self::Db>
         where
             <Self::Db as Database>::Error: Debug;
