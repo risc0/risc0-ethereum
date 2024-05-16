@@ -261,7 +261,56 @@ pub(crate) mod private {
     }
 }
 
-// TODO docs
+/// A type pointing at a contract using the environment and contract address initialized with. This
+/// contract is not typesafe, be sure the contract deployed at the address matches the ABI you use
+/// to make calls.
+///
+/// To preflight calls in the host to build the proof, use [Contract::preflight], using the env
+/// from [EthViewCallEnv::from_rpc].
+///
+/// To initialize in the guest, use [Contract::new], with the environment constructed through
+/// [EthViewCallInput::into_env].
+///
+/// # Examples
+///
+/// ```no_run
+/// use risc0_steel::{ethereum::EthViewCallEnv, Contract};
+/// use alloy_primitives::{address};
+/// use alloy_sol_types::sol;
+/// 
+/// # fn main() -> anyhow::Result<()> {
+/// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
+/// sol! {
+/// #[derive(Debug, PartialEq, Eq)]
+/// interface IERC20 {
+///    function balanceOf(address account) external view returns (uint);
+/// }
+/// }
+/// 
+/// let get_balance = IERC20::balanceOfCall {
+///     account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
+/// };
+/// 
+/// // Host:
+/// 
+/// let mut env = EthViewCallEnv::from_rpc("https://ethereum-rpc.publicnode.com", None)?;
+/// let mut contract = Contract::preflight(contract_address, &mut env);
+/// contract.call_builder(&get_balance).call()?;
+/// 
+/// let view_call_input = env.into_zkvm_input()?;
+/// 
+/// // Guest
+/// 
+/// let view_call_env = view_call_input.into_env();
+/// let contract = Contract::new(contract_address, &view_call_env);
+/// contract.call_builder(&get_balance).call();
+/// 
+/// # Ok(())
+/// # }
+/// ```
+///
+/// [EthViewCallInput::into_env]: ethereum::EthViewCallInput::into_env
+/// [EthViewCallEnv::from_rpc]: ethereum::EthViewCallEnv::from_rpc
 pub struct Contract<E> {
     address: Address,
     env: E,
