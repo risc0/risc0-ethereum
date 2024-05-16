@@ -99,6 +99,11 @@ sol! {
     }
 }
 
+
+#[cfg(feature = "host")]
+type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
+pub type GuestViewCallEnv<H> = ViewCallEnv<StateDB, H>;
+
 /// The [ViewCall] is configured from this object.
 pub struct ViewCallEnv<D, H> {
     db: D,
@@ -277,7 +282,7 @@ pub(crate) mod private {
 /// use risc0_steel::{ethereum::EthViewCallEnv, Contract};
 /// use alloy_primitives::{address};
 /// use alloy_sol_types::sol;
-/// 
+///
 /// # fn main() -> anyhow::Result<()> {
 /// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
 /// sol! {
@@ -286,25 +291,25 @@ pub(crate) mod private {
 ///    function balanceOf(address account) external view returns (uint);
 /// }
 /// }
-/// 
+///
 /// let get_balance = IERC20::balanceOfCall {
 ///     account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
 /// };
-/// 
+///
 /// // Host:
-/// 
+///
 /// let mut env = EthViewCallEnv::from_rpc("https://ethereum-rpc.publicnode.com", None)?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call()?;
-/// 
+///
 /// let view_call_input = env.into_zkvm_input()?;
-/// 
+///
 /// // Guest
-/// 
+///
 /// let view_call_env = view_call_input.into_env();
 /// let contract = Contract::new(contract_address, &view_call_env);
 /// contract.call_builder(&get_balance).call();
-/// 
+///
 /// # Ok(())
 /// # }
 /// ```
@@ -316,40 +321,46 @@ pub struct Contract<E> {
     env: E,
 }
 
-impl<'a, H> Contract<&'a ViewCallEnv<StateDB, H>> {
-    pub fn new(address: Address, env: &'a ViewCallEnv<StateDB, H>) -> Self {
+impl<'a, H> Contract<&'a GuestViewCallEnv<H>> {
+    pub fn new(address: Address, env: &'a GuestViewCallEnv<H>) -> Self {
         Self { address, env }
     }
-    // TODO docs
-    pub fn call_builder<C: SolCall>(
-        &self,
-        call: &C,
-    ) -> ViewCallBuilder<&ViewCallEnv<StateDB, H>, C> {
+
+    /// Initialize a call builder to execute a call on the contract. For more information on usage,
+    /// see [Contract].
+    pub fn call_builder<C: SolCall>(&self, call: &C) -> ViewCallBuilder<&GuestViewCallEnv<H>, C> {
         ViewCallBuilder::new_sol(self.env, self.address, call)
     }
 }
 
 #[cfg(feature = "host")]
-impl<'a, P, H> Contract<&'a mut ViewCallEnv<ProofDb<P>, H>>
+impl<'a, P, H> Contract<&'a mut HostViewCallEnv<P, H>>
 where
     P: host::provider::Provider,
 {
-    // TODO docs
-    pub fn preflight(address: Address, env: &'a mut ViewCallEnv<ProofDb<P>, H>) -> Self {
+    /// Constructor to initialize a [ViewCallEnv] outside of the guest program. When calling
+    /// functions on the contract, the data needed will be fetched through the [Provider], and
+    /// a storage proof of any elements accessed will be generated in
+    /// [ViewCallEnv::into_zkvm_input].
+    ///
+    /// [Provider]: host::provider::Provider
+    pub fn preflight(address: Address, env: &'a mut HostViewCallEnv<P, H>) -> Self {
         Self { address, env }
     }
 
-    // TODO docs
+    /// Initialize a call builder to execute a call on the contract. For more information on usage,
+    /// see [Contract].
     pub fn call_builder<C: SolCall>(
         &mut self,
         call: &C,
-    ) -> ViewCallBuilder<&mut ViewCallEnv<ProofDb<P>, H>, C> {
+    ) -> ViewCallBuilder<&mut HostViewCallEnv<P, H>, C> {
         ViewCallBuilder::new_sol(&mut self.env, self.address, call)
     }
 }
 
-/// A builder for calling an Ethereum contract.
+/// A builder for calling an Ethereum contract. Once configured, call with [ViewCallBuilder::call].
 #[derive(Debug, Clone)]
+#[must_use]
 pub struct ViewCallBuilder<E, C> {
     transaction: ViewCall<C>,
     env: E,
@@ -405,13 +416,13 @@ impl<E, C> ViewCallBuilder<E, C> {
 }
 
 #[cfg(feature = "host")]
-impl<'a, P, H, C> ViewCallBuilder<&'a mut ViewCallEnv<ProofDb<P>, H>, C>
+impl<'a, P, H, C> ViewCallBuilder<&'a mut HostViewCallEnv<P, H>, C>
 where
     P: host::provider::Provider,
     H: EvmHeader,
     C: SolCall,
 {
-    // TODO docs
+    /// Executes the call with a [ViewCallEnv] constructed with [ViewCallEnv::preflight].
     pub fn call(self) -> anyhow::Result<C::Return> {
         self.transaction
             .transact(self.env)
@@ -419,12 +430,12 @@ where
     }
 }
 
-impl<'a, H, C> ViewCallBuilder<&'a ViewCallEnv<StateDB, H>, C>
+impl<'a, H, C> ViewCallBuilder<&'a GuestViewCallEnv<H>, C>
 where
     H: EvmHeader,
     C: SolCall,
 {
-    // TODO docs
+    /// Executes the call with a [ViewCallEnv] constructed with [ViewCallEnv::preflight].
     pub fn call(self) -> C::Return {
         self.transaction.transact(self.env).unwrap()
     }
@@ -452,8 +463,7 @@ impl<C: SolCall> ViewCall<C> {
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new view call to the given contract.
-    // TODO
-    #[deprecated(since = "0.11.0", note = "please use TODO instead")]
+    #[deprecated(since = "0.11.0", note = "please use `Contract::call_builder` instead")]
     pub fn new(call: C, contract: Address) -> Self {
         #[allow(clippy::let_unit_value)]
         let _ = Self::RETURNS;
