@@ -18,7 +18,9 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use ethers::abi::Token;
 use risc0_ethereum_contracts::groth16::Seal;
-use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{
+    default_prover, is_dev_mode, sha::Digestible, ExecutorEnv, ProverOpts, VerifierContext,
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -74,7 +76,16 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         .prove_with_ctx(env, &ctx, elf, &ProverOpts::compact())?
         .receipt;
 
-    let journal = receipt.journal.bytes;
-    let seal = Seal::encode(receipt.inner.compact()?.seal.clone())?;
+    let journal = receipt.clone().journal.bytes;
+
+    let seal = match is_dev_mode() {
+        true => {
+            let mut seal = Vec::new();
+            seal.extend(vec![0u8; 4]);
+            seal.extend(receipt.claim()?.digest().as_bytes());
+            seal
+        }
+        false => Seal::encode(receipt.inner.compact()?.seal.clone())?,
+    };
     Ok((journal, seal))
 }
