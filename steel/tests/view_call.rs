@@ -23,7 +23,7 @@ use risc0_steel::{
         provider::{CachedProvider, EthFileProvider, EthersProvider},
         EthersClient,
     },
-    ViewCall,
+    Contract, ViewCall, ViewCallBuilder,
 };
 use std::fmt::Debug;
 use test_log::test;
@@ -45,36 +45,37 @@ fn erc20_balance_of() {
         account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"), // Binance 8
     };
 
-    let result = eth_call(ViewCall::new(call, ERC20_TEST_CONTRACT), ERC20_TEST_BLOCK);
+    let result = eth_call_single(
+        call,
+        BuilderOverrides::default(),
+        ERC20_TEST_CONTRACT,
+        ERC20_TEST_BLOCK,
+    );
     assert_eq!(result._0, uint!(3000000000000000_U256));
 }
 
 #[test]
 fn erc20_multi_balance_of() {
-    let view_call1 = ViewCall::new(
-        IERC20::balanceOfCall {
-            account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
-        },
-        ERC20_TEST_CONTRACT,
-    );
-    let view_call2 = ViewCall::new(
-        IERC20::balanceOfCall {
-            account: address!("5a52E96BAcdaBb82fd05763E25335261B270Efcb"),
-        },
-        ERC20_TEST_CONTRACT,
-    );
+    let view_call1 = IERC20::balanceOfCall {
+        account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
+    };
+    let view_call2 = IERC20::balanceOfCall {
+        account: address!("5a52E96BAcdaBb82fd05763E25335261B270Efcb"),
+    };
 
     // run the preflight
     let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
     let mut env = EthViewCallEnv::from_provider(provider, ERC20_TEST_BLOCK).unwrap();
-    env.preflight(view_call1.clone()).unwrap();
-    env.preflight(view_call2.clone()).unwrap();
+    let mut contract = Contract::preflight(ERC20_TEST_CONTRACT, &mut env);
+    contract.call_builder(&view_call1).call().unwrap();
+    contract.call_builder(&view_call2).call().unwrap();
     let input = env.into_zkvm_input().unwrap();
 
     // execute the call
     let env = input.into_env();
-    let result = env.execute(view_call1);
-    let result2 = env.execute(view_call2);
+    let contract = Contract::new(ERC20_TEST_CONTRACT, &env);
+    let result = contract.call_builder(&view_call1).call().unwrap();
+    let result2 = contract.call_builder(&view_call2).call().unwrap();
     assert_eq!(result._0, uint!(3000000000000000_U256));
     assert_eq!(result2._0, uint!(0x38d7ea4c68000_U256));
 }
@@ -116,8 +117,15 @@ fn uniswap_exact_output_single() {
         },
     };
 
-    let view_call = ViewCall::new(call, contract).from(caller);
-    let result = eth_call(view_call, block);
+    let result = eth_call_single(
+        call,
+        BuilderOverrides {
+            from: Some(caller),
+            ..Default::default()
+        },
+        contract,
+        block,
+    );
     assert_eq!(result.amountIn, uint!(112537714517_U256));
 }
 
@@ -168,8 +176,10 @@ sol!(
 
 #[test]
 fn precompile() {
-    let result = eth_call(
-        ViewCall::new(ViewCallTest::testPrecompileCall {}, VIEW_CALL_TEST_CONTRACT),
+    let result = eth_call_single(
+        ViewCallTest::testPrecompileCall {},
+        BuilderOverrides::default(),
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(
@@ -180,11 +190,10 @@ fn precompile() {
 
 #[test]
 fn nonexistent_account() {
-    let result = eth_call(
-        ViewCall::new(
-            ViewCallTest::testNonexistentAccountCall {},
-            VIEW_CALL_TEST_CONTRACT,
-        ),
+    let result = eth_call_single(
+        ViewCallTest::testNonexistentAccountCall {},
+        BuilderOverrides::default(),
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(result.size, uint!(0_U256));
@@ -192,8 +201,10 @@ fn nonexistent_account() {
 
 #[test]
 fn eoa_account() {
-    let result = eth_call(
-        ViewCall::new(ViewCallTest::testEoaAccountCall {}, VIEW_CALL_TEST_CONTRACT),
+    let result = eth_call_single(
+        ViewCallTest::testEoaAccountCall {},
+        BuilderOverrides::default(),
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(result.size, uint!(0_U256));
@@ -201,8 +212,10 @@ fn eoa_account() {
 
 #[test]
 fn blockhash() {
-    let result = eth_call(
-        ViewCall::new(ViewCallTest::testBlockhashCall {}, VIEW_CALL_TEST_CONTRACT),
+    let result = eth_call_single(
+        ViewCallTest::testBlockhashCall {},
+        BuilderOverrides::default(),
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(
@@ -213,8 +226,10 @@ fn blockhash() {
 
 #[test]
 fn chainid() {
-    let result = eth_call(
-        ViewCall::new(ViewCallTest::testChainidCall {}, VIEW_CALL_TEST_CONTRACT),
+    let result = eth_call_single(
+        ViewCallTest::testChainidCall {},
+        BuilderOverrides::default(),
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(result._0, uint!(11155111_U256));
@@ -223,9 +238,13 @@ fn chainid() {
 #[test]
 fn gasprice() {
     let gas_price = uint!(42_U256);
-    let result = eth_call(
-        ViewCall::new(ViewCallTest::testGaspriceCall {}, VIEW_CALL_TEST_CONTRACT)
-            .gas_price(gas_price),
+    let result = eth_call_single(
+        ViewCallTest::testGaspriceCall {},
+        BuilderOverrides {
+            gas_price: Some(gas_price),
+            ..Default::default()
+        },
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(result._0, gas_price);
@@ -233,11 +252,10 @@ fn gasprice() {
 
 #[test]
 fn multi_contract_calls() {
-    let result = eth_call(
-        ViewCall::new(
-            ViewCallTest::testMuliContractCallsCall {},
-            VIEW_CALL_TEST_CONTRACT,
-        ),
+    let result = eth_call_single(
+        ViewCallTest::testMuliContractCallsCall {},
+        BuilderOverrides::default(),
+        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
     );
     assert_eq!(result._0, uint!(84_U256));
@@ -249,14 +267,39 @@ fn call_eoa() {
     let mut env = EthViewCallEnv::from_provider(provider, VIEW_CALL_TEST_BLOCK)
         .unwrap()
         .with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-    env.preflight(ViewCall::new(
-        ViewCallTest::testBlockhashCall {},
-        Address::ZERO,
-    ))
-    .expect_err("calling an EOA should fail");
+    let mut contract = Contract::preflight(Address::ZERO, &mut env);
+    contract
+        .call_builder(&ViewCallTest::testBlockhashCall {})
+        .call()
+        .expect_err("calling an EOA should fail");
 }
 
-fn eth_call<C>(view_call: ViewCall<C>, block: u64) -> C::Return
+/// Type just used in tests to avoid restriction of operating over builders with different generic
+/// `E` types.
+#[derive(Debug, Default)]
+struct BuilderOverrides {
+    gas_price: Option<U256>,
+    from: Option<Address>,
+}
+
+impl BuilderOverrides {
+    fn override_builder<E, C>(&self, mut builder: ViewCallBuilder<E, C>) -> ViewCallBuilder<E, C> {
+        if let Some(gas_price) = self.gas_price {
+            builder = builder.gas_price(gas_price);
+        }
+        if let Some(from) = self.from {
+            builder = builder.from(from);
+        }
+        builder
+    }
+}
+
+fn eth_call_single<C>(
+    sol_call: C,
+    call_overrides: BuilderOverrides,
+    address: Address,
+    block: u64,
+) -> C::Return
 where
     C: SolCall + Clone,
     <C as SolCall>::Return: PartialEq + Debug,
@@ -266,11 +309,20 @@ where
         .unwrap()
         .with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
-    let preflight_result = env.preflight(view_call.clone()).unwrap();
+    let mut preflight = Contract::preflight(address, &mut env);
+    let preflight_result = call_overrides
+        .override_builder(preflight.call_builder(&sol_call))
+        .call()
+        .unwrap();
+
     let input = env.into_zkvm_input().unwrap();
 
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-    let result = env.execute(view_call);
+    let contract = Contract::new(address, &env);
+    let result = call_overrides
+        .override_builder(contract.call_builder(&sol_call))
+        .call()
+        .unwrap();
     assert_eq!(
         result, preflight_result,
         "mismatch in preflight and execution"

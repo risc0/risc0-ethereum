@@ -20,6 +20,7 @@ use alloy_primitives::{
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use alloy_sol_types::{sol, SolCall, SolType};
+#[cfg(feature = "host")]
 use host::db::ProofDb;
 use revm::{
     primitives::{
@@ -276,7 +277,7 @@ impl<'a, H> Contract<&'a ViewCallEnv<StateDB, H>> {
         &self,
         call: &C,
     ) -> ViewCallBuilder<&ViewCallEnv<StateDB, H>, C> {
-        ViewCallBuilder::new_sol(&self.env, self.address, call)
+        ViewCallBuilder::new_sol(self.env, self.address, call)
     }
 }
 
@@ -387,6 +388,8 @@ impl<C: SolCall> ViewCall<C> {
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new view call to the given contract.
+    // TODO
+    #[deprecated(since = "0.11.0", note = "please use TODO instead")]
     pub fn new(call: C, contract: Address) -> Self {
         #[allow(clippy::let_unit_value)]
         let _ = Self::RETURNS;
