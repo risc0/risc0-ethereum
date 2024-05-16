@@ -20,6 +20,7 @@ use alloy_primitives::{
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use alloy_sol_types::{sol, SolCall, SolType};
+use host::db::ProofDb;
 use revm::{
     primitives::{
         AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap,
@@ -261,19 +262,40 @@ pub(crate) mod private {
 }
 
 // TODO docs
-pub struct Contract<'a, D, H> {
+pub struct Contract<E> {
     address: Address,
-    env: &'a ViewCallEnv<D, H>,
+    env: E,
 }
 
-impl<'a, D, H> Contract<'a, D, H> {
-    pub fn new(address: Address, env: &'a ViewCallEnv<D, H>) -> Self {
+impl<'a, H> Contract<&'a ViewCallEnv<StateDB, H>> {
+    pub fn new(address: Address, env: &'a ViewCallEnv<StateDB, H>) -> Self {
+        Self { address, env }
+    }
+    // TODO docs
+    pub fn call_builder<C: SolCall>(
+        &self,
+        call: &C,
+    ) -> ViewCallBuilder<&ViewCallEnv<StateDB, H>, C> {
+        ViewCallBuilder::new_sol(&self.env, self.address, call)
+    }
+}
+
+#[cfg(feature = "host")]
+impl<'a, P, H> Contract<&'a mut ViewCallEnv<ProofDb<P>, H>>
+where
+    P: host::provider::Provider,
+{
+    // TODO docs
+    pub fn preflight(address: Address, env: &'a mut ViewCallEnv<ProofDb<P>, H>) -> Self {
         Self { address, env }
     }
 
     // TODO docs
-    pub fn call_builder<C: SolCall>(&self, call: &C) -> ViewCallBuilder<&'a ViewCallEnv<D, H>, C> {
-        ViewCallBuilder::new_sol(self.env, self.address, call)
+    pub fn call_builder<C: SolCall>(
+        &mut self,
+        call: &C,
+    ) -> ViewCallBuilder<&mut ViewCallEnv<ProofDb<P>, H>, C> {
+        ViewCallBuilder::new_sol(&mut self.env, self.address, call)
     }
 }
 
