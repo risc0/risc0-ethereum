@@ -90,7 +90,10 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
     ///
     /// This method is used to preflight the call. It will retrieve all necessary chain state data
     /// using the specified [Provider].
-    pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return> {
+    pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return>
+    where
+        P::Header: EvmHeader,
+    {
         info!(
             "Executing preflight for '{}' with caller {} on contract {}",
             C::SIGNATURE,
@@ -99,9 +102,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         );
 
         // initialize the database and execute the transaction
-        view_call
-            .transact(&mut self.db, self.cfg_env.clone(), self.header.inner())
-            .map_err(|err| anyhow!(err))
+        view_call.transact(self).map_err(|err| anyhow!(err))
     }
 
     /// Converts the environment into a [ViewCallInput].

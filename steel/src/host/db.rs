@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::{EvmHeader, ViewCallEnv};
 use super::provider::Provider;
 use alloy_primitives::{Address, Bytes, Sealable, B256, U256};
 use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, HashSet, KECCAK_EMPTY},
-    Database,
+    Database, Evm,
 };
 use std::fmt::Debug;
 use thiserror::Error;
@@ -33,7 +34,7 @@ pub enum ProviderDbError<E: std::error::Error> {
 }
 
 /// A revm [Database] backed by a [Provider].
-pub struct ProviderDb<P: Provider> {
+pub struct ProviderDb<P> {
     provider: P,
     block_number: u64,
 
@@ -119,7 +120,7 @@ impl<P: Provider> Database for ProviderDb<P> {
 }
 
 /// A revm [Database] backed by a [Provider] that caches all queries needed for a state proof.
-pub struct ProofDb<P: Provider> {
+pub struct ProofDb<P> {
     accounts: HashMap<Address, HashSet<U256>>,
     contracts: HashMap<B256, Bytes>,
     block_hash_numbers: HashSet<U256>,
@@ -151,6 +152,24 @@ impl<P: Provider> ProofDb<P> {
     }
     pub fn block_hash_numbers(&self) -> &HashSet<U256> {
         &self.block_hash_numbers
+    }
+}
+
+impl<'a, H, P> crate::private::SteelEnv<'a> for &'a mut ViewCallEnv<ProofDb<P>, H>
+where
+    H: EvmHeader,
+    P: Provider,
+{
+    type Ext = ();
+
+    type Db = &'a mut ProofDb<P>;
+
+    fn into_evm<'b: 'a>(self) -> Evm<'b, Self::Ext, Self::Db> {
+        Evm::builder()
+            .with_db(&mut self.db)
+            .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
+            .modify_block_env(|blk_env| self.header.fill_block_env(blk_env))
+            .build()
     }
 }
 
