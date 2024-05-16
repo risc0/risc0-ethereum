@@ -17,8 +17,8 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: v2024-02-08.1
-  RISC0_CRATE_VERSION: "^0.21"
+  RISC0_TOOLCHAIN_VERSION: v2024-04-22.0
+  RISC0_MONOREPO_REF: "main"
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -45,7 +45,7 @@ jobs:
           # Full history is required by license-check.py
           fetch-depth: 0
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@release-0.21
+      - uses: risc0/risc0/.github/actions/rustup@main
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
@@ -89,7 +89,6 @@ jobs:
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
-      RISC0_BUILD_LOCKED: 1
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -98,13 +97,16 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@release-0.21
-      - uses: risc0/risc0/.github/actions/rustup@release-0.21
-      - uses: risc0/risc0/.github/actions/sccache@release-0.21
+        uses: risc0/risc0/.github/actions/cuda@main
+      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION -F $FEATURE
-      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
@@ -122,14 +124,27 @@ jobs:
       - run: sccache --show-stats
 
   examples:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    strategy:
+      fail-fast: false
+      # Run only on Linux with GPU. Additional coverage is marginal, and GPU is fastest.
+      matrix:
+        include:
+          - os: Linux
+            feature: cuda
+            device: nvidia_rtx_a5000
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@release-0.21
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@main
+      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
@@ -138,11 +153,14 @@ jobs:
           node-version: 18
       - name: Install Ganache
         run: npm install ganache --global
-      - uses: risc0/risc0/.github/actions/sccache@release-0.21
+      - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: Linux-default
-      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
-      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
       - name: build erc20
         run: cargo build
         working-directory: examples/erc20
@@ -165,19 +183,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@release-0.21
+      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
+        with:
+          key: macOS-default
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
-      # TODO(#106) Re-enable sccache
-      # - uses: risc0/risc0/.github/actions/sccache@release-0.21
-      #   with:
-      #     key: macOS-default
-      - run: cargo install --force --locked cargo-risczero@$RISC0_CRATE_VERSION
-      - run: cargo risczero install --version $RISC0_TOOLCHAIN_VERSION
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
       - run: cargo doc --no-deps --workspace
-      # TODO(#18) debug forge doc and get this working
-      #- run: forge doc --root contracts
+      - run: forge doc
       #- run: sccache --show-stats
 
   # Run as a separate job because we need to install a different set of tools.

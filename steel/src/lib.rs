@@ -141,11 +141,9 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
 }
 
 impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
-    /// Execute the call on the [ViewCallEnv]. This might modify the database
-    pub fn execute<C>(&self, view_call: ViewCall<C>) -> C::Return
-    where
-        C: SolCall,
-    {
+    /// Executes the call using context from the environment.
+    #[inline]
+    pub fn execute<C: SolCall>(&self, view_call: ViewCall<C>) -> C::Return {
         let db = WrapStateDb::new(&self.db);
         view_call
             .transact(db, self.cfg_env.clone(), self.header.inner())
@@ -153,11 +151,15 @@ impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
     }
 }
 
-/// A view call to an Ethereum contract.
+/// A builder for calling an Ethereum contract.
+#[derive(Debug, Clone)]
 pub struct ViewCall<C: SolCall> {
     call: C,
     contract: Address,
     caller: Address,
+    gas_limit: u64,
+    gas_price: U256,
+    value: U256,
 }
 
 impl<C: SolCall> ViewCall<C> {
@@ -166,8 +168,8 @@ impl<C: SolCall> ViewCall<C> {
         mem::size_of::<C::Return>() > 0,
         "Function call must have a return value"
     );
-    /// The default gas limit for view calls.
-    const GAS_LIMIT: u64 = 30_000_000;
+    /// The default gas limit for function calls.
+    const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new view call to the given contract.
     pub fn new(call: C, contract: Address) -> Self {
@@ -178,12 +180,43 @@ impl<C: SolCall> ViewCall<C> {
             call,
             contract,
             caller: contract,
+            gas_limit: Self::DEFAULT_GAS_LIMIT,
+            gas_price: U256::ZERO,
+            value: U256::ZERO,
         }
     }
 
-    /// Sets the caller of the view function.
+    /// Sets the caller of the function call.
+    #[deprecated(
+        since = "0.11.0",
+        note = "please use `.from(..)` (ViewCall::from) instead"
+    )]
     pub fn with_caller(mut self, caller: Address) -> Self {
         self.caller = caller;
+        self
+    }
+
+    /// Sets the caller of the function call.
+    pub fn from(mut self, from: Address) -> Self {
+        self.caller = from;
+        self
+    }
+
+    /// Sets the gas limit of the function call.
+    pub fn gas(mut self, gas: u64) -> Self {
+        self.gas_limit = gas;
+        self
+    }
+
+    /// Sets the gas price of the function call.
+    pub fn gas_price(mut self, gas_price: U256) -> Self {
+        self.gas_price = gas_price;
+        self
+    }
+
+    /// Sets the value field of the function call.
+    pub fn value(mut self, value: U256) -> Self {
+        self.value = value;
         self
     }
 
@@ -197,7 +230,7 @@ impl<C: SolCall> ViewCall<C> {
         env.execute(self)
     }
 
-    /// Executes a view call using context from the [ViewCallEnv].
+    /// Executes the call for the provided state.
     fn transact<D, H>(
         self,
         db: D,
@@ -217,9 +250,10 @@ impl<C: SolCall> ViewCall<C> {
 
         let tx_env = evm.tx_mut();
         tx_env.caller = self.caller;
-        tx_env.gas_limit = Self::GAS_LIMIT;
+        tx_env.gas_limit = self.gas_limit;
+        tx_env.gas_price = self.gas_price;
         tx_env.transact_to = TransactTo::call(self.contract);
-        tx_env.value = U256::ZERO;
+        tx_env.value = self.value;
         tx_env.data = self.call.abi_encode().into();
 
         let ResultAndState { result, .. } = evm

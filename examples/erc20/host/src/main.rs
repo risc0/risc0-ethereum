@@ -24,8 +24,9 @@ use tracing_subscriber::EnvFilter;
 /// Address of the USDT contract on Ethereum Sepolia
 const CONTRACT: Address = address!("aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0");
 /// Function to call
-const CALL: IERC20::balanceOfCall =
-    IERC20::balanceOfCall { account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4") };
+const CALL: IERC20::balanceOfCall = IERC20::balanceOfCall {
+    account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4"),
+};
 /// Caller address
 const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
 
@@ -47,7 +48,9 @@ struct Args {
 
 fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
     // parse the command line arguments
     let args = Args::parse();
 
@@ -61,9 +64,14 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let returns = env.preflight(ViewCall::new(CALL, CONTRACT).with_caller(CALLER))?;
+    let returns = env.preflight(ViewCall::new(CALL, CONTRACT).from(CALLER))?;
     let input = env.into_zkvm_input()?;
-    println!("For block {} `{}` returns: {}", number, IERC20::balanceOfCall::SIGNATURE, returns._0);
+    println!(
+        "For block {} `{}` returns: {}",
+        number,
+        IERC20::balanceOfCall::SIGNATURE,
+        returns._0
+    );
 
     println!("Running the guest with the constructed input:");
     let session_info = {
@@ -73,7 +81,8 @@ fn main() -> Result<()> {
             .build()
             .context("Failed to build exec env")?;
         let exec = default_executor();
-        exec.execute(env, ERC20_GUEST_ELF).context("failed to run executor")?
+        exec.execute(env, ERC20_GUEST_ELF)
+            .context("failed to run executor")?
     };
 
     // extract the proof from the session info and validate it

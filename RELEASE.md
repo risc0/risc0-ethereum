@@ -7,11 +7,17 @@
 
 2. Create two version bump PRs:
 
-   * One PR should bump the version on the `release-x.y` branch.
+   * One PR should be to the `release-x.y` branch and do the following:
 
-     Additionally remove the note at the top of `README.md` about being on the `main` branch.
+     <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
+     * Bump the version of all crates in the workspace to `x.y.z`.
+     * Remove the note at the top of `README.md` about being on the `main` branch.
+     * Change the reference for all `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
+     <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarentees the checked in lock files are complete and consistent -->
+     * Run `cargo update` in all workspaces. (You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`)
+     * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
-   * The other PR should bump the version on the `main` branch to the next, unreleased, minor version.
+   * The other PR should bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 

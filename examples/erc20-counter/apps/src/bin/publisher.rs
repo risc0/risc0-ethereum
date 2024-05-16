@@ -40,7 +40,7 @@ sol! {
 // `ICounter` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface ICounter {
-        function increment(bytes calldata journal, calldata seal);
+        function increment(bytes calldata journal, bytes calldata seal);
     }
 }
 
@@ -117,8 +117,11 @@ fn main() -> Result<()> {
     let (journal, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
-    let calldata =
-        ICounter::ICounterCalls::increment(ICounter::incrementCall { journal, seal }).abi_encode();
+    let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
+        journal: journal.into(),
+        seal: seal.into(),
+    })
+    .abi_encode();
 
     // Send the calldata to Ethereum.
     let runtime = tokio::runtime::Runtime::new()?;
