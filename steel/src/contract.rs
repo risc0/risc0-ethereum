@@ -324,7 +324,7 @@ pub(crate) mod private {
     pub trait SteelEnv<'a> {
         type Ext;
         type Db: revm::Database;
-        fn into_evm<'b: 'a>(self) -> Evm<'b, Self::Ext, Self::Db>
+        fn into_evm(self) -> Evm<'a, Self::Ext, Self::Db>
         where
             <Self::Db as Database>::Error: Debug;
     }
@@ -337,7 +337,7 @@ pub(crate) mod private {
 
         type Db = WrapStateDb<'a>;
 
-        fn into_evm<'b: 'a>(self) -> Evm<'b, Self::Ext, Self::Db> {
+        fn into_evm(self) -> Evm<'a, Self::Ext, Self::Db> {
             Evm::builder()
                 .with_db(WrapStateDb::new(&self.db))
                 .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
@@ -356,7 +356,7 @@ pub(crate) mod private {
 
         type Db = &'a mut ProofDb<P>;
 
-        fn into_evm<'b: 'a>(self) -> Evm<'b, Self::Ext, Self::Db> {
+        fn into_evm(self) -> Evm<'a, Self::Ext, Self::Db> {
             Evm::builder()
                 .with_db(&mut self.db)
                 .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
