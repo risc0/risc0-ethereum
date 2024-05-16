@@ -317,13 +317,13 @@ impl<C: SolCall> ViewCall<C> {
     }
 }
 
-pub(crate) mod private {
+mod private {
     use super::*;
     use crate::{MerkleTrie, StateDB};
 
     pub trait SteelEnv<'a> {
         type Db: revm::Database;
-
+        
         fn into_evm(self) -> Evm<'a, (), Self::Db>
         where
             <Self::Db as Database>::Error: Debug;
