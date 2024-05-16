@@ -13,11 +13,10 @@
 // limitations under the License.
 
 use super::provider::Provider;
-use crate::{EvmHeader, ViewCallEnv};
 use alloy_primitives::{Address, Bytes, Sealable, B256, U256};
 use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, HashSet, KECCAK_EMPTY},
-    Database, Evm,
+    Database,
 };
 use std::fmt::Debug;
 use thiserror::Error;
@@ -152,24 +151,6 @@ impl<P: Provider> ProofDb<P> {
     }
     pub fn block_hash_numbers(&self) -> &HashSet<U256> {
         &self.block_hash_numbers
-    }
-}
-
-impl<'a, H, P> crate::private::SteelEnv<'a> for &'a mut ViewCallEnv<ProofDb<P>, H>
-where
-    H: EvmHeader,
-    P: Provider,
-{
-    type Ext = ();
-
-    type Db = &'a mut ProofDb<P>;
-
-    fn into_evm<'b: 'a>(self) -> Evm<'b, Self::Ext, Self::Db> {
-        Evm::builder()
-            .with_db(&mut self.db)
-            .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
-            .modify_block_env(|blk_env| self.header.fill_block_env(blk_env))
-            .build()
     }
 }
 

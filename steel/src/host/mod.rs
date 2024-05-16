@@ -31,6 +31,9 @@ use revm::primitives::HashMap;
 pub mod db;
 pub mod provider;
 
+#[cfg(feature = "host")]
+pub(crate) type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
+
 /// The Ethers client type.
 pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
 
