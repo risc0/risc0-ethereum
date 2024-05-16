@@ -74,8 +74,8 @@ fn erc20_multi_balance_of() {
     // execute the call
     let env = input.into_env();
     let contract = Contract::new(ERC20_TEST_CONTRACT, &env);
-    let result = contract.call_builder(&view_call1).call().unwrap();
-    let result2 = contract.call_builder(&view_call2).call().unwrap();
+    let result = contract.call_builder(&view_call1).call();
+    let result2 = contract.call_builder(&view_call2).call();
     assert_eq!(result._0, uint!(3000000000000000_U256));
     assert_eq!(result2._0, uint!(0x38d7ea4c68000_U256));
 }
@@ -321,8 +321,7 @@ where
     let contract = Contract::new(address, &env);
     let result = call_overrides
         .override_builder(contract.call_builder(&sol_call))
-        .call()
-        .unwrap();
+        .call();
     assert_eq!(
         result, preflight_result,
         "mismatch in preflight and execution"

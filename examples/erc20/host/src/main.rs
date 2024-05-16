@@ -17,7 +17,7 @@ use alloy_sol_types::{sol, SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
 
@@ -64,7 +64,8 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let returns = env.preflight(ViewCall::new(CALL, CONTRACT).from(CALLER))?;
+    let mut contract = Contract::preflight(CONTRACT, &mut env);
+    let returns = contract.call_builder(&CALL).from(CALLER).call()?;
     let input = env.into_zkvm_input()?;
     println!(
         "For block {} `{}` returns: {}",

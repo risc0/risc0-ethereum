@@ -151,7 +151,6 @@ impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
             env: self,
         }
         .call()
-        .unwrap()
     }
 }
 
@@ -354,15 +353,31 @@ impl<E, C> ViewCallBuilder<E, C> {
         self.transaction.value = value;
         self
     }
+}
 
+#[cfg(feature = "host")]
+impl<'a, P, H, C> ViewCallBuilder<&'a mut ViewCallEnv<ProofDb<P>, H>, C>
+where
+    P: host::provider::Provider,
+    H: EvmHeader,
+    C: SolCall,
+{
     // TODO docs
-    pub fn call<'a>(self) -> Result<C::Return, String>
-    where
-        C: SolCall,
-        E: private::SteelEnv<'a> + 'a,
-        <<E as private::SteelEnv<'a>>::Db as revm::Database>::Error: Debug,
-    {
-        self.transaction.transact(self.env)
+    pub fn call(self) -> anyhow::Result<C::Return> {
+        self.transaction
+            .transact(self.env)
+            .map_err(|err| anyhow::anyhow!(err))
+    }
+}
+
+impl<'a, H, C> ViewCallBuilder<&'a ViewCallEnv<StateDB, H>, C>
+where
+    H: EvmHeader,
+    C: SolCall,
+{
+    // TODO docs
+    pub fn call(self) -> C::Return {
+        self.transaction.transact(self.env).unwrap()
     }
 }
 
