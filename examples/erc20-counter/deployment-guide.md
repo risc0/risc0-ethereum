@@ -23,6 +23,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 
 2. Set your environment variables:
     > ***Note:*** *This requires having access to a Bonsai API Key. To request an API key [complete the form here](https://bonsai.xyz/apply).*
+    > Alternatively you can generate your proofs locally, assuming you have a machine with an x86 architecture and [Docker] installed. In this case do not export Bonsai related env variables.
 
     ```bash
     # Anvil sets up a number of default wallets, and this private key is one of them.
@@ -125,6 +126,7 @@ You can deploy the Counter contract on a testnet such as `Sepolia` and run an en
 
 1. Get access to Bonsai and an Ethereum node running on a given testnet, e.g., Sepolia (in this example, we will be using [Alchemy](https://www.alchemy.com/) as our Ethereum node provider) and export the following environment variables:
     > ***Note:*** *This requires having access to a Bonsai API Key. To request an API key [complete the form here](https://bonsai.xyz/apply).*
+    > Alternatively you can generate your proofs locally, assuming you have a machine with an x86 architecture and [Docker] installed. In this case do not export Bonsai related env variables.
 
     ```bash
     export BONSAI_API_KEY="YOUR_API_KEY" # see form linked in the previous section
@@ -209,3 +211,4 @@ You can deploy the Counter contract on a testnet such as `Sepolia` and run an en
 [0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0]: https://sepolia.etherscan.io/address/0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0#code
 [methods/guest/src/bin/balance_of.rs]: ./methods/guest/src/bin/balance_of.rs
 [apps/src/bin/publisher.rs]: ./apps/src/bin/publisher.rs
+[Docker]: https://docs.docker.com/get-docker/
