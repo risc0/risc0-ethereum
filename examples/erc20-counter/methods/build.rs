@@ -15,11 +15,13 @@
 use std::{collections::HashMap, env};
 
 use risc0_build::{embed_methods_with_options, DockerOptions, GuestOptions};
-use risc0_build_ethereum::generate_solidity_files;
+use risc0_build_ethereum::{build_ffi, generate_solidity_files};
 
 // Paths where the generated Solidity files will be written.
 const SOLIDITY_IMAGE_ID_PATH: &str = "../contracts/ImageID.sol";
 const SOLIDITY_ELF_PATH: &str = "../contracts/Elf.sol";
+
+const RISC0_ETHEREUM_PATH: &str = "../../..";
 
 fn main() {
     // Builds can be made deterministic, and thereby reproducible, by using Docker to build the
@@ -43,4 +45,9 @@ fn main() {
         .with_elf_sol_path(SOLIDITY_ELF_PATH);
 
     generate_solidity_files(guests.as_slice(), &solidity_opts).unwrap();
+
+    // Build risc0-ethereum forge ffi.
+    let risc0_ethereum_path =
+        &env::var("RISC0_ETHEREUM_PATH").unwrap_or_else(|_| RISC0_ETHEREUM_PATH.to_string());
+    build_ffi(risc0_ethereum_path).unwrap();
 }

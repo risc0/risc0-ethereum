@@ -50,7 +50,7 @@ abstract contract RiscZeroCheats is CommonBase {
     function prove(string memory elf_path, bytes memory input) internal returns (bytes memory, bytes32, bytes memory) {
         string[] memory imageRunnerInput = new string[](10);
         uint256 i = 0;
-        string memory risc0EthereumPath = vm.envOr("RISC0_ETHEREUM_PATH", "lib/risc0-ethereum");
+        string memory risc0EthereumPath = vm.envOr("RISC0_ETHEREUM_PATH", string("lib/risc0-ethereum"));
         imageRunnerInput[i++] = "cargo";
         imageRunnerInput[i++] = "run";
         imageRunnerInput[i++] = "--manifest-path";
