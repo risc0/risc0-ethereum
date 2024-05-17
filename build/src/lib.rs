@@ -155,10 +155,10 @@ pub fn build_ffi(risc0_ethereum_path: &str) -> Result<()> {
         .arg("risc0-forge-ffi")
         .status()?;
     if !status.success() {
-        panic!(
+        return Err(anyhow!(
             "risc0-ethereum forge ffi build failed with exit code: {:?}",
             status.code()
-        );
+        ));
     }
     Ok(())
 }
