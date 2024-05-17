@@ -11,7 +11,7 @@ bincode = { workspace = true }
 bonsai-sdk = { workspace = true }
 bytemuck = { workspace = true }
 clap = { version = "4.0", features = ["derive", "env"] }
-env_logger = { version = "0.10" }
+env_logger = { version = "0.11" }
 erc20-counter-methods = { workspace = true }
 ethers = { workspace = true }
 hex = { workspace = true }
