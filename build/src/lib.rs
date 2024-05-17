@@ -19,7 +19,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use anyhow::{anyhow, bail, Context, Ok, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use risc0_build::GuestListEntry;
 use risc0_zkp::core::digest::Digest;
 
@@ -155,10 +155,10 @@ pub fn build_ffi(risc0_ethereum_path: &str) -> Result<()> {
         .arg("risc0-forge-ffi")
         .status()?;
     if !status.success() {
-        return Err(anyhow!(
+        bail!(
             "risc0-ethereum forge ffi build failed with exit code: {:?}",
             status.code()
-        ));
+        )
     }
     Ok(())
 }
