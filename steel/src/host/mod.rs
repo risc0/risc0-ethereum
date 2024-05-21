@@ -19,7 +19,8 @@ use self::{
     provider::{EthersProvider, Provider},
 };
 use crate::{
-    ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCall, ViewCallEnv, ViewCallInput,
+    contract::new_evm, ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCall, ViewCallEnv,
+    ViewCallInput,
 };
 use alloy_primitives::{Sealable, B256};
 use alloy_sol_types::SolCall;
@@ -32,7 +33,6 @@ pub mod db;
 pub mod provider;
 
 /// Alias for readability, do not make public.
-#[cfg(feature = "host")]
 pub(crate) type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
 
 /// The Ethers client type.
@@ -86,7 +86,8 @@ impl<C: SolCall> ViewCall<C> {
         );
 
         // initialize the database and execute the transaction
-        let transaction_result = self.transact(&mut env).map_err(|err| anyhow!(err))?;
+        let evm = new_evm(&mut env.db, env.cfg_env.clone(), &env.header);
+        let transaction_result = self.transact(evm).map_err(|err| anyhow!(err))?;
 
         let input = env.into_zkvm_input()?;
 
