@@ -32,7 +32,7 @@ pub mod ethereum;
 pub mod host;
 mod mpt;
 
-pub use contract::{Contract, ViewCall, ViewCallBuilder};
+pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
 /// The serializable input to derive and validate a [ViewCallEnv].

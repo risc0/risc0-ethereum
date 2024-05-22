@@ -23,7 +23,7 @@ use risc0_steel::{
         provider::{CachedProvider, EthFileProvider, EthersProvider},
         EthersClient,
     },
-    Contract, ViewCallBuilder,
+    CallBuilder, Contract,
 };
 use std::fmt::Debug;
 use test_log::test;
@@ -283,7 +283,7 @@ struct BuilderOverrides {
 }
 
 impl BuilderOverrides {
-    fn override_builder<E, C>(&self, mut builder: ViewCallBuilder<E, C>) -> ViewCallBuilder<E, C> {
+    fn override_builder<E, C>(&self, mut builder: CallBuilder<E, C>) -> CallBuilder<E, C> {
         if let Some(gas_price) = self.gas_price {
             builder = builder.gas_price(gas_price);
         }

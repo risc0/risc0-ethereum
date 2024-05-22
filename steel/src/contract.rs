@@ -62,8 +62,9 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// # }
 /// ```
 ///
-/// [EthViewCallInput::into_env]: ethereum::EthViewCallInput::into_env
-/// [EthViewCallEnv::from_rpc]: ethereum::EthViewCallEnv::from_rpc
+/// [ViewCallInput::into_env]: crate::ViewCallInput::into_env
+/// [ViewCallEnv::new]: crate::ViewCallEnv::new
+/// [EthViewCallEnv::from_rpc]: crate::ethereum::EthViewCallEnv::from_rpc
 pub struct Contract<E> {
     address: Address,
     env: E,
@@ -76,8 +77,8 @@ impl<'a, H> Contract<&'a GuestViewCallEnv<H>> {
 
     /// Initialize a call builder to execute a call on the contract. For more information on usage,
     /// see [Contract].
-    pub fn call_builder<C: SolCall>(&self, call: &C) -> ViewCallBuilder<&GuestViewCallEnv<H>, C> {
-        ViewCallBuilder::new_sol(self.env, self.address, call)
+    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<&GuestViewCallEnv<H>, C> {
+        CallBuilder::new_sol(self.env, self.address, call)
     }
 }
 
@@ -91,7 +92,9 @@ where
     /// a storage proof of any elements accessed will be generated in
     /// [ViewCallEnv::into_zkvm_input].
     ///
-    /// [Provider]: host::provider::Provider
+    /// [Provider]: crate::host::provider::Provider
+    /// [ViewCallEnv::into_zkvm_input]: crate::ViewCallEnv::into_zkvm_input
+    /// [ViewCallEnv]: crate::ViewCallEnv
     pub fn preflight(address: Address, env: &'a mut HostViewCallEnv<P, H>) -> Self {
         Self { address, env }
     }
@@ -101,20 +104,20 @@ where
     pub fn call_builder<C: SolCall>(
         &mut self,
         call: &C,
-    ) -> ViewCallBuilder<&mut HostViewCallEnv<P, H>, C> {
-        ViewCallBuilder::new_sol(&mut self.env, self.address, call)
+    ) -> CallBuilder<&mut HostViewCallEnv<P, H>, C> {
+        CallBuilder::new_sol(&mut self.env, self.address, call)
     }
 }
 
-/// A builder for calling an Ethereum contract. Once configured, call with [ViewCallBuilder::call].
+/// A builder for calling an Ethereum contract. Once configured, call with [CallBuilder::call].
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct ViewCallBuilder<E, C> {
-    transaction: ViewCall<C>,
+pub struct CallBuilder<E, C> {
+    transaction: CallTxData<C>,
     env: E,
 }
 
-impl<E, C> ViewCallBuilder<E, C> {
+impl<E, C> CallBuilder<E, C> {
     /// The default gas limit for function calls.
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
@@ -126,7 +129,7 @@ impl<E, C> ViewCallBuilder<E, C> {
         C: SolCall,
     {
         let data = call.abi_encode();
-        let transaction = ViewCall {
+        let transaction = CallTxData {
             data,
             contract: address,
             caller: address,
@@ -164,13 +167,15 @@ impl<E, C> ViewCallBuilder<E, C> {
 }
 
 #[cfg(feature = "host")]
-impl<'a, P, H, C> ViewCallBuilder<&'a mut HostViewCallEnv<P, H>, C>
+impl<'a, P, H, C> CallBuilder<&'a mut HostViewCallEnv<P, H>, C>
 where
     P: Provider,
     H: EvmHeader,
     C: SolCall,
 {
-    /// Executes the call with a [ViewCallEnv] constructed with [ViewCallEnv::preflight].
+    /// Executes the call with a [ViewCallEnv] constructed with [Contract::preflight].
+    ///
+    /// [ViewCallEnv]: crate::ViewCallEnv
     pub fn call(self) -> anyhow::Result<C::Return> {
         let evm = new_evm(&mut self.env.db, self.env.cfg_env.clone(), &self.env.header);
         self.transaction
@@ -179,12 +184,14 @@ where
     }
 }
 
-impl<'a, H, C> ViewCallBuilder<&'a GuestViewCallEnv<H>, C>
+impl<'a, H, C> CallBuilder<&'a GuestViewCallEnv<H>, C>
 where
     H: EvmHeader,
     C: SolCall,
 {
-    /// Executes the call with a [ViewCallEnv] constructed with [ViewCallEnv::preflight].
+    /// Executes the call with a [ViewCallEnv] constructed with [Contract::preflight].
+    ///
+    /// [ViewCallEnv]: crate::ViewCallEnv
     pub fn call(self) -> C::Return {
         let evm = new_evm(
             WrapStateDb::new(&self.env.db),
@@ -195,9 +202,9 @@ where
     }
 }
 
-/// A builder for calling an Ethereum contract.
+/// Transaction data to be used for an execution. Used with [CallBuilder].
 #[derive(Debug, Clone)]
-pub struct ViewCall<C> {
+struct CallTxData<C> {
     data: Vec<u8>,
     pub(crate) contract: Address,
     pub(crate) caller: Address,
@@ -207,86 +214,21 @@ pub struct ViewCall<C> {
     call_ty: PhantomData<C>,
 }
 
-impl<C: SolCall> ViewCall<C> {
+impl<C: SolCall> CallTxData<C> {
     /// Compile-time assertion that the call C has a return value.
     const RETURNS: () = assert!(
         mem::size_of::<C::Return>() > 0,
         "Function call must have a return value"
     );
-    /// The default gas limit for function calls.
-    const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
-
-    /// Creates a new view call to the given contract.
-    #[deprecated(since = "0.11.0", note = "please use `Contract::call_builder` instead")]
-    pub fn new(call: C, contract: Address) -> Self {
-        #[allow(clippy::let_unit_value)]
-        let _ = Self::RETURNS;
-
-        let data = call.abi_encode();
-
-        Self {
-            data,
-            contract,
-            caller: contract,
-            gas_limit: Self::DEFAULT_GAS_LIMIT,
-            gas_price: U256::ZERO,
-            value: U256::ZERO,
-            call_ty: PhantomData::<C>,
-        }
-    }
-
-    /// Sets the caller of the function call.
-    #[deprecated(
-        since = "0.11.0",
-        note = "please use `.from(..)` (ViewCall::from) instead"
-    )]
-    pub fn with_caller(mut self, caller: Address) -> Self {
-        self.caller = caller;
-        self
-    }
-
-    /// Sets the caller of the function call.
-    pub fn from(mut self, from: Address) -> Self {
-        self.caller = from;
-        self
-    }
-
-    /// Sets the gas limit of the function call.
-    pub fn gas(mut self, gas: u64) -> Self {
-        self.gas_limit = gas;
-        self
-    }
-
-    /// Sets the gas price of the function call.
-    pub fn gas_price(mut self, gas_price: U256) -> Self {
-        self.gas_price = gas_price;
-        self
-    }
-
-    /// Sets the value field of the function call.
-    pub fn value(mut self, value: U256) -> Self {
-        self.value = value;
-        self
-    }
-
-    /// Executes the view call using the given environment.
-    #[inline]
-    #[deprecated(since = "0.11.0", note = "please use `Contract::new` instead")]
-    pub fn execute<H: EvmHeader>(self, env: GuestViewCallEnv<H>) -> C::Return {
-        ViewCallBuilder {
-            transaction: self,
-            env: &env,
-        }
-        .call()
-    }
-
     /// Executes the call for the provided state.
     pub(crate) fn transact<DB>(self, mut evm: Evm<'_, (), DB>) -> Result<C::Return, String>
     where
-        C: SolCall,
         DB: Database,
         <DB as Database>::Error: Debug,
     {
+        #[allow(clippy::let_unit_value)]
+        let _ = Self::RETURNS;
+
         let tx_env = evm.tx_mut();
         tx_env.caller = self.caller;
         tx_env.gas_limit = self.gas_limit;

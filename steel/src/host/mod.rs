@@ -18,15 +18,11 @@ use self::{
     db::ProofDb,
     provider::{EthersProvider, Provider},
 };
-use crate::{
-    contract::new_evm, ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCall, ViewCallEnv,
-    ViewCallInput,
-};
+use crate::{ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCallEnv, ViewCallInput};
 use alloy_primitives::{Sealable, B256};
-use alloy_sol_types::SolCall;
-use anyhow::{anyhow, ensure, Context};
+use anyhow::{ensure, Context};
 use ethers_providers::{Http, RetryClient};
-use log::{debug, info};
+use log::debug;
 use revm::primitives::HashMap;
 
 pub mod db;
@@ -65,33 +61,6 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         let db = ProofDb::new(provider, block_number);
 
         Ok(ViewCallEnv::new(db, header.seal_slow()))
-    }
-}
-
-impl<C: SolCall> ViewCall<C> {
-    /// Executes the call to derive the corresponding [ViewCallInput].
-    ///
-    /// This method is used to preflight the call and get the required input for the guest.
-    #[deprecated(since = "0.11.0", note = "please use `Contract::preflight` instead")]
-    pub fn preflight<P: Provider>(
-        self,
-        mut env: ViewCallEnv<ProofDb<P>, P::Header>,
-    ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
-        // initialize the database and execute the transaction
-        info!(
-            "Executing preflight for '{}' with caller {} on contract {}",
-            C::SIGNATURE,
-            self.caller,
-            self.contract
-        );
-
-        // initialize the database and execute the transaction
-        let evm = new_evm(&mut env.db, env.cfg_env.clone(), &env.header);
-        let transaction_result = self.transact(evm).map_err(|err| anyhow!(err))?;
-
-        let input = env.into_zkvm_input()?;
-
-        Ok((input, transaction_result))
     }
 }
 
