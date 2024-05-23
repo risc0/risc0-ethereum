@@ -1,3 +1,17 @@
+// Copyright 2024 RISC Zero, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #[cfg(feature = "host")]
 use crate::host::{provider::Provider, HostViewCallEnv};
 use crate::{EvmHeader, GuestViewCallEnv, MerkleTrie, StateDB};
@@ -14,30 +28,30 @@ use revm::{
 };
 use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 
-/// A type pointing at a contract using the environment and contract address initialized with. This
-/// contract is not typesafe, be sure the contract deployed at the address matches the ABI you use
-/// to make calls.
+/// Represents a contract that is initialized with a specific environment and contract address.
 ///
-/// To preflight calls in the host to build the proof, use [Contract::preflight], using the env
-/// from [EthViewCallEnv::from_rpc] or [ViewCallEnv::new].
+/// **Note:** This contract is not type-safe. Ensure that the deployed contract at the specified
+/// address matches the ABI used for making calls.
 ///
-/// To initialize in the guest, use [Contract::new], with the environment constructed through
-/// [ViewCallInput::into_env].
+/// ### Usage
+/// - **Preflight calls in the Host:** To prepare calls in the host environment and build the
+///   necessary proof, use [Contract::preflight]. The environment can be initialized using
+///   [EthViewCallEnv::from_rpc] or [ViewCallEnv::new].
+/// - **Calls in the Guest:** To initialize the contract in the guest environment, use
+///   [Contract::new]. The environment should be constructed using [ViewCallInput::into_env].
 ///
-/// # Examples
-///
-/// ```no_run
-/// use risc0_steel::{ethereum::EthViewCallEnv, Contract};
-/// use alloy_primitives::{address};
-/// use alloy_sol_types::sol;
+/// ### Examples
+/// ```rust no_run
+/// # use risc0_steel::{ethereum::EthViewCallEnv, Contract};
+/// # use alloy_primitives::{address};
+/// # use alloy_sol_types::sol;
 ///
 /// # fn main() -> anyhow::Result<()> {
 /// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
 /// sol! {
-/// #[derive(Debug, PartialEq, Eq)]
-/// interface IERC20 {
-///    function balanceOf(address account) external view returns (uint);
-/// }
+///     interface IERC20 {
+///         function balanceOf(address account) external view returns (uint);
+///     }
 /// }
 ///
 /// let get_balance = IERC20::balanceOfCall {
@@ -45,15 +59,13 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// };
 ///
 /// // Host:
-///
 /// let mut env = EthViewCallEnv::from_rpc("https://ethereum-rpc.publicnode.com", None)?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call()?;
 ///
 /// let view_call_input = env.into_zkvm_input()?;
 ///
-/// // Guest
-///
+/// // Guest:
 /// let view_call_env = view_call_input.into_env();
 /// let contract = Contract::new(contract_address, &view_call_env);
 /// contract.call_builder(&get_balance).call();
@@ -75,10 +87,11 @@ impl<'a, H> Contract<&'a GuestViewCallEnv<H>> {
         Self { address, env }
     }
 
-    /// Initialize a call builder to execute a call on the contract. For more information on usage,
-    /// see [Contract].
-    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<&GuestViewCallEnv<H>, C> {
-        CallBuilder::new_sol(self.env, self.address, call)
+    /// Initialize a call builder to execute a call on the contract.
+    ///
+    /// For more information on usage, see [Contract].
+    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<C, &GuestViewCallEnv<H>> {
+        CallBuilder::new(self.env, self.address, call)
     }
 }
 
@@ -87,9 +100,10 @@ impl<'a, P, H> Contract<&'a mut HostViewCallEnv<P, H>>
 where
     P: Provider,
 {
-    /// Constructor to initialize a [ViewCallEnv] outside of the guest program. When calling
-    /// functions on the contract, the data needed will be fetched through the [Provider], and
-    /// a storage proof of any elements accessed will be generated in
+    /// Constructor to initialize a [ViewCallEnv] outside of the guest program.
+    ///
+    /// When calling functions on the contract, the data needed will be fetched through the
+    /// [Provider], and a storage proof of any elements accessed will be generated in
     /// [ViewCallEnv::into_zkvm_input].
     ///
     /// [Provider]: crate::host::provider::Provider
@@ -99,97 +113,95 @@ where
         Self { address, env }
     }
 
-    /// Initialize a call builder to execute a call on the contract. For more information on usage,
-    /// see [Contract].
+    /// Initialize a call builder to execute a call on the contract.
+    ///
+    /// For more information on usage see [Contract].
     pub fn call_builder<C: SolCall>(
         &mut self,
         call: &C,
-    ) -> CallBuilder<&mut HostViewCallEnv<P, H>, C> {
-        CallBuilder::new_sol(&mut self.env, self.address, call)
+    ) -> CallBuilder<C, &mut HostViewCallEnv<P, H>> {
+        CallBuilder::new(&mut self.env, self.address, call)
     }
 }
 
-/// A builder for calling an Ethereum contract. Once configured, call with [CallBuilder::call].
+/// A builder for calling an Ethereum contract.
+///
+/// Once configured, call with [CallBuilder::call].
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct CallBuilder<E, C> {
-    transaction: CallTxData<C>,
+pub struct CallBuilder<C, E> {
+    tx: CallTxData<C>,
     env: E,
 }
 
-impl<E, C> CallBuilder<E, C> {
+impl<C, E> CallBuilder<C, E> {
     /// The default gas limit for function calls.
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new view call to the given contract.
-    ///
-    /// Note: Intentionally not exposing, but will be needed with generic contract codegen.
-    fn new_sol(env: E, address: Address, call: &C) -> Self
+    fn new(env: E, address: Address, call: &C) -> Self
     where
         C: SolCall,
     {
-        let data = call.abi_encode();
-        let transaction = CallTxData {
-            data,
-            contract: address,
+        let tx = CallTxData {
             caller: address,
             gas_limit: Self::DEFAULT_GAS_LIMIT,
             gas_price: U256::ZERO,
+            to: address,
             value: U256::ZERO,
-            call_ty: PhantomData::<C>,
+            data: call.abi_encode(),
+            phantom: PhantomData,
         };
-        Self { transaction, env }
+        Self { tx, env }
     }
 
     /// Sets the caller of the function call.
     pub fn from(mut self, from: Address) -> Self {
-        self.transaction.caller = from;
+        self.tx.caller = from;
         self
     }
 
     /// Sets the gas limit of the function call.
     pub fn gas(mut self, gas: u64) -> Self {
-        self.transaction.gas_limit = gas;
+        self.tx.gas_limit = gas;
         self
     }
 
     /// Sets the gas price of the function call.
     pub fn gas_price(mut self, gas_price: U256) -> Self {
-        self.transaction.gas_price = gas_price;
+        self.tx.gas_price = gas_price;
         self
     }
 
     /// Sets the value field of the function call.
     pub fn value(mut self, value: U256) -> Self {
-        self.transaction.value = value;
+        self.tx.value = value;
         self
     }
 }
 
 #[cfg(feature = "host")]
-impl<'a, P, H, C> CallBuilder<&'a mut HostViewCallEnv<P, H>, C>
+impl<'a, C, P, H> CallBuilder<C, &'a mut HostViewCallEnv<P, H>>
 where
+    C: SolCall,
     P: Provider,
     H: EvmHeader,
-    C: SolCall,
 {
     /// Executes the call with a [ViewCallEnv] constructed with [Contract::preflight].
     ///
     /// [ViewCallEnv]: crate::ViewCallEnv
     pub fn call(self) -> anyhow::Result<C::Return> {
         let evm = new_evm(&mut self.env.db, self.env.cfg_env.clone(), &self.env.header);
-        self.transaction
-            .transact(evm)
-            .map_err(|err| anyhow::anyhow!(err))
+        self.tx.transact(evm).map_err(|err| anyhow::anyhow!(err))
     }
 }
 
-impl<'a, H, C> CallBuilder<&'a GuestViewCallEnv<H>, C>
+impl<'a, C, H> CallBuilder<C, &'a GuestViewCallEnv<H>>
 where
-    H: EvmHeader,
     C: SolCall,
+    H: EvmHeader,
 {
-    /// Executes the call with a [ViewCallEnv] constructed with [Contract::preflight].
+    /// Executes the call with a [ViewCallEnv] constructed with [Contract::new].
     ///
     /// [ViewCallEnv]: crate::ViewCallEnv
     pub fn call(self) -> C::Return {
@@ -198,20 +210,20 @@ where
             self.env.cfg_env.clone(),
             &self.env.header,
         );
-        self.transaction.transact(evm).unwrap()
+        self.tx.transact(evm).unwrap()
     }
 }
 
-/// Transaction data to be used for an execution. Used with [CallBuilder].
+/// Transaction data to be used with [CallBuilder] for an execution.
 #[derive(Debug, Clone)]
 struct CallTxData<C> {
-    data: Vec<u8>,
-    pub(crate) contract: Address,
-    pub(crate) caller: Address,
+    caller: Address,
     gas_limit: u64,
     gas_price: U256,
+    to: Address,
     value: U256,
-    call_ty: PhantomData<C>,
+    data: Vec<u8>,
+    phantom: PhantomData<C>,
 }
 
 impl<C: SolCall> CallTxData<C> {
@@ -220,8 +232,9 @@ impl<C: SolCall> CallTxData<C> {
         mem::size_of::<C::Return>() > 0,
         "Function call must have a return value"
     );
-    /// Executes the call for the provided state.
-    pub(crate) fn transact<DB>(self, mut evm: Evm<'_, (), DB>) -> Result<C::Return, String>
+
+    /// Executes the call in the provided [Evm].
+    fn transact<DB>(self, mut evm: Evm<'_, (), DB>) -> Result<C::Return, String>
     where
         DB: Database,
         <DB as Database>::Error: Debug,
@@ -233,7 +246,7 @@ impl<C: SolCall> CallTxData<C> {
         tx_env.caller = self.caller;
         tx_env.gas_limit = self.gas_limit;
         tx_env.gas_price = self.gas_price;
-        tx_env.transact_to = TransactTo::call(self.contract);
+        tx_env.transact_to = TransactTo::call(self.to);
         tx_env.value = self.value;
         tx_env.data = self.data.into();
 
@@ -264,11 +277,7 @@ impl<C: SolCall> CallTxData<C> {
     }
 }
 
-pub(crate) fn new_evm<'a, DB, H>(
-    db: DB,
-    cfg: CfgEnvWithHandlerCfg,
-    header: &Sealed<H>,
-) -> Evm<'a, (), DB>
+fn new_evm<'a, DB, H>(db: DB, cfg: CfgEnvWithHandlerCfg, header: &Sealed<H>) -> Evm<'a, (), DB>
 where
     DB: Database,
     H: EvmHeader,

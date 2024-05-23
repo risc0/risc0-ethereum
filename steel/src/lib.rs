@@ -97,7 +97,7 @@ sol! {
 /// Alias for readability, do not make public.
 pub(crate) type GuestViewCallEnv<H> = ViewCallEnv<StateDB, H>;
 
-/// The [ViewCall] is configured from this object.
+/// The [Contract] is configured from this object.
 pub struct ViewCallEnv<D, H> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
