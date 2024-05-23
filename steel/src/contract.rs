@@ -34,7 +34,7 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// address matches the ABI used for making calls.
 ///
 /// ### Usage
-/// - **Preflight calls in the Host:** To prepare calls in the host environment and build the
+/// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
 ///   necessary proof, use [Contract::preflight]. The environment can be initialized using
 ///   [EthViewCallEnv::from_rpc] or [ViewCallEnv::new].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
@@ -83,13 +83,12 @@ pub struct Contract<E> {
 }
 
 impl<'a, H> Contract<&'a GuestViewCallEnv<H>> {
+    /// Constructor for executing calls to an Ethereum contract in the guest.
     pub fn new(address: Address, env: &'a GuestViewCallEnv<H>) -> Self {
         Self { address, env }
     }
 
-    /// Initialize a call builder to execute a call on the contract.
-    ///
-    /// For more information on usage, see [Contract].
+    /// Initializes a call builder to execute a call on the contract.
     pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<C, &GuestViewCallEnv<H>> {
         CallBuilder::new(self.env, self.address, call)
     }
@@ -100,11 +99,11 @@ impl<'a, P, H> Contract<&'a mut HostViewCallEnv<P, H>>
 where
     P: Provider,
 {
-    /// Constructor to initialize a [ViewCallEnv] outside of the guest program.
+    /// Constructor for preflighting calls to an Ethereum contract on the host.
     ///
-    /// When calling functions on the contract, the data needed will be fetched through the
-    /// [Provider], and a storage proof of any elements accessed will be generated in
-    /// [ViewCallEnv::into_zkvm_input].
+    /// Initializes the environment for calling functions on the Ethereum contract, fetching
+    /// necessary data via the [Provider], and generating a storage proof for any accessed
+    /// elements using [ViewCallEnv::into_zkvm_input].
     ///
     /// [Provider]: crate::host::provider::Provider
     /// [ViewCallEnv::into_zkvm_input]: crate::ViewCallEnv::into_zkvm_input
@@ -113,14 +112,12 @@ where
         Self { address, env }
     }
 
-    /// Initialize a call builder to execute a call on the contract.
-    ///
-    /// For more information on usage see [Contract].
+    /// Initializes a call builder to execute a call on the contract.
     pub fn call_builder<C: SolCall>(
         &mut self,
         call: &C,
     ) -> CallBuilder<C, &mut HostViewCallEnv<P, H>> {
-        CallBuilder::new(&mut self.env, self.address, call)
+        CallBuilder::new(self.env, self.address, call)
     }
 }
 
@@ -144,7 +141,7 @@ impl<C, E> CallBuilder<C, E> {
         C: SolCall,
     {
         let tx = CallTxData {
-            caller: address,
+            caller: address, // by default the contract calls itself
             gas_limit: Self::DEFAULT_GAS_LIMIT,
             gas_price: U256::ZERO,
             to: address,
