@@ -17,18 +17,33 @@
 use alloy_primitives::{address, b256, uint, Address, U256};
 use alloy_sol_types::{sol, SolCall};
 use risc0_steel::{
-    config::ETH_SEPOLIA_CHAIN_SPEC,
+    config::{ChainSpec, ETH_MAINNET_CHAIN_SPEC, ETH_SEPOLIA_CHAIN_SPEC},
     ethereum::EthViewCallEnv,
-    host::{
-        provider::{CachedProvider, EthFileProvider, EthersProvider},
-        EthersClient,
-    },
-    CallBuilder, Contract,
+    host, CallBuilder, Contract,
 };
 use std::fmt::Debug;
 use test_log::test;
 
+macro_rules! provider {
+    () => {
+        test_provider!()
+        // use the following to fill the cache file
+        // provider_helper!("<RPC-URL>")
+    };
+}
+
 const RPC_CACHE_FILE: &str = "testdata/rpc_cache.json";
+
+macro_rules! test_provider {
+    () => {
+        host::provider::EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap()
+    };
+    ($url:tt) => {{
+        let client = host::EthersClient::new_client($url, 3, 500).unwrap();
+        let provider = host::provider::EthersProvider::new(client);
+        host::provider::CachedProvider::new(RPC_CACHE_FILE.into(), provider).unwrap()
+    }};
+}
 
 const ERC20_TEST_CONTRACT: Address = address!("dAC17F958D2ee523a2206206994597C13D831ec7"); // USDT
 const ERC20_TEST_BLOCK: u64 = 19493153;
@@ -45,38 +60,39 @@ fn erc20_balance_of() {
         account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"), // Binance 8
     };
 
-    let result = eth_call_single(
+    let result = eth_call(
         call,
-        BuilderOverrides::default(),
         ERC20_TEST_CONTRACT,
+        BuilderOverrides::default(),
         ERC20_TEST_BLOCK,
+        &ETH_MAINNET_CHAIN_SPEC,
     );
     assert_eq!(result._0, uint!(3000000000000000_U256));
 }
 
 #[test]
 fn erc20_multi_balance_of() {
-    let view_call1 = IERC20::balanceOfCall {
+    let call1 = IERC20::balanceOfCall {
         account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
     };
-    let view_call2 = IERC20::balanceOfCall {
+    let call2 = IERC20::balanceOfCall {
         account: address!("5a52E96BAcdaBb82fd05763E25335261B270Efcb"),
     };
 
-    // run the preflight
-    let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let mut env = EthViewCallEnv::from_provider(provider, ERC20_TEST_BLOCK).unwrap();
+    let mut env = EthViewCallEnv::from_provider(provider!(), ERC20_TEST_BLOCK)
+        .unwrap()
+        .with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     let mut contract = Contract::preflight(ERC20_TEST_CONTRACT, &mut env);
-    contract.call_builder(&view_call1).call().unwrap();
-    contract.call_builder(&view_call2).call().unwrap();
+    contract.call_builder(&call1).call().unwrap();
+    contract.call_builder(&call2).call().unwrap();
     let input = env.into_input().unwrap();
 
     // execute the call
-    let env = input.into_env();
+    let env = input.into_env().with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     let contract = Contract::new(ERC20_TEST_CONTRACT, &env);
-    let result = contract.call_builder(&view_call1).call();
-    let result2 = contract.call_builder(&view_call2).call();
-    assert_eq!(result._0, uint!(3000000000000000_U256));
+    let result1 = contract.call_builder(&call1).call();
+    let result2 = contract.call_builder(&call2).call();
+    assert_eq!(result1._0, uint!(3000000000000000_U256));
     assert_eq!(result2._0, uint!(0x38d7ea4c68000_U256));
 }
 
@@ -117,14 +133,15 @@ fn uniswap_exact_output_single() {
         },
     };
 
-    let result = eth_call_single(
+    let result = eth_call(
         call,
+        contract,
         BuilderOverrides {
             from: Some(caller),
             ..Default::default()
         },
-        contract,
         block,
+        &ETH_MAINNET_CHAIN_SPEC,
     );
     assert_eq!(result.amountIn, uint!(112537714517_U256));
 }
@@ -176,11 +193,12 @@ sol!(
 
 #[test]
 fn precompile() {
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testPrecompileCall {},
-        BuilderOverrides::default(),
         VIEW_CALL_TEST_CONTRACT,
+        BuilderOverrides::default(),
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(
         result._0,
@@ -190,33 +208,36 @@ fn precompile() {
 
 #[test]
 fn nonexistent_account() {
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testNonexistentAccountCall {},
-        BuilderOverrides::default(),
         VIEW_CALL_TEST_CONTRACT,
+        BuilderOverrides::default(),
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(result.size, uint!(0_U256));
 }
 
 #[test]
 fn eoa_account() {
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testEoaAccountCall {},
-        BuilderOverrides::default(),
         VIEW_CALL_TEST_CONTRACT,
+        BuilderOverrides::default(),
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(result.size, uint!(0_U256));
 }
 
 #[test]
 fn blockhash() {
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testBlockhashCall {},
-        BuilderOverrides::default(),
         VIEW_CALL_TEST_CONTRACT,
+        BuilderOverrides::default(),
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(
         result._0,
@@ -226,11 +247,12 @@ fn blockhash() {
 
 #[test]
 fn chainid() {
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testChainidCall {},
-        BuilderOverrides::default(),
         VIEW_CALL_TEST_CONTRACT,
+        BuilderOverrides::default(),
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(result._0, uint!(11155111_U256));
 }
@@ -238,33 +260,34 @@ fn chainid() {
 #[test]
 fn gasprice() {
     let gas_price = uint!(42_U256);
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testGaspriceCall {},
+        VIEW_CALL_TEST_CONTRACT,
         BuilderOverrides {
             gas_price: Some(gas_price),
             ..Default::default()
         },
-        VIEW_CALL_TEST_CONTRACT,
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(result._0, gas_price);
 }
 
 #[test]
 fn multi_contract_calls() {
-    let result = eth_call_single(
+    let result = eth_call(
         ViewCallTest::testMuliContractCallsCall {},
-        BuilderOverrides::default(),
         VIEW_CALL_TEST_CONTRACT,
+        BuilderOverrides::default(),
         VIEW_CALL_TEST_BLOCK,
+        &ETH_SEPOLIA_CHAIN_SPEC,
     );
     assert_eq!(result._0, uint!(84_U256));
 }
 
 #[test]
 fn call_eoa() {
-    let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let mut env = EthViewCallEnv::from_provider(provider, VIEW_CALL_TEST_BLOCK)
+    let mut env = EthViewCallEnv::from_provider(provider!(), VIEW_CALL_TEST_BLOCK)
         .unwrap()
         .with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let mut contract = Contract::preflight(Address::ZERO, &mut env);
@@ -274,8 +297,7 @@ fn call_eoa() {
         .expect_err("calling an EOA should fail");
 }
 
-/// Type just used in tests to avoid restriction of operating over builders with different generic
-/// `E` types.
+/// Simple struct to operate over different [CallBuilder] types.
 #[derive(Debug, Default)]
 struct BuilderOverrides {
     gas_price: Option<U256>,
@@ -294,24 +316,24 @@ impl BuilderOverrides {
     }
 }
 
-fn eth_call_single<C>(
-    sol_call: C,
-    call_overrides: BuilderOverrides,
+fn eth_call<C>(
+    call: C,
     address: Address,
+    call_overrides: BuilderOverrides,
     block: u64,
+    chain_spec: &ChainSpec,
 ) -> C::Return
 where
-    C: SolCall + Clone,
+    C: SolCall,
     <C as SolCall>::Return: PartialEq + Debug,
 {
-    let provider = EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap();
-    let mut env = EthViewCallEnv::from_provider(provider, block)
+    let mut env = EthViewCallEnv::from_provider(provider!(), block)
         .unwrap()
-        .with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+        .with_chain_spec(chain_spec);
 
     let mut preflight = Contract::preflight(address, &mut env);
     let preflight_result = call_overrides
-        .override_builder(preflight.call_builder(&sol_call))
+        .override_builder(preflight.call_builder(&call))
         .call()
         .unwrap();
 
@@ -320,7 +342,7 @@ where
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let contract = Contract::new(address, &env);
     let result = call_overrides
-        .override_builder(contract.call_builder(&sol_call))
+        .override_builder(contract.call_builder(&call))
         .call();
     assert_eq!(
         result, preflight_result,
@@ -328,18 +350,4 @@ where
     );
 
     result
-}
-
-/// Adds the required RPC data to the cache file.
-#[allow(dead_code)]
-fn golden<C: SolCall>(calls: impl IntoIterator<Item = C>, address: Address, block: u64) {
-    let client = EthersClient::new_client("<RPC-URL>", 3, 500).unwrap();
-    let provider = CachedProvider::new(RPC_CACHE_FILE.into(), EthersProvider::new(client)).unwrap();
-    let mut env = EthViewCallEnv::from_provider(provider, block).unwrap();
-
-    let mut contract = Contract::preflight(address, &mut env);
-    for call in calls {
-        contract.call_builder(&call).call().unwrap();
-    }
-    env.into_input().unwrap();
 }
