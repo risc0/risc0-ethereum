@@ -69,7 +69,7 @@ fn erc20_multi_balance_of() {
     let mut contract = Contract::preflight(ERC20_TEST_CONTRACT, &mut env);
     contract.call_builder(&view_call1).call().unwrap();
     contract.call_builder(&view_call2).call().unwrap();
-    let input = env.into_zkvm_input().unwrap();
+    let input = env.into_input().unwrap();
 
     // execute the call
     let env = input.into_env();
@@ -315,7 +315,7 @@ where
         .call()
         .unwrap();
 
-    let input = env.into_zkvm_input().unwrap();
+    let input = env.into_input().unwrap();
 
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let contract = Contract::new(address, &env);
@@ -341,5 +341,5 @@ fn golden<C: SolCall>(calls: impl IntoIterator<Item = C>, address: Address, bloc
     for call in calls {
         contract.call_builder(&call).call().unwrap();
     }
-    env.into_zkvm_input().unwrap();
+    env.into_input().unwrap();
 }

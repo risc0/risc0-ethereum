@@ -63,7 +63,7 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call()?;
 ///
-/// let view_call_input = env.into_zkvm_input()?;
+/// let view_call_input = env.into_input()?;
 ///
 /// // Guest:
 /// let view_call_env = view_call_input.into_env();
@@ -103,10 +103,10 @@ where
     ///
     /// Initializes the environment for calling functions on the Ethereum contract, fetching
     /// necessary data via the [Provider], and generating a storage proof for any accessed
-    /// elements using [ViewCallEnv::into_zkvm_input].
+    /// elements using [ViewCallEnv::into_input].
     ///
     /// [Provider]: crate::host::provider::Provider
-    /// [ViewCallEnv::into_zkvm_input]: crate::ViewCallEnv::into_zkvm_input
+    /// [ViewCallEnv::into_input]: crate::ViewCallEnv::into_input
     /// [ViewCallEnv]: crate::ViewCallEnv
     pub fn preflight(address: Address, env: &'a mut HostViewCallEnv<P, H>) -> Self {
         Self { address, env }

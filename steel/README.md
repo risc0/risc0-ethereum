@@ -74,7 +74,7 @@ let commitment = env.block_commitment();
 // the guest. It also returns the result of the call.
 let mut contract = Contract::preflight(CONTRACT, &mut env);
 let returns = contract.call_builder(&CALL).from(CALLER).call()?;
-let input = env.into_zkvm_input()?;
+let input = env.into_input()?;
 ```
 
 ## Ethereum Integration

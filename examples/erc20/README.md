@@ -105,7 +105,7 @@ let mut env =
 // the guest. It also returns the result of the call.
 let mut contract = Contract::preflight(CONTRACT, &mut env);
 let returns = contract.call_builder(&CALL).from(CALLER).call()?;
-let input = env.into_zkvm_input()?;
+let input = env.into_input()?;
 ```
 
 [install-rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html

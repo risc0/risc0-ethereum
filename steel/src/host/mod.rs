@@ -69,7 +69,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
-    pub fn into_zkvm_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
+    pub fn into_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
         let db = &self.db;
 
         // use the same provider as the database
