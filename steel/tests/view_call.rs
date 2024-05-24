@@ -28,12 +28,13 @@ macro_rules! provider {
     () => {
         test_provider!()
         // use the following to fill the cache file
-        // provider_helper!("<RPC-URL>")
+        // test_provider!("<RPC-URL>")
     };
 }
 
 const RPC_CACHE_FILE: &str = "testdata/rpc_cache.json";
 
+// Create a file provider or a cached Ethers provider when an URL is specified.
 macro_rules! test_provider {
     () => {
         host::provider::EthFileProvider::from_file(&RPC_CACHE_FILE.into()).unwrap()
