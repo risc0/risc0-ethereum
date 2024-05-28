@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["build", "contracts", "ffi", "relay", "relay/tests/methods", "steel"]
+members = ["build", "contracts", "ffi", "steel"]
 
 [workspace.package]
 version = "0.11.0-alpha.1"
@@ -13,7 +13,6 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 # Intra-workspace dependencies
 risc0-build-ethereum = { version = "0.11.0-alpha.1", default-features = false, path = "build" }
 risc0-ethereum-contracts = { version = "0.11.0-alpha.1", default-features = false, path = "contracts" }
-risc0-ethereum-relay = { version = "0.11.0-alpha.1", default-features = false, path = "relay" }
 risc0-steel = { version = "0.11.0-alpha.1", default-features = false, path = "steel" }
 risc0-forge-ffi = { version = "0.11.0-alpha.1", default-features = false, path = "ffi" }
 
