@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use std::{
-    fs,
+    env, fs,
     io::Write,
     path::{Path, PathBuf},
     process::{Command, Stdio},
@@ -82,6 +82,10 @@ impl Options {
 
 /// Generate Solidity files for integrating a RISC Zero project with Ethereum.
 pub fn generate_solidity_files(guests: &[GuestListEntry], opts: &Options) -> Result<()> {
+    // Skip Solidity source files generation if RISC0_SKIP_BUILD is enabled.
+    if env::var("RISC0_SKIP_BUILD").is_ok() {
+        return Ok(());
+    }
     let image_id_file_path = opts
         .image_id_sol_path
         .as_ref()
