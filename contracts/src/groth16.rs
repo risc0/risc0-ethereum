@@ -14,7 +14,7 @@
 
 use alloy_sol_types::SolValue;
 use anyhow::Result;
-use risc0_zkvm::{sha::Digestible, CompactReceipt};
+use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
 
 pub struct Seal {}
 
@@ -26,7 +26,7 @@ impl Seal {
 
     /// encoding of the seal with selector.
     pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
-        let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
+        let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
         let selector = &verifier_parameters_digest.as_bytes()[..4];
         // Create a new vector with the capacity to hold both selector and seal
         let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());

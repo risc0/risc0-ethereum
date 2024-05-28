@@ -19,7 +19,8 @@ use std::{
 
 use anyhow::Context;
 use risc0_zkvm::{
-    default_executor, sha::Digest, ExecutorEnv, InnerReceipt, MaybePruned, Receipt, ReceiptClaim,
+    default_executor, sha::Digest, ExecutorEnv, FakeReceipt, InnerReceipt, MaybePruned, Receipt,
+    ReceiptClaim,
 };
 use tokio::sync::mpsc;
 
@@ -107,15 +108,13 @@ impl Prover {
                 let session = exec
                     .execute(env, elf)
                     .context("Executor failed to generate a successful session")?;
-                let inner = InnerReceipt::Fake {
-                    claim: ReceiptClaim {
-                        pre: MaybePruned::Pruned(Digest::ZERO),
-                        post: MaybePruned::Pruned(Digest::ZERO),
-                        exit_code: session.exit_code,
-                        input: MaybePruned::Pruned(Digest::ZERO),
-                        output: None.into(),
-                    },
-                };
+                let inner = InnerReceipt::Fake(FakeReceipt::new(ReceiptClaim {
+                    pre: MaybePruned::Pruned(Digest::ZERO),
+                    post: MaybePruned::Pruned(Digest::ZERO),
+                    exit_code: session.exit_code,
+                    input: MaybePruned::Pruned(Digest::ZERO),
+                    output: None.into(),
+                }));
                 let receipt = Receipt::new(inner, session.journal.bytes);
                 let receipt_bytes = bincode::serialize(&receipt)?;
                 self.storage

@@ -73,7 +73,7 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
 
     let ctx = VerifierContext::default();
     let receipt = default_prover()
-        .prove_with_ctx(env, &ctx, elf, &ProverOpts::compact())?
+        .prove_with_ctx(env, &ctx, elf, &ProverOpts::groth16())?
         .receipt;
 
     let journal = receipt.clone().journal.bytes;
@@ -85,7 +85,7 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
             seal.extend(receipt.claim()?.digest().as_bytes());
             seal
         }
-        false => Seal::encode(receipt.inner.compact()?.seal.clone())?,
+        false => Seal::encode(receipt.inner.groth16()?.seal.clone())?,
     };
     Ok((journal, seal))
 }
