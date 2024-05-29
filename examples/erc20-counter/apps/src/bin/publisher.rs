@@ -23,7 +23,7 @@ use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_ethereum_contracts::groth16::encode;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
@@ -92,6 +92,7 @@ fn main() -> Result<()> {
     let mut env =
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
+    let mut contract = Contract::preflight(CONTRACT, &mut env);
 
     // Function to call
     let account = args.account;
@@ -99,8 +100,8 @@ fn main() -> Result<()> {
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
-    let returns = env.preflight(ViewCall::new(call, CONTRACT))?;
-    let view_call_input = env.into_zkvm_input()?;
+    let returns = contract.call_builder(&call).call()?;
+    let view_call_input = env.into_input()?;
     println!(
         "For block {} `{}` returns: {}",
         number,

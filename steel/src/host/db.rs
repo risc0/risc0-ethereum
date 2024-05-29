@@ -33,7 +33,7 @@ pub enum ProviderDbError<E: std::error::Error> {
 }
 
 /// A revm [Database] backed by a [Provider].
-pub struct ProviderDb<P: Provider> {
+pub struct ProviderDb<P> {
     provider: P,
     block_number: u64,
 
@@ -119,7 +119,7 @@ impl<P: Provider> Database for ProviderDb<P> {
 }
 
 /// A revm [Database] backed by a [Provider] that caches all queries needed for a state proof.
-pub struct ProofDb<P: Provider> {
+pub struct ProofDb<P> {
     accounts: HashMap<Address, HashSet<U256>>,
     contracts: HashMap<B256, Bytes>,
     block_hash_numbers: HashSet<U256>,
