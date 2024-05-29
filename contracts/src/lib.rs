@@ -12,18 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Specifies the Bonsai Relay Ethereum contract and provides
-//! structures and procedures for programmatic deployment of and interaction
-//! with a `Proxy` contract instance on Ethereum.
-
 use ethers::prelude::*;
-
-abigen!(IBonsaiRelay, "$OUT_DIR/IBonsaiRelay.sol/IBonsaiRelay.json");
-abigen!(BonsaiRelay, "$OUT_DIR/BonsaiRelay.sol/BonsaiRelay.json");
-abigen!(
-    BonsaiTestRelay,
-    "$OUT_DIR/BonsaiTestRelay.sol/BonsaiTestRelay.json"
-);
 
 abigen!(
     IRiscZeroVerifier,
@@ -35,10 +24,3 @@ abigen!(
 );
 
 pub mod groth16;
-
-pub mod testutils {
-    use ethers::prelude::*;
-
-    abigen!(Counter, "$OUT_DIR/Counter.sol/Counter.json");
-    abigen!(Proxy, "$OUT_DIR/ProxyTest.sol/Proxy.json");
-}
