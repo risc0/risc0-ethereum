@@ -12,13 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The following library provides utility functions to help with sending
-// off-chain proof requests to the Bonsai proving service and publish the
-// received proofs directly to a deployed app contract on Ethereum.
-//
-// Please note that both `risc0_zkvm` and `bonsai_sdk` crates are still
-// under active development. As such, this library might change to adapt to
-// the upstream changes.
+// The following library provides utility functions to help with sending 
+// transactions to a deployed app contract on Ethereum.
 
 use anyhow::Result;
 use ethers::prelude::*;
