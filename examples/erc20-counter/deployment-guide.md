@@ -23,6 +23,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 
 2. Set your environment variables:
     > ***Note:*** *This requires having access to a Bonsai API Key. To request an API key [complete the form here](https://bonsai.xyz/apply).*
+    >
     > Alternatively you can generate your proofs locally, assuming you have a machine with an x86 architecture and [Docker] installed. In this case do not export Bonsai related env variables.
 
     ```bash
@@ -126,6 +127,7 @@ You can deploy the Counter contract on a testnet such as `Sepolia` and run an en
 
 1. Get access to Bonsai and an Ethereum node running on a given testnet, e.g., Sepolia (in this example, we will be using [Alchemy](https://www.alchemy.com/) as our Ethereum node provider) and export the following environment variables:
     > ***Note:*** *This requires having access to a Bonsai API Key. To request an API key [complete the form here](https://bonsai.xyz/apply).*
+    >
     > Alternatively you can generate your proofs locally, assuming you have a machine with an x86 architecture and [Docker] installed. In this case do not export Bonsai related env variables.
 
     ```bash
