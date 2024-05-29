@@ -2,7 +2,7 @@
 
 ## Publisher
 
-The [`publisher` CLI][publisher], is an example application that sends an off-chain proof request to the [Bonsai] proving service, and publishes the received proofs to your deployed [Counter] contract.
+The [`publisher` CLI][publisher], is an example application that sends an off-chain proof request to the RISC Zero zkVM, and publishes the received proofs to your deployed [Counter] contract.
 
 ### Usage
 
@@ -36,13 +36,9 @@ Options:
 
 ## Library
 
-We provide a small rust [library] containing utility functions to help with sending off-chain proof requests to the Bonsai proving service and publish the received proofs directly to a deployed app contract on Ethereum.
-
-As we continue to improve the [risc0-zkvm] and [bonsai-sdk] crates, we will absorb some functionality provided here into those crates.
+We provide a small rust [library] containing utility functions to help with sending 
+transactions to a deployed app contract on Ethereum.
 
 [publisher]: ./src/bin/publisher.rs
-[Bonsai]: https://dev.bonsai.xyz/
 [library]: ./src/lib.rs
-[risc0-zkvm]: https://docs.rs/risc0-zkvm/latest/risc0_zkvm/
-[bonsai-sdk]: https://docs.rs/bonsai-sdk/latest/bonsai_sdk/
 [Counter]: ../contracts/Counter.sol
