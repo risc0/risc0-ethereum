@@ -118,12 +118,12 @@ fn main() -> Result<()> {
             env,
             &VerifierContext::default(),
             BALANCE_OF_ELF,
-            &ProverOpts::compact(),
+            &ProverOpts::groth16(),
         )?
         .receipt;
 
     // Encode the seal with the selector
-    let seal = Seal::encode(receipt.inner.compact()?.seal.clone())?;
+    let seal = Seal::encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
