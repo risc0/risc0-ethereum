@@ -55,13 +55,9 @@ jobs:
         with:
           node-version: 18
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-        with:
-          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - run: cargo fmt --all --check
-      - run: cargo fmt --all --check --manifest-path relay/tests/methods/guest/Cargo.toml
       - run: cargo sort --workspace --check
-      - run: cargo sort --workspace --check relay/tests/methods/guest
-      - run: cargo clippy --workspace --exclude risc0-ethereum-relay-test-methods
+      - run: cargo clippy --workspace
       - run: forge fmt --check
         working-directory: contracts
       - uses: actions/setup-python@v4
@@ -108,8 +104,6 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-        with:
-          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - name: build workspace
         run: cargo test --workspace --timings --no-run
       - name: test workspace
@@ -146,16 +140,9 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-        with:
-          version: nightly-09fe3e041369a816365a020f715ad6f94dbce9f2
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Install Ganache
-        run: npm install ganache --global
-      - uses: risc0/risc0/.github/actions/sccache@main
-        with:
-          key: Linux-default
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -169,9 +156,6 @@ jobs:
         working-directory: examples/erc20-counter
       - name: test erc20-Counter
         run: ./test-local-deployment.sh
-        env:
-          BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
-          BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
         working-directory: examples/erc20-counter
       - run: sccache --show-stats
 
