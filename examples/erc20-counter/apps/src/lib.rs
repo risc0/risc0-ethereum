@@ -20,13 +20,8 @@
 // under active development. As such, this library might change to adapt to
 // the upstream changes.
 
-use std::time::Duration;
-
-use anyhow::{Context, Result};
-use bonsai_sdk::alpha as bonsai_sdk;
+use anyhow::Result;
 use ethers::prelude::*;
-use risc0_ethereum_contracts::groth16::Seal;
-use risc0_zkvm::{compute_image_id, Receipt};
 
 /// Wrapper of a `SignerMiddleware` client to send transactions to the given
 /// contract's `Address`.
@@ -66,89 +61,5 @@ impl TxSender {
         log::info!("Transaction receipt: {:?}", &tx);
 
         Ok(tx)
-    }
-}
-
-/// An implementation of a Prover that runs on Bonsai.
-pub struct BonsaiProver {}
-impl BonsaiProver {
-    /// Generates a snark proof as a triplet (`Vec<u8>`, `FixedBytes<32>`,
-    /// `Vec<u8>) for the given elf and input.
-    pub fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
-        let client = bonsai_sdk::Client::from_env(risc0_zkvm::VERSION)?;
-
-        // Compute the image_id, then upload the ELF with the image_id as its key.
-        let image_id = compute_image_id(elf)?;
-        let image_id_hex = image_id.to_string();
-        client.upload_img(&image_id_hex, elf.to_vec())?;
-        log::info!("Image ID: 0x{}", image_id_hex);
-
-        // Prepare input data and upload it.
-        let input_id = client.upload_input(input.to_vec())?;
-
-        // Start a session running the prover.
-        let session = client.create_session(image_id_hex, input_id, vec![])?;
-        log::info!("Created session: {}", session.uuid);
-        let _receipt = loop {
-            let res = session.status(&client)?;
-            if res.status == "RUNNING" {
-                log::info!(
-                    "Current status: {} - state: {} - continue polling...",
-                    res.status,
-                    res.state.unwrap_or_default()
-                );
-                std::thread::sleep(Duration::from_secs(15));
-                continue;
-            }
-            if res.status == "SUCCEEDED" {
-                // Download the receipt, containing the output.
-                let receipt_url = res
-                    .receipt_url
-                    .context("API error, missing receipt on completed session")?;
-
-                let receipt_buf = client.download(&receipt_url)?;
-                let receipt: Receipt = bincode::deserialize(&receipt_buf)?;
-
-                break receipt;
-            }
-
-            panic!(
-                "Workflow exited: {} - | err: {}",
-                res.status,
-                res.error_msg.unwrap_or_default()
-            );
-        };
-
-        // Fetch the snark.
-        let snark_session = client.create_snark(session.uuid)?;
-        log::info!("Created snark session: {}", snark_session.uuid);
-        let snark_receipt = loop {
-            let res = snark_session.status(&client)?;
-            match res.status.as_str() {
-                "RUNNING" => {
-                    log::info!("Current status: {} - continue polling...", res.status,);
-                    std::thread::sleep(Duration::from_secs(15));
-                    continue;
-                }
-                "SUCCEEDED" => {
-                    break res.output.context("No snark generated :(")?;
-                }
-                _ => {
-                    panic!(
-                        "Workflow exited: {} err: {}",
-                        res.status,
-                        res.error_msg.unwrap_or_default()
-                    );
-                }
-            }
-        };
-
-        let snark = snark_receipt.snark;
-        log::debug!("Snark proof!: {snark:?}");
-
-        let seal = Seal::abi_encode(snark).context("Read seal")?;
-        let journal = snark_receipt.journal;
-
-        Ok((journal, seal))
     }
 }

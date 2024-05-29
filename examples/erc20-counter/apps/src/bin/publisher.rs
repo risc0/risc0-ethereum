@@ -19,11 +19,12 @@
 use alloy_primitives::{address, Address};
 use alloy_sol_types::{sol, SolCall, SolInterface};
 use anyhow::Result;
-use apps::{BonsaiProver, TxSender};
+use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
+use risc0_ethereum_contracts::groth16::encode;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
-use risc0_zkvm::serde::to_vec;
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
@@ -107,18 +108,26 @@ fn main() -> Result<()> {
         returns._0
     );
 
-    // Send an off-chain proof request to the Bonsai proving service.
-    let input = InputBuilder::new()
-        .write(view_call_input)
-        .unwrap()
-        .write(account)
-        .unwrap()
-        .bytes();
-    let (journal, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
+    let env = ExecutorEnv::builder()
+        .write(&view_call_input)?
+        .write(&account)?
+        .build()?;
+
+    let receipt = default_prover()
+        .prove_with_ctx(
+            env,
+            &VerifierContext::default(),
+            BALANCE_OF_ELF,
+            &ProverOpts::groth16(),
+        )?
+        .receipt;
+
+    // Encode the groth16 seal with the selector
+    let seal = encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
-        journal: journal.into(),
+        journal: receipt.journal.bytes.clone().into(),
         seal: seal.into(),
     })
     .abi_encode();
@@ -128,23 +137,4 @@ fn main() -> Result<()> {
     runtime.block_on(tx_sender.send(calldata))?;
 
     Ok(())
-}
-
-pub struct InputBuilder {
-    input: Vec<u32>,
-}
-
-impl InputBuilder {
-    pub fn new() -> Self {
-        InputBuilder { input: Vec::new() }
-    }
-
-    pub fn write(mut self, input: impl serde::Serialize) -> Result<Self> {
-        self.input.extend(to_vec(&input)?);
-        Ok(self)
-    }
-
-    pub fn bytes(self) -> Vec<u8> {
-        bytemuck::cast_slice(&self.input).to_vec()
-    }
 }

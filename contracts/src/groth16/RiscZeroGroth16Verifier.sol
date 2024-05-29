@@ -115,10 +115,10 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
             sha256(
                 abi.encodePacked(
                     // tag
-                    sha256("risc0.CompactReceiptVerifierParameters"),
+                    sha256("risc0.Groth16ReceiptVerifierParameters"),
                     // down
                     control_root,
-                    bn254_control_id,
+                    reverseByteOrderUint256(uint256(bn254_control_id)),
                     verifier_key_digest(),
                     // down length
                     uint16(3) << 8
