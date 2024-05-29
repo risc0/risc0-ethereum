@@ -22,7 +22,7 @@ use anyhow::Result;
 use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
-use risc0_ethereum_contracts::groth16::Seal;
+use risc0_ethereum_contracts::groth16::encode;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
@@ -119,12 +119,12 @@ fn main() -> Result<()> {
             env,
             &VerifierContext::default(),
             BALANCE_OF_ELF,
-            &ProverOpts::compact(),
+            &ProverOpts::groth16(),
         )?
         .receipt;
 
-    // Encode the seal with the selector
-    let seal = Seal::encode(receipt.inner.compact()?.seal.clone())?;
+    // Encode the groth16 seal with the selector
+    let seal = encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
     let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {

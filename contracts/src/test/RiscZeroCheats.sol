@@ -37,14 +37,14 @@ abstract contract RiscZeroCheats is CommonBase {
         return vm.envOr("RISC0_DEV_MODE", false);
     }
 
-    /// @notice Returns the journal, post state digest, and Groth16 seal, resulting from running the
-    ///     guest with elf_path using input on the Bonsai proving service.
+    /// @notice Returns the journal, and Groth16 seal, resulting from running the
+    ///     guest with elf_path using input on the RISC Zero zkVM.
     /// @dev Based on whether `devMode()` is `true`, will take one of two actions:
     ///     * When `devMode()` is `true`
     ///       Executes the guest program (ELF) locally and returns the journal along with an empty
     ///       seal. This empty seal will only be accepted by the mock verifier contract.
     ///     * When `devMode()` is `false`
-    ///       Uses the Bonsai proving service to run the guest and produce an on-chain verifiable
+    ///       Uses the local prover or the Bonsai proving service to run the guest and produce an on-chain verifiable
     ///       SNARK attesting to the correctness of the journal output. URL and API key for Bonsai
     ///       should be specified using the BONSAI_API_URL and BONSAI_API_KEY environment variables.
     function prove(string memory elf_path, bytes memory input) internal returns (bytes memory, bytes memory) {

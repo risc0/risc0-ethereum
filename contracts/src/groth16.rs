@@ -14,25 +14,21 @@
 
 use alloy_sol_types::SolValue;
 use anyhow::Result;
-use risc0_zkvm::{sha::Digestible, CompactReceipt};
+use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
 
-pub struct Seal {}
+/// ABI encoding of the seal.
+pub fn abi_encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+    Ok(encode(seal)?.abi_encode())
+}
 
-impl Seal {
-    /// ABI encoding of the seal.
-    pub fn abi_encode(seal: Vec<u8>) -> Result<Vec<u8>> {
-        Ok(Self::encode(seal)?.abi_encode())
-    }
+/// encoding of the seal with selector.
+pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+    let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
+    let selector = &verifier_parameters_digest.as_bytes()[..4];
+    // Create a new vector with the capacity to hold both selector and seal
+    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+    selector_seal.extend_from_slice(selector);
+    selector_seal.extend_from_slice(&seal);
 
-    /// encoding of the seal with selector.
-    pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
-        let verifier_parameters_digest = CompactReceipt::verifier_parameters().digest();
-        let selector = &verifier_parameters_digest.as_bytes()[..4];
-        // Create a new vector with the capacity to hold both selector and seal
-        let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
-        selector_seal.extend_from_slice(selector);
-        selector_seal.extend_from_slice(&seal);
-
-        Ok(selector_seal)
-    }
+    Ok(selector_seal)
 }

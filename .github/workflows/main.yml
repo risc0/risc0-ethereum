@@ -56,10 +56,8 @@ jobs:
           node-version: 18
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - run: cargo fmt --all --check
-      - run: cargo fmt --all --check --manifest-path relay/tests/methods/guest/Cargo.toml
       - run: cargo sort --workspace --check
-      - run: cargo sort --workspace --check relay/tests/methods/guest
-      - run: cargo clippy --workspace --exclude risc0-ethereum-relay-test-methods
+      - run: cargo clippy --workspace
       - run: forge fmt --check
         working-directory: contracts
       - uses: actions/setup-python@v4
