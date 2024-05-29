@@ -17,7 +17,7 @@ use std::io::Write;
 use anyhow::{Context, Result};
 use clap::Parser;
 use ethers::abi::Token;
-use risc0_ethereum_contracts::groth16::Seal;
+use risc0_ethereum_contracts::groth16::encode;
 use risc0_zkvm::{
     default_prover, is_dev_mode, sha::Digestible, ExecutorEnv, ProverOpts, VerifierContext,
 };
@@ -85,7 +85,7 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
             seal.extend(receipt.claim()?.digest().as_bytes());
             seal
         }
-        false => Seal::encode(receipt.inner.groth16()?.seal.clone())?,
+        false => encode(receipt.inner.groth16()?.seal.clone())?,
     };
     Ok((journal, seal))
 }
