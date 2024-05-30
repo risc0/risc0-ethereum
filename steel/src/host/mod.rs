@@ -18,18 +18,18 @@ use self::{
     db::ProofDb,
     provider::{EthersProvider, Provider},
 };
-use crate::{
-    ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCall, ViewCallEnv, ViewCallInput,
-};
+use crate::{ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCallEnv, ViewCallInput};
 use alloy_primitives::{Sealable, B256};
-use alloy_sol_types::SolCall;
-use anyhow::{anyhow, ensure, Context};
+use anyhow::{ensure, Context};
 use ethers_providers::{Http, RetryClient};
-use log::{debug, info};
+use log::debug;
 use revm::primitives::HashMap;
 
 pub mod db;
 pub mod provider;
+
+/// Alias for readability, do not make public.
+pub(crate) type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
 
 /// The Ethers client type.
 pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
@@ -64,51 +64,12 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
     }
 }
 
-impl<C: SolCall> ViewCall<C> {
-    /// Executes the call to derive the corresponding [ViewCallInput].
-    ///
-    /// This method is used to preflight the call and get the required input for the guest.
-    #[deprecated(
-        since = "0.11.0",
-        note = "please use `env.preflight(..)` (ViewCallEnv::preflight) instead"
-    )]
-    pub fn preflight<P: Provider>(
-        self,
-        mut env: ViewCallEnv<ProofDb<P>, P::Header>,
-    ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
-        // initialize the database and execute the transaction
-        let transaction_result = env.preflight(self)?;
-
-        let input = env.into_zkvm_input()?;
-
-        Ok((input, transaction_result))
-    }
-}
-
 impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    /// Executes the call using context from the environment.
-    ///
-    /// This method is used to preflight the call. It will retrieve all necessary chain state data
-    /// using the specified [Provider].
-    pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return> {
-        info!(
-            "Executing preflight for '{}' with caller {} on contract {}",
-            C::SIGNATURE,
-            view_call.caller,
-            view_call.contract
-        );
-
-        // initialize the database and execute the transaction
-        view_call
-            .transact(&mut self.db, self.cfg_env.clone(), self.header.inner())
-            .map_err(|err| anyhow!(err))
-    }
-
     /// Converts the environment into a [ViewCallInput].
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
-    pub fn into_zkvm_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
+    pub fn into_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
         let db = &self.db;
 
         // use the same provider as the database

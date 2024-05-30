@@ -19,23 +19,20 @@ use alloy_primitives::{
     b256, keccak256, Address, BlockNumber, Bytes, Sealable, Sealed, TxNumber, B256, U256,
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
-use alloy_sol_types::{sol, SolCall, SolType};
-use revm::{
-    primitives::{
-        AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap,
-        ResultAndState, SpecId, SuccessReason, TransactTo,
-    },
-    Database, Evm,
-};
+use alloy_sol_types::sol;
+
+use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
 use serde::{Deserialize, Serialize};
-use std::{convert::Infallible, fmt::Debug, mem, rc::Rc};
+use std::{fmt::Debug, rc::Rc};
 
 pub mod config;
+mod contract;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
 mod mpt;
 
+pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
 /// The serializable input to derive and validate a [ViewCallEnv].
@@ -52,7 +49,7 @@ impl<H: EvmHeader> ViewCallInput<H> {
     /// Converts the input into a [ViewCallEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
-    pub fn into_env(self) -> ViewCallEnv<StateDB, H> {
+    pub fn into_env(self) -> GuestViewCallEnv<H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
         assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
@@ -97,8 +94,11 @@ sol! {
     }
 }
 
-/// The [ViewCall] is configured from this object.
-pub struct ViewCallEnv<D, H: EvmHeader> {
+/// Alias for readability, do not make public.
+pub(crate) type GuestViewCallEnv<H> = ViewCallEnv<StateDB, H>;
+
+/// The [Contract] is configured from this object.
+pub struct ViewCallEnv<D, H> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
@@ -137,149 +137,6 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
     /// Returns the header of the environment.
     pub fn header(&self) -> &H {
         self.header.inner()
-    }
-}
-
-impl<H: EvmHeader> ViewCallEnv<StateDB, H> {
-    /// Executes the call using context from the environment.
-    #[inline]
-    pub fn execute<C: SolCall>(&self, view_call: ViewCall<C>) -> C::Return {
-        let db = WrapStateDb::new(&self.db);
-        view_call
-            .transact(db, self.cfg_env.clone(), self.header.inner())
-            .unwrap()
-    }
-}
-
-/// A builder for calling an Ethereum contract.
-#[derive(Debug, Clone)]
-pub struct ViewCall<C: SolCall> {
-    call: C,
-    contract: Address,
-    caller: Address,
-    gas_limit: u64,
-    gas_price: U256,
-    value: U256,
-}
-
-impl<C: SolCall> ViewCall<C> {
-    /// Compile-time assertion that the call C has a return value.
-    const RETURNS: () = assert!(
-        mem::size_of::<C::Return>() > 0,
-        "Function call must have a return value"
-    );
-    /// The default gas limit for function calls.
-    const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
-
-    /// Creates a new view call to the given contract.
-    pub fn new(call: C, contract: Address) -> Self {
-        #[allow(clippy::let_unit_value)]
-        let _ = Self::RETURNS;
-
-        Self {
-            call,
-            contract,
-            caller: contract,
-            gas_limit: Self::DEFAULT_GAS_LIMIT,
-            gas_price: U256::ZERO,
-            value: U256::ZERO,
-        }
-    }
-
-    /// Sets the caller of the function call.
-    #[deprecated(
-        since = "0.11.0",
-        note = "please use `.from(..)` (ViewCall::from) instead"
-    )]
-    pub fn with_caller(mut self, caller: Address) -> Self {
-        self.caller = caller;
-        self
-    }
-
-    /// Sets the caller of the function call.
-    pub fn from(mut self, from: Address) -> Self {
-        self.caller = from;
-        self
-    }
-
-    /// Sets the gas limit of the function call.
-    pub fn gas(mut self, gas: u64) -> Self {
-        self.gas_limit = gas;
-        self
-    }
-
-    /// Sets the gas price of the function call.
-    pub fn gas_price(mut self, gas_price: U256) -> Self {
-        self.gas_price = gas_price;
-        self
-    }
-
-    /// Sets the value field of the function call.
-    pub fn value(mut self, value: U256) -> Self {
-        self.value = value;
-        self
-    }
-
-    /// Executes the view call using the given environment.
-    #[inline]
-    #[deprecated(
-        since = "0.11.0",
-        note = "please use `env.execute(..)` (ViewCallEnv::execute) instead"
-    )]
-    pub fn execute<H: EvmHeader>(self, env: ViewCallEnv<StateDB, H>) -> C::Return {
-        env.execute(self)
-    }
-
-    /// Executes the call for the provided state.
-    fn transact<D, H>(
-        self,
-        db: D,
-        cfg_env: CfgEnvWithHandlerCfg,
-        header: &H,
-    ) -> Result<C::Return, String>
-    where
-        D: Database,
-        H: EvmHeader,
-        <D as Database>::Error: Debug,
-    {
-        let mut evm = Evm::builder()
-            .with_db(db)
-            .with_cfg_env_with_handler_cfg(cfg_env)
-            .modify_block_env(|blk_env| header.fill_block_env(blk_env))
-            .build();
-
-        let tx_env = evm.tx_mut();
-        tx_env.caller = self.caller;
-        tx_env.gas_limit = self.gas_limit;
-        tx_env.gas_price = self.gas_price;
-        tx_env.transact_to = TransactTo::call(self.contract);
-        tx_env.value = self.value;
-        tx_env.data = self.call.abi_encode().into();
-
-        let ResultAndState { result, .. } = evm
-            .transact_preverified()
-            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
-        let ExecutionResult::Success { reason, output, .. } = result else {
-            return Err(format!("Call '{}' failed", C::SIGNATURE));
-        };
-        // there must be a return value to decode
-        if reason != SuccessReason::Return {
-            return Err(format!(
-                "Call '{}' did not return: {:?}",
-                C::SIGNATURE,
-                reason
-            ));
-        }
-        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
-            format!(
-                "Call '{}' returned invalid type; expected '{}': {:?}",
-                C::SIGNATURE,
-                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
-                err
-            )
-        })?;
-
-        Ok(returns)
     }
 }
 
@@ -342,84 +199,6 @@ impl StateDB {
 
     fn storage_trie(&self, root: &B256) -> Option<&Rc<MerkleTrie>> {
         self.storage_tries.get(root)
-    }
-}
-
-struct WrapStateDb<'a> {
-    inner: &'a StateDB,
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
-}
-
-impl<'a> WrapStateDb<'a> {
-    /// Creates a new [Database] from the given [StateDb].
-    fn new(inner: &'a StateDB) -> Self {
-        Self {
-            inner,
-            account_storage: HashMap::new(),
-        }
-    }
-}
-
-impl Database for WrapStateDb<'_> {
-    /// The database does not return any errors.
-    type Error = Infallible;
-
-    /// Get basic account information.
-    #[inline]
-    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let account = self.inner.account(address);
-        match account {
-            Some(account) => {
-                // link storage trie to the account, if it exists
-                if let Some(storage_trie) = self.inner.storage_trie(&account.storage_root) {
-                    self.account_storage
-                        .insert(address, Some(storage_trie.clone()));
-                }
-
-                Ok(Some(AccountInfo {
-                    balance: account.balance,
-                    nonce: account.nonce,
-                    code_hash: account.code_hash,
-                    code: None, // we don't need the code here, `code_by_hash` will be used instead
-                }))
-            }
-            None => {
-                self.account_storage.insert(address, None);
-
-                Ok(None)
-            }
-        }
-    }
-
-    /// Get account code by its hash.
-    #[inline]
-    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
-        let code = self.inner.code_by_hash(code_hash);
-        Ok(Bytecode::new_raw(code.clone()))
-    }
-
-    /// Get storage value of address at index.
-    #[inline]
-    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let storage = self
-            .account_storage
-            .get(&address)
-            .unwrap_or_else(|| panic!("storage not found: {:?}", address));
-        match storage {
-            Some(storage) => {
-                let val = storage
-                    .get_rlp(keccak256(index.to_be_bytes::<32>()))
-                    .expect("invalid storage value");
-                Ok(val.unwrap_or_default())
-            }
-            None => Ok(U256::ZERO),
-        }
-    }
-
-    /// Get block hash by block number.
-    #[inline]
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
-        Ok(self.inner.block_hash(number))
     }
 }
 
