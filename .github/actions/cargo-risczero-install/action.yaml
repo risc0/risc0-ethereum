@@ -8,7 +8,8 @@ inputs:
     type: string
   toolchain-version:
     description: 'Version of the RISC Zero toolchains to install'
-    required: true
+    required: false
+    default: 'latest'
   features:
     description: 'Comma separated list of feature flags to set when building cargo risczero'
     required: false
