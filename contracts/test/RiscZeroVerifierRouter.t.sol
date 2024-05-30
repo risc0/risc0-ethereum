@@ -332,4 +332,18 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
         verifierRouter.removeVerifier(SELECTOR_A);
     }
+
+    function test_TransferRouterOwnership() external {
+        address newOwner = address(0xc0ffee);
+
+        verifierRouter.transferOwnership(newOwner);
+        assertEq(verifierRouter.pendingOwner(), newOwner);
+        assertEq(verifierRouter.owner(), address(this));
+
+        vm.startPrank(newOwner);
+        verifierRouter.acceptOwnership();
+        vm.stopPrank();
+
+        assertEq(verifierRouter.owner(), newOwner);
+    }
 }

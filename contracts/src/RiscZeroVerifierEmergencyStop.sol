@@ -16,13 +16,13 @@
 
 pragma solidity ^0.8.9;
 
-import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
+import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.sol";
 import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Wrapper for an IRiscZeroVerifier contract, providing emergency stop function.
-contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable, Pausable {
+contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable2Step, Pausable {
     IRiscZeroVerifier immutable verifier;
 
     /// @notice Error raised when calling estop with a receipt that cannot be verified as proof

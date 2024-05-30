@@ -16,12 +16,12 @@
 
 pragma solidity ^0.8.9;
 
-import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
+import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Router for IRiscZeroVerifier, allowing multiple implementations to be accessible behind a single address.
-contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable {
+contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     /// @notice Mapping from 4-byte verifier selector to verifier contracts.
     ///         Used to route receipts to verifiers that are able to check the receipt.
     mapping(bytes4 => IRiscZeroVerifier) public verifiers;

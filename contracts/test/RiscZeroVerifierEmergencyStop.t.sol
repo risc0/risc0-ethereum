@@ -109,4 +109,18 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.expectRevert(Pausable.EnforcedPause.selector);
         verifierEstop.verifyIntegrity(TEST_RECEIPT);
     }
+
+    function test_TransferEstopOwnership() external {
+        address newOwner = address(0xc0ffee);
+
+        verifierEstop.transferOwnership(newOwner);
+        assertEq(verifierEstop.pendingOwner(), newOwner);
+        assertEq(verifierEstop.owner(), address(this));
+
+        vm.startPrank(newOwner);
+        verifierEstop.acceptOwnership();
+        vm.stopPrank();
+
+        assertEq(verifierEstop.owner(), newOwner);
+    }
 }
