@@ -78,7 +78,7 @@ library ReceiptClaimLib {
     /// @dev Input hash and postStateDigest are set to all-zeros (i.e. no committed input, or
     ///      final memory state), the exit code is (Halted, 0), and there are no assumptions
     ///      (i.e. the receipt is unconditional).
-    function from(bytes32 imageId, bytes32 journalDigest) internal pure returns (ReceiptClaim memory) {
+    function ok(bytes32 imageId, bytes32 journalDigest) internal pure returns (ReceiptClaim memory) {
         return ReceiptClaim(
             imageId,
             SYSTEM_STATE_ZERO_DIGEST,
