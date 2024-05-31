@@ -56,6 +56,10 @@ struct Args {
     #[clap(long)]
     contract: Address,
 
+    /// ERC20 contract address on Ethereum
+    #[clap(long)]
+    token: Address,
+
     /// Account address to read the balance_of on Ethereum
     #[clap(long)]
     account: Address,
@@ -80,20 +84,21 @@ fn main() -> Result<()> {
     };
 
     // Preflight the call to execute the function in the guest.
-    let mut contract = Contract::preflight(args.contract, &mut env);
+    let mut contract = Contract::preflight(args.token, &mut env);
     let returns = contract.call_builder(&call).call()?;
     println!(
         "For block {} calling `{}` on {} returns: {}",
         env.header().number(),
         IERC20::balanceOfCall::SIGNATURE,
-        args.contract,
+        args.token,
         returns._0
     );
 
+    println!("proving...");
     let view_call_input = env.into_input()?;
     let env = ExecutorEnv::builder()
         .write(&view_call_input)?
-        .write(&args.contract)?
+        .write(&args.token)?
         .write(&args.account)?
         .build()?;
 
@@ -105,6 +110,7 @@ fn main() -> Result<()> {
             &ProverOpts::groth16(),
         )?
         .receipt;
+    println!("proving...done");
 
     // Create a new `TxSender`.
     let tx_sender = TxSender::new(
@@ -125,8 +131,10 @@ fn main() -> Result<()> {
     .abi_encode();
 
     // Send the calldata to Ethereum.
+    println!("sending tx...");
     let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(tx_sender.send(calldata))?;
+    println!("sending tx...done");
 
     Ok(())
 }

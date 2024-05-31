@@ -50,7 +50,8 @@ echo "Publishing a new state..."
 cargo run --bin publisher -- \
     --chain-id=31337 \
     --rpc-url=http://localhost:8545 \
-    --contract=${TOYKEN_ADDRESS:?} \
+    --contract=${COUNTER_ADDRESS:?} \
+    --token=${TOYKEN_ADDRESS:?} \
     --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
 
 # Attempt to verify counter value as part of the script logic
