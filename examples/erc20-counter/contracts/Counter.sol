@@ -25,18 +25,27 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// @dev The contract interacts with ERC-20 tokens, using view call proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
 contract Counter {
-    /// @notice RISC Zero verifier contract address.
-    IRiscZeroVerifier public immutable verifier;
-
     /// @notice Image ID of the only zkVM binary to accept verification from.
-    bytes32 public constant imageId = ImageID.BALANCE_OF_ID;
+    bytes32 constant imageId = ImageID.BALANCE_OF_ID;
+
+    /// @notice RISC Zero verifier contract address.
+    IRiscZeroVerifier immutable verifier;
+
+    address immutable tokenAddress;
 
     /// @notice Counter to track the number of successful verifications.
     uint256 public counter;
 
+    ///  @notice Journal that is committed to by the guest.
+    struct Journal {
+        Steel.Commitment commitment;
+        address tokenAddress;
+    }
+
     /// @notice Initialize the contract, binding it to a specified RISC Zero verifier.
-    constructor(IRiscZeroVerifier _verifier) {
+    constructor(IRiscZeroVerifier _verifier, address _tokenAddress) {
         verifier = _verifier;
+        tokenAddress = _tokenAddress;
         counter = 0;
     }
 
@@ -45,11 +54,12 @@ contract Counter {
     ///
     /// The view call proof must be generated off-chain using RISC0-zkVM and submitted here.
     /// This function performs the proof verification process.
-    function increment(bytes calldata journal, bytes calldata seal) public {
+    function increment(bytes calldata journalData, bytes calldata seal) public {
         // Construct the expected journal data. Verify will fail if journal does not match.
-        Steel.Commitment memory commitment = abi.decode(journal, (Steel.Commitment));
-        require(Steel.validateCommitment(commitment));
-        verifier.verify(seal, imageId, sha256(journal));
+        Journal memory journal = abi.decode(journalData, (Journal));
+        require(journal.tokenAddress == tokenAddress);
+        require(Steel.validateCommitment(journal.commitment));
+        verifier.verify(seal, imageId, sha256(journalData));
         counter = counter + 1;
     }
 

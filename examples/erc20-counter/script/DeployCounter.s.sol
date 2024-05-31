@@ -22,6 +22,7 @@ import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 
 import {Counter} from "../contracts/Counter.sol";
+import {ERC20} from "../contracts/ERC20.sol";
 
 /// @notice Deployment script for the Counter contract.
 /// @dev Use the following environment variable to control the deployment:
@@ -35,10 +36,13 @@ contract CounterrDeploy is Script {
 
         vm.startBroadcast(deployerKey);
 
+        ERC20 toyken = new ERC20("TOYKEN", "TOY", 0);
+        console2.log("Deployed ERC20 TOYKEN to", address(toyken));
+
         IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
-        Counter counter = new Counter(verifier);
+        Counter counter = new Counter(verifier, address(toyken));
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();
