@@ -11,7 +11,7 @@ In contrast, this library abstracts away these complexities, allowing developers
 To demonstrate a simple instance of using the view call library, let's consider possibly the most common view call: querying the balance of an ERC-20 token for a specific address.
 You can find the full example [here](../examples/erc20/README.md).
 
-## Guest Code
+## Guest code
 
 Here is a snippet of the [relevant code](../examples/erc20/methods/guest/src/main.rs) of the guest:
 
@@ -53,7 +53,7 @@ fn main() {
 
 ```
 
-## Host Code
+## Host code
 
 Here is a snippet to the [relevant code](../examples/erc20/host/src/main.rs) on the host, it requires the same arguments as the guest:
 
@@ -71,7 +71,7 @@ let returns = contract.call_builder(&CALL).from(CALLER).call()?;
 let input = env.into_input()?;
 ```
 
-## Ethereum Integration
+## Ethereum integration
 
 Steel can be integrated with the [Bonsai Foundry Template]. The Ethereum contract that validates the Groth16 proof must also validate the ViewCallEnv commitment.
 
@@ -87,7 +87,46 @@ function validate(bytes calldata journal, bytes calldata seal) public {
 
 We also provide an example, [erc20-counter], showcasing such integration.
 
-### Getting the verified block hash
+### Adding more data to the Journal
+
+In the previous example, the only thing contained in the Journal was the Steel commitment. However, if additional journal data is desired, this can be easily extended as follows:
+```rust
+use risc0_steel::SolCommitment;
+
+sol! {
+    struct Journal {
+        SolCommitment commitment;
+        bytes data;
+    }
+}
+
+...
+
+let journal = Journal {
+    commitment: view_call_env.block_commitment(),
+    data,
+};
+env::commit_slice(&journal.abi_encode());
+```
+
+Which can be validated using the following Solidity code:
+
+```Solidity
+struct Journal {
+    Steel.Commitment commitment;
+    bytes data;
+}
+
+function validate(bytes calldata journalData, bytes calldata seal) public returns (bytes memory) {
+    Journal memory journal = abi.decode(journalData, (Journal));
+    require(Steel.validateCommitment(journal.commitment));
+    verifier.verify(seal, imageId, sha256(journalData));
+
+    return journal.data;
+}
+```
+
+### Block hash validation
 
 Since internally the `blockhash` opcode is used for validation, the commitment must not be older than 256 blocks.
 Given a block time of 12 seconds, this allows just over 50 minutes to create the proof and ensure that the validating transaction is included in a block.
