@@ -18,13 +18,14 @@ pragma solidity ^0.8.20;
 
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
+import {ICounter} from "./ICounter.sol";
 import {ImageID} from "./ImageID.sol"; // auto-generated contract after running `cargo build`.
 
 /// @title Counter
 /// @notice Implements a counter that increments based on off-chain Steel proofs submitted to this contract.
 /// @dev The contract interacts with ERC-20 tokens, using Steel proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
-contract Counter {
+contract Counter is ICounter {
     /// @notice Image ID of the only zkVM binary to accept verification from.
     bytes32 public constant imageId = ImageID.BALANCE_OF_ID;
 
@@ -50,8 +51,7 @@ contract Counter {
         counter = 0;
     }
 
-    /// @notice Increments the counter, if the Steel proof verifies that the specified account holds at least 1 token.
-    /// @dev The Steel proof must be generated off-chain using RISC0-zkVM and submitted here.
+    /// @inheritdoc ICounter
     function increment(bytes calldata journalData, bytes calldata seal) external {
         // Decode and validate the journal data
         Journal memory journal = abi.decode(journalData, (Journal));
@@ -65,8 +65,8 @@ contract Counter {
         counter += 1;
     }
 
-    /// @notice Returns the value of the counter.
-    function get() public view returns (uint256) {
+    /// @inheritdoc ICounter
+    function get() external view returns (uint256) {
         return counter;
     }
 }

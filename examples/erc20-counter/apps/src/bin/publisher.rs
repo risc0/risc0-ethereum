@@ -34,12 +34,7 @@ sol! {
     }
 }
 
-// `ICounter` interface automatically generated via the alloy `sol!` macro.
-sol! {
-    interface ICounter {
-        function increment(bytes calldata journal, bytes calldata seal) public;
-    }
-}
+sol!("../contracts/ICounter.sol");
 
 /// Arguments of the publisher CLI.
 #[derive(Parser, Debug)]
@@ -124,7 +119,7 @@ fn main() -> Result<()> {
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
     let calldata = ICounter::incrementCall {
-        journal: receipt.journal.bytes.into(),
+        journalData: receipt.journal.bytes.into(),
         seal: seal.into(),
     }
     .abi_encode();
