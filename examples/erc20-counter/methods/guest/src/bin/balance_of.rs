@@ -17,7 +17,7 @@
 
 use alloy_primitives::{address, Address, U256};
 use alloy_sol_types::{sol, SolValue};
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallInput, Contract};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmInput, Contract};
 use risc0_zkvm::guest::env;
 
 risc0_zkvm::guest::entry!(main);
@@ -39,7 +39,7 @@ const CONTRACT: Address = address!("299Da20a3e957c78d7634A55D88195224C9f9f6b");
 
 fn main() {
     // Read the input from the guest environment.
-    let input: EthViewCallInput = env::read();
+    let input: EthEvmInput = env::read();
     let account: Address = env::read();
 
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used

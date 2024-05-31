@@ -23,7 +23,7 @@ use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_ethereum_contracts::groth16::encode;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmHeader};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
