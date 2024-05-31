@@ -75,28 +75,30 @@ let input = env.into_input()?;
 
 Steel can be integrated with the [Bonsai Foundry Template]. The Ethereum contract that validates the Groth16 proof must also validate the ViewCallEnv commitment.
 
-Here is an example of implementing the validation using the Solidity [Steel library]:
+Here is an example of implementing the validation using the Solidity [Steel library]. The journal contains the commitment as well as additional data:
 
-```solidity
-function validate(bytes calldata journal, bytes calldata seal) public {
-    Steel.Commitment memory commitment = abi.decode(journal, (Steel.Commitment));
-    require(Steel.validateCommitment(commitment));
-    verifier.verify(seal, imageId, sha256(journal));
+```Solidity
+struct Journal {
+    Steel.Commitment commitment;
+    address tokenAddress;
+}
+
+function validate(bytes calldata journalData, bytes calldata seal) external {
+    Journal memory journal = abi.decode(journalData, (Journal));
+    require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
+    verifier.verify(seal, imageId, sha256(journalData));
 }
 ```
 
-We also provide an example, [erc20-counter], showcasing such integration.
+The guest code to create the journal would look like the following:
 
-### Adding more data to the Journal
-
-In the previous example, the only thing contained in the Journal was the Steel commitment. However, if additional journal data is desired, this can be easily extended as follows:
 ```rust
 use risc0_steel::SolCommitment;
 
 sol! {
     struct Journal {
         SolCommitment commitment;
-        bytes data;
+        address tokenAddress;
     }
 }
 
@@ -104,27 +106,12 @@ sol! {
 
 let journal = Journal {
     commitment: view_call_env.block_commitment(),
-    data,
+    tokenAddress,
 };
 env::commit_slice(&journal.abi_encode());
 ```
 
-Which can be validated using the following Solidity code:
-
-```Solidity
-struct Journal {
-    Steel.Commitment commitment;
-    bytes data;
-}
-
-function validate(bytes calldata journalData, bytes calldata seal) public returns (bytes memory) {
-    Journal memory journal = abi.decode(journalData, (Journal));
-    require(Steel.validateCommitment(journal.commitment));
-    verifier.verify(seal, imageId, sha256(journalData));
-
-    return journal.data;
-}
-```
+We also provide an example, [erc20-counter], showcasing such integration.
 
 ### Block hash validation
 

@@ -16,7 +16,7 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use alloy_primitives::{Address, Bytes};
+use alloy_primitives::Address;
 use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
 use apps::TxSender;
@@ -129,8 +129,6 @@ fn main() -> Result<()> {
         seal: seal.into(),
     }
     .abi_encode();
-
-    println!("calldata: {}", Bytes::from(calldata.clone()));
 
     // Send the calldata to Ethereum.
     println!("sending tx...");
