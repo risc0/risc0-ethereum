@@ -8,7 +8,9 @@ inputs:
     type: string
   toolchain-version:
     description: 'Version of the RISC Zero toolchains to install'
-    required: true
+    required: false
+    default: ''
+    type: string
   features:
     description: 'Comma separated list of feature flags to set when building cargo risczero'
     required: false
@@ -34,7 +36,7 @@ runs:
         shell: bash
         working-directory: tmp/risc0
       - name: install toolchains
-        run: cargo risczero install --version ${{ inputs.toolchain-version }}
+        run: cargo risczero install ${{ inputs.toolchain-version != '' && format('--version {0}', inputs.toolchain-version) || '' }}
         shell: bash
       - name: cleanup
         run: rm -rf tmp

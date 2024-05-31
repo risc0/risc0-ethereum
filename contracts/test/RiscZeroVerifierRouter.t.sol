@@ -41,7 +41,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     using ReceiptClaimLib for ReceiptClaim;
 
     bytes32 internal TEST_JOURNAL_DIGEST = sha256(TestReceipt.JOURNAL);
-    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaimLib.ok(TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     RiscZeroReceipt internal TEST_RECEIPT_A;
     RiscZeroReceipt internal TEST_RECEIPT_B;
     RiscZeroReceipt internal TEST_MANGLED_RECEIPT_A;

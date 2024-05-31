@@ -45,7 +45,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroVerifierEmergencyStop internal verifierEstop;
 
     bytes32 internal TEST_JOURNAL_DIGEST = sha256(TestReceipt.JOURNAL);
-    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaimLib.from(TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+    ReceiptClaim internal TEST_RECEIPT_CLAIM = ReceiptClaimLib.ok(TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     RiscZeroReceipt internal TEST_RECEIPT;
 
     function setUp() external {
