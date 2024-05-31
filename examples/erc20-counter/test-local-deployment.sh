@@ -27,7 +27,7 @@ export ETH_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efc
 
 # Build the project
 echo "Building the project..."
-cargo build --release
+cargo build
 
 # Deploy the Counter contract
 echo "Deploying the Counter contract..."
@@ -47,7 +47,7 @@ echo "Counter Address: $COUNTER_ADDRESS"
 
 # Publish a new state
 echo "Publishing a new state..."
-cargo run --release -F metal --bin publisher -- \
+cargo run --bin publisher -- \
     --chain-id=31337 \
     --rpc-url=http://localhost:8545 \
     --contract=${TOYKEN_ADDRESS:?} \
