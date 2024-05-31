@@ -17,6 +17,7 @@
 pragma solidity ^0.8.20;
 
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
+import {Steel} from "risc0/steel/Steel.sol";
 import {ImageID} from "./ImageID.sol"; // auto-generated contract after running `cargo build`.
 
 /// @title Counter.
@@ -24,13 +25,9 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// @dev The contract interacts with ERC-20 tokens, using view call proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
 contract Counter {
-    struct BlockCommitment {
-        bytes32 blockHash;
-        uint256 blockNumber;
-    }
     /// @notice RISC Zero verifier contract address.
-
     IRiscZeroVerifier public immutable verifier;
+
     /// @notice Image ID of the only zkVM binary to accept verification from.
     bytes32 public constant imageId = ImageID.BALANCE_OF_ID;
 
@@ -50,8 +47,8 @@ contract Counter {
     /// This function performs the proof verification process.
     function increment(bytes calldata journal, bytes calldata seal) public {
         // Construct the expected journal data. Verify will fail if journal does not match.
-        BlockCommitment memory commitment = abi.decode(journal, (BlockCommitment));
-        require(blockhash(commitment.blockNumber) == commitment.blockHash);
+        Steel.Commitment memory commitment = abi.decode(journal, (Steel.Commitment));
+        require(Steel.validateCommitment(commitment));
         verifier.verify(seal, imageId, sha256(journal));
         counter = counter + 1;
     }

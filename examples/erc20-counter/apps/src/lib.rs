@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The following library provides utility functions to help with sending 
+// The following library provides utility functions to help with sending
 // transactions to a deployed app contract on Ethereum.
 
 use anyhow::Result;

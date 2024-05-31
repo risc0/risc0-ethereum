@@ -19,7 +19,6 @@ use alloy_primitives::{
     b256, keccak256, Address, BlockNumber, Bytes, Sealable, Sealed, TxNumber, B256, U256,
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
-use alloy_sol_types::sol;
 
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
 use serde::{Deserialize, Serialize};
@@ -86,13 +85,13 @@ impl<H: EvmHeader> ViewCallInput<H> {
     }
 }
 
-sol! {
-    /// Solidity struct representing the committed block used for validation.
-    struct BlockCommitment {
-        bytes32 blockHash;
-        uint blockNumber;
-    }
+// Keep everything in the Steel library private except the commitment.
+mod private {
+    alloy_sol_types::sol!("../contracts/src/steel/Steel.sol");
 }
+
+/// Solidity struct representing the committed block used for validation.
+pub use private::Steel::Commitment as SolCommitment;
 
 /// Alias for readability, do not make public.
 pub(crate) type GuestViewCallEnv<H> = ViewCallEnv<StateDB, H>;
@@ -126,9 +125,9 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
         self
     }
 
-    /// Returns the [BlockCommitment] used to validate the environment.
-    pub fn block_commitment(&self) -> BlockCommitment {
-        BlockCommitment {
+    /// Returns the [SolCommitment] used to validate the environment.
+    pub fn block_commitment(&self) -> SolCommitment {
+        SolCommitment {
             blockHash: self.header.seal(),
             blockNumber: U256::from(self.header.number()),
         }

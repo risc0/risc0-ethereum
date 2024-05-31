@@ -87,10 +87,10 @@ fn main() -> Result<()> {
     )?;
 
     // Create a view call environment from an RPC endpoint and a block number. If no block number is
-    // provided, the latest block is used. The `with_chain_spec` method is used to specify the
-    // chain configuration.
-    let mut env =
-        EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    // provided, the latest block is used.
+    let mut env = EthViewCallEnv::from_rpc(&args.rpc_url, None)?;
+    //  The `with_chain_spec` method is used to specify the chain configuration.
+    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
     let mut contract = Contract::preflight(CONTRACT, &mut env);
 
