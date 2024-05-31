@@ -27,8 +27,7 @@ use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Cont
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
-/// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
-/// Must match the guest code.
+/// Address of the deployed contract to call the function on.
 const CONTRACT: Address = address!("299Da20a3e957c78d7634A55D88195224C9f9f6b");
 
 sol! {
@@ -41,7 +40,7 @@ sol! {
 // `ICounter` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface ICounter {
-        function increment(bytes calldata journal, bytes calldata seal);
+        function increment(bytes calldata journal, bytes calldata seal) public;
     }
 }
 
