@@ -17,7 +17,7 @@ use alloy_sol_types::{sol, SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmHeader};
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
 
@@ -54,15 +54,15 @@ fn main() -> Result<()> {
     // parse the command line arguments
     let args = Args::parse();
 
-    // Create a view call environment from an RPC endpoint and a block number. If no block number is
+    // Create an EVM environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
     let mut env =
-        EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+        EthEvmEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
     let commitment = env.block_commitment();
 
-    // Preflight the view call to construct the input that is required to execute the function in
+    // Preflight the call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
     let mut contract = Contract::preflight(CONTRACT, &mut env);
     let returns = contract.call_builder(&CALL).from(CALLER).call()?;

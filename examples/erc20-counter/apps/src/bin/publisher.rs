@@ -23,7 +23,7 @@ use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_ethereum_contracts::groth16::encode;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
@@ -86,11 +86,11 @@ fn main() -> Result<()> {
         &args.contract,
     )?;
 
-    // Create a view call environment from an RPC endpoint and a block number. If no block number is
+    // Create an EVM environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
     let mut env =
-        EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+        EthEvmEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
     let mut contract = Contract::preflight(CONTRACT, &mut env);
 
@@ -98,10 +98,10 @@ fn main() -> Result<()> {
     let account = args.account;
     let call = IERC20::balanceOfCall { account };
 
-    // Preflight the view call to construct the input that is required to execute the function in
+    // Preflight the call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
     let returns = contract.call_builder(&call).call()?;
-    let view_call_input = env.into_input()?;
+    let input = env.into_input()?;
     println!(
         "For block {} `{}` returns: {}",
         number,
@@ -110,7 +110,7 @@ fn main() -> Result<()> {
     );
 
     let env = ExecutorEnv::builder()
-        .write(&view_call_input)?
+        .write(&input)?
         .write(&account)?
         .build()?;
 

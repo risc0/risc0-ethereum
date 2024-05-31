@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use super::{EIP1186Proof, NullProvider, Provider};
-use crate::{ethereum::EthBlockHeader, EvmHeader};
+use crate::{ethereum::EthBlockHeader, EvmBlockHeader};
 use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, StorageValue, TxNumber, U256};
 use anyhow::Context;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -74,7 +74,7 @@ pub type FileProvider<H> = CachedProvider<NullProvider<H>>;
 
 impl<H> FileProvider<H>
 where
-    H: EvmHeader + Clone + Serialize + DeserializeOwned,
+    H: EvmBlockHeader + Clone + Serialize + DeserializeOwned,
 {
     /// Creates a new [FileProvider] loading the given file.
     pub fn from_file(file_path: &PathBuf) -> anyhow::Result<Self> {

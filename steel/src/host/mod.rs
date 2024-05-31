@@ -18,7 +18,7 @@ use self::{
     db::ProofDb,
     provider::{EthersProvider, Provider},
 };
-use crate::{ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCallEnv, ViewCallInput};
+use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
 use alloy_primitives::{Sealable, B256};
 use anyhow::{ensure, Context};
 use ethers_providers::{Http, RetryClient};
@@ -29,13 +29,13 @@ pub mod db;
 pub mod provider;
 
 /// Alias for readability, do not make public.
-pub(crate) type HostViewCallEnv<P, H> = ViewCallEnv<ProofDb<P>, H>;
+pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
 
 /// The Ethers client type.
 pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
 
-impl EthViewCallEnv<ProofDb<EthersProvider<EthersClient>>> {
-    /// Creates a new provable [ViewCallEnv] for Ethereum from an RPC endpoint.
+impl EthEvmEnv<ProofDb<EthersProvider<EthersClient>>> {
+    /// Creates a new provable [EvmEnv] for Ethereum from an RPC endpoint.
     pub fn from_rpc(url: &str, block_number: Option<u64>) -> anyhow::Result<Self> {
         let client = EthersClient::new_client(url, 3, 500)?;
         let provider = EthersProvider::new(client);
@@ -46,12 +46,12 @@ impl EthViewCallEnv<ProofDb<EthersProvider<EthersClient>>> {
             None => provider.get_block_number()?,
         };
 
-        ViewCallEnv::from_provider(provider, block_number)
+        EvmEnv::from_provider(provider, block_number)
     }
 }
 
-impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    /// Creates a new provable [ViewCallEnv] from a [Provider].
+impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
+    /// Creates a new provable [EvmEnv] from a [Provider].
     pub fn from_provider(provider: P, block_number: u64) -> anyhow::Result<Self> {
         let header = provider
             .get_block_header(block_number)?
@@ -60,16 +60,16 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         // create a new database backed by the provider
         let db = ProofDb::new(provider, block_number);
 
-        Ok(ViewCallEnv::new(db, header.seal_slow()))
+        Ok(EvmEnv::new(db, header.seal_slow()))
     }
 }
 
-impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    /// Converts the environment into a [ViewCallInput].
+impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
+    /// Converts the environment into a [EvmInput].
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
-    pub fn into_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
+    pub fn into_input(self) -> anyhow::Result<EvmInput<P::Header>> {
         let db = &self.db;
 
         // use the same provider as the database
@@ -135,7 +135,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         debug!("blocks: {}", ancestors.len());
 
         let header = self.header.into_inner();
-        Ok(ViewCallInput {
+        Ok(EvmInput {
             header,
             state_trie,
             storage_tries,

@@ -35,9 +35,9 @@ mod mpt;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
-/// The serializable input to derive and validate a [ViewCallEnv].
+/// The serializable input to derive and validate a [EvmEnv].
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ViewCallInput<H> {
+pub struct EvmInput<H> {
     pub header: H,
     pub state_trie: MerkleTrie,
     pub storage_tries: Vec<MerkleTrie>,
@@ -45,11 +45,11 @@ pub struct ViewCallInput<H> {
     pub ancestors: Vec<H>,
 }
 
-impl<H: EvmHeader> ViewCallInput<H> {
-    /// Converts the input into a [ViewCallEnv] for execution.
+impl<H: EvmBlockHeader> EvmInput<H> {
+    /// Converts the input into a [EvmEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
-    pub fn into_env(self) -> GuestViewCallEnv<H> {
+    pub fn into_env(self) -> GuestEvmEnv<H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
         assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
@@ -75,14 +75,14 @@ impl<H: EvmHeader> ViewCallInput<H> {
             previous_header = ancestor;
         }
 
-        let db = StateDB::new(
+        let db = StateDb::new(
             self.state_trie,
             self.storage_tries,
             self.contracts,
             block_hashes,
         );
 
-        ViewCallEnv::new(db, header)
+        EvmEnv::new(db, header)
     }
 }
 
@@ -95,17 +95,17 @@ sol! {
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type GuestViewCallEnv<H> = ViewCallEnv<StateDB, H>;
+pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
-/// The [Contract] is configured from this object.
-pub struct ViewCallEnv<D, H> {
+/// The environment to execute the contract calls in.
+pub struct EvmEnv<D, H> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
 }
 
-impl<D, H: EvmHeader> ViewCallEnv<D, H> {
-    /// Creates a new view call environment.
+impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
+    /// Creates a new environment.
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
@@ -144,14 +144,14 @@ impl<D, H: EvmHeader> ViewCallEnv<D, H> {
 ///
 /// It is backed by a single [MerkleTrie] for the accounts and one [MerkleTrie] each for the
 /// accounts' storages. It panics when data is queried that is not contained in the tries.
-pub struct StateDB {
+pub struct StateDb {
     state_trie: MerkleTrie,
     storage_tries: HashMap<B256, Rc<MerkleTrie>>,
     contracts: HashMap<B256, Bytes>,
     block_hashes: HashMap<u64, B256>,
 }
 
-impl StateDB {
+impl StateDb {
     /// Creates a new state database from the given tries.
     pub fn new(
         state_trie: MerkleTrie,
@@ -232,7 +232,7 @@ impl Default for StateAccount {
 }
 
 /// An EVM abstraction of a block header.
-pub trait EvmHeader: Sealable {
+pub trait EvmBlockHeader: Sealable {
     /// Returns the hash of the parent block's header.
     fn parent_hash(&self) -> &B256;
     /// Returns the block number.
