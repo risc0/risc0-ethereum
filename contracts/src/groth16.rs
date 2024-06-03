@@ -55,7 +55,7 @@ mod tests {
             .ok_or(anyhow!("{name} not found"))
     }
     #[test]
-    fn control_root_is_stable() {
+    fn control_root_is_consistent() {
         let params = Groth16ReceiptVerifierParameters::default();
         let expected_control_root = params.control_root.to_string();
         let control_root = parse_digest(CONTROL_ID_PATH, CONTROL_ROOT).unwrap();
@@ -63,7 +63,7 @@ mod tests {
     }
 
     #[test]
-    fn bn254_control_id_is_stable() {
+    fn bn254_control_id_is_consistent() {
         let params = Groth16ReceiptVerifierParameters::default();
         let mut expected_bn254_control_id = params.bn254_control_id;
         expected_bn254_control_id.as_mut_bytes().reverse();
