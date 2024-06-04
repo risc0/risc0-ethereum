@@ -18,7 +18,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: v2024-04-22.0
-  RISC0_MONOREPO_REF: "main"
+  RISC0_MONOREPO_REF: "v1.0.0-rc.7"
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -45,7 +45,7 @@ jobs:
           # Full history is required by license-check.py
           fetch-depth: 0
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/rustup@v1.0.0-rc.7
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
@@ -93,9 +93,9 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+        uses: risc0/risc0/.github/actions/cuda@v1.0.0-rc.7
+      - uses: risc0/risc0/.github/actions/rustup@v1.0.0-rc.7
+      - uses: risc0/risc0/.github/actions/sccache@v1.0.0-rc.7
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -134,9 +134,9 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+        uses: risc0/risc0/.github/actions/cuda@v1.0.0-rc.7
+      - uses: risc0/risc0/.github/actions/rustup@v1.0.0-rc.7
+      - uses: risc0/risc0/.github/actions/sccache@v1.0.0-rc.7
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
@@ -167,8 +167,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+      - uses: risc0/risc0/.github/actions/rustup@v1.0.0-rc.7
+      - uses: risc0/risc0/.github/actions/sccache@v1.0.0-rc.7
         with:
           key: macOS-default
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
