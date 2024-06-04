@@ -32,3 +32,44 @@ pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
 
     Ok(selector_seal)
 }
+
+#[cfg(test)]
+mod tests {
+    use anyhow::anyhow;
+    use ethers::utils::hex;
+    use regex::Regex;
+
+    use super::*;
+    use std::fs;
+
+    const CONTROL_ID_PATH: &str = "./src/groth16/ControlID.sol";
+    const CONTROL_ROOT: &str = "CONTROL_ROOT";
+    const BN254_CONTROL_ID: &str = "BN254_CONTROL_ID";
+
+    fn parse_digest(file_path: &str, name: &str) -> Result<String, anyhow::Error> {
+        let content = fs::read_to_string(file_path)?;
+        let re_digest = Regex::new(&format!(r#"{}\s*=\s*hex"([0-9a-fA-F]+)""#, name))?;
+        re_digest
+            .captures(&content)
+            .and_then(|caps| caps.get(1).map(|m| m.as_str().to_string()))
+            .ok_or(anyhow!("{name} not found"))
+    }
+    #[test]
+    fn control_root_is_consistent() {
+        let params = Groth16ReceiptVerifierParameters::default();
+        let expected_control_root = params.control_root.to_string();
+        let control_root = parse_digest(CONTROL_ID_PATH, CONTROL_ROOT).unwrap();
+        assert_eq!(control_root, expected_control_root);
+    }
+
+    #[test]
+    fn bn254_control_id_is_consistent() {
+        let params = Groth16ReceiptVerifierParameters::default();
+        let mut expected_bn254_control_id = params.bn254_control_id;
+        expected_bn254_control_id.as_mut_bytes().reverse();
+        let expected_bn254_control_id = hex::encode(expected_bn254_control_id);
+        let bn254_control_id = parse_digest(CONTROL_ID_PATH, BN254_CONTROL_ID).unwrap();
+
+        assert_eq!(bn254_control_id, expected_bn254_control_id);
+    }
+}
