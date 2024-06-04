@@ -1,31 +1,30 @@
 # RISC Zero View Call Proofs ERC20-Counter Example
 
-This example implements a counter that increments based on off-chain view call proofs submitted to the [Counter] contract.
-The contract interacts with ERC-20 tokens, using view call proofs to verify that an account holds at least 1 token before incrementing the counter.
-This contract leverages RISC Zero as a [coprocessor] for generating and verifying these proofs.
+This example implements a counter that increments based on off-chain RISC Zero [Steel] proofs submitted to the [Counter] contract.
+The contract interacts with ERC-20 tokens, using [Steel] proofs to verify that an account holds at least 1 token before incrementing the counter.
 
 ## Overview
 
-The [Counter] contract is designed to interact with the Ethereum blockchain, leveraging the power of RISC Zero view call proofs to perform a specific operation: incrementing a counter based on the token holdings of an account.
+The [Counter] contract is designed to interact with the Ethereum blockchain, leveraging the power of RISC Zero [Steel] proofs to perform a specific operation: incrementing a counter based on the token holdings of an account.
 
 ### Contract Functionality
 
 #### Increment Counter
 
-The core functionality of the [Counter] contract is to increment an internal counter whenever a valid view call proof is submitted.
+The core functionality of the [Counter] contract is to increment an internal counter whenever a valid proof was submitted.
 This proof must demonstrate that a specified account holds at least one unit of a particular ERC-20 token.
 The contract ensures that the counter is only incremented when the proof is verified and the condition of holding at least one token is met.
 
-#### View Call Proof Submission
+#### Steel Proof Submission
 
-Users or entities can submit view call proofs to the [Counter] contract.
+Users or entities can submit proofs to the [Counter] contract.
 These proofs are generated off-chain using the RISC Zero zkVM.
 The proof encapsulates the verification of an account's token balance without exposing the account's details or requiring direct on-chain queries.
 
 #### Token Balance Verification
 
-Upon receiving a view call proof, the [Counter] contract decodes and verifies it against the specified ERC-20 token contract.
-This process involves validating the proof against the contract's state at a specific block height, ensuring the account in question indeed holds at least one token at the time of the proof's generation.
+Upon receiving a [Steel] proof, the [Counter] contract decodes the proof and validates it against the contract's state at a certain block height.
+This ensures that the account in question actually holds at least one token at the time the proof was generated.
 
 #### Counter Management
 
@@ -78,7 +77,7 @@ When you're ready, follow the [deployment guide] to get your application running
 [RISC Zero]: https://www.risczero.com/
 [Sepolia]: https://www.alchemy.com/overviews/sepolia-testnet
 [cargo-binstall]: https://github.com/cargo-bins/cargo-binstall#cargo-binaryinstall
-[coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
 [deployment guide]: ./deployment-guide.md
 [install Rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html
 [Counter]: ./contracts/Counter.sol
+[Steel]: https://www.risczero.com/blog/introducing-steel
