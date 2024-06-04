@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::EvmHeader;
-use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, TxNumber, B256, U256};
+use crate::EvmBlockHeader;
+use alloy_primitives::{
+    Address, BlockNumber, Bytes, StorageKey, StorageValue, TxNumber, B256, U256,
+};
 use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, error::Error as StdError, fmt::Debug, marker::PhantomData};
 
@@ -26,7 +28,7 @@ pub use file::{CachedProvider, EthFileProvider, FileProvider};
 /// A trait for providers that fetch data from the Ethereum blockchain.
 pub trait Provider {
     type Error: StdError + Send + Sync + 'static;
-    type Header: EvmHeader;
+    type Header: EvmBlockHeader;
 
     fn get_block_header(&self, block: BlockNumber) -> Result<Option<Self::Header>, Self::Error>;
     fn get_transaction_count(
@@ -39,13 +41,13 @@ pub trait Provider {
     fn get_storage_at(
         &self,
         address: Address,
-        storage_slot: StorageKey,
+        key: StorageKey,
         block: BlockNumber,
-    ) -> Result<B256, Self::Error>;
+    ) -> Result<StorageValue, Self::Error>;
     fn get_proof(
         &self,
         address: Address,
-        storage_slots: Vec<StorageKey>,
+        storage_keys: Vec<StorageKey>,
         block: BlockNumber,
     ) -> Result<EIP1186Proof, Self::Error>;
 }
@@ -53,9 +55,9 @@ pub trait Provider {
 /// Data structure with proof for one single storage-entry
 #[derive(Debug, Default, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct StorageProof {
-    pub key: B256,
+    pub key: StorageKey,
     pub proof: Vec<Bytes>,
-    pub value: U256,
+    pub value: StorageValue,
 }
 
 /// Response for EIP-1186 account proof `eth_getProof`
@@ -73,7 +75,7 @@ pub struct EIP1186Proof {
 /// A simple provider that panics on all queries.
 pub struct NullProvider<H>(PhantomData<H>);
 
-impl<H: EvmHeader> Provider for NullProvider<H> {
+impl<H: EvmBlockHeader> Provider for NullProvider<H> {
     type Error = Infallible;
     type Header = H;
 
@@ -94,7 +96,7 @@ impl<H: EvmHeader> Provider for NullProvider<H> {
         _: Address,
         _: StorageKey,
         _: BlockNumber,
-    ) -> Result<B256, Self::Error> {
+    ) -> Result<StorageValue, Self::Error> {
         panic!("Unexpected provider call")
     }
     fn get_proof(

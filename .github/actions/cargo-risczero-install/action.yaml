@@ -1,0 +1,43 @@
+name: cargo risczero install
+description: Install cargo risczero, build toolchains, and r0vm.
+
+inputs:
+  ref:
+    description: 'Git reference to pull from risc0/risc0 and build'
+    required: true
+    type: string
+  toolchain-version:
+    description: 'Version of the RISC Zero toolchains to install'
+    required: false
+    default: ''
+    type: string
+  features:
+    description: 'Comma separated list of feature flags to set when building cargo risczero'
+    required: false
+    default: 'default'
+    type: string
+
+runs:
+  using: composite
+  steps:
+      - name: checkout risc0
+        uses: actions/checkout@v4
+        with:
+          repository: 'risc0/risc0'
+          path: 'tmp/risc0'
+          ref: ${{ inputs.ref }}
+          lfs: true
+      - name: install cargo-risczero
+        run: cargo install --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
+        working-directory: tmp/risc0
+        shell: bash
+      - name: install r0vm
+        run: cargo install --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
+        shell: bash
+        working-directory: tmp/risc0
+      - name: install toolchains
+        run: cargo risczero install ${{ inputs.toolchain-version != '' && format('--version {0}', inputs.toolchain-version) || '' }}
+        shell: bash
+      - name: cleanup
+        run: rm -rf tmp
+        shell: bash

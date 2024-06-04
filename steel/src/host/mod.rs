@@ -18,24 +18,24 @@ use self::{
     db::ProofDb,
     provider::{EthersProvider, Provider},
 };
-use crate::{
-    ethereum::EthViewCallEnv, EvmHeader, MerkleTrie, ViewCall, ViewCallEnv, ViewCallInput,
-};
+use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
 use alloy_primitives::{Sealable, B256};
-use alloy_sol_types::SolCall;
-use anyhow::{anyhow, ensure, Context};
+use anyhow::{ensure, Context};
 use ethers_providers::{Http, RetryClient};
-use log::{debug, info};
+use log::debug;
 use revm::primitives::HashMap;
 
 pub mod db;
 pub mod provider;
 
+/// Alias for readability, do not make public.
+pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
+
 /// The Ethers client type.
 pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
 
-impl EthViewCallEnv<ProofDb<EthersProvider<EthersClient>>> {
-    /// Creates a new provable [ViewCallEnv] for Ethereum from an RPC endpoint.
+impl EthEvmEnv<ProofDb<EthersProvider<EthersClient>>> {
+    /// Creates a new provable [EvmEnv] for Ethereum from an RPC endpoint.
     pub fn from_rpc(url: &str, block_number: Option<u64>) -> anyhow::Result<Self> {
         let client = EthersClient::new_client(url, 3, 500)?;
         let provider = EthersProvider::new(client);
@@ -46,12 +46,12 @@ impl EthViewCallEnv<ProofDb<EthersProvider<EthersClient>>> {
             None => provider.get_block_number()?,
         };
 
-        ViewCallEnv::from_provider(provider, block_number)
+        EvmEnv::from_provider(provider, block_number)
     }
 }
 
-impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    /// Creates a new provable [ViewCallEnv] from a [Provider].
+impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
+    /// Creates a new provable [EvmEnv] from a [Provider].
     pub fn from_provider(provider: P, block_number: u64) -> anyhow::Result<Self> {
         let header = provider
             .get_block_header(block_number)?
@@ -60,59 +60,27 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         // create a new database backed by the provider
         let db = ProofDb::new(provider, block_number);
 
-        Ok(ViewCallEnv::new(db, header.seal_slow()))
+        Ok(EvmEnv::new(db, header.seal_slow()))
     }
 }
 
-impl<C: SolCall> ViewCall<C> {
-    /// Executes the call to derive the corresponding [ViewCallInput].
+impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
+    /// Converts the environment into a [EvmInput].
     ///
-    /// This method is used to preflight the call and get the required input for the guest.
-    // TODO
-    #[deprecated(since = "0.11.0", note = "TODO write note")]
-    pub fn preflight<P: Provider>(
-        self,
-        mut env: ViewCallEnv<ProofDb<P>, P::Header>,
-    ) -> anyhow::Result<(ViewCallInput<P::Header>, C::Return)> {
-        info!(
-            "Executing preflight for '{}' with caller {} on contract {}",
-            C::SIGNATURE,
-            self.caller,
-            self.contract
-        );
-
-        // initialize the database and execute the transaction
-        let transaction_result = env.transact(self).map_err(|err| anyhow!(err))?;
-
-        let input = env.into_zkvm_input()?;
-
-        Ok((input, transaction_result))
-    }
-}
-
-impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
-    // TODO docs/rename maybe
-    pub fn preflight<C: SolCall>(&mut self, view_call: ViewCall<C>) -> anyhow::Result<C::Return> {
-        info!(
-            "Executing preflight for '{}' with caller {} on contract {}",
-            C::SIGNATURE,
-            view_call.caller,
-            view_call.contract
-        );
-
-        // initialize the database and execute the transaction
-        self.transact(view_call).map_err(|err| anyhow!(err))
-    }
-
-    // TODO this name probably isn't great
-    pub fn into_zkvm_input(self) -> anyhow::Result<ViewCallInput<P::Header>> {
+    /// The resulting input contains inclusion proofs for all the required chain state data. It can
+    /// therefore be used to execute the same calls in a verifiable way in the zkVM.
+    pub fn into_input(self) -> anyhow::Result<EvmInput<P::Header>> {
         let db = &self.db;
+
+        // use the same provider as the database
+        let provider = db.provider();
+
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
-        for (address, storage_slots) in db.accounts() {
-            let proof = db.provider().get_proof(
+        for (address, storage_keys) in db.accounts() {
+            let proof = provider.get_proof(
                 *address,
-                storage_slots.iter().map(|v| B256::from(*v)).collect(),
+                storage_keys.iter().map(|v| B256::from(*v)).collect(),
                 db.block_number(),
             )?;
             proofs.push(proof);
@@ -150,8 +118,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
             for number in (block_hash_min_number..db.block_number()).rev() {
-                let header = db
-                    .provider()
+                let header = provider
                     .get_block_header(number)?
                     .with_context(|| format!("block {number} not found"))?;
                 ancestors.push(header);
@@ -168,7 +135,7 @@ impl<P: Provider> ViewCallEnv<ProofDb<P>, P::Header> {
         debug!("blocks: {}", ancestors.len());
 
         let header = self.header.into_inner();
-        Ok(ViewCallInput {
+        Ok(EvmInput {
             header,
             state_trie,
             storage_tries,

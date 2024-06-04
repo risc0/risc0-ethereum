@@ -12,74 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy_primitives::U256;
-use alloy_sol_types::{sol, SolValue};
-use anyhow::{ensure, Result};
-use risc0_zkvm::Groth16Seal;
+use alloy_sol_types::SolValue;
+use anyhow::Result;
+use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
 
-sol! {
-    /// Groth16 seal construction from [RiscZeroGroth16Verifier.sol].
-    ///
-    /// [RiscZeroGroth16Verifier.sol]: https://github.com/risc0/risc0/blob/v0.20.1/bonsai/ethereum/contracts/groth16/RiscZeroGroth16Verifier.sol#L76-L81
-    #[derive(Debug)]
-    struct Seal {
-        uint256[2] a;
-        uint256[2][2] b;
-        uint256[2] c;
-    }
+/// ABI encoding of the seal.
+pub fn abi_encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+    Ok(encode(seal)?.abi_encode())
 }
 
-impl Seal {
-    /// ABI encoding of the seal.
-    pub fn abi_encode(seal: Groth16Seal) -> Result<Vec<u8>> {
-        let seal = Seal::try_from(seal)?;
-        Ok(seal.abi_encode())
-    }
+/// encoding of the seal with selector.
+pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+    let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
+    let selector = &verifier_parameters_digest.as_bytes()[..4];
+    // Create a new vector with the capacity to hold both selector and seal
+    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+    selector_seal.extend_from_slice(selector);
+    selector_seal.extend_from_slice(&seal);
+
+    Ok(selector_seal)
 }
 
-impl TryFrom<Groth16Seal> for Seal {
-    type Error = anyhow::Error;
+#[cfg(test)]
+mod tests {
+    use anyhow::anyhow;
+    use ethers::utils::hex;
+    use regex::Regex;
 
-    fn try_from(seal: Groth16Seal) -> Result<Self> {
-        ensure!(
-            seal.a.len() == 2,
-            "seal.a has invalid length: {}",
-            seal.a.len()
-        );
-        ensure!(
-            seal.b.len() == 2,
-            "seal.b has invalid length: {}",
-            seal.b.len()
-        );
-        ensure!(
-            seal.b[0].len() == 2,
-            "seal.b[0] has invalid length: {}",
-            seal.b[0].len()
-        );
-        ensure!(
-            seal.b[1].len() == 2,
-            "seal.b[0] has invalid length: {}",
-            seal.b[1].len()
-        );
-        ensure!(
-            seal.c.len() == 2,
-            "seal.c has invalid length: {}",
-            seal.c.len()
-        );
+    use super::*;
+    use std::fs;
 
-        let a0 = U256::from_be_slice(seal.a[0].as_slice());
-        let a1 = U256::from_be_slice(seal.a[1].as_slice());
-        let b00 = U256::from_be_slice(seal.b[0][0].as_slice());
-        let b01 = U256::from_be_slice(seal.b[0][1].as_slice());
-        let b10 = U256::from_be_slice(seal.b[1][0].as_slice());
-        let b11 = U256::from_be_slice(seal.b[1][1].as_slice());
-        let c0 = U256::from_be_slice(seal.c[0].as_slice());
-        let c1 = U256::from_be_slice(seal.c[1].as_slice());
+    const CONTROL_ID_PATH: &str = "./src/groth16/ControlID.sol";
+    const CONTROL_ROOT: &str = "CONTROL_ROOT";
+    const BN254_CONTROL_ID: &str = "BN254_CONTROL_ID";
 
-        Ok(Seal {
-            a: [a0, a1],
-            b: [[b00, b01], [b10, b11]],
-            c: [c0, c1],
-        })
+    fn parse_digest(file_path: &str, name: &str) -> Result<String, anyhow::Error> {
+        let content = fs::read_to_string(file_path)?;
+        let re_digest = Regex::new(&format!(r#"{}\s*=\s*hex"([0-9a-fA-F]+)""#, name))?;
+        re_digest
+            .captures(&content)
+            .and_then(|caps| caps.get(1).map(|m| m.as_str().to_string()))
+            .ok_or(anyhow!("{name} not found"))
+    }
+    #[test]
+    fn control_root_is_consistent() {
+        let params = Groth16ReceiptVerifierParameters::default();
+        let expected_control_root = params.control_root.to_string();
+        let control_root = parse_digest(CONTROL_ID_PATH, CONTROL_ROOT).unwrap();
+        assert_eq!(control_root, expected_control_root);
+    }
+
+    #[test]
+    fn bn254_control_id_is_consistent() {
+        let params = Groth16ReceiptVerifierParameters::default();
+        let mut expected_bn254_control_id = params.bn254_control_id;
+        expected_bn254_control_id.as_mut_bytes().reverse();
+        let expected_bn254_control_id = hex::encode(expected_bn254_control_id);
+        let bn254_control_id = parse_digest(CONTROL_ID_PATH, BN254_CONTROL_ID).unwrap();
+
+        assert_eq!(bn254_control_id, expected_bn254_control_id);
     }
 }

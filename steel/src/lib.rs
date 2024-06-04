@@ -12,33 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
 use alloy_primitives::{
     b256, keccak256, Address, BlockNumber, Bytes, Sealable, Sealed, TxNumber, B256, U256,
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
-use alloy_sol_types::{sol, SolCall, SolType};
-use revm::{
-    primitives::{
-        db::Database, AccountInfo, BlockEnv, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult,
-        HashMap, ResultAndState, SpecId, SuccessReason, TransactTo,
-    },
-    Evm,
-};
+
+use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
 use serde::{Deserialize, Serialize};
-use std::{convert::Infallible, fmt::Debug, rc::Rc};
+use std::{fmt::Debug, rc::Rc};
 
 pub mod config;
-pub mod db;
+mod contract;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
 mod mpt;
 
+pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
-/// The serializable input to derive and validate a [ViewCallEnv].
+/// The serializable input to derive and validate a [EvmEnv].
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ViewCallInput<H> {
+pub struct EvmInput<H> {
     pub header: H,
     pub state_trie: MerkleTrie,
     pub storage_tries: Vec<MerkleTrie>,
@@ -46,11 +44,11 @@ pub struct ViewCallInput<H> {
     pub ancestors: Vec<H>,
 }
 
-impl<H: EvmHeader> ViewCallInput<H> {
-    /// Converts the input into a [ViewCallEnv] for execution.
+impl<H: EvmBlockHeader> EvmInput<H> {
+    /// Converts the input into a [EvmEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
-    pub fn into_env(self) -> ViewCallEnv<StateDB, H> {
+    pub fn into_env(self) -> GuestEvmEnv<H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
         assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
@@ -76,35 +74,37 @@ impl<H: EvmHeader> ViewCallInput<H> {
             previous_header = ancestor;
         }
 
-        let db = StateDB::new(
+        let db = StateDb::new(
             self.state_trie,
             self.storage_tries,
             self.contracts,
             block_hashes,
         );
 
-        ViewCallEnv::new(db, header)
+        EvmEnv::new(db, header)
     }
 }
 
-sol! {
-    /// Solidity struct representing the committed block used for validation.
-    #[derive(Debug, PartialEq, Eq)]
-    struct BlockCommitment {
-        bytes32 blockHash;
-        uint blockNumber;
-    }
+// Keep everything in the Steel library private except the commitment.
+mod private {
+    alloy_sol_types::sol!("../contracts/src/steel/Steel.sol");
 }
 
-/// The [ViewCall] is configured from this object.
-pub struct ViewCallEnv<D: Database, H: EvmHeader> {
+/// Solidity struct representing the committed block used for validation.
+pub use private::Steel::Commitment as SolCommitment;
+
+/// Alias for readability, do not make public.
+pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
+
+/// The environment to execute the contract calls in.
+pub struct EvmEnv<D, H> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
 }
 
-impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
-    /// Creates a new view call environment.
+impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
+    /// Creates a new environment.
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
@@ -125,9 +125,9 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
         self
     }
 
-    /// Returns the [BlockCommitment] used to validate the environment.
-    pub fn block_commitment(&self) -> BlockCommitment {
-        BlockCommitment {
+    /// Returns the [SolCommitment] used to validate the environment.
+    pub fn block_commitment(&self) -> SolCommitment {
+        SolCommitment {
             blockHash: self.header.seal(),
             blockNumber: U256::from(self.header.number()),
         }
@@ -137,112 +137,20 @@ impl<D: Database, H: EvmHeader> ViewCallEnv<D, H> {
     pub fn header(&self) -> &H {
         self.header.inner()
     }
-
-    pub fn execute<C>(&mut self, view_call: ViewCall<C>) -> C::Return
-    where
-        <D as Database>::Error: Debug,
-        C: SolCall,
-    {
-        self.transact(view_call).unwrap()
-    }
-
-    fn transact<C>(&mut self, view_call: ViewCall<C>) -> Result<C::Return, String>
-    where
-        <D as Database>::Error: Debug,
-        C: SolCall,
-    {
-        let mut evm = Evm::builder()
-            .with_db(&mut self.db)
-            .with_cfg_env_with_handler_cfg(self.cfg_env.clone())
-            .modify_block_env(|blk_env| self.header.fill_block_env(blk_env))
-            .build();
-
-        let tx_env = evm.tx_mut();
-        tx_env.caller = view_call.caller;
-        tx_env.gas_limit = ViewCall::<C>::GAS_LIMIT;
-        tx_env.transact_to = TransactTo::call(view_call.contract);
-        tx_env.value = U256::ZERO;
-        tx_env.data = view_call.call.abi_encode().into();
-
-        let ResultAndState { result, .. } = evm
-            .transact_preverified()
-            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
-        let ExecutionResult::Success { reason, output, .. } = result else {
-            return Err(format!("Call '{}' failed", C::SIGNATURE));
-        };
-        // there must be a return value to decode
-        if reason != SuccessReason::Return {
-            return Err(format!(
-                "Call '{}' did not return: {:?}",
-                C::SIGNATURE,
-                reason
-            ));
-        }
-        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
-            format!(
-                "Call '{}' returned invalid type; expected '{}': {:?}",
-                C::SIGNATURE,
-                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
-                err
-            )
-        })?;
-
-        Ok(returns)
-    }
-}
-
-/// A view call to an Ethereum contract.
-pub struct ViewCall<C: SolCall> {
-    call: C,
-    contract: Address,
-    caller: Address,
-}
-
-impl<C: SolCall> ViewCall<C> {
-    /// The default gas limit for view calls.
-    const GAS_LIMIT: u64 = 30_000_000;
-
-    /// Creates a new view call to the given contract.
-    pub fn new(call: C, contract: Address) -> Self {
-        Self {
-            call,
-            contract,
-            caller: contract,
-        }
-    }
-
-    /// Sets the caller of the view function.
-    pub fn with_caller(mut self, caller: Address) -> Self {
-        self.caller = caller;
-        self
-    }
-
-    /// Executes the view call using the given environment.
-    #[inline]
-    // TODO update deprecate notice
-    #[deprecated(since = "0.11.0", note = "TODO")]
-    pub fn execute<D: Database, H: EvmHeader>(self, mut env: ViewCallEnv<D, H>) -> C::Return
-    where
-        <D as Database>::Error: Debug,
-    {
-        env.execute(self)
-    }
 }
 
 /// A simple read-only EVM database.
 ///
 /// It is backed by a single [MerkleTrie] for the accounts and one [MerkleTrie] each for the
 /// accounts' storages. It panics when data is queried that is not contained in the tries.
-pub struct StateDB {
+pub struct StateDb {
     state_trie: MerkleTrie,
     storage_tries: HashMap<B256, Rc<MerkleTrie>>,
     contracts: HashMap<B256, Bytes>,
     block_hashes: HashMap<u64, B256>,
-
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
 }
 
-impl StateDB {
+impl StateDb {
     /// Creates a new state database from the given tries.
     pub fn new(
         state_trie: MerkleTrie,
@@ -263,79 +171,33 @@ impl StateDB {
             contracts,
             storage_tries,
             block_hashes,
-            account_storage: HashMap::new(),
-        }
-    }
-}
-
-impl Database for StateDB {
-    /// The database does not return any errors.
-    type Error = Infallible;
-
-    #[inline]
-    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let account = self
-            .state_trie
-            .get_rlp::<StateAccount>(keccak256(address))
-            .expect("invalid state value");
-        match account {
-            Some(account) => {
-                // link storage trie to the account, if it exists
-                if let Some(storage_trie) = self.storage_tries.get(&account.storage_root) {
-                    self.account_storage
-                        .insert(address, Some(storage_trie.clone()));
-                }
-
-                Ok(Some(AccountInfo {
-                    balance: account.balance,
-                    nonce: account.nonce,
-                    code_hash: account.code_hash,
-                    code: None, // we don't need the code here, `code_by_hash` will be used instead
-                }))
-            }
-            None => {
-                self.account_storage.insert(address, None);
-
-                Ok(None)
-            }
         }
     }
 
-    #[inline]
-    fn code_by_hash(&mut self, hash: B256) -> Result<Bytecode, Self::Error> {
-        let code = self
-            .contracts
+    fn account(&self, address: Address) -> Option<StateAccount> {
+        self.state_trie
+            .get_rlp(keccak256(address))
+            .expect("invalid state value")
+    }
+
+    fn code_by_hash(&self, hash: B256) -> &Bytes {
+        self.contracts
             .get(&hash)
-            .unwrap_or_else(|| panic!("code not found: {}", hash));
-        Ok(Bytecode::new_raw(code.clone()))
+            .unwrap_or_else(|| panic!("code not found: {}", hash))
     }
 
-    #[inline]
-    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let storage = self
-            .account_storage
-            .get(&address)
-            .unwrap_or_else(|| panic!("storage not found: {:?}", address));
-        match storage {
-            Some(storage) => {
-                let val = storage
-                    .get_rlp(keccak256(index.to_be_bytes::<32>()))
-                    .expect("invalid storage value");
-                Ok(val.unwrap_or_default())
-            }
-            None => Ok(U256::ZERO),
-        }
-    }
-
-    #[inline]
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
+    fn block_hash(&self, number: U256) -> B256 {
         // block number is never bigger then u64::MAX
         let number: u64 = number.to();
         let hash = self
             .block_hashes
             .get(&number)
             .unwrap_or_else(|| panic!("block not found: {}", number));
-        Ok(*hash)
+        *hash
+    }
+
+    fn storage_trie(&self, root: &B256) -> Option<&Rc<MerkleTrie>> {
+        self.storage_tries.get(root)
     }
 }
 
@@ -369,7 +231,7 @@ impl Default for StateAccount {
 }
 
 /// An EVM abstraction of a block header.
-pub trait EvmHeader: Sealable {
+pub trait EvmBlockHeader: Sealable {
     /// Returns the hash of the parent block's header.
     fn parent_hash(&self) -> &B256;
     /// Returns the block number.

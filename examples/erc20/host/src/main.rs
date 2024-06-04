@@ -17,24 +17,27 @@ use alloy_sol_types::{sol, SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
 
-/// Address of the USDT contract on Ethereum Sepolia
-const CONTRACT: Address = address!("aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0");
-/// Function to call
-const CALL: IERC20::balanceOfCall =
-    IERC20::balanceOfCall { account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4") };
-/// Caller address
-const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
-
 sol! {
     /// ERC-20 balance function signature.
+    /// This must match the signature in the guest.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
     }
 }
+
+/// Function to call, implements the [SolCall] trait.
+const CALL: IERC20::balanceOfCall = IERC20::balanceOfCall {
+    account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4"),
+};
+
+/// Address of the deployed contract to call the function on (USDT contract on Sepolia).
+const CONTRACT: Address = address!("aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0");
+/// Address of the caller.
+const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
 
 /// Simple program to show the use of Ethereum contract data inside the guest.
 #[derive(Parser, Debug)]
@@ -47,23 +50,33 @@ struct Args {
 
 fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
-    // parse the command line arguments
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+    // Parse the command line arguments.
     let args = Args::parse();
 
-    // Create a view call environment from an RPC endpoint and a block number. If no block number is
-    // provided, the latest block is used. The `with_chain_spec` method is used to specify the
-    // chain configuration.
-    let mut env =
-        EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-    let number = env.header().number();
+    // Create an EVM environment from an RPC endpoint and a block number. If no block number is
+    // provided, the latest block is used.
+    let mut env = EthEvmEnv::from_rpc(&args.rpc_url, None)?;
+    //  The `with_chain_spec` method is used to specify the chain configuration.
+    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+
     let commitment = env.block_commitment();
 
-    // Preflight the view call to construct the input that is required to execute the function in
-    // the guest. It also returns the result of the call.
-    let returns = env.preflight(ViewCall::new(CALL, CONTRACT).with_caller(CALLER))?;
-    let input = env.into_zkvm_input()?;
-    println!("For block {} `{}` returns: {}", number, IERC20::balanceOfCall::SIGNATURE, returns._0);
+    // Preflight the call to prepare the input that is required to execute the function in
+    // the guest without RPC access. It also returns the result of the call.
+    let mut contract = Contract::preflight(CONTRACT, &mut env);
+    let returns = contract.call_builder(&CALL).from(CALLER).call()?;
+    println!(
+        "For block {} `{}` returns: {}",
+        env.header().number(),
+        IERC20::balanceOfCall::SIGNATURE,
+        returns._0
+    );
+
+    // Finally, construct the input from the environment.
+    let input = env.into_input()?;
 
     println!("Running the guest with the constructed input:");
     let session_info = {
@@ -73,12 +86,13 @@ fn main() -> Result<()> {
             .build()
             .context("Failed to build exec env")?;
         let exec = default_executor();
-        exec.execute(env, ERC20_GUEST_ELF).context("failed to run executor")?
+        exec.execute(env, ERC20_GUEST_ELF)
+            .context("failed to run executor")?
     };
 
-    // extract the proof from the session info and validate it
+    // The commitment in the journal should match.
     let bytes = session_info.journal.as_ref();
-    assert_eq!(&bytes[..64], &commitment.abi_encode());
+    assert!(bytes.starts_with(&commitment.abi_encode()));
 
     Ok(())
 }

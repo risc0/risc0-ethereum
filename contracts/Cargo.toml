@@ -11,15 +11,13 @@ repository = { workspace = true }
 anyhow = "1.0"
 
 [dependencies]
-alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
-bonsai-sdk = { workspace = true }
 ethers = { version = "2.0", features = ["rustls", "ws"] }
-hex = { version = "0.4", optional = true }
 risc0-zkvm = { workspace = true }
 
 [dev-dependencies]
+regex = "1.10"
 tokio = { version = "1", features = ["macros", "rt"] }
 
 [lib]
@@ -27,4 +25,3 @@ doctest = false
 
 [features]
 default = []
-control-id = ["dep:hex", "risc0-zkvm/prove"]

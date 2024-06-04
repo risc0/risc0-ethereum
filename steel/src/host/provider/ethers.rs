@@ -124,31 +124,27 @@ where
     fn get_storage_at(
         &self,
         address: alloy_primitives::Address,
-        storage_slot: alloy_primitives::B256,
+        key: alloy_primitives::StorageKey,
         block: alloy_primitives::BlockNumber,
-    ) -> Result<alloy_primitives::B256, Self::Error> {
+    ) -> Result<alloy_primitives::StorageValue, Self::Error> {
         let address = to_ethers_h160(address);
-        let storage_slot = to_ethers_h256(storage_slot);
+        let key = to_ethers_h256(key);
+        let value = self.block_on(self.client.get_storage_at(address, key, Some(block.into())))?;
 
-        Ok(from_ethers_h256(
-            self.block_on(
-                self.client
-                    .get_storage_at(address, storage_slot, Some(block.into())),
-            )?,
-        ))
+        Ok(from_ethers_h256(value).into())
     }
 
     fn get_proof(
         &self,
         address: alloy_primitives::Address,
-        storage_slots: Vec<alloy_primitives::B256>,
+        storage_keys: Vec<alloy_primitives::StorageKey>,
         block: alloy_primitives::BlockNumber,
     ) -> Result<EIP1186Proof, Self::Error> {
         let address = to_ethers_h160(address);
-        let storage_slots = storage_slots.into_iter().map(to_ethers_h256).collect();
+        let storage_keys = storage_keys.into_iter().map(to_ethers_h256).collect();
         let proof = self.block_on(self.client.get_proof(
             address,
-            storage_slots,
+            storage_keys,
             Some(block.into()),
         ))?;
 

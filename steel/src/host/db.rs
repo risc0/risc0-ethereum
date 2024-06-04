@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use super::provider::Provider;
-use crate::db::CacheDb;
 use alloy_primitives::{Address, Bytes, Sealable, B256, U256};
 use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, HashSet, KECCAK_EMPTY},
@@ -34,7 +33,7 @@ pub enum ProviderDbError<E: std::error::Error> {
 }
 
 /// A revm [Database] backed by a [Provider].
-pub struct ProviderDb<P: Provider> {
+pub struct ProviderDb<P> {
     provider: P,
     block_number: u64,
 
@@ -103,7 +102,7 @@ impl<P: Provider> Database for ProviderDb<P> {
             .get_storage_at(address, index.into(), self.block_number)
             .map_err(ProviderDbError::Provider)?;
 
-        Ok(storage.into())
+        Ok(storage)
     }
 
     fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
@@ -120,12 +119,12 @@ impl<P: Provider> Database for ProviderDb<P> {
 }
 
 /// A revm [Database] backed by a [Provider] that caches all queries needed for a state proof.
-pub struct ProofDb<P: Provider> {
+pub struct ProofDb<P> {
     accounts: HashMap<Address, HashSet<U256>>,
     contracts: HashMap<B256, Bytes>,
     block_hash_numbers: HashSet<U256>,
 
-    db: CacheDb<ProviderDb<P>>,
+    db: ProviderDb<P>,
 }
 
 impl<P: Provider> ProofDb<P> {
@@ -134,15 +133,15 @@ impl<P: Provider> ProofDb<P> {
             accounts: HashMap::new(),
             contracts: HashMap::new(),
             block_hash_numbers: HashSet::new(),
-            db: CacheDb::new(ProviderDb::new(provider, block_number)),
+            db: ProviderDb::new(provider, block_number),
         }
     }
 
     pub fn provider(&self) -> &P {
-        &self.db.inner().provider
+        &self.db.provider
     }
     pub fn block_number(&self) -> u64 {
-        self.db.inner().block_number
+        self.db.block_number
     }
     pub fn accounts(&self) -> &HashMap<Address, HashSet<U256>> {
         &self.accounts

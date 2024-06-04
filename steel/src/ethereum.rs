@@ -13,9 +13,9 @@
 // limitations under the License.
 
 //! Type aliases for Ethereum.
-use crate::ViewCallEnv;
+use crate::EvmEnv;
 
-use super::{EvmHeader, ViewCallInput};
+use super::{EvmBlockHeader, EvmInput};
 use alloy_primitives::{
     keccak256, Address, BlockHash, BlockNumber, Bloom, Bytes, Sealable, B256, B64, U256,
 };
@@ -23,11 +23,11 @@ use alloy_rlp_derive::RlpEncodable;
 use revm::primitives::BlockEnv;
 use serde::{Deserialize, Serialize};
 
-/// [ViewCallEnv] for Ethereum.
-pub type EthViewCallEnv<D> = ViewCallEnv<D, EthBlockHeader>;
+/// [EvmEnv] for Ethereum.
+pub type EthEvmEnv<D> = EvmEnv<D, EthBlockHeader>;
 
-/// [ViewCallInput] for Ethereum.
-pub type EthViewCallInput = ViewCallInput<EthBlockHeader>;
+/// [EvmInput] for Ethereum.
+pub type EthEvmInput = EvmInput<EthBlockHeader>;
 
 /// Ethereum post-merge block header.
 #[derive(Debug, Clone, Serialize, Deserialize, RlpEncodable)]
@@ -82,7 +82,7 @@ impl Sealable for EthBlockHeader {
     }
 }
 
-impl EvmHeader for EthBlockHeader {
+impl EvmBlockHeader for EthBlockHeader {
     #[inline]
     fn parent_hash(&self) -> &B256 {
         &self.parent_hash
