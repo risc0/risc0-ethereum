@@ -17,7 +17,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use core::{APRCommitment, CometMainInterface, CONTRACT};
 use methods::TOKEN_STATS_ELF;
-use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthViewCallEnv, ViewCall};
+use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthEvmEnv, Contract};
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
 
@@ -32,24 +32,33 @@ struct Args {
 
 fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
-    // parse the command line arguments
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+    // Parse the command line arguments.
     let args = Args::parse();
 
-    // Create a view call environment from an RPC endpoint and a block number. If no block number is
-    // provided, the latest block is used. The `with_chain_spec` method is used to specify the
-    // chain configuration.
-    let mut env =
-        EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    // Create an EVM environment from an RPC endpoint and a block number. If no block number is
+    // provided, the latest block is used.
+    let mut env = EthEvmEnv::from_rpc(&args.rpc_url, None)?;
+    //  The `with_chain_spec` method is used to specify the chain configuration.
+    env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+
     let block_commitment = env.block_commitment();
 
-    // Preflight the view call to construct the input that is required to execute the function in
-    // the guest. It also returns the result of the call.
-    let utilization =
-        env.preflight(ViewCall::new(CometMainInterface::getUtilizationCall {}, CONTRACT))?._0;
-    env.preflight(ViewCall::new(CometMainInterface::getSupplyRateCall { utilization }, CONTRACT))?
+    // Preflight the call to prepare the input that is required to execute the function in
+    // the guest without RPC access. It also returns the result of the call.
+    let mut contract = Contract::preflight(CONTRACT, &mut env);
+    let utilization = contract
+        .call_builder(&CometMainInterface::getUtilizationCall {})
+        .call()?
         ._0;
-    let input = env.into_zkvm_input()?;
+    contract
+        .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
+        .call()?;
+
+    // Finally, construct the input from the environment.
+    let input = env.into_input()?;
 
     println!("Running the guest with the constructed input:");
     let session_info = {
@@ -59,10 +68,12 @@ fn main() -> Result<()> {
             .build()
             .context("Failed to build exec env")?;
         let exec = default_executor();
-        exec.execute(env, TOKEN_STATS_ELF).context("failed to run executor")?
+        exec.execute(env, TOKEN_STATS_ELF)
+            .context("failed to run executor")?
     };
 
-    let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes, true)?;
+    let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes, true)
+        .context("failed to decode journal")?;
     assert_eq!(block_commitment, apr_commit.commitment);
 
     // Calculation is handling `/ 10^18 * 100` to match precision for a percentage.

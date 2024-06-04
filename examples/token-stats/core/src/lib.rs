@@ -14,11 +14,9 @@
 
 use alloy_primitives::{address, Address};
 use alloy_sol_types::sol;
-use risc0_steel::BlockCommitment;
+use risc0_steel::SolCommitment;
 
-/// Address of Compound USDC.
-/// 
-/// https://etherscan.io/address/0x9743591b23b83ed41e6abcc84016a4c7702c706e#code
+/// Address of Compound USDC (cUSDCv3) token.
 pub const CONTRACT: Address = address!("c3d688B66703497DAA19211EEdff47f25384cdc3");
 
 sol! {
@@ -30,9 +28,8 @@ sol! {
 }
 
 sol! {
-    #[derive(Debug, PartialEq, Eq)]
     struct APRCommitment {
-        BlockCommitment commitment;
+        SolCommitment commitment;
         uint64 annualSupplyRate;
     }
 }
