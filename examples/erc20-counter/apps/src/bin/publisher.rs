@@ -16,34 +16,26 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use alloy_primitives::{address, Address};
-use alloy_sol_types::{sol, SolCall, SolInterface};
+use alloy_primitives::Address;
+use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
 use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_ethereum_contracts::groth16::encode;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
-/// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
-/// Must match the guest code.
-const CONTRACT: Address = address!("299Da20a3e957c78d7634A55D88195224C9f9f6b");
-
 sol! {
     /// ERC-20 balance function signature.
+    /// This must match the signature in the guest.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
     }
 }
 
-// `ICounter` interface automatically generated via the alloy `sol!` macro.
-sol! {
-    interface ICounter {
-        function increment(bytes calldata journal, bytes calldata seal);
-    }
-}
+sol!("../contracts/ICounter.sol");
 
 /// Arguments of the publisher CLI.
 #[derive(Parser, Debug)]
@@ -63,7 +55,11 @@ struct Args {
 
     /// Counter's contract address on Ethereum
     #[clap(long)]
-    contract: String,
+    contract: Address,
+
+    /// ERC20 contract address on Ethereum
+    #[clap(long)]
+    token: Address,
 
     /// Account address to read the balance_of on Ethereum
     #[clap(long)]
@@ -75,43 +71,38 @@ fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
+
     // parse the command line arguments
     let args = Args::parse();
 
-    // Create a new `TxSender`.
-    let tx_sender = TxSender::new(
-        args.chain_id,
-        &args.rpc_url,
-        &args.eth_wallet_private_key,
-        &args.contract,
-    )?;
+    // Create an EVM environment from an RPC endpoint and a block number. If no block number is
+    // provided, the latest block is used.
+    let mut env = EthEvmEnv::from_rpc(&args.rpc_url, None)?;
+    //  The `with_chain_spec` method is used to specify the chain configuration.
+    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
-    // Create a view call environment from an RPC endpoint and a block number. If no block number is
-    // provided, the latest block is used. The `with_chain_spec` method is used to specify the
-    // chain configuration.
-    let mut env =
-        EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-    let number = env.header().number();
-    let mut contract = Contract::preflight(CONTRACT, &mut env);
+    // Prepare the function call
+    let call = IERC20::balanceOfCall {
+        account: args.account,
+    };
 
-    // Function to call
-    let account = args.account;
-    let call = IERC20::balanceOfCall { account };
-
-    // Preflight the view call to construct the input that is required to execute the function in
-    // the guest. It also returns the result of the call.
+    // Preflight the call to execute the function in the guest.
+    let mut contract = Contract::preflight(args.token, &mut env);
     let returns = contract.call_builder(&call).call()?;
-    let view_call_input = env.into_input()?;
     println!(
-        "For block {} `{}` returns: {}",
-        number,
+        "For block {} calling `{}` on {} returns: {}",
+        env.header().number(),
         IERC20::balanceOfCall::SIGNATURE,
+        args.token,
         returns._0
     );
 
+    println!("proving...");
+    let view_call_input = env.into_input()?;
     let env = ExecutorEnv::builder()
         .write(&view_call_input)?
-        .write(&account)?
+        .write(&args.token)?
+        .write(&args.account)?
         .build()?;
 
     let receipt = default_prover()
@@ -122,20 +113,31 @@ fn main() -> Result<()> {
             &ProverOpts::groth16(),
         )?
         .receipt;
+    println!("proving...done");
+
+    // Create a new `TxSender`.
+    let tx_sender = TxSender::new(
+        args.chain_id,
+        &args.rpc_url,
+        &args.eth_wallet_private_key,
+        &args.contract.to_string(),
+    )?;
 
     // Encode the groth16 seal with the selector
     let seal = encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
-    let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
-        journal: receipt.journal.bytes.clone().into(),
+    let calldata = ICounter::incrementCall {
+        journalData: receipt.journal.bytes.into(),
         seal: seal.into(),
-    })
+    }
     .abi_encode();
 
     // Send the calldata to Ethereum.
+    println!("sending tx...");
     let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(tx_sender.send(calldata))?;
+    println!("sending tx...done");
 
     Ok(())
 }

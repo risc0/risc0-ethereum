@@ -18,7 +18,7 @@ use alloy_primitives::{address, b256, uint, Address, U256};
 use alloy_sol_types::{sol, SolCall};
 use risc0_steel::{
     config::{ChainSpec, ETH_MAINNET_CHAIN_SPEC, ETH_SEPOLIA_CHAIN_SPEC},
-    ethereum::EthViewCallEnv,
+    ethereum::EthEvmEnv,
     host, CallBuilder, Contract,
 };
 use std::fmt::Debug;
@@ -80,7 +80,7 @@ fn erc20_multi_balance_of() {
         account: address!("5a52E96BAcdaBb82fd05763E25335261B270Efcb"),
     };
 
-    let mut env = EthViewCallEnv::from_provider(provider!(), ERC20_TEST_BLOCK)
+    let mut env = EthEvmEnv::from_provider(provider!(), ERC20_TEST_BLOCK)
         .unwrap()
         .with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     let mut contract = Contract::preflight(ERC20_TEST_CONTRACT, &mut env);
@@ -288,7 +288,7 @@ fn multi_contract_calls() {
 
 #[test]
 fn call_eoa() {
-    let mut env = EthViewCallEnv::from_provider(provider!(), VIEW_CALL_TEST_BLOCK)
+    let mut env = EthEvmEnv::from_provider(provider!(), VIEW_CALL_TEST_BLOCK)
         .unwrap()
         .with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let mut contract = Contract::preflight(Address::ZERO, &mut env);
@@ -328,7 +328,7 @@ where
     C: SolCall,
     <C as SolCall>::Return: PartialEq + Debug,
 {
-    let mut env = EthViewCallEnv::from_provider(provider!(), block)
+    let mut env = EthEvmEnv::from_provider(provider!(), block)
         .unwrap()
         .with_chain_spec(chain_spec);
 
