@@ -21,13 +21,9 @@ env:
 
 jobs:
   e2e-test:
-    runs-on: [self-hosted, prod, "${{ matrix.os }}"]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: Linux
-            feature: default
+    # TODO: Using the nvidia_rtx_a5000 as a workaround because it has jq installed.
+    # Need to refactor the test-local-deployment.sh script or ensure jq is installed in this job instead.
+    runs-on: [self-hosted, prod, Linux, nvidia_rtx_a5000]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -37,7 +33,7 @@ jobs:
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
+          key: Linux-default
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - uses: actions/setup-node@v4
         with:
@@ -46,7 +42,7 @@ jobs:
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: ${{ matrix.feature }}
+          features: default
       - name: build erc20-Counter
         run: cargo build
         working-directory: examples/erc20-counter
