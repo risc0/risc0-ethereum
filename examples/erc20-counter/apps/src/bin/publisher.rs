@@ -23,12 +23,13 @@ use apps::TxSender;
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_ethereum_contracts::groth16::encode;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, Contract, EvmHeader};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
 sol! {
     /// ERC-20 balance function signature.
+    /// This must match the signature in the guest.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
     }
@@ -74,8 +75,10 @@ fn main() -> Result<()> {
     // parse the command line arguments
     let args = Args::parse();
 
-    // Create a view call environment from an RPC endpoint using the latest block
-    let mut env = EthViewCallEnv::from_rpc(&args.rpc_url, None)?;
+    // Create an EVM environment from an RPC endpoint and a block number. If no block number is
+    // provided, the latest block is used.
+    let mut env = EthEvmEnv::from_rpc(&args.rpc_url, None)?;
+    //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
     // Prepare the function call
