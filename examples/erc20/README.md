@@ -2,8 +2,6 @@
 
 **An example that uses the ERC20 interface's `balanceOf` method.**
 
-> ***WARNING***: This software is still experimental, we do not recommend it for production use.
-
 ## Prerequisites
 
 To get started, you need to have Rust installed. If you haven't done so, follow the instructions [here][install-rust].

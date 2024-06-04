@@ -2,7 +2,9 @@
 
 # Steel - Hardened off-chain Execution for EVM dapps
 
-> ***WARNING***: This library is still in its experimental phase and under active development. Production use is not recommended until the software has matured sufficiently.
+> [!WARNING]
+> This library is under active development, with breaking changes expected.
+> We do not recommend the Steel library for production use at this time.
 
 In the realm of Ethereum and smart contracts, obtaining data directly from the blockchain without altering its state—known as "view calls" — are a fundamental operation.
 Traditionally, these operations, especially when it comes to proving and verifying off-chain computations, involve a degree of complexity: either via proof of storage mechanisms requiring detailed knowledge of slot indexes, or via query-specific circuit development.
