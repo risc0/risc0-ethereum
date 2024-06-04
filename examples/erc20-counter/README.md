@@ -1,7 +1,5 @@
 # RISC Zero View Call Proofs ERC20-Counter Example
 
-> ***WARNING***: This software is still experimental, we do not recommend it for production use.
-
 This example implements a counter that increments based on off-chain view call proofs submitted to the [Counter] contract.
 The contract interacts with ERC-20 tokens, using view call proofs to verify that an account holds at least 1 token before incrementing the counter.
 This contract leverages RISC Zero as a [coprocessor] for generating and verifying these proofs.
