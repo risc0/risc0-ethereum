@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::EvmHeader;
+use crate::EvmBlockHeader;
 use alloy_primitives::{
     Address, BlockNumber, Bytes, StorageKey, StorageValue, TxNumber, B256, U256,
 };
@@ -28,7 +28,7 @@ pub use file::{CachedProvider, EthFileProvider, FileProvider};
 /// A trait for providers that fetch data from the Ethereum blockchain.
 pub trait Provider {
     type Error: StdError + Send + Sync + 'static;
-    type Header: EvmHeader;
+    type Header: EvmBlockHeader;
 
     fn get_block_header(&self, block: BlockNumber) -> Result<Option<Self::Header>, Self::Error>;
     fn get_transaction_count(
@@ -75,7 +75,7 @@ pub struct EIP1186Proof {
 /// A simple provider that panics on all queries.
 pub struct NullProvider<H>(PhantomData<H>);
 
-impl<H: EvmHeader> Provider for NullProvider<H> {
+impl<H: EvmBlockHeader> Provider for NullProvider<H> {
     type Error = Infallible;
     type Header = H;
 
