@@ -2,7 +2,7 @@
 
 # Steel - Hardened off-chain Execution for EVM dapps
 
-> [!WARNING]
+> ***WARNING***
 > This library is under active development, with breaking changes expected.
 > We do not recommend the Steel library for production use at this time.
 
