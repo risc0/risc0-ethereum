@@ -187,7 +187,7 @@ SCHEDULE_DELAY=1 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
-    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
+    --slow --broadcast --unlocked \
     --sender ${PUBLIC_KEY} \
     --rpc-url ${RPC_URL}
 
@@ -211,7 +211,7 @@ SELECTOR=0xaabbccdd \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:FinishRemoveVerifier \
-    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
+    --slow --broadcast --unlocked \
     --sender ${PUBLIC_KEY} \
     --rpc-url ${RPC_URL}
 
@@ -232,6 +232,60 @@ cast call --rpc-url ${RPC_URL} \
     'getVerifier(bytes4)(address)' 0xaabbccdd
 Error: ... execution reverted
 ```
+
+## Update the TimelockController minimum delay
+
+This is a two-step process, guarded by the `TimelockController`.
+
+### Schedule the update
+
+Schedule the action:
+
+```console
+MIN_DELAY=10 \
+SCHEDULE_DELAY=1 \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:ScheduleUpdateDelay \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  minDelay: 10
+  scheduleDelay: 1
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+```
+
+### Finish the update
+
+Execute the action:
+
+```console
+MIN_DELAY=10 \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:FinishUpdateDelay \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  minDelay: 10
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+```
+
+Confirm the update:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${TIMELOCK_CONTROLLER} \
+    'getMinDelay()(uint256)'
+10
+```
+
 
 ## Activate the emergency stop
 

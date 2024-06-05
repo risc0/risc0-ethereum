@@ -116,7 +116,7 @@ contract DeployEstopVerifier is Script {
 /// @notice Finish deployment of RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
-///     * TIMELOCK_CONTROLLER contract address of TimelockController.
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
 ///
@@ -149,32 +149,11 @@ contract FinishDeployEstopVerifier is Script {
     }
 }
 
-/// @notice Activate an Emergency Stop mechanism.
-/// @dev Use the following environment variable to control the deployment:
-///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
-///
-/// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ActivateEstop is Script {
-    function run() external {
-        vm.startBroadcast();
-
-        // Locate contracts
-        RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
-        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
-
-        // Activate the emergency stop
-        verifierEstop.estop();
-
-        vm.stopBroadcast();
-    }
-}
-
 /// @notice Schedule removal of a verifier from the router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
 ///     * SCHEDULE_DELAY minimum delay in seconds before the new verifier can be added to the router
-///     * TIMELOCK_CONTROLLER contract address of TimelockController.
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
@@ -209,7 +188,7 @@ contract ScheduleRemoveVerifier is Script {
 /// @notice Finish removal of a verifier from the router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
-///     * TIMELOCK_CONTROLLER contract address of TimelockController.
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
@@ -233,6 +212,85 @@ contract FinishRemoveVerifier is Script {
         bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
 
         timelockController.execute(address(verifierRouter), 0, data, 0, 0);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Schedule an update of the minimum timelock delay.
+/// @dev Use the following environment variable to control the deployment:
+///     * MIN_DELAY minimum delay in seconds for operations
+///     * SCHEDULE_DELAY minimum delay in seconds before the new verifier can be added to the router
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ScheduleUpdateDelay is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        uint256 minDelay = vm.envUint("MIN_DELAY");
+        console2.log("minDelay:", minDelay);
+
+        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
+        console2.log("scheduleDelay:", scheduleDelay);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Schedule the 'updateDelay()' request
+        bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
+
+        timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Finish an update of the minimum timelock delay.
+/// @dev Use the following environment variable to control the deployment:
+///     * MIN_DELAY minimum delay in seconds for operations
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract FinishUpdateDelay is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        uint256 minDelay = vm.envUint("MIN_DELAY");
+        console2.log("minDelay:", minDelay);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Execute the 'updateDelay()' request
+        bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
+
+        timelockController.execute(address(timelockController), 0, data, 0, 0);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Activate an Emergency Stop mechanism.
+/// @dev Use the following environment variable to control the deployment:
+///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ActivateEstop is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        // Locate contracts
+        RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
+        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
+
+        // Activate the emergency stop
+        verifierEstop.estop();
 
         vm.stopBroadcast();
     }
