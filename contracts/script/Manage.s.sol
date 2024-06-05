@@ -24,6 +24,27 @@ import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencySto
 import {IRiscZeroVerifier} from "../src//IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 
+/// @notice Compare strings for equality.
+function stringEq(string memory a, string memory b) view returns (bool) {
+    return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+}
+
+/// @notice Return the role code for the given named role
+function timelockControllerRole(TimelockController timelockController, string memory roleStr) view returns (bytes32) {
+    if (stringEq(roleStr, "proposer")) {
+        return timelockController.PROPOSER_ROLE();
+    }
+    else if (stringEq(roleStr, "executor")) {
+        return timelockController.EXECUTOR_ROLE();
+    }
+    else if (stringEq(roleStr, "canceller")) {
+        return timelockController.CANCELLER_ROLE();
+    }
+    else {
+        revert();
+    }
+}
+
 /// @notice Deployment script for the timelocked router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * MIN_DELAY minimum delay in seconds for operations
@@ -302,19 +323,7 @@ contract ScheduleGrantRole is Script {
         console2.log("Using TimelockController at address", address(timelockController));
 
         // Schedule the 'grantRole()' request
-        bytes32 role;
-        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
-            role = timelockController.PROPOSER_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
-            role = timelockController.EXECUTOR_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
-            role = timelockController.CANCELLER_ROLE();
-        }
-        else {
-            revert();
-        }
+        bytes32 role = timelockControllerRole(timelockController, roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
@@ -349,19 +358,7 @@ contract FinishGrantRole is Script {
         console2.log("Using TimelockController at address", address(timelockController));
 
         // Execute the 'grantRole()' request
-        bytes32 role;
-        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
-            role = timelockController.PROPOSER_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
-            role = timelockController.EXECUTOR_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
-            role = timelockController.CANCELLER_ROLE();
-        }
-        else {
-            revert();
-        }
+        bytes32 role = timelockControllerRole(timelockController, roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
@@ -400,19 +397,7 @@ contract ScheduleRevokeRole is Script {
         console2.log("Using TimelockController at address", address(timelockController));
 
         // Schedule the 'grantRole()' request
-        bytes32 role;
-        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
-            role = timelockController.PROPOSER_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
-            role = timelockController.EXECUTOR_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
-            role = timelockController.CANCELLER_ROLE();
-        }
-        else {
-            revert();
-        }
+        bytes32 role = timelockControllerRole(timelockController, roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
@@ -447,19 +432,7 @@ contract FinishRevokeRole is Script {
         console2.log("Using TimelockController at address", address(timelockController));
 
         // Execute the 'grantRole()' request
-        bytes32 role;
-        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
-            role = timelockController.PROPOSER_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
-            role = timelockController.EXECUTOR_ROLE();
-        }
-        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
-            role = timelockController.CANCELLER_ROLE();
-        }
-        else {
-            revert();
-        }
+        bytes32 role = timelockControllerRole(timelockController, roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
