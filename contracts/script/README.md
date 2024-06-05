@@ -1,6 +1,8 @@
 # Scripts
 
-## Testing with Anvil
+## Setup your environment
+
+### Anvil
 
 Start Anvil:
 
@@ -8,7 +10,7 @@ Start Anvil:
 anvil -a 10 --block-time 1 --host 0.0.0.0 --port 8545
 ```
 
-Set your public and private key:
+Set your RPC URL, as well as your public and private key:
 
 ```console
 export RPC_URL="http://localhost:8545"
@@ -16,9 +18,32 @@ export PUBLIC_KEY="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 export PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 ```
 
-### Deploy the timelocked router
+### Sepolia or Mainnet
 
-Configure the proposer, executor, and admin:
+Set your RPC URL, public and private key, and Etherscan API key:
+
+```console
+export RPC_URL="..."
+export PUBLIC_KEY="..."
+export PRIVATE_KEY="..."
+export ETHERSCAN_API_KEY="..."
+export FORGE_DEPLOY_FLAGS="--verify"
+```
+
+Example RPC URLs:
+
+* Sepolia:
+  * https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
+  * https://sepolia.infura.io/v3/YOUR_API_KEY
+* Mainnet:
+  * https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+  * https://mainnet.infura.io/v3/YOUR_API_KEY
+
+### Fireblocks
+
+TODO! For now, refer to the [Fireblocks docs](https://developers.fireblocks.com/docs/ethereum-smart-contract-development#using-foundry).
+
+## Deploy the timelocked router
 
 Deploy the contracts:
 
@@ -27,7 +52,7 @@ MIN_DELAY=1 \
 PROPOSER="${PUBLIC_KEY}" \
 EXECUTOR="${PUBLIC_KEY}" \
 forge script contracts/script/Manage.s.sol:DeployTimelockRouter \
-    --slow --broadcast --unlocked \
+    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
     --sender ${PUBLIC_KEY} \
     --rpc-url ${RPC_URL}
 
@@ -63,7 +88,7 @@ cast call --rpc-url ${RPC_URL} \
 0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 
-### Deploy a verifier
+## Deploy a verifier with emergency stop mechanism
 
 Deploy the contracts:
 
@@ -74,7 +99,7 @@ VERIFIER_ESTOP_OWNER=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:DeployEstopVerifier \
-    --slow --broadcast --unlocked \
+    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
     --sender ${PUBLIC_KEY} \
     --rpc-url ${RPC_URL}
 
@@ -102,13 +127,18 @@ Test the deployment:
 ```console
 cast call --rpc-url ${RPC_URL} \
     ${VERIFIER_ESTOP} \
+    'paused()(bool)'
+false
+
+cast call --rpc-url ${RPC_URL} \
+    ${VERIFIER_ESTOP} \
     'owner()(address)'
 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
-### Finish adding verifier to router
+## Finish adding verifier to router
 
-Tell the TimelockController to execute the action:
+Tell the `TimelockController` to execute the action:
 
 ```console
 SELECTOR=0xaabbccdd \
@@ -137,4 +167,30 @@ cast call --rpc-url ${RPC_URL} \
     ${VERIFIER_ROUTER} \
     'getVerifier(bytes4)(address)' 0xaabbccdd
 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+```
+
+## Activate the emergency stop
+
+Activate the emergency stop:
+
+```console
+VERIFIER_ESTOP=${VERIFIER_ESTOP} \
+forge script contracts/script/Manage.s.sol:ActivateEstop \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  Using RiscZeroVerifierEmergencyStop at address 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+```
+
+Test the activation:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${VERIFIER_ESTOP} \
+    'paused()(bool)'
+true
 ```

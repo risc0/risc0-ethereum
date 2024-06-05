@@ -113,7 +113,7 @@ contract DeployEstopVerifier is Script {
     }
 }
 
-/// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
+/// @notice Finish deployment of RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController.
@@ -144,6 +144,27 @@ contract FinishDeployEstopVerifier is Script {
         bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
 
         timelockController.execute(address(verifierRouter), 0, data, 0, 0);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Activate an Emergency Stop mechanism.
+/// @dev Use the following environment variable to control the deployment:
+///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ActivateEstop is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        // Locate contracts
+        RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
+        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
+
+        // Activate the emergency stop
+        verifierEstop.estop();
 
         vm.stopBroadcast();
     }
