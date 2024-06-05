@@ -442,7 +442,7 @@ cast call --rpc-url ${RPC_URL} \
 false
 ```
 
-## Renounce role
+## Renounce access to the TimelockController
 
 If your private key is compromised, you can renounce your role(s) without waiting for the time delay. Repeat this action for any of the roles you might have, such as:
 
