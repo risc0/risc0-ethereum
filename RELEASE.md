@@ -23,6 +23,8 @@
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
+   Also tag the release as `steel-v0.X.Y`, as long as Steel is pre-1.0 and so on a different version than the rest of the crates.
+
    Include a summary of the changes in the release notes.
 
 4. Publish crates to `crates.io`
