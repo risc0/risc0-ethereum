@@ -39,7 +39,16 @@
    > NOTE: We intend to publish more of the crates in the future.
    > Blocking issue is that the other crates depend on building Solidity smart contracts as part of a `build.rs` script, which makes it incompatible with `crates.io`.
 
-   <!-- TODO: Include the actual commands to publish -->
+   ```sh
+   # Log in to crates.io. Create a token that is restricted to what you need to do (e.g. publish update) and set an expiry.
+   cargo login
+   # Dry run to check that the package will publish. Look through the output, e.g. at version numbers, to confirm it makes sense.
+   cargo publish -p $PKG --dry-run
+   # Actually publish the crate
+   cargo publish -p $PKG
+   ```
+
+   See the [Cargo docs](https://doc.rust-lang.org/cargo/reference/publishing.html) for more details.
 
 5. When changes have been made to the verifier contract, deploy a new verifier contract.
 
