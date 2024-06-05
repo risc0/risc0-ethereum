@@ -286,6 +286,161 @@ cast call --rpc-url ${RPC_URL} \
 10
 ```
 
+## Grant access to the TimelockController
+
+This is a two-step process, guarded by the `TimelockController`.
+
+Three roles are supported:
+
+* `proposer`
+* `executor`
+* `canceller`
+
+### Schedule the update
+
+Schedule the action:
+
+```console
+ROLE="executor" \
+ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
+SCHEDULE_DELAY=1 \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:ScheduleGrantRole \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  roleStr: executor
+  account: 0x00000000000000AABBCcdDEefF00000000000000
+  scheduleDelay: 1
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  role: 
+  0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+Confirm the role code:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${TIMELOCK_CONTROLLER} \
+    'EXECUTOR_ROLE()(bytes32)'
+0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+### Finish the update
+
+Schedule the action:
+
+```console
+ROLE="executor" \
+ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:FinishGrantRole \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  roleStr: executor
+  account: 0x00000000000000AABBCcdDEefF00000000000000
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  role: 
+  0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+Confirm the update:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${TIMELOCK_CONTROLLER} \
+    'hasRole(bytes32, address)(bool)' \
+    0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63 \
+    0x00000000000000aabbccddeeff00000000000000
+true
+```
+
+## Revoke access to the TimelockController
+
+This is a two-step process, guarded by the `TimelockController`.
+
+Three roles are supported:
+
+* `proposer`
+* `executor`
+* `canceller`
+
+### Schedule the update
+
+Schedule the action:
+
+```console
+ROLE="executor" \
+ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
+SCHEDULE_DELAY=1 \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:ScheduleRevokeRole \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  roleStr: executor
+  account: 0x00000000000000AABBCcdDEefF00000000000000
+  scheduleDelay: 1
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  role: 
+  0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+Confirm the role code:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${TIMELOCK_CONTROLLER} \
+    'EXECUTOR_ROLE()(bytes32)'
+0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+### Finish the update
+
+Schedule the action:
+
+```console
+ROLE="executor" \
+ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:FinishRevokeRole \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  roleStr: executor
+  account: 0x00000000000000AABBCcdDEefF00000000000000
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  role: 
+  0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+Confirm the update:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${TIMELOCK_CONTROLLER} \
+    'hasRole(bytes32, address)(bool)' \
+    0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63 \
+    0x00000000000000aabbccddeeff00000000000000
+false
+```
 
 ## Activate the emergency stop
 

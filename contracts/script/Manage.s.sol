@@ -69,7 +69,7 @@ contract DeployTimelockRouter is Script {
 /// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
-///     * SCHEDULE_DELAY minimum delay in seconds before the new verifier can be added to the router
+///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
 ///     * VERIFIER_ESTOP_OWNER owner of the emergency stop contract
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
@@ -152,7 +152,7 @@ contract FinishDeployEstopVerifier is Script {
 /// @notice Schedule removal of a verifier from the router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
-///     * SCHEDULE_DELAY minimum delay in seconds before the new verifier can be added to the router
+///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
@@ -220,7 +220,7 @@ contract FinishRemoveVerifier is Script {
 /// @notice Schedule an update of the minimum timelock delay.
 /// @dev Use the following environment variable to control the deployment:
 ///     * MIN_DELAY minimum delay in seconds for operations
-///     * SCHEDULE_DELAY minimum delay in seconds before the new verifier can be added to the router
+///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
@@ -268,6 +268,202 @@ contract FinishUpdateDelay is Script {
 
         // Execute the 'updateDelay()' request
         bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
+
+        timelockController.execute(address(timelockController), 0, data, 0, 0);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Schedule grant role.
+/// @dev Use the following environment variable to control the deployment:
+///     * ROLE the role to be granted
+///     * ACCOUNT the account to be granted the role
+///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ScheduleGrantRole is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        string memory roleStr = vm.envString("ROLE");
+        console2.log("roleStr:", roleStr);
+
+        address account = vm.envAddress("ACCOUNT");
+        console2.log("account:", account);
+
+        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
+        console2.log("scheduleDelay:", scheduleDelay);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Schedule the 'grantRole()' request
+        bytes32 role;
+        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
+            role = timelockController.PROPOSER_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
+            role = timelockController.EXECUTOR_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
+            role = timelockController.CANCELLER_ROLE();
+        }
+        else {
+            revert();
+        }
+        console2.log("role: ");
+        console2.logBytes32(role);
+
+        bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
+
+        timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Finish grant role.
+/// @dev Use the following environment variable to control the deployment:
+///     * ROLE the role to be granted
+///     * ACCOUNT the account to be granted the role
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract FinishGrantRole is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        string memory roleStr = vm.envString("ROLE");
+        console2.log("roleStr:", roleStr);
+
+        address account = vm.envAddress("ACCOUNT");
+        console2.log("account:", account);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Execute the 'grantRole()' request
+        bytes32 role;
+        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
+            role = timelockController.PROPOSER_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
+            role = timelockController.EXECUTOR_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
+            role = timelockController.CANCELLER_ROLE();
+        }
+        else {
+            revert();
+        }
+        console2.log("role: ");
+        console2.logBytes32(role);
+
+        bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
+
+        timelockController.execute(address(timelockController), 0, data, 0, 0);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Schedule revoke role.
+/// @dev Use the following environment variable to control the deployment:
+///     * ROLE the role to be revoked
+///     * ACCOUNT the account to be revoked of the role
+///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ScheduleRevokeRole is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        string memory roleStr = vm.envString("ROLE");
+        console2.log("roleStr:", roleStr);
+
+        address account = vm.envAddress("ACCOUNT");
+        console2.log("account:", account);
+
+        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
+        console2.log("scheduleDelay:", scheduleDelay);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Schedule the 'grantRole()' request
+        bytes32 role;
+        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
+            role = timelockController.PROPOSER_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
+            role = timelockController.EXECUTOR_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
+            role = timelockController.CANCELLER_ROLE();
+        }
+        else {
+            revert();
+        }
+        console2.log("role: ");
+        console2.logBytes32(role);
+
+        bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
+
+        timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Finish revoke role.
+/// @dev Use the following environment variable to control the deployment:
+///     * ROLE the role to be revoked
+///     * ACCOUNT the account to be revoked of the role
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract FinishRevokeRole is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        string memory roleStr = vm.envString("ROLE");
+        console2.log("roleStr:", roleStr);
+
+        address account = vm.envAddress("ACCOUNT");
+        console2.log("account:", account);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Execute the 'grantRole()' request
+        bytes32 role;
+        if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("proposer"))) {
+            role = timelockController.PROPOSER_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("executor"))) {
+            role = timelockController.EXECUTOR_ROLE();
+        }
+        else if (keccak256(abi.encodePacked(roleStr)) == keccak256(abi.encodePacked("canceller"))) {
+            role = timelockController.CANCELLER_ROLE();
+        }
+        else {
+            revert();
+        }
+        console2.log("role: ");
+        console2.logBytes32(role);
+
+        bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
 
         timelockController.execute(address(timelockController), 0, data, 0, 0);
 
