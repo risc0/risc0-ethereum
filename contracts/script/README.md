@@ -442,6 +442,44 @@ cast call --rpc-url ${RPC_URL} \
 false
 ```
 
+## Renounce role
+
+If your private key is compromised, you can renounce your role(s) without waiting for the time delay. Repeat this action for any of the roles you might have, such as:
+
+* proposer
+* executor
+* canceller
+
+```console
+ROLE="executor" \
+ACCOUNT=${PUBLIC_KEY} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+forge script contracts/script/Manage.s.sol:RenounceRole \
+    --slow --broadcast --unlocked \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  roleStr: executor
+  msg.sender: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  role: 
+  0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+```
+
+Confirm:
+
+```console
+cast call --rpc-url ${RPC_URL} \
+    ${TIMELOCK_CONTROLLER} \
+    'hasRole(bytes32, address)(bool)' \
+    0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63 \
+    ${PUBLIC_KEY}
+false
+```
+
 ## Activate the emergency stop
 
 Activate the emergency stop:

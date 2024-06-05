@@ -444,6 +444,37 @@ contract FinishRevokeRole is Script {
     }
 }
 
+/// @notice Renounce role.
+/// @dev Use the following environment variable to control the deployment:
+///     * ROLE the role to be renounced
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract RenounceRole is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        string memory roleStr = vm.envString("ROLE");
+        console2.log("roleStr:", roleStr);
+
+        console2.log("msg.sender:", msg.sender);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        // Renounce the role
+        bytes32 role = timelockControllerRole(timelockController, roleStr);
+        console2.log("role: ");
+        console2.logBytes32(role);
+
+        timelockController.renounceRole(role, msg.sender);
+
+        vm.stopBroadcast();
+    }
+}
+
 /// @notice Activate an Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
 ///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
