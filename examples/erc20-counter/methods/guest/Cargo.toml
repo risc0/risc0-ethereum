@@ -16,7 +16,7 @@ ahash = { version = "0.8", default-features = false, features = ["compile-time-r
 alloy-primitives = { version = "0.7" }
 alloy-sol-types = { version = "0.7" }
 risc0-steel = { path = "../../../../steel" }
-risc0-zkvm = { version = "1.0.0-rc.7", default-features = false, features = ["std"] }
+risc0-zkvm = { version = "1.0", default-features = false, features = ["std"] }
 
 [patch.crates-io]
 # use optimized risc0 circuit

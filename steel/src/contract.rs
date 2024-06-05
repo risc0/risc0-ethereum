@@ -13,12 +13,10 @@
 // limitations under the License.
 
 #[cfg(feature = "host")]
-use crate::host::{provider::Provider, HostViewCallEnv};
-use crate::{EvmHeader, GuestViewCallEnv, MerkleTrie, StateDB};
+use crate::host::{provider::Provider, HostEvmEnv};
+use crate::{EvmBlockHeader, GuestEvmEnv, MerkleTrie, StateDb};
 use alloy_primitives::{keccak256, Address, Sealed, B256, U256};
-
 use alloy_sol_types::{SolCall, SolType};
-
 use revm::{
     primitives::{
         AccountInfo, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap, ResultAndState,
@@ -36,13 +34,13 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
 ///   necessary proof, use [Contract::preflight]. The environment can be initialized using
-///   [EthViewCallEnv::from_rpc] or [ViewCallEnv::new].
+///   [EthEvmEnv::from_rpc] or [EvmEnv::new].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
-///   [Contract::new]. The environment should be constructed using [ViewCallInput::into_env].
+///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
 /// ### Examples
 /// ```rust no_run
-/// # use risc0_steel::{ethereum::EthViewCallEnv, Contract};
+/// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
 /// # use alloy_primitives::{address};
 /// # use alloy_sol_types::sol;
 ///
@@ -59,43 +57,43 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// };
 ///
 /// // Host:
-/// let mut env = EthViewCallEnv::from_rpc("https://ethereum-rpc.publicnode.com", None)?;
+/// let mut env = EthEvmEnv::from_rpc("https://ethereum-rpc.publicnode.com", None)?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call()?;
 ///
-/// let view_call_input = env.into_input()?;
+/// let evm_input = env.into_input()?;
 ///
 /// // Guest:
-/// let view_call_env = view_call_input.into_env();
-/// let contract = Contract::new(contract_address, &view_call_env);
+/// let evm_env = evm_input.into_env();
+/// let contract = Contract::new(contract_address, &evm_env);
 /// contract.call_builder(&get_balance).call();
 ///
 /// # Ok(())
 /// # }
 /// ```
 ///
-/// [ViewCallInput::into_env]: crate::ViewCallInput::into_env
-/// [ViewCallEnv::new]: crate::ViewCallEnv::new
-/// [EthViewCallEnv::from_rpc]: crate::ethereum::EthViewCallEnv::from_rpc
+/// [EvmInput::into_env]: crate::EvmInput::into_env
+/// [EvmEnv::new]: crate::EvmEnv::new
+/// [EthEvmEnv::from_rpc]: crate::ethereum::EthEvmEnv::from_rpc
 pub struct Contract<E> {
     address: Address,
     env: E,
 }
 
-impl<'a, H> Contract<&'a GuestViewCallEnv<H>> {
+impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
     /// Constructor for executing calls to an Ethereum contract in the guest.
-    pub fn new(address: Address, env: &'a GuestViewCallEnv<H>) -> Self {
+    pub fn new(address: Address, env: &'a GuestEvmEnv<H>) -> Self {
         Self { address, env }
     }
 
     /// Initializes a call builder to execute a call on the contract.
-    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<C, &GuestViewCallEnv<H>> {
+    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<C, &GuestEvmEnv<H>> {
         CallBuilder::new(self.env, self.address, call)
     }
 }
 
 #[cfg(feature = "host")]
-impl<'a, P, H> Contract<&'a mut HostViewCallEnv<P, H>>
+impl<'a, P, H> Contract<&'a mut HostEvmEnv<P, H>>
 where
     P: Provider,
 {
@@ -103,20 +101,17 @@ where
     ///
     /// Initializes the environment for calling functions on the Ethereum contract, fetching
     /// necessary data via the [Provider], and generating a storage proof for any accessed
-    /// elements using [ViewCallEnv::into_input].
+    /// elements using [EvmEnv::into_input].
     ///
     /// [Provider]: crate::host::provider::Provider
-    /// [ViewCallEnv::into_input]: crate::ViewCallEnv::into_input
-    /// [ViewCallEnv]: crate::ViewCallEnv
-    pub fn preflight(address: Address, env: &'a mut HostViewCallEnv<P, H>) -> Self {
+    /// [EvmEnv::into_input]: crate::EvmEnv::into_input
+    /// [EvmEnv]: crate::EvmEnv
+    pub fn preflight(address: Address, env: &'a mut HostEvmEnv<P, H>) -> Self {
         Self { address, env }
     }
 
     /// Initializes a call builder to execute a call on the contract.
-    pub fn call_builder<C: SolCall>(
-        &mut self,
-        call: &C,
-    ) -> CallBuilder<C, &mut HostViewCallEnv<P, H>> {
+    pub fn call_builder<C: SolCall>(&mut self, call: &C) -> CallBuilder<C, &mut HostEvmEnv<P, H>> {
         CallBuilder::new(self.env, self.address, call)
     }
 }
@@ -135,7 +130,7 @@ impl<C, E> CallBuilder<C, E> {
     /// The default gas limit for function calls.
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
-    /// Creates a new view call to the given contract.
+    /// Creates a new builder for the given contract call.
     fn new(env: E, address: Address, call: &C) -> Self
     where
         C: SolCall,
@@ -178,29 +173,35 @@ impl<C, E> CallBuilder<C, E> {
 }
 
 #[cfg(feature = "host")]
-impl<'a, C, P, H> CallBuilder<C, &'a mut HostViewCallEnv<P, H>>
+impl<'a, C, P, H> CallBuilder<C, &'a mut HostEvmEnv<P, H>>
 where
     C: SolCall,
     P: Provider,
-    H: EvmHeader,
+    H: EvmBlockHeader,
 {
-    /// Executes the call with a [ViewCallEnv] constructed with [Contract::preflight].
+    /// Executes the call with a [EvmEnv] constructed with [Contract::preflight].
     ///
-    /// [ViewCallEnv]: crate::ViewCallEnv
+    /// [EvmEnv]: crate::EvmEnv
     pub fn call(self) -> anyhow::Result<C::Return> {
+        log::info!(
+            "Executing preflight for '{}' on contract {}",
+            C::SIGNATURE,
+            self.tx.to
+        );
+
         let evm = new_evm(&mut self.env.db, self.env.cfg_env.clone(), &self.env.header);
         self.tx.transact(evm).map_err(|err| anyhow::anyhow!(err))
     }
 }
 
-impl<'a, C, H> CallBuilder<C, &'a GuestViewCallEnv<H>>
+impl<'a, C, H> CallBuilder<C, &'a GuestEvmEnv<H>>
 where
     C: SolCall,
-    H: EvmHeader,
+    H: EvmBlockHeader,
 {
-    /// Executes the call with a [ViewCallEnv] constructed with [Contract::new].
+    /// Executes the call with a [EvmEnv] constructed with [Contract::new].
     ///
-    /// [ViewCallEnv]: crate::ViewCallEnv
+    /// [EvmEnv]: crate::EvmEnv
     pub fn call(self) -> C::Return {
         let evm = new_evm(
             WrapStateDb::new(&self.env.db),
@@ -277,7 +278,7 @@ impl<C: SolCall> CallTxData<C> {
 fn new_evm<'a, DB, H>(db: DB, cfg: CfgEnvWithHandlerCfg, header: &Sealed<H>) -> Evm<'a, (), DB>
 where
     DB: Database,
-    H: EvmHeader,
+    H: EvmBlockHeader,
 {
     Evm::builder()
         .with_db(db)
@@ -287,13 +288,13 @@ where
 }
 
 struct WrapStateDb<'a> {
-    inner: &'a StateDB,
+    inner: &'a StateDb,
     account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
 }
 
 impl<'a> WrapStateDb<'a> {
     /// Creates a new [Database] from the given [StateDb].
-    pub(crate) fn new(inner: &'a StateDB) -> Self {
+    pub(crate) fn new(inner: &'a StateDb) -> Self {
         Self {
             inner,
             account_storage: HashMap::new(),
