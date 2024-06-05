@@ -169,3 +169,71 @@ contract ActivateEstop is Script {
         vm.stopBroadcast();
     }
 }
+
+/// @notice Schedule removal of a verifier from the router.
+/// @dev Use the following environment variable to control the deployment:
+///     * SELECTOR the selector associated with this verifier
+///     * SCHEDULE_DELAY minimum delay in seconds before the new verifier can be added to the router
+///     * TIMELOCK_CONTROLLER contract address of TimelockController.
+///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ScheduleRemoveVerifier is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
+        console2.log("selector:");
+        console2.logBytes4(selector);
+
+        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
+        console2.log("scheduleDelay:", scheduleDelay);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
+        console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
+
+        // Schedule the 'removeVerifier()' request
+        bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
+
+        timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
+
+        vm.stopBroadcast();
+    }
+}
+
+/// @notice Finish removal of a verifier from the router.
+/// @dev Use the following environment variable to control the deployment:
+///     * SELECTOR the selector associated with this verifier
+///     * TIMELOCK_CONTROLLER contract address of TimelockController.
+///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract FinishRemoveVerifier is Script {
+    function run() external {
+        vm.startBroadcast();
+
+        bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
+        console2.log("selector:");
+        console2.logBytes4(selector);
+
+        // Locate contracts
+        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(timelockController));
+
+        RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
+        console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
+
+        // Execute the 'removeVerifier()' request
+        bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
+
+        timelockController.execute(address(verifierRouter), 0, data, 0, 0);
+
+        vm.stopBroadcast();
+    }
+}

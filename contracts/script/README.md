@@ -90,6 +90,10 @@ cast call --rpc-url ${RPC_URL} \
 
 ## Deploy a verifier with emergency stop mechanism
 
+This is a two-step process, guarded by the `TimelockController`.
+
+### Deploy the verifier and schedule addition to router
+
 Deploy the contracts:
 
 ```console
@@ -136,7 +140,7 @@ cast call --rpc-url ${RPC_URL} \
 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
-## Finish adding verifier to router
+### Finish adding verifier to router
 
 Tell the `TimelockController` to execute the action:
 
@@ -167,6 +171,66 @@ cast call --rpc-url ${RPC_URL} \
     ${VERIFIER_ROUTER} \
     'getVerifier(bytes4)(address)' 0xaabbccdd
 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+```
+
+## Remove a verifier
+
+This is a two-step process, guarded by the `TimelockController`.
+
+### Schedule verifier for removal
+
+Schedule the action:
+
+```console
+SELECTOR=0xaabbccdd \
+SCHEDULE_DELAY=1 \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER} \
+forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
+    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  selector:
+  0xaabbccdd
+  scheduleDelay: 1
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+```
+
+
+### Finish removing the verifier
+
+Execute the action:
+
+```console
+SELECTOR=0xaabbccdd \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER} \
+forge script contracts/script/Manage.s.sol:FinishRemoveVerifier \
+    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
+    --sender ${PUBLIC_KEY} \
+    --rpc-url ${RPC_URL}
+
+...
+
+== Logs ==
+  selector:
+  0xaabbccdd
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+```
+
+Confirm it was removed:
+
+```
+cast call --rpc-url ${RPC_URL} \
+    ${VERIFIER_ROUTER} \
+    'getVerifier(bytes4)(address)' 0xaabbccdd
+Error: ... execution reverted
 ```
 
 ## Activate the emergency stop
