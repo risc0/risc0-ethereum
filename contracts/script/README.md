@@ -115,7 +115,7 @@ Deploy the contracts:
 VERIFIER_ESTOP_OWNER=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
-bash contracts/script/manage DeployEstopVerifier
+bash contracts/script/manage ScheduleDeployEstopVerifier
 
 ...
 

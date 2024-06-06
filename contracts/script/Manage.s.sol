@@ -53,8 +53,6 @@ function timelockControllerRole(TimelockController timelockController, string me
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract DeployTimelockRouter is Script {
     function run() external {
-        vm.startBroadcast();
-
         // initial minimum delay in seconds for operations
         uint256 minDelay = vm.envUint("MIN_DELAY");
         console2.log("minDelay:", minDelay);
@@ -74,13 +72,13 @@ contract DeployTimelockRouter is Script {
         console2.log("admin:", admin);
 
         // Deploy new contracts
+        vm.broadcast();
         TimelockController timelockController = new TimelockController(minDelay, proposers, executors, admin);
         console2.log("Deployed TimelockController to", address(timelockController));
 
+        vm.broadcast();
         RiscZeroVerifierRouter verifierRouter = new RiscZeroVerifierRouter(address(timelockController));
         console2.log("Deployed RiscZeroVerifierRouter to", address(verifierRouter));
-
-        vm.stopBroadcast();
     }
 }
 
@@ -93,10 +91,8 @@ contract DeployTimelockRouter is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract DeployEstopVerifier is Script {
+contract ScheduleDeployEstopVerifier is Script {
     function run() external {
-        vm.startBroadcast();
-
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
@@ -106,12 +102,15 @@ contract DeployEstopVerifier is Script {
 
         RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
         console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
+        require(verifierRouter.owner() == address(timelockController), "timelock controller must own the verifier router");
 
         // Deploy new contracts
+        vm.broadcast();
         RiscZeroGroth16Verifier verifier =
             new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
+        vm.broadcast();
         RiscZeroVerifierEmergencyStop verifierEstop = new RiscZeroVerifierEmergencyStop(verifier, verifierEstopOwner);
         console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop));
 
@@ -125,9 +124,8 @@ contract DeployEstopVerifier is Script {
 
         bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
 
+        vm.broadcast();
         timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -141,8 +139,6 @@ contract DeployEstopVerifier is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract FinishDeployEstopVerifier is Script {
     function run() external {
-        vm.startBroadcast();
-
         // Locate contracts
         TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
         console2.log("Using TimelockController at address", address(timelockController));
@@ -163,9 +159,8 @@ contract FinishDeployEstopVerifier is Script {
 
         bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
 
+        vm.broadcast();
         timelockController.execute(address(verifierRouter), 0, data, 0, 0);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -180,8 +175,6 @@ contract FinishDeployEstopVerifier is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract ScheduleRemoveVerifier is Script {
     function run() external {
-        vm.startBroadcast();
-
         bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
@@ -199,9 +192,8 @@ contract ScheduleRemoveVerifier is Script {
 
         bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
 
+        vm.broadcast();
         timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -215,8 +207,6 @@ contract ScheduleRemoveVerifier is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract FinishRemoveVerifier is Script {
     function run() external {
-        vm.startBroadcast();
-
         bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
@@ -231,9 +221,8 @@ contract FinishRemoveVerifier is Script {
         // Execute the 'removeVerifier()' request
         bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
 
+        vm.broadcast();
         timelockController.execute(address(verifierRouter), 0, data, 0, 0);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -247,8 +236,6 @@ contract FinishRemoveVerifier is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract ScheduleUpdateDelay is Script {
     function run() external {
-        vm.startBroadcast();
-
         uint256 minDelay = vm.envUint("MIN_DELAY");
         console2.log("minDelay:", minDelay);
 
@@ -262,9 +249,8 @@ contract ScheduleUpdateDelay is Script {
 
         bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
 
+        vm.broadcast();
         timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -277,8 +263,6 @@ contract ScheduleUpdateDelay is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract FinishUpdateDelay is Script {
     function run() external {
-        vm.startBroadcast();
-
         uint256 minDelay = vm.envUint("MIN_DELAY");
         console2.log("minDelay:", minDelay);
 
@@ -289,9 +273,8 @@ contract FinishUpdateDelay is Script {
         // Execute the 'updateDelay()' request
         bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
 
+        vm.broadcast();
         timelockController.execute(address(timelockController), 0, data, 0, 0);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -306,8 +289,6 @@ contract FinishUpdateDelay is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract ScheduleGrantRole is Script {
     function run() external {
-        vm.startBroadcast();
-
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
 
@@ -328,9 +309,8 @@ contract ScheduleGrantRole is Script {
 
         bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
 
+        vm.broadcast();
         timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -344,8 +324,6 @@ contract ScheduleGrantRole is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract FinishGrantRole is Script {
     function run() external {
-        vm.startBroadcast();
-
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
 
@@ -363,9 +341,8 @@ contract FinishGrantRole is Script {
 
         bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
 
+        vm.broadcast();
         timelockController.execute(address(timelockController), 0, data, 0, 0);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -380,8 +357,6 @@ contract FinishGrantRole is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract ScheduleRevokeRole is Script {
     function run() external {
-        vm.startBroadcast();
-
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
 
@@ -402,9 +377,8 @@ contract ScheduleRevokeRole is Script {
 
         bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
 
+        vm.broadcast();
         timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -418,8 +392,6 @@ contract ScheduleRevokeRole is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract FinishRevokeRole is Script {
     function run() external {
-        vm.startBroadcast();
-
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
 
@@ -437,9 +409,8 @@ contract FinishRevokeRole is Script {
 
         bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
 
+        vm.broadcast();
         timelockController.execute(address(timelockController), 0, data, 0, 0);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -452,8 +423,6 @@ contract FinishRevokeRole is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract RenounceRole is Script {
     function run() external {
-        vm.startBroadcast();
-
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
 
@@ -468,9 +437,8 @@ contract RenounceRole is Script {
         console2.log("role: ");
         console2.logBytes32(role);
 
+        vm.broadcast();
         timelockController.renounceRole(role, msg.sender);
-
-        vm.stopBroadcast();
     }
 }
 
@@ -482,15 +450,12 @@ contract RenounceRole is Script {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract ActivateEstop is Script {
     function run() external {
-        vm.startBroadcast();
-
         // Locate contracts
         RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
         console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
 
         // Activate the emergency stop
+        vm.broadcast();
         verifierEstop.estop();
-
-        vm.stopBroadcast();
     }
 }
