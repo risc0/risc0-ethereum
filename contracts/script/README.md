@@ -429,7 +429,6 @@ If your private key is compromised, you can renounce your role(s) without waitin
 
 ```console
 ROLE="executor" \
-ACCOUNT=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 bash contracts/script/manage RenounceRole
 
