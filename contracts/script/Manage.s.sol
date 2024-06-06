@@ -25,7 +25,7 @@ import {IRiscZeroVerifier} from "../src//IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 
 /// @notice Compare strings for equality.
-function stringEq(string memory a, string memory b) view returns (bool) {
+function stringEq(string memory a, string memory b) pure returns (bool) {
     return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
 }
 
@@ -42,6 +42,60 @@ function timelockControllerRole(TimelockController timelockController, string me
     }
 }
 
+/// @notice Base contract for the scripts below, providing common context and functions.
+contract RiscZeroManagementScript is Script {
+    TimelockController internal _timelockController;
+    RiscZeroVerifierRouter internal _verifierRouter;
+    RiscZeroVerifierEmergencyStop internal _verifierEstop;
+    RiscZeroGroth16Verifier internal _verifier;
+
+    /// @notice Determines the contract address of TimelockController from the environment.
+    /// @dev Uses the TIMELOCK_CONTROLLER environment variable.
+    function timelockController() internal returns (TimelockController) {
+        if (address(_timelockController) != address(0)) {
+            return _timelockController;
+        }
+        _timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
+        console2.log("Using TimelockController at address", address(_timelockController));
+        return _timelockController;
+    }
+
+    /// @notice Determines the contract address of RiscZeroVerifierRouter from the environment.
+    /// @dev Uses the VERIFIER_ROUTER environment variable.
+    function verifierRouter() internal returns (RiscZeroVerifierRouter) {
+        if (address(_verifierRouter) != address(0)) {
+            return _verifierRouter;
+        }
+        _verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
+        console2.log("Using RiscZeroVerifierRouter at address", address(_verifierRouter));
+        return _verifierRouter;
+    }
+
+    /// @notice Determines the contract address of RiscZeroVerifierRouter from the environment.
+    /// @dev Uses the VERIFIER_ESTOP environment variable.
+    function verifierEstop() internal returns (RiscZeroVerifierEmergencyStop) {
+        if (address(_verifierEstop) != address(0)) {
+            return _verifierEstop;
+        }
+        _verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
+        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(_verifierEstop));
+        return _verifierEstop;
+    }
+
+    /// @notice Determines the contract address of RiscZeroGroth16Verifier from the environment.
+    /// @dev Uses the VERIFIER_ESTOP environment variable, and gets the proxied verifier.
+    // NOTE: This assumes the verifier is a RiscZeroGroth16Verifier. In the future, this may not
+    // be a valid assumption, once we introduce other verifier types.
+    function verifier() internal returns (RiscZeroGroth16Verifier) {
+        if (address(_verifier) != address(0)) {
+            return _verifier;
+        }
+        _verifier = RiscZeroGroth16Verifier(address(verifierEstop().verifier()));
+        console2.log("Using RiscZeroGroth16Verifier at address", address(_verifier));
+        return _verifier;
+    }
+}
+
 /// @notice Deployment script for the timelocked router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * MIN_DELAY minimum delay in seconds for operations
@@ -51,7 +105,7 @@ function timelockControllerRole(TimelockController timelockController, string me
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract DeployTimelockRouter is Script {
+contract DeployTimelockRouter is RiscZeroManagementScript {
     function run() external {
         // initial minimum delay in seconds for operations
         uint256 minDelay = vm.envUint("MIN_DELAY");
@@ -73,12 +127,12 @@ contract DeployTimelockRouter is Script {
 
         // Deploy new contracts
         vm.broadcast();
-        TimelockController timelockController = new TimelockController(minDelay, proposers, executors, admin);
-        console2.log("Deployed TimelockController to", address(timelockController));
+        _timelockController = new TimelockController(minDelay, proposers, executors, admin);
+        console2.log("Deployed TimelockController to", address(timelockController()));
 
         vm.broadcast();
-        RiscZeroVerifierRouter verifierRouter = new RiscZeroVerifierRouter(address(timelockController));
-        console2.log("Deployed RiscZeroVerifierRouter to", address(verifierRouter));
+        _verifierRouter = new RiscZeroVerifierRouter(address(timelockController()));
+        console2.log("Deployed RiscZeroVerifierRouter to", address(verifierRouter()));
     }
 }
 
@@ -91,41 +145,33 @@ contract DeployTimelockRouter is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ScheduleDeployEstopVerifier is Script {
+contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
     function run() external {
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
-        RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
-        console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
-        require(verifierRouter.owner() == address(timelockController), "timelock controller must own the verifier router");
-
         // Deploy new contracts
         vm.broadcast();
-        RiscZeroGroth16Verifier verifier =
+        _verifier =
             new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier()));
 
         vm.broadcast();
-        RiscZeroVerifierEmergencyStop verifierEstop = new RiscZeroVerifierEmergencyStop(verifier, verifierEstopOwner);
-        console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop));
+        _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
+        console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop()));
 
         // Schedule the 'addVerifier()' request
-        bytes4 selector = verifier.SELECTOR();
+        bytes4 selector = verifier().SELECTOR();
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
+        bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
 
         vm.broadcast();
-        timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(address(verifierRouter()), 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -137,30 +183,18 @@ contract ScheduleDeployEstopVerifier is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract FinishDeployEstopVerifier is Script {
+contract FinishDeployEstopVerifier is RiscZeroManagementScript {
     function run() external {
         // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
-        RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
-        console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
-
-        RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
-        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
-
-        RiscZeroGroth16Verifier verifier = RiscZeroGroth16Verifier(address(verifierEstop.verifier()));
-        console2.log("Using RiscZeroGroth16Verifier at address", address(verifier));
-
         // Execute the 'addVerifier()' request
-        bytes4 selector = verifier.SELECTOR();
+        bytes4 selector = verifier().SELECTOR();
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
+        bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
 
         vm.broadcast();
-        timelockController.execute(address(verifierRouter), 0, data, 0, 0);
+        timelockController().execute(address(verifierRouter()), 0, data, 0, 0);
     }
 }
 
@@ -173,27 +207,20 @@ contract FinishDeployEstopVerifier is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ScheduleRemoveVerifier is Script {
+contract ScheduleRemoveVerifier is RiscZeroManagementScript {
     function run() external {
         bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
-        RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
-        console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
-
         // Schedule the 'removeVerifier()' request
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
+        bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
 
         vm.broadcast();
-        timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(address(verifierRouter()), 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -205,24 +232,17 @@ contract ScheduleRemoveVerifier is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract FinishRemoveVerifier is Script {
+contract FinishRemoveVerifier is RiscZeroManagementScript {
     function run() external {
         bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
-        RiscZeroVerifierRouter verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
-        console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
-
         // Execute the 'removeVerifier()' request
-        bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
+        bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
 
         vm.broadcast();
-        timelockController.execute(address(verifierRouter), 0, data, 0, 0);
+        timelockController().execute(address(verifierRouter()), 0, data, 0, 0);
     }
 }
 
@@ -234,23 +254,19 @@ contract FinishRemoveVerifier is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ScheduleUpdateDelay is Script {
+contract ScheduleUpdateDelay is RiscZeroManagementScript {
     function run() external {
         uint256 minDelay = vm.envUint("MIN_DELAY");
         console2.log("minDelay:", minDelay);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Schedule the 'updateDelay()' request
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
+        bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
 
         vm.broadcast();
-        timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(address(timelockController()), 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -261,20 +277,16 @@ contract ScheduleUpdateDelay is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract FinishUpdateDelay is Script {
+contract FinishUpdateDelay is RiscZeroManagementScript {
     function run() external {
         uint256 minDelay = vm.envUint("MIN_DELAY");
         console2.log("minDelay:", minDelay);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Execute the 'updateDelay()' request
-        bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
+        bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
 
         vm.broadcast();
-        timelockController.execute(address(timelockController), 0, data, 0, 0);
+        timelockController().execute(address(timelockController()), 0, data, 0, 0);
     }
 }
 
@@ -287,7 +299,7 @@ contract FinishUpdateDelay is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ScheduleGrantRole is Script {
+contract ScheduleGrantRole is RiscZeroManagementScript {
     function run() external {
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
@@ -295,22 +307,18 @@ contract ScheduleGrantRole is Script {
         address account = vm.envAddress("ACCOUNT");
         console2.log("account:", account);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Schedule the 'grantRole()' request
-        bytes32 role = timelockControllerRole(timelockController, roleStr);
+        bytes32 role = timelockControllerRole(timelockController(), roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
+        bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
 
         vm.broadcast();
-        timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(address(timelockController()), 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -322,7 +330,7 @@ contract ScheduleGrantRole is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract FinishGrantRole is Script {
+contract FinishGrantRole is RiscZeroManagementScript {
     function run() external {
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
@@ -330,19 +338,15 @@ contract FinishGrantRole is Script {
         address account = vm.envAddress("ACCOUNT");
         console2.log("account:", account);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Execute the 'grantRole()' request
-        bytes32 role = timelockControllerRole(timelockController, roleStr);
+        bytes32 role = timelockControllerRole(timelockController(), roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
-        bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
+        bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
 
         vm.broadcast();
-        timelockController.execute(address(timelockController), 0, data, 0, 0);
+        timelockController().execute(address(timelockController()), 0, data, 0, 0);
     }
 }
 
@@ -355,7 +359,7 @@ contract FinishGrantRole is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ScheduleRevokeRole is Script {
+contract ScheduleRevokeRole is RiscZeroManagementScript {
     function run() external {
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
@@ -363,22 +367,18 @@ contract ScheduleRevokeRole is Script {
         address account = vm.envAddress("ACCOUNT");
         console2.log("account:", account);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Schedule the 'grantRole()' request
-        bytes32 role = timelockControllerRole(timelockController, roleStr);
+        bytes32 role = timelockControllerRole(timelockController(), roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
+        bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
 
         vm.broadcast();
-        timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(address(timelockController()), 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -390,7 +390,7 @@ contract ScheduleRevokeRole is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract FinishRevokeRole is Script {
+contract FinishRevokeRole is RiscZeroManagementScript {
     function run() external {
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
@@ -398,19 +398,15 @@ contract FinishRevokeRole is Script {
         address account = vm.envAddress("ACCOUNT");
         console2.log("account:", account);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Execute the 'grantRole()' request
-        bytes32 role = timelockControllerRole(timelockController, roleStr);
+        bytes32 role = timelockControllerRole(timelockController(), roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
-        bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
+        bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
 
         vm.broadcast();
-        timelockController.execute(address(timelockController), 0, data, 0, 0);
+        timelockController().execute(address(timelockController()), 0, data, 0, 0);
     }
 }
 
@@ -421,24 +417,20 @@ contract FinishRevokeRole is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract RenounceRole is Script {
+contract RenounceRole is RiscZeroManagementScript {
     function run() external {
         string memory roleStr = vm.envString("ROLE");
         console2.log("roleStr:", roleStr);
 
         console2.log("msg.sender:", msg.sender);
 
-        // Locate contracts
-        TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(timelockController));
-
         // Renounce the role
-        bytes32 role = timelockControllerRole(timelockController, roleStr);
+        bytes32 role = timelockControllerRole(timelockController(), roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
 
         vm.broadcast();
-        timelockController.renounceRole(role, msg.sender);
+        timelockController().renounceRole(role, msg.sender);
     }
 }
 
@@ -448,7 +440,7 @@ contract RenounceRole is Script {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ActivateEstop is Script {
+contract ActivateEstop is RiscZeroManagementScript {
     function run() external {
         // Locate contracts
         RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
