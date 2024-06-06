@@ -98,7 +98,6 @@ Deploy the contracts:
 
 ```console
 SELECTOR=0xaabbccdd \
-SCHEDULE_DELAY=1 \
 VERIFIER_ESTOP_OWNER=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
@@ -112,12 +111,12 @@ forge script contracts/script/Manage.s.sol:DeployEstopVerifier \
 == Logs ==
   selector:
   0xaabbccdd
-  scheduleDelay: 1
   verifierEstopOwner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   Deployed IRiscZeroVerifier to 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
   Deployed RiscZeroVerifierEmergencyStop to 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+  scheduleDelay: 1
 ```
 
 Save the e-stop contract address:
@@ -183,7 +182,6 @@ Schedule the action:
 
 ```console
 SELECTOR=0xaabbccdd \
-SCHEDULE_DELAY=1 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
@@ -196,9 +194,9 @@ forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
 == Logs ==
   selector:
   0xaabbccdd
-  scheduleDelay: 1
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  scheduleDelay: 1
 ```
 
 
@@ -243,7 +241,6 @@ Schedule the action:
 
 ```console
 MIN_DELAY=10 \
-SCHEDULE_DELAY=1 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:ScheduleUpdateDelay \
     --slow --broadcast --unlocked \
@@ -254,8 +251,8 @@ forge script contracts/script/Manage.s.sol:ScheduleUpdateDelay \
 
 == Logs ==
   minDelay: 10
-  scheduleDelay: 1
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  scheduleDelay: 1
 ```
 
 ### Finish the update
@@ -303,7 +300,6 @@ Schedule the action:
 ```console
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
-SCHEDULE_DELAY=1 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:ScheduleGrantRole \
     --slow --broadcast --unlocked \
@@ -315,10 +311,10 @@ forge script contracts/script/Manage.s.sol:ScheduleGrantRole \
 == Logs ==
   roleStr: executor
   account: 0x00000000000000AABBCcdDEefF00000000000000
-  scheduleDelay: 1
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   role: 
   0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+  scheduleDelay: 1
 ```
 
 Confirm the role code:
@@ -381,7 +377,6 @@ Schedule the action:
 ```console
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
-SCHEDULE_DELAY=1 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:ScheduleRevokeRole \
     --slow --broadcast --unlocked \
@@ -393,10 +388,10 @@ forge script contracts/script/Manage.s.sol:ScheduleRevokeRole \
 == Logs ==
   roleStr: executor
   account: 0x00000000000000AABBCcdDEefF00000000000000
-  scheduleDelay: 1
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   role: 
   0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
+  scheduleDelay: 1
 ```
 
 Confirm the role code:

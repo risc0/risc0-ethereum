@@ -33,14 +33,11 @@ function stringEq(string memory a, string memory b) view returns (bool) {
 function timelockControllerRole(TimelockController timelockController, string memory roleStr) view returns (bytes32) {
     if (stringEq(roleStr, "proposer")) {
         return timelockController.PROPOSER_ROLE();
-    }
-    else if (stringEq(roleStr, "executor")) {
+    } else if (stringEq(roleStr, "executor")) {
         return timelockController.EXECUTOR_ROLE();
-    }
-    else if (stringEq(roleStr, "canceller")) {
+    } else if (stringEq(roleStr, "canceller")) {
         return timelockController.CANCELLER_ROLE();
-    }
-    else {
+    } else {
         revert();
     }
 }
@@ -90,7 +87,7 @@ contract DeployTimelockRouter is Script {
 /// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
-///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * VERIFIER_ESTOP_OWNER owner of the emergency stop contract
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
@@ -104,9 +101,6 @@ contract DeployEstopVerifier is Script {
         bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
-
-        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
-        console2.log("scheduleDelay:", scheduleDelay);
 
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
@@ -126,6 +120,9 @@ contract DeployEstopVerifier is Script {
         console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop));
 
         // Schedule the 'addVerifier()' request
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        console2.log("scheduleDelay:", scheduleDelay);
+
         bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
 
         timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
@@ -173,7 +170,7 @@ contract FinishDeployEstopVerifier is Script {
 /// @notice Schedule removal of a verifier from the router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * SELECTOR the selector associated with this verifier
-///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
@@ -187,9 +184,6 @@ contract ScheduleRemoveVerifier is Script {
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
-        console2.log("scheduleDelay:", scheduleDelay);
-
         // Locate contracts
         TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
         console2.log("Using TimelockController at address", address(timelockController));
@@ -198,6 +192,9 @@ contract ScheduleRemoveVerifier is Script {
         console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
 
         // Schedule the 'removeVerifier()' request
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        console2.log("scheduleDelay:", scheduleDelay);
+
         bytes memory data = abi.encodeCall(verifierRouter.removeVerifier, selector);
 
         timelockController.schedule(address(verifierRouter), 0, data, 0, 0, scheduleDelay);
@@ -241,7 +238,7 @@ contract FinishRemoveVerifier is Script {
 /// @notice Schedule an update of the minimum timelock delay.
 /// @dev Use the following environment variable to control the deployment:
 ///     * MIN_DELAY minimum delay in seconds for operations
-///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
@@ -253,14 +250,14 @@ contract ScheduleUpdateDelay is Script {
         uint256 minDelay = vm.envUint("MIN_DELAY");
         console2.log("minDelay:", minDelay);
 
-        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
-        console2.log("scheduleDelay:", scheduleDelay);
-
         // Locate contracts
         TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
         console2.log("Using TimelockController at address", address(timelockController));
 
         // Schedule the 'updateDelay()' request
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        console2.log("scheduleDelay:", scheduleDelay);
+
         bytes memory data = abi.encodeCall(timelockController.updateDelay, minDelay);
 
         timelockController.schedule(address(timelockController), 0, data, 0, 0, scheduleDelay);
@@ -300,7 +297,7 @@ contract FinishUpdateDelay is Script {
 /// @dev Use the following environment variable to control the deployment:
 ///     * ROLE the role to be granted
 ///     * ACCOUNT the account to be granted the role
-///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
@@ -315,9 +312,6 @@ contract ScheduleGrantRole is Script {
         address account = vm.envAddress("ACCOUNT");
         console2.log("account:", account);
 
-        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
-        console2.log("scheduleDelay:", scheduleDelay);
-
         // Locate contracts
         TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
         console2.log("Using TimelockController at address", address(timelockController));
@@ -326,6 +320,9 @@ contract ScheduleGrantRole is Script {
         bytes32 role = timelockControllerRole(timelockController, roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
+
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(timelockController.grantRole, (role, account));
 
@@ -374,7 +371,7 @@ contract FinishGrantRole is Script {
 /// @dev Use the following environment variable to control the deployment:
 ///     * ROLE the role to be revoked
 ///     * ACCOUNT the account to be revoked of the role
-///     * SCHEDULE_DELAY minimum delay in seconds for the scheduled action
+///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
@@ -389,9 +386,6 @@ contract ScheduleRevokeRole is Script {
         address account = vm.envAddress("ACCOUNT");
         console2.log("account:", account);
 
-        uint256 scheduleDelay = vm.envUint("SCHEDULE_DELAY");
-        console2.log("scheduleDelay:", scheduleDelay);
-
         // Locate contracts
         TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
         console2.log("Using TimelockController at address", address(timelockController));
@@ -400,6 +394,9 @@ contract ScheduleRevokeRole is Script {
         bytes32 role = timelockControllerRole(timelockController, roleStr);
         console2.log("role: ");
         console2.logBytes32(role);
+
+        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
+        console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(timelockController.revokeRole, (role, account));
 
