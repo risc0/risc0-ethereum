@@ -204,7 +204,6 @@ bash contracts/script/manage ScheduleRemoveVerifier
   scheduleDelay: 1
 ```
 
-
 ### Finish the update
 
 Execute the action:
@@ -226,7 +225,7 @@ bash contracts/script/manage FinishRemoveVerifier
 
 Confirm it was removed:
 
-```
+```console
 cast call --rpc-url ${RPC_URL} \
     ${VERIFIER_ROUTER} \
     'getVerifier(bytes4)(address)' 0x310fe598
