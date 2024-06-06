@@ -52,8 +52,8 @@ MIN_DELAY=1 \
 PROPOSER="${PUBLIC_KEY}" \
 EXECUTOR="${PUBLIC_KEY}" \
 forge script contracts/script/Manage.s.sol:DeployTimelockRouter \
-    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast ${FORGE_DEPLOY_FLAGS} \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -102,8 +102,8 @@ VERIFIER_ESTOP_OWNER=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:DeployEstopVerifier \
-    --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast ${FORGE_DEPLOY_FLAGS} \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -149,8 +149,8 @@ TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 VERIFIER_ESTOP=${VERIFIER_ESTOP} \
 forge script contracts/script/Manage.s.sol:FinishDeployEstopVerifier \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -185,8 +185,8 @@ SELECTOR=0xaabbccdd \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -209,8 +209,8 @@ SELECTOR=0xaabbccdd \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 forge script contracts/script/Manage.s.sol:FinishRemoveVerifier \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -243,8 +243,8 @@ Schedule the action:
 MIN_DELAY=10 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:ScheduleUpdateDelay \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -263,8 +263,8 @@ Execute the action:
 MIN_DELAY=10 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:FinishUpdateDelay \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -302,8 +302,8 @@ ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:ScheduleGrantRole \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -335,8 +335,8 @@ ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:FinishGrantRole \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -379,8 +379,8 @@ ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:ScheduleRevokeRole \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -412,8 +412,8 @@ ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:FinishRevokeRole \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -450,8 +450,8 @@ ROLE="executor" \
 ACCOUNT=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 forge script contracts/script/Manage.s.sol:RenounceRole \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
@@ -482,8 +482,8 @@ Activate the emergency stop:
 ```console
 VERIFIER_ESTOP=${VERIFIER_ESTOP} \
 forge script contracts/script/Manage.s.sol:ActivateEstop \
-    --slow --broadcast --unlocked \
-    --sender ${PUBLIC_KEY} \
+    --slow --broadcast \
+    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
     --rpc-url ${RPC_URL}
 
 ...
