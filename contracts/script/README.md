@@ -1,5 +1,7 @@
 # Scripts
 
+Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
+
 ## Setup your environment
 
 ### Anvil
@@ -41,7 +43,20 @@ Example RPC URLs:
 
 ### Fireblocks
 
-TODO! For now, refer to the [Fireblocks docs](https://developers.fireblocks.com/docs/ethereum-smart-contract-development#using-foundry).
+Requires the [Fireblocks integration for Foundry](https://developers.fireblocks.com/docs/ethereum-smart-contract-development#using-foundry).
+
+Set your public key, your Etherscan API key, and the necessary parameters for Fireblocks:
+
+```console
+export PUBLIC_KEY="..."
+export ETHERSCAN_API_KEY="..."
+export FORGE_DEPLOY_FLAGS="--verify"
+export FIREBLOCKS_API_KEY="..."
+export FIREBLOCKS_API_PRIVATE_KEY_PATH="/path/to/secret.key"
+export FIREBLOCKS_CHAIN_ID="1 for mainnet, 11155111 for Sepolia"
+```
+
+Then, in the instructions below, pass the `--fireblocks` flag to the `manage` script.
 
 ## Deploy the timelocked router
 
@@ -51,10 +66,7 @@ Deploy the contracts:
 MIN_DELAY=1 \
 PROPOSER="${PUBLIC_KEY}" \
 EXECUTOR="${PUBLIC_KEY}" \
-forge script contracts/script/Manage.s.sol:DeployTimelockRouter \
-    --slow --broadcast ${FORGE_DEPLOY_FLAGS} \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage DeployTimelockRouter
 
 ...
 
@@ -101,10 +113,7 @@ SELECTOR=0xaabbccdd \
 VERIFIER_ESTOP_OWNER=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
-forge script contracts/script/Manage.s.sol:DeployEstopVerifier \
-    --slow --broadcast ${FORGE_DEPLOY_FLAGS} \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage DeployEstopVerifier
 
 ...
 
@@ -148,10 +157,7 @@ SELECTOR=0xaabbccdd \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
 VERIFIER_ESTOP=${VERIFIER_ESTOP} \
-forge script contracts/script/Manage.s.sol:FinishDeployEstopVerifier \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage FinishDeployEstopVerifier
 
 ...
 
@@ -184,10 +190,7 @@ Schedule the action:
 SELECTOR=0xaabbccdd \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
-forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage ScheduleRemoveVerifier
 
 ...
 
@@ -208,10 +211,7 @@ Execute the action:
 SELECTOR=0xaabbccdd \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER} \
-forge script contracts/script/Manage.s.sol:FinishRemoveVerifier \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage FinishRemoveVerifier
 
 ...
 
@@ -242,10 +242,7 @@ Schedule the action:
 ```console
 MIN_DELAY=10 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:ScheduleUpdateDelay \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage ScheduleUpdateDelay
 
 ...
 
@@ -262,10 +259,7 @@ Execute the action:
 ```console
 MIN_DELAY=10 \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:FinishUpdateDelay \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage FinishUpdateDelay
 
 ...
 
@@ -301,10 +295,7 @@ Schedule the action:
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:ScheduleGrantRole \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage ScheduleGrantRole
 
 ...
 
@@ -334,10 +325,7 @@ Schedule the action:
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:FinishGrantRole \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage FinishGrantRole
 
 ...
 
@@ -378,10 +366,7 @@ Schedule the action:
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:ScheduleRevokeRole \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage ScheduleRevokeRole
 
 ...
 
@@ -411,10 +396,7 @@ Schedule the action:
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:FinishRevokeRole \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage FinishRevokeRole
 
 ...
 
@@ -449,10 +431,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 ROLE="executor" \
 ACCOUNT=${PUBLIC_KEY} \
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-forge script contracts/script/Manage.s.sol:RenounceRole \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage RenounceRole
 
 ...
 
@@ -481,10 +460,7 @@ Activate the emergency stop:
 
 ```console
 VERIFIER_ESTOP=${VERIFIER_ESTOP} \
-forge script contracts/script/Manage.s.sol:ActivateEstop \
-    --slow --broadcast \
-    --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-    --rpc-url ${RPC_URL}
+bash contracts/script/manage ActivateEstop
 
 ...
 
