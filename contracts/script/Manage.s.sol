@@ -169,9 +169,15 @@ contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
         console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
+        address dest = address(verifierRouter());
+
+        // Simulate the call and check that it will not revert.
+        vm.prank(address(timelockController()));
+        (bool success,) = dest.call(data);
+        require(success, "simulation of transaction to schedule failed");
 
         vm.broadcast();
-        timelockController().schedule(address(verifierRouter()), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -218,9 +224,15 @@ contract ScheduleRemoveVerifier is RiscZeroManagementScript {
         console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
+        address dest = address(verifierRouter());
+
+        // Simulate the call and check that it will not revert.
+        vm.prank(address(timelockController()));
+        (bool success,) = dest.call(data);
+        require(success, "simulation of transaction to schedule failed");
 
         vm.broadcast();
-        timelockController().schedule(address(verifierRouter()), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -264,9 +276,15 @@ contract ScheduleUpdateDelay is RiscZeroManagementScript {
         console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
+        address dest = address(timelockController());
+
+        // Simulate the call and check that it will not revert.
+        vm.prank(address(timelockController()));
+        (bool success,) = dest.call(data);
+        require(success, "simulation of transaction to schedule failed");
 
         vm.broadcast();
-        timelockController().schedule(address(timelockController()), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -316,9 +334,15 @@ contract ScheduleGrantRole is RiscZeroManagementScript {
         console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
+        address dest = address(timelockController());
+
+        // Simulate the call and check that it will not revert.
+        vm.prank(address(timelockController()));
+        (bool success,) = dest.call(data);
+        require(success, "simulation of transaction to schedule failed");
 
         vm.broadcast();
-        timelockController().schedule(address(timelockController()), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
 
@@ -376,9 +400,15 @@ contract ScheduleRevokeRole is RiscZeroManagementScript {
         console2.log("scheduleDelay:", scheduleDelay);
 
         bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
+        address dest = address(timelockController());
+
+        // Simulate the call and check that it will not revert.
+        vm.prank(address(timelockController()));
+        (bool success,) = dest.call(data);
+        require(success, "simulation of transaction to schedule failed");
 
         vm.broadcast();
-        timelockController().schedule(address(timelockController()), 0, data, 0, 0, scheduleDelay);
+        timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
 
