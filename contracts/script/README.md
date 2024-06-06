@@ -54,6 +54,9 @@ export FORGE_DEPLOY_FLAGS="--verify"
 export FIREBLOCKS_API_KEY="..."
 export FIREBLOCKS_API_PRIVATE_KEY_PATH="/path/to/secret.key"
 export FIREBLOCKS_CHAIN_ID="1 for mainnet, 11155111 for Sepolia"
+
+# IF YOU ARE IN A SANDBOX ENVIRONMENT, be sure to also set this:
+export FIREBLOCKS_API_BASE_URL="https://sandbox-api.fireblocks.io"
 ```
 
 Then, in the instructions below, pass the `--fireblocks` flag to the `manage` script.
