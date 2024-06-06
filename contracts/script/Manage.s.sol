@@ -86,7 +86,6 @@ contract DeployTimelockRouter is Script {
 
 /// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
-///     * SELECTOR the selector associated with this verifier
 ///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * VERIFIER_ESTOP_OWNER owner of the emergency stop contract
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
@@ -97,10 +96,6 @@ contract DeployTimelockRouter is Script {
 contract DeployEstopVerifier is Script {
     function run() external {
         vm.startBroadcast();
-
-        bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
-        console2.log("selector:");
-        console2.logBytes4(selector);
 
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
@@ -113,13 +108,18 @@ contract DeployEstopVerifier is Script {
         console2.log("Using RiscZeroVerifierRouter at address", address(verifierRouter));
 
         // Deploy new contracts
-        IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("Deployed IRiscZeroVerifier to", address(verifier));
+        RiscZeroGroth16Verifier verifier =
+            new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
         RiscZeroVerifierEmergencyStop verifierEstop = new RiscZeroVerifierEmergencyStop(verifier, verifierEstopOwner);
         console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop));
 
         // Schedule the 'addVerifier()' request
+        bytes4 selector = verifier.SELECTOR();
+        console2.log("selector:");
+        console2.logBytes4(selector);
+
         uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController.getMinDelay());
         console2.log("scheduleDelay:", scheduleDelay);
 
@@ -133,7 +133,6 @@ contract DeployEstopVerifier is Script {
 
 /// @notice Finish deployment of RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
-///     * SELECTOR the selector associated with this verifier
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
@@ -143,10 +142,6 @@ contract DeployEstopVerifier is Script {
 contract FinishDeployEstopVerifier is Script {
     function run() external {
         vm.startBroadcast();
-
-        bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
-        console2.log("selector:");
-        console2.logBytes4(selector);
 
         // Locate contracts
         TimelockController timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
@@ -158,7 +153,14 @@ contract FinishDeployEstopVerifier is Script {
         RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
         console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
 
+        RiscZeroGroth16Verifier verifier = RiscZeroGroth16Verifier(address(verifierEstop.verifier()));
+        console2.log("Using RiscZeroGroth16Verifier at address", address(verifier));
+
         // Execute the 'addVerifier()' request
+        bytes4 selector = verifier.SELECTOR();
+        console2.log("selector:");
+        console2.logBytes4(selector);
+
         bytes memory data = abi.encodeCall(verifierRouter.addVerifier, (selector, verifierEstop));
 
         timelockController.execute(address(verifierRouter), 0, data, 0, 0);

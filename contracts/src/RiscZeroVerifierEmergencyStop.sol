@@ -23,7 +23,7 @@ import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Wrapper for an IRiscZeroVerifier contract, providing emergency stop function.
 contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable2Step, Pausable {
-    IRiscZeroVerifier immutable verifier;
+    IRiscZeroVerifier public immutable verifier;
 
     /// @notice Error raised when calling estop with a receipt that cannot be verified as proof
     /// of an exploit on the verifier contract.
