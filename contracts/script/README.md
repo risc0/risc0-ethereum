@@ -176,7 +176,7 @@ cast call --rpc-url ${RPC_URL} \
 
 This is a two-step process, guarded by the `TimelockController`.
 
-### Schedule verifier for removal
+### Schedule the update
 
 Schedule the action:
 
@@ -200,7 +200,7 @@ forge script contracts/script/Manage.s.sol:ScheduleRemoveVerifier \
 ```
 
 
-### Finish removing the verifier
+### Finish the update
 
 Execute the action:
 
