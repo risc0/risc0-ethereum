@@ -2,6 +2,9 @@
 
 Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
 
+> [!NOTE]
+> Running the `manage` commands will run in simulation mode (i.e. will not send transactions) unless the `--broadcast` flag is passed.
+
 ## Setup your environment
 
 ### Anvil
