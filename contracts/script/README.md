@@ -70,8 +70,8 @@ Deploy the contracts:
 
 ```console
 MIN_DELAY=1 \
-PROPOSER="${PUBLIC_KEY}" \
-EXECUTOR="${PUBLIC_KEY}" \
+PROPOSER="${PUBLIC_KEY:?}" \
+EXECUTOR="${PUBLIC_KEY:?}" \
 bash contracts/script/manage DeployTimelockRouter
 
 ...
@@ -85,7 +85,7 @@ bash contracts/script/manage DeployTimelockRouter
   Deployed RiscZeroVerifierRouter to 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 ```
 
-Save the contract addresses:
+Look at the command logs and save the contract addresses:
 
 ```console
 export TIMELOCK_CONTROLLER="0x5FbDB2315678afecb367f032d93F642f64180aa3"
@@ -95,13 +95,13 @@ export VERIFIER_ROUTER="0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
 Test the deployment:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'getMinDelay()(uint256)'
 1
 
-cast call --rpc-url ${RPC_URL} \
-    ${VERIFIER_ROUTER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${VERIFIER_ROUTER:?} \
     'owner()(address)'
 0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
@@ -115,9 +115,9 @@ This is a two-step process, guarded by the `TimelockController`.
 Deploy the contracts:
 
 ```console
-VERIFIER_ESTOP_OWNER=${PUBLIC_KEY} \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-VERIFIER_ROUTER=${VERIFIER_ROUTER} \
+VERIFIER_ESTOP_OWNER=${PUBLIC_KEY:?} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
 bash contracts/script/manage ScheduleDeployEstopVerifier
 
 ...
@@ -133,7 +133,7 @@ bash contracts/script/manage ScheduleDeployEstopVerifier
   scheduleDelay: 1
 ```
 
-Save the e-stop contract address:
+Look at the command logs and save the e-stop contract address:
 
 ```console
 export VERIFIER_ESTOP="0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
@@ -142,13 +142,13 @@ export VERIFIER_ESTOP="0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
 Test the deployment:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${VERIFIER_ESTOP} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${VERIFIER_ESTOP:?} \
     'paused()(bool)'
 false
 
-cast call --rpc-url ${RPC_URL} \
-    ${VERIFIER_ESTOP} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${VERIFIER_ESTOP:?} \
     'owner()(address)'
 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
@@ -158,9 +158,9 @@ cast call --rpc-url ${RPC_URL} \
 Tell the `TimelockController` to execute the action:
 
 ```console
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-VERIFIER_ROUTER=${VERIFIER_ROUTER} \
-VERIFIER_ESTOP=${VERIFIER_ESTOP} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
+VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
 bash contracts/script/manage FinishDeployEstopVerifier
 
 ...
@@ -177,9 +177,14 @@ bash contracts/script/manage FinishDeployEstopVerifier
 Test the deployment:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${VERIFIER_ROUTER} \
-    'getVerifier(bytes4)(address)' 0x310fe598
+export VERIFIER="$(cast call --rpc-url ${RPC_URL:?} ${VERIFIER_ESTOP:?} 'verifier()(address)')"
+export SELECTOR="$(cast call --rpc-url ${RPC_URL:?} ${VERIFIER:?} 'SELECTOR()(bytes4)' | head -c 10)"
+```
+
+```console
+cast call --rpc-url ${RPC_URL:?} \
+    ${VERIFIER_ROUTER:?} \
+    'getVerifier(bytes4)(address)' ${SELECTOR:?}
 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
 ```
 
@@ -192,9 +197,8 @@ This is a two-step process, guarded by the `TimelockController`.
 Schedule the action:
 
 ```console
-SELECTOR=0x310fe598 \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-VERIFIER_ROUTER=${VERIFIER_ROUTER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
 bash contracts/script/manage ScheduleRemoveVerifier
 
 ...
@@ -212,9 +216,8 @@ bash contracts/script/manage ScheduleRemoveVerifier
 Execute the action:
 
 ```console
-SELECTOR=0x310fe598 \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
-VERIFIER_ROUTER=${VERIFIER_ROUTER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
 bash contracts/script/manage FinishRemoveVerifier
 
 ...
@@ -229,9 +232,9 @@ bash contracts/script/manage FinishRemoveVerifier
 Confirm it was removed:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${VERIFIER_ROUTER} \
-    'getVerifier(bytes4)(address)' 0x310fe598
+cast call --rpc-url ${RPC_URL:?} \
+    ${VERIFIER_ROUTER:?} \
+    'getVerifier(bytes4)(address)' ${SELECTOR:?}
 Error: ... execution reverted
 ```
 
@@ -245,7 +248,7 @@ Schedule the action:
 
 ```console
 MIN_DELAY=10 \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage ScheduleUpdateDelay
 
 ...
@@ -262,7 +265,7 @@ Execute the action:
 
 ```console
 MIN_DELAY=10 \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage FinishUpdateDelay
 
 ...
@@ -275,8 +278,8 @@ bash contracts/script/manage FinishUpdateDelay
 Confirm the update:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'getMinDelay()(uint256)'
 10
 ```
@@ -298,7 +301,7 @@ Schedule the action:
 ```console
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage ScheduleGrantRole
 
 ...
@@ -315,8 +318,8 @@ bash contracts/script/manage ScheduleGrantRole
 Confirm the role code:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'EXECUTOR_ROLE()(bytes32)'
 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
 ```
@@ -328,7 +331,7 @@ Schedule the action:
 ```console
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage FinishGrantRole
 
 ...
@@ -344,8 +347,8 @@ bash contracts/script/manage FinishGrantRole
 Confirm the update:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'hasRole(bytes32, address)(bool)' \
     0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63 \
     0x00000000000000aabbccddeeff00000000000000
@@ -369,7 +372,7 @@ Schedule the action:
 ```console
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage ScheduleRevokeRole
 
 ...
@@ -386,8 +389,8 @@ bash contracts/script/manage ScheduleRevokeRole
 Confirm the role code:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'EXECUTOR_ROLE()(bytes32)'
 0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
 ```
@@ -399,7 +402,7 @@ Schedule the action:
 ```console
 ROLE="executor" \
 ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage FinishRevokeRole
 
 ...
@@ -415,8 +418,8 @@ bash contracts/script/manage FinishRevokeRole
 Confirm the update:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'hasRole(bytes32, address)(bool)' \
     0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63 \
     0x00000000000000aabbccddeeff00000000000000
@@ -433,7 +436,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 
 ```console
 ROLE="executor" \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER} \
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 bash contracts/script/manage RenounceRole
 
 ...
@@ -449,11 +452,11 @@ bash contracts/script/manage RenounceRole
 Confirm:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${TIMELOCK_CONTROLLER} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
     'hasRole(bytes32, address)(bool)' \
     0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63 \
-    ${PUBLIC_KEY}
+    ${PUBLIC_KEY:?}
 false
 ```
 
@@ -462,7 +465,7 @@ false
 Activate the emergency stop:
 
 ```console
-VERIFIER_ESTOP=${VERIFIER_ESTOP} \
+VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
 bash contracts/script/manage ActivateEstop
 
 ...
@@ -474,8 +477,8 @@ bash contracts/script/manage ActivateEstop
 Test the activation:
 
 ```console
-cast call --rpc-url ${RPC_URL} \
-    ${VERIFIER_ESTOP} \
+cast call --rpc-url ${RPC_URL:?} \
+    ${VERIFIER_ESTOP:?} \
     'paused()(bool)'
 true
 ```

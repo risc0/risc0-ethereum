@@ -94,6 +94,15 @@ contract RiscZeroManagementScript is Script {
         console2.log("Using RiscZeroGroth16Verifier at address", address(_verifier));
         return _verifier;
     }
+
+    /// @notice Simulates a call to check if it will succeed, given the current EVM state.
+    function simulate(address dest, bytes memory data) internal {
+        uint256 snapshot = vm.snapshot();
+        vm.prank(address(timelockController()));
+        (bool success,) = dest.call(data);
+        require(success, "simulation of transaction to schedule failed");
+        vm.revertTo(snapshot);
+    }
 }
 
 /// @notice Deployment script for the timelocked router.
@@ -170,11 +179,7 @@ contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
         address dest = address(verifierRouter());
-
-        // Simulate the call and check that it will not revert.
-        vm.prank(address(timelockController()));
-        (bool success,) = dest.call(data);
-        require(success, "simulation of transaction to schedule failed");
+        simulate(dest, data);
 
         vm.broadcast();
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
@@ -225,11 +230,7 @@ contract ScheduleRemoveVerifier is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
         address dest = address(verifierRouter());
-
-        // Simulate the call and check that it will not revert.
-        vm.prank(address(timelockController()));
-        (bool success,) = dest.call(data);
-        require(success, "simulation of transaction to schedule failed");
+        simulate(dest, data);
 
         vm.broadcast();
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
@@ -277,11 +278,7 @@ contract ScheduleUpdateDelay is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
         address dest = address(timelockController());
-
-        // Simulate the call and check that it will not revert.
-        vm.prank(address(timelockController()));
-        (bool success,) = dest.call(data);
-        require(success, "simulation of transaction to schedule failed");
+        simulate(dest, data);
 
         vm.broadcast();
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
@@ -335,11 +332,7 @@ contract ScheduleGrantRole is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
         address dest = address(timelockController());
-
-        // Simulate the call and check that it will not revert.
-        vm.prank(address(timelockController()));
-        (bool success,) = dest.call(data);
-        require(success, "simulation of transaction to schedule failed");
+        simulate(dest, data);
 
         vm.broadcast();
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
@@ -401,11 +394,7 @@ contract ScheduleRevokeRole is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
         address dest = address(timelockController());
-
-        // Simulate the call and check that it will not revert.
-        vm.prank(address(timelockController()));
-        (bool success,) = dest.call(data);
-        require(success, "simulation of transaction to schedule failed");
+        simulate(dest, data);
 
         vm.broadcast();
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
