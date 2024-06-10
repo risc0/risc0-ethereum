@@ -5,7 +5,7 @@
 # RISC Zero Ethereum
 
 [RISC Zero] is a zero-knowledge verifiable general computing platform, with [Ethereum] integration.
-This repository contains [Solidity verifier contracts][contracts],[Steel] EVM view call library, and supporting code.
+This repository contains [Solidity verifier contracts][contracts], [Steel] EVM view call library, and supporting code.
 
 If you are looking to get started using RISC Zero in the application on Ethereum, the best place to look is the [Foundry template][template].
 
