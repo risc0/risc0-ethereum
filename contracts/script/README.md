@@ -66,6 +66,12 @@ export FIREBLOCKS_API_BASE_URL="https://sandbox-api.fireblocks.io"
 
 Then, in the instructions below, pass the `--fireblocks` flag to the `manage` script.
 
+> [!NOTE]
+> Your Fireblocks API user will need to have "Editor" permissions (i.e., ability to propose transactions for signing, but not necessarily the ability to sign transactions).
+
+> [!NOTE]
+> To deploy contracts using Fireblocks, you will need to add the null address (`0x0000000000000000000000000000000000000000`) to your Fireblocks whitelist.
+
 ## Deploy the timelocked router
 
 Deploy the contracts:
