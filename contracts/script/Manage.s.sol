@@ -161,8 +161,7 @@ contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
 
         // Deploy new contracts
         vm.broadcast();
-        _verifier =
-            new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+        _verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier()));
 
         vm.broadcast();
