@@ -48,6 +48,8 @@ Example RPC URLs:
 
 Requires the [Fireblocks integration for Foundry](https://developers.fireblocks.com/docs/ethereum-smart-contract-development#using-foundry).
 
+Also requires that you have a [Fireblocks API account](https://developers.fireblocks.com/docs/quickstart).
+
 Set your public key, your Etherscan API key, and the necessary parameters for Fireblocks:
 
 ```console

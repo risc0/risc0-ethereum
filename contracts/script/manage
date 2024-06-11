@@ -59,15 +59,15 @@ if [ $FIREBLOCKS -gt 0 ]; then
     fi
 
     # Run forge via fireblocks
-    fireblocks-json-rpc --http -- \ 
+    fireblocks-json-rpc --http -- \
         forge script ${SCRIPT_FILE}:${SCRIPT_FUNCTION} \
-        --slow --unlocked ${FORGE_DEPLOY_FLAGS} \
+        --slow --unlocked ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS} \
         --sender ${PUBLIC_KEY} \
-        --rpc-url {} "$FORGE_SCRIPT_FLAGS"
+        --rpc-url {}
 else
     # Run forge
     forge script ${SCRIPT_FILE}:${SCRIPT_FUNCTION} \
-        --slow ${FORGE_DEPLOY_FLAGS} \
+        --slow ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS} \
         --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-        --rpc-url ${RPC_URL}  "$FORGE_SCRIPT_FLAGS"
+        --rpc-url ${RPC_URL}
 fi
