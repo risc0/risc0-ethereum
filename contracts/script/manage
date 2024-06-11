@@ -7,12 +7,17 @@ SCRIPT_FILE="${SCRIPT_DIR}/Manage.s.sol"
 FIREBLOCKS=0
 
 POSITIONAL_ARGS=()
+FORGE_SCRIPT_FLAGS=()
 
 while [[ $# -gt 0 ]]; do
     case $1 in
     -f|--fireblocks)
         FIREBLOCKS=1
         shift # past argument
+        ;;
+    --broadcast)
+        FORGE_SCRIPT_FLAGS+=("$1") 
+        shift
         ;;
     -*|--*)
         echo "Unknown option $1"
@@ -32,7 +37,7 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 SCRIPT_FUNCTION="${1:-help}"
 if [ "${SCRIPT_FUNCTION}" == "help" ]; then
     echo "Usage:"
-    echo "  bash ${0} <SCRIPT_FUNCTION> [--fireblocks]"
+    echo "  bash ${0} <SCRIPT_FUNCTION> [--fireblocks] [--broadcast]"
     echo "See README.md for a list of functions"
     exit 0
 fi
@@ -56,13 +61,13 @@ if [ $FIREBLOCKS -gt 0 ]; then
     # Run forge via fireblocks
     fireblocks-json-rpc --http -- \ 
         forge script ${SCRIPT_FILE}:${SCRIPT_FUNCTION} \
-        --slow --broadcast --unlocked ${FORGE_DEPLOY_FLAGS} \
+        --slow --unlocked ${FORGE_DEPLOY_FLAGS} \
         --sender ${PUBLIC_KEY} \
-        --rpc-url {}
+        --rpc-url {} "$FORGE_SCRIPT_FLAGS"
 else
     # Run forge
     forge script ${SCRIPT_FILE}:${SCRIPT_FUNCTION} \
-        --slow --broadcast ${FORGE_DEPLOY_FLAGS} \
+        --slow ${FORGE_DEPLOY_FLAGS} \
         --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
-        --rpc-url ${RPC_URL}
+        --rpc-url ${RPC_URL}  "$FORGE_SCRIPT_FLAGS"
 fi
