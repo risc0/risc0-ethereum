@@ -10,16 +10,20 @@
    * One PR should be to the `release-x.y` branch and do the following:
 
      <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
-     * Bump the version of all crates in the workspace to `x.y.z`.
+     * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
      * Remove the note at the top of `README.md` about being on the `main` branch.
-     * Change the reference for all `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
-     <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarentees the checked in lock files are complete and consistent -->
-     * Run `cargo update` in all workspaces. (You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`)
+     * Update `risc0` crate dependencies. In all workspaces:
+         >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
+         * Change the reference for `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
+         <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarentees the checked in lock files are complete and consistent -->
+         * Run `cargo update`.
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
    * The other PR should bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
+
+   Also tag the release as `steel-v0.X.Y`, as long as Steel is pre-1.0 and so on a different version than the rest of the crates.
 
    Include a summary of the changes in the release notes.
 
@@ -35,7 +39,16 @@
    > NOTE: We intend to publish more of the crates in the future.
    > Blocking issue is that the other crates depend on building Solidity smart contracts as part of a `build.rs` script, which makes it incompatible with `crates.io`.
 
-   <!-- TODO: Include the actual commands to publish -->
+   ```sh
+   # Log in to crates.io. Create a token that is restricted to what you need to do (e.g. publish update) and set an expiry.
+   cargo login
+   # Dry run to check that the package will publish. Look through the output, e.g. at version numbers, to confirm it makes sense.
+   cargo publish -p $PKG --dry-run
+   # Actually publish the crate
+   cargo publish -p $PKG
+   ```
+
+   See the [Cargo docs](https://doc.rust-lang.org/cargo/reference/publishing.html) for more details.
 
 5. When changes have been made to the verifier contract, deploy a new verifier contract.
 
