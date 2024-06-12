@@ -72,6 +72,9 @@ Then, in the instructions below, pass the `--fireblocks` flag to the `manage` sc
 > [!NOTE]
 > To deploy contracts using Fireblocks, you might need to enable "one-time address transactions" in your Fireblocks workspace settings.
 
+> [!NOTE]
+> Before you approve any contract-call transactions, be sure you understand what the call does! When in doubt, use a [calldata decoder](https://calldata.swiss-knife.xyz/decoder).
+
 ## Deploy the timelocked router
 
 Deploy the contracts:
