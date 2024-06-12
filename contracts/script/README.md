@@ -53,6 +53,7 @@ Also requires that you have a [Fireblocks API account](https://developers.firebl
 Set your public key, your Etherscan API key, and the necessary parameters for Fireblocks:
 
 ```console
+export RPC_URL="..."
 export PUBLIC_KEY="..."
 export ETHERSCAN_API_KEY="..."
 export FORGE_DEPLOY_FLAGS="--verify"
