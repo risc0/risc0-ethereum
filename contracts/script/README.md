@@ -116,29 +116,22 @@ cast call --rpc-url ${RPC_URL:?} \
 
 ## Deploy a verifier with emergency stop mechanism
 
-This is a two-step process, guarded by the `TimelockController`.
+This is a 3-step process, guarded by the `TimelockController`.
 
-### Deploy the verifier and schedule addition to router
+### Deploy the verifier
 
 Deploy the contracts:
 
 ```console
 VERIFIER_ESTOP_OWNER=${PUBLIC_KEY:?} \
-TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
-VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
-bash contracts/script/manage ScheduleDeployEstopVerifier
+bash contracts/script/manage DeployEstopVerifier
 
 ...
 
 == Logs ==
   verifierEstopOwner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
-  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   Deployed RiscZeroGroth16Verifier to 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
   Deployed RiscZeroVerifierEmergencyStop to 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
-  selector:
-  0x310fe598
-  scheduleDelay: 1
 ```
 
 Look at the command logs and save the e-stop contract address:
@@ -161,25 +154,50 @@ cast call --rpc-url ${RPC_URL:?} \
 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
-### Finish adding verifier to router
+### Schedule the update
 
-Tell the `TimelockController` to execute the action:
+Schedule the action:
 
 ```console
 TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
 VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
 VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
-bash contracts/script/manage FinishDeployEstopVerifier
+bash contracts/script/manage ScheduleAddVerifier
 
 ...
 
 == Logs ==
-  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
-  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   Using RiscZeroVerifierEmergencyStop at address 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
   Using RiscZeroGroth16Verifier at address 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
   selector:
   0x310fe598
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  scheduleDelay: 1
+  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  Simulating call to 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  0xd0a6af30310fe59800000000000000000000000000000000000000000000000000000000000000000000000000000000cf7ed3acca5a467e9e704c703e8d87f634fb0fc9
+  Simulation successful
+```
+
+### Finish the update
+
+Execute the action:
+
+```console
+TIMELOCK_CONTROLLER=${TIMELOCK_CONTROLLER:?} \
+VERIFIER_ROUTER=${VERIFIER_ROUTER:?} \
+VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
+bash contracts/script/manage FinishAddVerifier
+
+...
+
+== Logs ==
+  Using RiscZeroVerifierEmergencyStop at address 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+  Using RiscZeroGroth16Verifier at address 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+  selector:
+  0x310fe598
+  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 
 Test the deployment:
@@ -215,8 +233,11 @@ bash contracts/script/manage ScheduleRemoveVerifier
   selector:
   0x310fe598
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
-  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
   scheduleDelay: 1
+  Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  Simulating call to 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  0x93d237f6310fe59800000000000000000000000000000000000000000000000000000000
+  Simulation successful
 ```
 
 ### Finish the update
@@ -233,8 +254,8 @@ bash contracts/script/manage FinishRemoveVerifier
 == Logs ==
   selector:
   0x310fe598
-  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   Using RiscZeroVerifierRouter at address 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+  Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
 ```
 
 Confirm it was removed:
@@ -265,6 +286,9 @@ bash contracts/script/manage ScheduleUpdateDelay
   minDelay: 10
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   scheduleDelay: 1
+  Simulating call to 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  0x64d62353000000000000000000000000000000000000000000000000000000000000000a
+  Simulation successful
 ```
 
 ### Finish the update
@@ -320,7 +344,10 @@ bash contracts/script/manage ScheduleGrantRole
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   role: 
   0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
-  scheduleDelay: 1
+  scheduleDelay: 10
+  Simulating call to 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  0x2f2ff15dd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e6300000000000000000000000000000000000000aabbccddeeff00000000000000
+  Simulation successful
 ```
 
 Confirm the role code:
@@ -391,7 +418,10 @@ bash contracts/script/manage ScheduleRevokeRole
   Using TimelockController at address 0x5FbDB2315678afecb367f032d93F642f64180aa3
   role: 
   0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63
-  scheduleDelay: 1
+  scheduleDelay: 10
+  Simulating call to 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  0xd547741fd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e6300000000000000000000000000000000000000aabbccddeeff00000000000000
+  Simulation successful
 ```
 
 Confirm the role code:

@@ -97,11 +97,14 @@ contract RiscZeroManagementScript is Script {
 
     /// @notice Simulates a call to check if it will succeed, given the current EVM state.
     function simulate(address dest, bytes memory data) internal {
+        console2.log("Simulating call to", dest);
+        console2.logBytes(data);
         uint256 snapshot = vm.snapshot();
         vm.prank(address(timelockController()));
         (bool success,) = dest.call(data);
         require(success, "simulation of transaction to schedule failed");
         vm.revertTo(snapshot);
+        console2.log("Simulation successful");
     }
 }
 
@@ -147,14 +150,11 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
 
 /// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
-///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * VERIFIER_ESTOP_OWNER owner of the emergency stop contract
-///     * TIMELOCK_CONTROLLER contract address of TimelockController
-///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
+contract DeployEstopVerifier is RiscZeroManagementScript {
     function run() external {
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
@@ -167,7 +167,20 @@ contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
         vm.broadcast();
         _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
         console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop()));
+    }
+}
 
+/// @notice Schedule addition of verifier to router.
+/// @dev Use the following environment variable to control the deployment:
+///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
+///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ScheduleAddVerifier is RiscZeroManagementScript {
+    function run() external {
         // Schedule the 'addVerifier()' request
         bytes4 selector = verifier().SELECTOR();
         console2.log("selector:");
@@ -185,7 +198,7 @@ contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
     }
 }
 
-/// @notice Finish deployment of RISC Zero verifier with Emergency Stop mechanism.
+/// @notice Finish addition of verifier to router.
 /// @dev Use the following environment variable to control the deployment:
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
@@ -193,9 +206,8 @@ contract ScheduleDeployEstopVerifier is RiscZeroManagementScript {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract FinishDeployEstopVerifier is RiscZeroManagementScript {
+contract FinishAddVerifier is RiscZeroManagementScript {
     function run() external {
-        // Locate contracts
         // Execute the 'addVerifier()' request
         bytes4 selector = verifier().SELECTOR();
         console2.log("selector:");
