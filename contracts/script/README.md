@@ -67,13 +67,10 @@ export FIREBLOCKS_API_BASE_URL="https://sandbox-api.fireblocks.io"
 Then, in the instructions below, pass the `--fireblocks` flag to the `manage` script.
 
 > [!NOTE]
-> Your Fireblocks API user will need to have "Editor" permissions (i.e., ability to propose transactions for signing, but not necessarily the ability to sign transactions). You will also need a Transaction Authorization Policy (TAP) that specifies who the signers are for transactions initiated by your API user.
+> Your Fireblocks API user will need to have "Editor" permissions (i.e., ability to propose transactions for signing, but not necessarily the ability to sign transactions). You will also need a Transaction Authorization Policy (TAP) that specifies who the signers are for transactions initiated by your API user, and this policy will need to permit contract creation as well as contract calls.
 
 > [!NOTE]
-> To deploy contracts using Fireblocks, you might need to enable "one-time address transactions" in your Fireblocks workspace settings.
-
-> [!NOTE]
-> Before you approve any contract-call transactions, be sure you understand what the call does! When in doubt, use a [calldata decoder](https://calldata.swiss-knife.xyz/decoder).
+> Before you approve any contract-call transactions, be sure you understand what the call does! When in doubt, use [Etherscan](https://etherscan.io/) to lookup the function selector, together with a [calldata decoder](https://openchain.xyz/tools/abi) ([alternative](https://calldata.swiss-knife.xyz/decoder)) to decode the call's arguments.
 
 ## Deploy the timelocked router
 
