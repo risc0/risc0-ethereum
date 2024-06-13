@@ -1,0 +1,73 @@
+#!/bin/bash
+
+set -eo pipefail
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_FILE="${SCRIPT_DIR}/Manage.s.sol"
+FIREBLOCKS=0
+
+POSITIONAL_ARGS=()
+FORGE_SCRIPT_FLAGS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -f|--fireblocks)
+        FIREBLOCKS=1
+        shift # past argument
+        ;;
+    --broadcast)
+        FORGE_SCRIPT_FLAGS+=("$1") 
+        shift
+        ;;
+    -*|--*)
+        echo "Unknown option $1"
+        exit 1
+        ;;
+    *)
+        POSITIONAL_ARGS+=("$1") # save positional arg
+        shift # past argument
+        ;;
+    esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
+# Set our function. If the function is "help", or if the function is
+# unspecified, then print some help.
+SCRIPT_FUNCTION="${1:-help}"
+if [ "${SCRIPT_FUNCTION}" == "help" ]; then
+    echo "Usage:"
+    echo "  bash ${0} <SCRIPT_FUNCTION> [--fireblocks] [--broadcast]"
+    echo "See README.md for a list of functions"
+    exit 0
+fi
+
+echo "Running ${SCRIPT_FILE}:${SCRIPT_FUNCTION}"
+
+# Check for forge
+if ! command -v forge &> /dev/null; then
+    echo "forge not found"
+    exit -1
+fi
+
+if [ $FIREBLOCKS -gt 0 ]; then
+    # Check for fireblocks
+    if ! command -v fireblocks-json-rpc &> /dev/null
+    then
+        echo "fireblocks-json-rpc not found"
+        exit -1
+    fi
+
+    # Run forge via fireblocks
+    fireblocks-json-rpc --verbose --rpcUrl ${RPC_URL} --http -- \
+        forge script ${SCRIPT_FILE}:${SCRIPT_FUNCTION} \
+        --slow --unlocked ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS} \
+        --sender ${PUBLIC_KEY} \
+        --rpc-url {}
+else
+    # Run forge
+    forge script ${SCRIPT_FILE}:${SCRIPT_FUNCTION} \
+        --slow ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS} \
+        --sender ${PUBLIC_KEY} --private-key ${PRIVATE_KEY} \
+        --rpc-url ${RPC_URL}
+fi
