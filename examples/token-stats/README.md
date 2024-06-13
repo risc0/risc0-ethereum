@@ -1,8 +1,6 @@
 # Compound Token Stats (APR Proof)
 
-**An example that calls multiple view function on the Compound USDC contract to compute the APR.**
-
-> ***WARNING***: This software is still experimental, we do not recommend it for production use.
+**An example that calls multiple view functions on the Compound USDC contract to compute the APR.**
 
 ## Prerequisites
 
