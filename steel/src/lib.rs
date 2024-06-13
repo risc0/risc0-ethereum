@@ -88,8 +88,8 @@ impl<H: EvmBlockHeader> EvmInput<H> {
 // Keep everything in the Steel library private except the commitment.
 mod private {
     alloy_sol_types::sol! {
+        #![sol(all_derives)]
         /// A Commitment struct representing a block number and its block hash.
-        #[sol(all_derives)]
         struct Commitment {
             uint256 blockNumber; // Block number at which the commitment was made.
             bytes32 blockHash; // Hash of the block at the specified block number.
