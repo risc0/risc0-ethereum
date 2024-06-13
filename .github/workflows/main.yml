@@ -154,6 +154,9 @@ jobs:
       - name: build erc20-Counter
         run: cargo build
         working-directory: examples/erc20-counter
+      - name: build token-stats
+        run: cargo build
+        working-directory: examples/token-stats
       - name: test erc20-Counter
         run: ./test-local-deployment.sh
         working-directory: examples/erc20-counter

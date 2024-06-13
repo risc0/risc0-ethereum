@@ -87,7 +87,10 @@ impl<H: EvmBlockHeader> EvmInput<H> {
 
 // Keep everything in the Steel library private except the commitment.
 mod private {
-    alloy_sol_types::sol!("../contracts/src/steel/Steel.sol");
+    alloy_sol_types::sol!(
+        #[sol(all_derives)]
+        "../contracts/src/steel/Steel.sol"
+    );
 }
 
 /// Solidity struct representing the committed block used for validation.
