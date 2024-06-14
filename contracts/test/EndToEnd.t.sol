@@ -38,7 +38,7 @@ import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencySto
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {TestReceipt} from "./TestReceipt.sol";
 
-contract RiscZeroGroth16VerifierTest is Test {
+contract EndToEnd is Test {
     using OutputLib for Output;
     using ReceiptClaimLib for ReceiptClaim;
     using SystemStateLib for SystemState;
