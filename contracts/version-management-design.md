@@ -83,7 +83,7 @@ Using the verifier selector included in the seal, it will route each `verify` ca
 Implementations can be added to the router mapping by an admin of the router, who is assigned as the owner of the contract.
 Implementations can also be removed by the admin, and once removed it can never be replaced. I.e. each identifier can have at most one implementation across time.
 
-RISC Zero deploys and acts as an admin on a router, maintaining a recommended list of trusted verifiers.
+RISC Zero deploys and acts as the admin on a router, maintaining a recommended list of trusted verifiers.
 Note in particular this means that RISC Zero may add new verifiers, and so a [TimelockController][TimelockController-docs] is put in place to impose a delay on all additions.
 If an application using the managed router does not trust a new verifier being added, they will have a time-window to respond.
 
