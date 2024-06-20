@@ -15,7 +15,7 @@
      * Update `risc0` crate dependencies. In all workspaces:
          >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
          * Change the reference for `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
-         <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarentees the checked in lock files are complete and consistent -->
+         <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarantees the checked in lock files are complete and consistent -->
          * Run `cargo update`.
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
@@ -56,7 +56,7 @@
 
    * Deploy the contract to Sepolia, and verify the source code.
 
-     Set the `ETHERSCAN_API_KEY` and `ETH_WALLET_PRIVATE_KEY` environment variables to an valid Etherscan API key and Sepolia private key respectively.
+     Set the `ETHERSCAN_API_KEY` and `ETH_WALLET_PRIVATE_KEY` environment variables to a valid Etherscan API key and Sepolia private key respectively.
 
      ```sh
      # In the contracts directory
