@@ -1,6 +1,6 @@
 # RISC Zero Ethereum Contracts
 
-RISC Zero provides smart contracts to verifiy [RISC Zero] receipts of execution on [Ethereum], and you can find these contracts here.
+RISC Zero provides smart contracts to verify [RISC Zero] receipts of execution on [Ethereum], and you can find these contracts here.
 
 ## Getting Started
 
@@ -20,7 +20,7 @@ forge install risc0/risc0-ethereum@v1.0.0
 ### [IRiscZeroVerifier]
 
 This is the interface you will use to interact with the RISC Zero verifier.
-Verfier contracts will implement this interface.
+Verifier contracts will implement this interface.
 Behind this interface may be the [Groth16 verifier][RiscZeroGroth16Verifier], a mock implementation, and any other verifier we provide in the future.
 
 ## Verifier Implementations

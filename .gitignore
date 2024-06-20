@@ -8,6 +8,7 @@
 .idea/
 .vim/
 bazel-*
+cache/
 dist/
 rust-project.json
 target/
