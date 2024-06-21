@@ -66,7 +66,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     bytes16 public immutable CONTROL_ROOT_1;
     bytes32 public immutable BN254_CONTROL_ID;
 
-    /// @notice A short key attached to the seal to select the correct verifier implementation.
+    /// @notice A short key is attached to the seal to select the correct verifier implementation.
     /// @dev The selector is taken from the hash of the verifier parameters including the Groth16
     ///      verification key and the control IDs that commit to the RISC Zero circuits. If two
     ///      receipts have different selectors (i.e. different verifier parameters), then it can
