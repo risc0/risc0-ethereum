@@ -97,7 +97,7 @@ impl<'a, P, H> Contract<&'a mut HostEvmEnv<P, H>>
 where
     P: Provider,
 {
-    /// Constructor for preflighting calls to an Ethereum contract on the host.
+    /// Constructor for pre-flighting calls to an Ethereum contract on the host.
     ///
     /// Initializes the environment for calling functions on the Ethereum contract, fetching
     /// necessary data via the [Provider], and generating a storage proof for any accessed
