@@ -34,7 +34,7 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable2Step, Pausa
     }
 
     /// @notice Initiate an emergency stop of the verifier contract.
-    ///         Can only be used by the guardian address assigned as owner of this contract.
+    ///         Can only be used by the guardian address assigned as the owner of this contract.
     ///
     ///         When stopped, all calls to the verify and verifyIntegrity functions will revert.
     ///         Once stopped, this contract can never be restarted.
