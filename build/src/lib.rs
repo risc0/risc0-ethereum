@@ -65,7 +65,7 @@ pub struct Options {
 }
 
 // Builder interface is provided to make it easy to add more intelligent default and additional
-// options without breaking backwards compatibility in the future.
+// options without breaking backward compatibility in the future.
 impl Options {
     /// Add a path to generate the Solidity file with image ID information.
     pub fn with_image_id_sol_path(mut self, path: impl AsRef<Path>) -> Self {
