@@ -42,7 +42,7 @@ struct ReceiptClaim {
     /// @notice The exit code for the execution.
     ExitCode exitCode;
     /// @notice A digest of the input to the guest.
-    /// @dev This field is currently unused and must be set to the zero digest.
+    /// @dev This field is currently unused and must be set to zero digest.
     bytes32 input;
     /// @notice Digest of the Output of the guest, including the journal
     /// and assumptions set during execution.
