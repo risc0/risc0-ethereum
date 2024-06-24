@@ -57,17 +57,7 @@ library ReceiptClaimLib {
 
     // Define a constant to ensure hashing is done at compile time. Can't use the
     // SystemStateLib.digest method here because the Solidity compiler complains.
-    bytes32 private constant SYSTEM_STATE_ZERO_DIGEST = sha256(
-        abi.encodePacked(
-            SystemStateLib.TAG_DIGEST,
-            // down
-            bytes32(0),
-            // data
-            uint32(0),
-            // down.length
-            uint16(1) << 8
-        )
-    );
+    bytes32 constant SYSTEM_STATE_ZERO_DIGEST = 0xa3acc27117418996340b84e5a90f3ef4c49d22c79e44aad822ec9c313e1eb8e2;
 
     /// @notice Construct a ReceiptClaim from the given imageId and journalDigest.
     ///         Returned ReceiptClaim will represent a successful execution of the zkVM, running

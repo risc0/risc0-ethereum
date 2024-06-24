@@ -1,17 +1,26 @@
 # RISC Zero Ethereum Contracts
 
-RISC Zero provides smart contracts to verifiy [RISC Zero] receipts of execution on [Ethereum], and you can find these contracts here.
+RISC Zero provides smart contracts to verify [RISC Zero] receipts of execution on [Ethereum], and you can find these contracts here.
 
 ## Getting Started
 
 If you are looking to get started using RISC Zero in an application on Ethereum, the best place to look is the [Foundry template][template].
+
+## Using the Contracts with Foundry
+
+You can use these contracts in [Foundry] using the `forge install` command to add this repository as a [dependency][foundry-dependencies].
+
+```sh
+# Use @ref to install from any git ref, such as main or a different release.
+forge install risc0/risc0-ethereum@v1.0.0
+```
 
 ## Verifier Interface
 
 ### [IRiscZeroVerifier]
 
 This is the interface you will use to interact with the RISC Zero verifier.
-Verfier contracts will implement this interface.
+Verifier contracts will implement this interface.
 Behind this interface may be the [Groth16 verifier][RiscZeroGroth16Verifier], a mock implementation, and any other verifier we provide in the future.
 
 ## Verifier Implementations
@@ -41,14 +50,6 @@ When the emergency stop is activated, this proxy will be permanently disabled, a
 
 Allows for multiple verifier implementations to live behind a single address implementing the [IRiscZeroVerifier] interface.
 Using the verifier selector included in the seal, it will route each `verify` call to the appropriate implementation.
-
-## Using the Contracts with Foundry
-
-You can use these contracts in [Foundry] using the `forge install` command to add this repository as a [dependency][foundry-dependencies].
-
-```bash
-forge install risc0/risc0-ethereum
-```
 
 [RISC Zero]: https://github.com/risc0/risc0
 [Ethereum]: https://ethereum.org/
