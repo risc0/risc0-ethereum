@@ -19,6 +19,10 @@ use std::process::Command;
 use anyhow::Context;
 
 fn main() -> anyhow::Result<()> {
+    // Rerun the build script if anything in the src folder has changed, and in particular if any
+    // of the Solidity source files have changed.
+    println!("cargo::rerun-if-changed=src");
+
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let out_dir = std::path::Path::new(&out_dir);
     let cache_dir = out_dir.join(".cache");
