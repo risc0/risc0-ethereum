@@ -15,12 +15,12 @@
 #[cfg(feature = "host")]
 use crate::host::{provider::Provider, HostEvmEnv};
 use crate::{EvmBlockHeader, GuestEvmEnv, MerkleTrie, StateDb};
-use alloy_primitives::{keccak256, Address, Sealed, B256, U256};
+use alloy_primitives::{keccak256, Address, Sealed, TxKind, B256, U256};
 use alloy_sol_types::{SolCall, SolType};
 use revm::{
     primitives::{
         AccountInfo, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap, ResultAndState,
-        SuccessReason, TransactTo,
+        SuccessReason,
     },
     Database, Evm,
 };
@@ -244,7 +244,7 @@ impl<C: SolCall> CallTxData<C> {
         tx_env.caller = self.caller;
         tx_env.gas_limit = self.gas_limit;
         tx_env.gas_price = self.gas_price;
-        tx_env.transact_to = TransactTo::call(self.to);
+        tx_env.transact_to = TxKind::Call(self.to);
         tx_env.value = self.value;
         tx_env.data = self.data.into();
 
