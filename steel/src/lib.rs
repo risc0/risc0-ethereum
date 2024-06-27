@@ -19,7 +19,6 @@ use alloy_primitives::{
     b256, keccak256, Address, BlockNumber, Bytes, Sealable, Sealed, TxNumber, B256, U256,
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
-
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Debug, rc::Rc};
@@ -37,10 +36,16 @@ pub use mpt::MerkleTrie;
 /// The serializable input to derive and validate a [EvmEnv].
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EvmInput<H> {
-    pub header: H,
+    /// Chain of block headers in reverse order.
+    /// The first header is used for the commitment, the last contains the EVM state.
+    pub chain: Vec<H>,
+    /// Account trie of the EVM state.
     pub state_trie: MerkleTrie,
+    /// Storage tries of all referenced accounts.
     pub storage_tries: Vec<MerkleTrie>,
+    /// Code of all referenced contracts.
     pub contracts: Vec<Bytes>,
+    /// Block headers that can be queried with the `BLOCKHASH` opcode.
     pub ancestors: Vec<H>,
 }
 
@@ -49,30 +54,36 @@ impl<H: EvmBlockHeader> EvmInput<H> {
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
     pub fn into_env(self) -> GuestEvmEnv<H> {
+        let mut commit: Option<SolCommitment> = None;
+
+        // seal the headers to compute the block hash, and verify the chain
+        let header = self
+            .chain
+            .into_iter()
+            .map(Sealable::seal_slow)
+            .inspect(|h| {
+                if commit.is_none() {
+                    commit = Some(h.into());
+                }
+            })
+            .reduce(Self::parent)
+            .expect("Empty chain");
+
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
-        assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
-
-        // seal the header to compute its block hash
-        let header = self.header.seal_slow();
+        assert_eq!(header.state_root(), &state_root, "State root mismatch");
 
         // validate that ancestor headers form a valid chain
         let mut block_hashes = HashMap::with_capacity(self.ancestors.len() + 1);
         block_hashes.insert(header.number(), header.seal());
 
-        let mut previous_header = header.inner();
-        for ancestor in &self.ancestors {
-            let ancestor_hash = ancestor.hash_slow();
-            assert_eq!(
-                previous_header.parent_hash(),
-                &ancestor_hash,
-                "Invalid chain: block {} is not the parent of block {}",
-                ancestor.number(),
-                previous_header.number()
-            );
-            block_hashes.insert(ancestor.number(), ancestor_hash);
-            previous_header = ancestor;
-        }
+        self.ancestors
+            .into_iter()
+            .map(Sealable::seal_slow)
+            .inspect(|h| {
+                block_hashes.insert(h.number(), h.seal());
+            })
+            .reduce(Self::parent);
 
         let db = StateDb::new(
             self.state_trie,
@@ -81,7 +92,21 @@ impl<H: EvmBlockHeader> EvmInput<H> {
             block_hashes,
         );
 
-        EvmEnv::new(db, header)
+        EvmEnv::new(db, header, commit.unwrap())
+    }
+
+    /// Verifies that the `parent` is the parent of `header`.
+    #[inline]
+    fn parent(header: Sealed<H>, parent: Sealed<H>) -> Sealed<H> {
+        assert_eq!(
+            header.parent_hash(),
+            &parent.seal(),
+            "Invalid chain: block {} is not the parent of block {}",
+            parent.seal(),
+            header.seal()
+        );
+
+        parent
     }
 }
 
@@ -100,6 +125,15 @@ mod private {
 /// Solidity struct representing the committed block used for validation.
 pub use private::Commitment as SolCommitment;
 
+impl<H: EvmBlockHeader> From<&Sealed<H>> for SolCommitment {
+    fn from(header: &Sealed<H>) -> Self {
+        SolCommitment {
+            blockNumber: U256::from(header.number()),
+            blockHash: header.seal(),
+        }
+    }
+}
+
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
@@ -108,18 +142,20 @@ pub struct EvmEnv<D, H> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
+    commitment: SolCommitment,
 }
 
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// Creates a new environment.
     /// It uses the default configuration for the latest specification.
-    pub fn new(db: D, header: Sealed<H>) -> Self {
+    pub fn new(db: D, header: Sealed<H>, commitment: SolCommitment) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
 
         Self {
             db,
             cfg_env,
             header,
+            commitment,
         }
     }
 
@@ -134,10 +170,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
 
     /// Returns the [SolCommitment] used to validate the environment.
     pub fn block_commitment(&self) -> SolCommitment {
-        SolCommitment {
-            blockHash: self.header.seal(),
-            blockNumber: U256::from(self.header.number()),
-        }
+        self.commitment.clone()
     }
 
     /// Returns the header of the environment.
