@@ -166,7 +166,7 @@ impl Node {
             Node::Null => vec![EMPTY_STRING_CODE],
             Node::Leaf(prefix, value) => {
                 let path = prefix.encode_path_leaf(true);
-                let mut out = encoded_header(true, path.length() + value.length());
+                let mut out = encode_list_header(path.length() + value.length());
                 path.encode(&mut out);
                 value.encode(&mut out);
 
@@ -175,7 +175,7 @@ impl Node {
             Node::Extension(prefix, child) => {
                 let path = prefix.encode_path_leaf(false);
                 let node_ref = NodeRef::from_node(child);
-                let mut out = encoded_header(true, path.length() + node_ref.length());
+                let mut out = encode_list_header(path.length() + node_ref.length());
                 path.encode(&mut out);
                 node_ref.encode(&mut out);
 
@@ -196,7 +196,7 @@ impl Node {
                     }
                 }
 
-                let mut out = encoded_header(true, payload_length);
+                let mut out = encode_list_header(payload_length);
                 child_refs.iter().for_each(|child| child.encode(&mut out));
                 // add an EMPTY_STRING_CODE for the missing value
                 out.push(EMPTY_STRING_CODE);
@@ -309,10 +309,10 @@ impl Encodable for NodeRef<'_> {
 }
 
 #[inline]
-fn encoded_header(list: bool, payload_length: usize) -> Vec<u8> {
+fn encode_list_header(payload_length: usize) -> Vec<u8> {
     debug_assert!(payload_length > 0);
     let header = Header {
-        list,
+        list: true,
         payload_length,
     };
     let mut out = Vec::with_capacity(header.length() + payload_length);
