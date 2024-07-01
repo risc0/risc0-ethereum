@@ -13,10 +13,9 @@
 // limitations under the License.
 
 use alloy_primitives::{b256, keccak256, B256};
-use alloy_rlp::{BufMut, Decodable, Encodable, Header, EMPTY_STRING_CODE};
+use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
 use nybbles::Nibbles;
 use revm::primitives::HashMap;
-use rlp as legacy_rlp;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use thiserror::Error as ThisError;
@@ -28,9 +27,13 @@ pub const EMPTY_ROOT_HASH: B256 =
 /// The error type that is returned when parsing a [MerkleTrie] node.
 #[derive(Debug, ThisError)]
 pub enum ParseNodeError {
+    // Error that occurs when a node has data after its RLP encoding.
+    #[error("Node has additional bytes")]
+    AdditionalBytes,
+
     /// Error that occurs when parsing the RLP encoding of a node.
     #[error("RLP error")]
-    Rlp(#[from] legacy_rlp::DecoderError),
+    Rlp(#[from] alloy_rlp::Error),
 }
 
 /// A sparse Merkle Patricia trie storing byte values.
@@ -163,7 +166,7 @@ impl Node {
             Node::Null => vec![EMPTY_STRING_CODE],
             Node::Leaf(prefix, value) => {
                 let path = prefix.encode_path_leaf(true);
-                let mut out = encoded_header(true, path.length() + value.length());
+                let mut out = encode_list_header(path.length() + value.length());
                 path.encode(&mut out);
                 value.encode(&mut out);
 
@@ -172,7 +175,7 @@ impl Node {
             Node::Extension(prefix, child) => {
                 let path = prefix.encode_path_leaf(false);
                 let node_ref = NodeRef::from_node(child);
-                let mut out = encoded_header(true, path.length() + node_ref.length());
+                let mut out = encode_list_header(path.length() + node_ref.length());
                 path.encode(&mut out);
                 node_ref.encode(&mut out);
 
@@ -193,7 +196,7 @@ impl Node {
                     }
                 }
 
-                let mut out = encoded_header(true, payload_length);
+                let mut out = encode_list_header(payload_length);
                 child_refs.iter().for_each(|child| child.encode(&mut out));
                 // add an EMPTY_STRING_CODE for the missing value
                 out.push(EMPTY_STRING_CODE);
@@ -205,46 +208,48 @@ impl Node {
     }
 }
 
-impl legacy_rlp::Decodable for Node {
-    fn decode(rlp: &legacy_rlp::Rlp) -> Result<Self, legacy_rlp::DecoderError> {
-        use legacy_rlp::{Decodable, DecoderError, Prototype};
-
-        match rlp.prototype()? {
-            Prototype::Null | Prototype::Data(0) => Ok(Node::Null),
-            Prototype::List(2) => {
-                let (path, is_leaf) = decode_path(rlp.val_at::<Vec<u8>>(0)?);
-                if is_leaf {
-                    let val = rlp.val_at::<Vec<u8>>(1)?;
-                    Ok(Node::Leaf(path, val.into_boxed_slice()))
-                } else {
-                    let node = Decodable::decode(&rlp.at(1)?)?;
-                    if node == Node::Null {
-                        return Err(DecoderError::Custom("extension node with null child"));
+impl Decodable for Node {
+    fn decode(buf: &mut &[u8]) -> alloy_rlp::Result<Self> {
+        match Header::decode_raw(buf)? {
+            // if the node is not a list, it must be empty or a digest
+            PayloadView::String(payload) => match payload.len() {
+                0 => Ok(Node::Null),
+                32 => Ok(Node::Digest(B256::from_slice(payload))),
+                _ => Err(alloy_rlp::Error::UnexpectedLength),
+            },
+            PayloadView::List(mut items) => match items.len() {
+                // branch node: 17-item node [ v0 ... v15, value ]
+                17 => {
+                    let mut children: [Option<Box<Node>>; 16] = Default::default();
+                    for (i, mut node_rlp) in items.into_iter().enumerate() {
+                        if node_rlp != [EMPTY_STRING_CODE] {
+                            if i == 16 {
+                                return Err(alloy_rlp::Error::Custom("branch node with value"));
+                            } else {
+                                children[i] = Some(Box::new(Node::decode(&mut node_rlp)?));
+                            }
+                        }
                     }
-                    Ok(Node::Extension(path, Box::new(node)))
+
+                    Ok(Node::Branch(children))
                 }
-            }
-            Prototype::List(17) => {
-                let mut children: [Option<Box<Node>>; 16] = Default::default();
-                for (i, node_rlp) in rlp.iter().enumerate().take(16) {
-                    match node_rlp.prototype()? {
-                        Prototype::Null | Prototype::Data(0) => {}
-                        _ => children[i] = Some(Box::new(Decodable::decode(&node_rlp)?)),
+                // leaf or extension node: 2-item node [ encodedPath, v ]
+                // they are distinguished by a flag in the first nibble of the encodedPath
+                2 => {
+                    let (path, is_leaf) = decode_path(&mut items[0])?;
+                    if is_leaf {
+                        let value = Header::decode_bytes(&mut items[1], false)?;
+                        Ok(Node::Leaf(path, value.into()))
+                    } else {
+                        let node = Node::decode(&mut items[1])?;
+                        if node == Node::Null {
+                            return Err(alloy_rlp::Error::Custom("extension node with null child"));
+                        }
+                        Ok(Node::Extension(path, Box::new(node)))
                     }
                 }
-                // verify that there is no 17th element with a value
-                if !rlp.at(16)?.is_empty() {
-                    return Err(DecoderError::Custom("branch node with value"));
-                }
-
-                Ok(Node::Branch(children))
-            }
-            Prototype::Data(32) => {
-                let digest = B256::decode(&mut rlp.as_raw())
-                    .map_err(|_| DecoderError::Custom("invalid digest"))?;
-                Ok(Node::Digest(digest))
-            }
-            _ => Err(DecoderError::RlpIncorrectListLen),
+                _ => Err(alloy_rlp::Error::Custom("unexpected list length")),
+            },
         }
     }
 }
@@ -304,10 +309,10 @@ impl Encodable for NodeRef<'_> {
 }
 
 #[inline]
-fn encoded_header(list: bool, payload_length: usize) -> Vec<u8> {
+fn encode_list_header(payload_length: usize) -> Vec<u8> {
     debug_assert!(payload_length > 0);
     let header = Header {
-        list,
+        list: true,
         payload_length,
     };
     let mut out = Vec::with_capacity(header.length() + payload_length);
@@ -315,10 +320,32 @@ fn encoded_header(list: bool, payload_length: usize) -> Vec<u8> {
     out
 }
 
+fn decode_path(buf: &mut &[u8]) -> alloy_rlp::Result<(Nibbles, bool)> {
+    let path = Nibbles::unpack(Header::decode_bytes(buf, false)?);
+    if path.len() < 2 {
+        return Err(alloy_rlp::Error::InputTooShort);
+    }
+    let (is_leaf, odd_nibbles) = match path[0] {
+        0b0000 => (false, false),
+        0b0001 => (false, true),
+        0b0010 => (true, false),
+        0b0011 => (true, true),
+        _ => return Err(alloy_rlp::Error::Custom("node is not extension or leaf")),
+    };
+    let prefix = if odd_nibbles { &path[1..] } else { &path[2..] };
+    Ok((Nibbles::from_nibbles_unchecked(prefix), is_leaf))
+}
+
 /// Returns the decoded node and its RLP hash.
 fn parse_node(rlp: impl AsRef<[u8]>) -> Result<(Option<B256>, Node), ParseNodeError> {
     let rlp = rlp.as_ref();
-    let node = legacy_rlp::decode(rlp)?;
+    // decode the node without advancing
+    let mut buf = rlp;
+    let node = Node::decode(&mut buf)?;
+    if !buf.is_empty() {
+        return Err(ParseNodeError::AdditionalBytes);
+    }
+
     // the hash is only needed for RLP length >= 32
     Ok(((rlp.len() >= 32).then(|| keccak256(rlp)), node))
 }
@@ -343,17 +370,6 @@ fn resolve_trie(root: Node, nodes_by_hash: &HashMap<B256, Node>) -> Node {
             None => root,
         },
     }
-}
-
-#[inline]
-fn decode_path(path: impl AsRef<[u8]>) -> (Nibbles, bool) {
-    let path = Nibbles::unpack(path);
-    assert!(path.len() >= 2);
-    let is_leaf = path[0] & 2 != 0;
-    let odd_nibbles = path[0] & 1 != 0;
-
-    let prefix = if odd_nibbles { &path[1..] } else { &path[2..] };
-    (Nibbles::from_nibbles_unchecked(prefix), is_leaf)
 }
 
 #[cfg(test)]
