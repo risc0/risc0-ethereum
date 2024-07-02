@@ -19,7 +19,7 @@ use self::{
     provider::{EthersProvider, Provider},
 };
 use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
-use alloy_primitives::{Sealable, B256};
+use alloy_primitives::{BlockNumber, Sealable, B256};
 use anyhow::{ensure, Context};
 use ethers_providers::{Http, RetryClient};
 use log::debug;
@@ -59,8 +59,10 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
 
         // create a new database backed by the provider
         let db = ProofDb::new(provider, block_number);
+        let header = header.seal_slow();
+        let commitment = (&header).into();
 
-        Ok(EvmEnv::new(db, header.seal_slow()))
+        Ok(EvmEnv::new(db, header, commitment))
     }
 }
 
@@ -69,8 +71,27 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
+    #[inline]
     pub fn into_input(self) -> anyhow::Result<EvmInput<P::Header>> {
-        let db = &self.db;
+        let block_number = self.db.block_number();
+        self.into_input_with_chain(block_number)
+    }
+
+    /// Converts the environment into a [EvmInput] using a commitment chain.
+    ///
+    /// The given `block_number` corresponds to block used for the commitment and must be a parent.
+    /// The resulting input contains inclusion proofs for all the required chain state data. It can
+    /// therefore be used to execute the same calls in a verifiable way in the zkVM.
+    pub fn into_input_with_chain(
+        self,
+        block_number: BlockNumber,
+    ) -> anyhow::Result<EvmInput<P::Header>> {
+        let db = self.db;
+        ensure!(
+            block_number >= db.block_number(),
+            "block number must be at least {}",
+            db.block_number()
+        );
 
         // use the same provider as the database
         let provider = db.provider();
@@ -113,15 +134,27 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
         // collect the bytecode of all referenced contracts
         let contracts: Vec<_> = db.contracts().values().cloned().collect();
 
-        // retrieve ancestor block headers
+        // retrieve ancestor block headers and commitment chain
         let mut ancestors = Vec::new();
+        let mut chain = Vec::new();
+
+        let mut start_number = db.block_number();
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
-            for number in (block_hash_min_number..db.block_number()).rev() {
-                let header = provider
-                    .get_block_header(number)?
-                    .with_context(|| format!("block {number} not found"))?;
+            debug_assert!(block_hash_min_number < start_number);
+            start_number = block_hash_min_number;
+        }
+
+        // fetch headers in descending order
+        for number in (start_number..=block_number).rev() {
+            let header = provider
+                .get_block_header(number)?
+                .with_context(|| format!("block {} not found", number))?;
+
+            if number < db.block_number() {
                 ancestors.push(header);
+            } else {
+                chain.push(header);
             }
         }
 
@@ -132,11 +165,10 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
             storage_tries.iter().map(|t| t.size()).sum::<usize>()
         );
         debug!("contracts: {}", contracts.len());
-        debug!("blocks: {}", ancestors.len());
+        debug!("blocks: {}", chain.len() + ancestors.len());
 
-        let header = self.header.into_inner();
         Ok(EvmInput {
-            header,
+            chain,
             state_trie,
             storage_tries,
             contracts,
