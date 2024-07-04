@@ -306,10 +306,14 @@ impl Default for StateAccount {
     }
 }
 
-/// An EVM abstraction of a block header.
-pub trait EvmBlockHeader: Sealable {
+/// Block header abstraction for hash chains.
+pub trait ChainBlockHeader: Sealable {
     /// Returns the hash of the parent block's header.
     fn parent_hash(&self) -> &B256;
+}
+
+/// Block header abstraction for the EVM.
+pub trait EvmBlockHeader: ChainBlockHeader {
     /// Returns the block number.
     fn number(&self) -> BlockNumber;
     /// Returns the block timestamp.

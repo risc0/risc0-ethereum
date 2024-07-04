@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Type aliases for Ethereum.
-use crate::EvmEnv;
+use crate::{ChainBlockHeader, EvmEnv};
 
 use super::{EvmBlockHeader, EvmChainInput, EvmInput};
 use alloy_primitives::{
@@ -85,11 +85,14 @@ impl Sealable for EthBlockHeader {
     }
 }
 
-impl EvmBlockHeader for EthBlockHeader {
+impl ChainBlockHeader for EthBlockHeader {
     #[inline]
     fn parent_hash(&self) -> &B256 {
         &self.parent_hash
     }
+}
+
+impl EvmBlockHeader for EthBlockHeader {
     #[inline]
     fn number(&self) -> BlockNumber {
         self.number

@@ -34,9 +34,9 @@ sol! {
 pub struct Input {
     /// Steel input.
     pub input: EthEvmChainInput,
-    /// Own image ID.
+    /// Own image ID; we cannot use a constant as this would modify the image itself.
     pub self_image_id: Digest,
-    /// Journal of a previous assumption.
+    /// Journal of a previous assumption; if None then we start a new chain.
     pub assumption: Option<Vec<u8>>,
 }
 
@@ -51,6 +51,7 @@ sol! {
         bytes32 selfImageID;
     }
 
+    /// Token statistics.
     #[derive(Default)]
     struct Stats {
         uint256 cumulativeSupplyRate;
