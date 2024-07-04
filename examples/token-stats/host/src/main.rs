@@ -44,8 +44,6 @@ fn main() -> Result<()> {
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
-    let block_commitment = env.block_commitment();
-
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
     let mut contract = Contract::preflight(CONTRACT, &mut env);
@@ -74,7 +72,6 @@ fn main() -> Result<()> {
 
     let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes, true)
         .context("failed to decode journal")?;
-    assert_eq!(block_commitment, apr_commit.commitment);
 
     // Calculation is handling `/ 10^18 * 100` to match precision for a percentage.
     let apr = apr_commit.annualSupplyRate as f64 / 10f64.powi(16);

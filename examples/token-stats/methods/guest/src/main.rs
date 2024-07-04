@@ -51,7 +51,7 @@ fn main() {
 
     // This commits the APR at current utilization rate for this given block.
     let journal = APRCommitment {
-        commitment: env.block_commitment(),
+        commitment: env.into_commitment(),
         annualSupplyRate: annual_supply_rate,
     };
     env::commit_slice(&journal.abi_encode());

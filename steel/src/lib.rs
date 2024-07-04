@@ -37,11 +37,11 @@ pub use mpt::MerkleTrie;
 /// The serializable input to derive and validate a [EvmEnv].
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EvmInput<H> {
-    pub header: H,
-    pub state_trie: MerkleTrie,
-    pub storage_tries: Vec<MerkleTrie>,
-    pub contracts: Vec<Bytes>,
-    pub ancestors: Vec<H>,
+    header: H,
+    state_trie: MerkleTrie,
+    storage_tries: Vec<MerkleTrie>,
+    contracts: Vec<Bytes>,
+    ancestors: Vec<H>,
 }
 
 impl<H: EvmBlockHeader> EvmInput<H> {
@@ -66,9 +66,9 @@ impl<H: EvmBlockHeader> EvmInput<H> {
             assert_eq!(
                 previous_header.parent_hash(),
                 &ancestor_hash,
-                "Invalid chain: block {} is not the parent of block {}",
-                ancestor.number(),
-                previous_header.number()
+                "Invalid ancestors: block {} is not the parent of block {}",
+                ancestor_hash,
+                previous_header.hash_slow()
             );
             block_hashes.insert(ancestor.number(), ancestor_hash);
             previous_header = ancestor;
@@ -82,6 +82,61 @@ impl<H: EvmBlockHeader> EvmInput<H> {
         );
 
         EvmEnv::new(db, header)
+    }
+}
+
+/// The serializable input to derive and validate a [EvmEnv].
+///
+/// Unlike [EvmInput], it also contains a chain of blocker headers,
+/// which allows a later commitment than the state block.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EvmChainInput<H> {
+    chain: Vec<H>,
+    input: EvmInput<H>,
+}
+
+impl<H: EvmBlockHeader> EvmChainInput<H> {
+    /// Links the chain segment with a previous segment.
+    ///
+    /// It panics if the [SolCommitment] does not match the parent hash of the [EvmChainInput].
+    pub fn link(&self, commit: &SolCommitment) {
+        let parent_hash = self.input.header.parent_hash();
+        assert_eq!(
+            &commit.blockHash, parent_hash,
+            "Invalid chain link: block {} is not the parent of block {}",
+            commit.blockHash, parent_hash
+        );
+    }
+
+    /// Converts the input into a [EvmEnv] for execution.
+    ///
+    /// This method verifies the header chain and the state matches the state root at the bottom of
+    /// the chain; it panics if not.
+    pub fn into_env(self) -> GuestEvmEnv<H> {
+        let mut env = self.input.into_env();
+        if self.chain.is_empty() {
+            return env;
+        }
+        let last_block_number = self.chain.last().unwrap().number();
+
+        let mut parent_hash = env.header.seal();
+        for header in self.chain {
+            let hash = header.hash_slow();
+            assert_eq!(
+                &parent_hash,
+                header.parent_hash(),
+                "Invalid chain: block {} is not the parent of block {}",
+                parent_hash,
+                hash
+            );
+            parent_hash = hash;
+        }
+        env.commitment = SolCommitment {
+            blockNumber: U256::from(last_block_number),
+            blockHash: parent_hash,
+        };
+
+        env
     }
 }
 
@@ -100,6 +155,15 @@ mod private {
 /// Solidity struct representing the committed block used for validation.
 pub use private::Commitment as SolCommitment;
 
+impl SolCommitment {
+    fn from_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Self {
+        SolCommitment {
+            blockNumber: U256::from(header.number()),
+            blockHash: header.seal(),
+        }
+    }
+}
+
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
@@ -108,6 +172,7 @@ pub struct EvmEnv<D, H> {
     db: D,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
+    commitment: SolCommitment,
 }
 
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
@@ -115,11 +180,13 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
+        let commitment = SolCommitment::from_header(&header);
 
         Self {
             db,
             cfg_env,
             header,
+            commitment,
         }
     }
 
@@ -132,17 +199,19 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         self
     }
 
-    /// Returns the [SolCommitment] used to validate the environment.
-    pub fn block_commitment(&self) -> SolCommitment {
-        SolCommitment {
-            blockHash: self.header.seal(),
-            blockNumber: U256::from(self.header.number()),
-        }
-    }
-
     /// Returns the header of the environment.
     pub fn header(&self) -> &H {
         self.header.inner()
+    }
+
+    /// Returns the [SolCommitment] used to validate the environment.
+    pub fn commitment(&self) -> &SolCommitment {
+        &self.commitment
+    }
+
+    /// Consumes and returns the [SolCommitment] used to validate the environment.
+    pub fn into_commitment(self) -> SolCommitment {
+        self.commitment
     }
 }
 
