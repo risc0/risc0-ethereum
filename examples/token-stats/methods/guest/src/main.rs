@@ -12,16 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use alloy_primitives::B256;
 use alloy_sol_types::SolValue;
-use core::{APRCommitment, CometMainInterface, CONTRACT};
-use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthEvmInput, Contract};
-use risc0_zkvm::guest::env;
+use core::{CometMainInterface, Input, Journal, CONTRACT};
+use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, Contract};
+use risc0_zkvm::{guest::env, sha::Digest};
 
 const SECONDS_PER_YEAR: u64 = 60 * 60 * 24 * 365;
 
 fn main() {
     // Read the input from the guest environment.
-    let input: EthEvmInput = env::read();
+    let Input {
+        input,
+        self_image_id,
+        assumption,
+    } = env::read();
+
+    // Proof composition: recursively verify and load the previous APR computation
+    let mut stats = if let Some(journal) = assumption {
+        // verify that the journal was indeed produced by the same guest code
+        env::verify(self_image_id, &journal).unwrap();
+        // decode the journal
+        let Journal {
+            commitment,
+            stats,
+            selfImageID,
+        } = Journal::abi_decode(&journal, false).unwrap();
+        // check that the image ID is correct and that the input chain connects
+        assert_eq!(Digest::from_bytes(selfImageID.0), self_image_id);
+        input.link(&commitment);
+
+        stats
+    } else {
+        Default::default()
+    };
 
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
@@ -48,11 +72,13 @@ fn main() {
     // And this is calculating: Supply Rate * Seconds Per Year, to avoid float calculations for
     // precision.
     let annual_supply_rate = supply_rate * SECONDS_PER_YEAR;
+    stats.add_supply_rate(annual_supply_rate);
 
     // This commits the APR at current utilization rate for this given block.
-    let journal = APRCommitment {
+    let journal = Journal {
         commitment: env.into_commitment(),
-        annualSupplyRate: annual_supply_rate,
+        stats,
+        selfImageID: B256::from_slice(self_image_id.as_bytes()),
     };
     env::commit_slice(&journal.abi_encode());
 }

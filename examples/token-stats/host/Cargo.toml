@@ -6,9 +6,15 @@ edition = "2021"
 [dependencies]
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
+bincode = { workspace = true }
 clap = { workspace = true }
 core = { path = "../core" }
 methods = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
 tracing-subscriber = { workspace = true }
+
+[features]
+metal = ["risc0-zkvm/metal"]
+cuda = ["risc0-zkvm/cuda"]
+disable-dev-mode = ["risc0-zkvm/disable-dev-mode"]
