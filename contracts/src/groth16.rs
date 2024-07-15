@@ -17,18 +17,18 @@ use anyhow::Result;
 use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
 
 /// ABI encoding of the seal.
-pub fn abi_encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+pub fn abi_encode(seal: impl AsRef<u8>) -> Result<Vec<u8>> {
     Ok(encode(seal)?.abi_encode())
 }
 
 /// encoding of the seal with selector.
-pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
+pub fn encode(seal: impl AsRef<u8>) -> Result<Vec<u8>> {
     let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
     let selector = &verifier_parameters_digest.as_bytes()[..4];
     // Create a new vector with the capacity to hold both selector and seal
-    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+    let mut selector_seal = Vec::with_capacity(selector.len() + seal.as_ref().len());
     selector_seal.extend_from_slice(selector);
-    selector_seal.extend_from_slice(&seal);
+    selector_seal.extend_from_slice(seal.as_ref());
 
     Ok(selector_seal)
 }
