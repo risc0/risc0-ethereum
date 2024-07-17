@@ -62,7 +62,7 @@ fn main() -> Result<()> {
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
-    let commitment = env.block_commitment();
+    let commitment = env.commitment().abi_encode();
 
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
@@ -92,7 +92,7 @@ fn main() -> Result<()> {
 
     // The commitment in the journal should match.
     let bytes = session_info.journal.as_ref();
-    assert!(bytes.starts_with(&commitment.abi_encode()));
+    assert!(bytes.starts_with(&commitment));
 
     Ok(())
 }

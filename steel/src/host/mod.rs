@@ -18,8 +18,8 @@ use self::{
     db::ProofDb,
     provider::{EthersProvider, Provider},
 };
-use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
-use alloy_primitives::{Sealable, B256};
+use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmChainInput, EvmEnv, EvmInput, MerkleTrie};
+use alloy_primitives::{BlockNumber, Sealable, B256};
 use anyhow::{ensure, Context};
 use ethers_providers::{Http, RetryClient};
 use log::debug;
@@ -36,7 +36,7 @@ pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
 
 impl EthEvmEnv<ProofDb<EthersProvider<EthersClient>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an RPC endpoint.
-    pub fn from_rpc(url: &str, block_number: Option<u64>) -> anyhow::Result<Self> {
+    pub fn from_rpc(url: &str, block_number: Option<BlockNumber>) -> anyhow::Result<Self> {
         let client = EthersClient::new_client(url, 3, 500)?;
         let provider = EthersProvider::new(client);
 
@@ -52,7 +52,7 @@ impl EthEvmEnv<ProofDb<EthersProvider<EthersClient>>> {
 
 impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
     /// Creates a new provable [EvmEnv] from a [Provider].
-    pub fn from_provider(provider: P, block_number: u64) -> anyhow::Result<Self> {
+    pub fn from_provider(provider: P, block_number: BlockNumber) -> anyhow::Result<Self> {
         let header = provider
             .get_block_header(block_number)?
             .with_context(|| format!("block {block_number} not found"))?;
@@ -61,6 +61,11 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
         let db = ProofDb::new(provider, block_number);
 
         Ok(EvmEnv::new(db, header.seal_slow()))
+    }
+
+    /// Returns the [Provider].
+    pub fn provider(&self) -> &P {
+        self.db.provider()
     }
 }
 
@@ -117,10 +122,10 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
         let mut ancestors = Vec::new();
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
-            for number in (block_hash_min_number..db.block_number()).rev() {
+            for block_number in (block_hash_min_number..db.block_number()).rev() {
                 let header = provider
-                    .get_block_header(number)?
-                    .with_context(|| format!("block {number} not found"))?;
+                    .get_block_header(block_number)?
+                    .with_context(|| format!("block {block_number} not found"))?;
                 ancestors.push(header);
             }
         }
@@ -132,7 +137,7 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
             storage_tries.iter().map(|t| t.size()).sum::<usize>()
         );
         debug!("contracts: {}", contracts.len());
-        debug!("blocks: {}", ancestors.len());
+        debug!("ancestor blocks: {}", ancestors.len());
 
         let header = self.header.into_inner();
         Ok(EvmInput {
@@ -142,5 +147,30 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
             contracts,
             ancestors,
         })
+    }
+
+    /// Converts the environment into a [EvmChainInput].
+    ///
+    /// The resulting input contains inclusion proofs for all required chain state data. These
+    /// proofs can be validated against the given `block', so the input can be used to execute the
+    /// same calls in a verifiable way in the zkVM. It will panic if `block' is not a descendant of
+    /// the state block of the environment.
+    pub fn into_chain_input(self, block: BlockNumber) -> anyhow::Result<EvmChainInput<P::Header>> {
+        let state_block = self.header().number();
+        assert!(state_block <= block);
+
+        // fetch all the blocks between the EVM block and the chain block for the commitment
+        let provider = self.provider();
+        let chain = (state_block + 1..=block)
+            .map(|block_number: u64| {
+                provider
+                    .get_block_header(block_number)?
+                    .with_context(|| format!("block {block_number} not found"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let input = self.into_input()?;
+        debug!("chain blocks: {}", chain.len());
+
+        Ok(EvmChainInput { chain, input })
     }
 }

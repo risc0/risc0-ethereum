@@ -6,6 +6,7 @@ edition = "2021"
 [workspace]
 
 [dependencies]
+alloy-primitives = { version = "0.7" }
 alloy-sol-types = { version = "0.7" }
 core = { path = "../../core" }
 risc0-steel = { path = "../../../../steel" }

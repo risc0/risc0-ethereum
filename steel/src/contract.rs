@@ -184,9 +184,10 @@ where
     /// [EvmEnv]: crate::EvmEnv
     pub fn call(self) -> anyhow::Result<C::Return> {
         log::info!(
-            "Executing preflight for '{}' on contract {}",
+            "Executing preflight for '{}' on contract {} in block {}",
             C::SIGNATURE,
-            self.tx.to
+            self.tx.to,
+            self.env.header().number()
         );
 
         let evm = new_evm(&mut self.env.db, self.env.cfg_env.clone(), &self.env.header);
