@@ -12,15 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ethers::prelude::*;
-
-abigen!(
-    IRiscZeroVerifier,
-    "$OUT_DIR/IRiscZeroVerifier.sol/IRiscZeroVerifier.json"
-);
-abigen!(
-    RiscZeroGroth16Verifier,
-    "$OUT_DIR/RiscZeroGroth16Verifier.sol/RiscZeroGroth16Verifier.json"
+alloy::sol!(
+    #![sol(rpc, all_derives)]
+    "src/IRiscZeroVerifier.sol"
 );
 
 pub mod groth16;

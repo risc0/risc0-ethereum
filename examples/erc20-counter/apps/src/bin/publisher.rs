@@ -124,7 +124,7 @@ fn main() -> Result<()> {
     )?;
 
     // Encode the groth16 seal with the selector
-    let seal = encode(receipt.inner.groth16()?.seal.clone())?;
+    let seal = encode(receipt.inner.groth16()?);
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
     let calldata = ICounter::incrementCall {

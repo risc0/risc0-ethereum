@@ -12,35 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy_sol_types::SolValue;
-use anyhow::Result;
-use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
+use alloy::sol_types::SolValue;
+use risc0_zkvm::{Groth16Receipt, ReceiptClaim};
 
-/// ABI encoding of the seal.
-pub fn abi_encode(seal: Vec<u8>) -> Result<Vec<u8>> {
-    Ok(encode(seal)?.abi_encode())
+/// ABI encoding of a [Groth16Receipt][risc0_zkvm::Groth16Receipt] seal.
+pub fn abi_encode(receipt: &Groth16Receipt<ReceiptClaim>) -> Vec<u8> {
+    encode(receipt).abi_encode()
 }
 
-/// encoding of the seal with selector.
-pub fn encode(seal: Vec<u8>) -> Result<Vec<u8>> {
-    let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
-    let selector = &verifier_parameters_digest.as_bytes()[..4];
+/// Encoding of a [Groth16Receipt][risc0_zkvm::Groth16Receipt] by prefixing it with the verifier selector,
+/// taken from the first 4 bytes of the hash of the verifier parameters including the Groth16
+/// verification key and the control IDs that commit to the RISC Zero circuits.
+pub fn encode(receipt: &Groth16Receipt<ReceiptClaim>) -> Vec<u8> {
+    let selector = &receipt.verifier_parameters.as_bytes()[..4];
     // Create a new vector with the capacity to hold both selector and seal
-    let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
+    let mut selector_seal = Vec::with_capacity(selector.len() + receipt.seal.len());
     selector_seal.extend_from_slice(selector);
-    selector_seal.extend_from_slice(&seal);
+    selector_seal.extend_from_slice(&receipt.seal);
 
-    Ok(selector_seal)
+    selector_seal
 }
 
 #[cfg(test)]
 mod tests {
-    use anyhow::anyhow;
-    use ethers::utils::hex;
-    use regex::Regex;
-
-    use super::*;
     use std::fs;
+
+    use anyhow::anyhow;
+    use regex::Regex;
+    use risc0_zkvm::Groth16ReceiptVerifierParameters;
 
     const CONTROL_ID_PATH: &str = "./src/groth16/ControlID.sol";
     const CONTROL_ROOT: &str = "CONTROL_ROOT";
