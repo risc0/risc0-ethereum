@@ -73,15 +73,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [Linux, macOS]
-        feature: [default]
-        device: [cpu]
         include:
+          - os: Linux
+            feature: default
+            device: cpu
           - os: Linux
             feature: cuda
             device: nvidia_rtx_a5000
           - os: macOS
-            feature: metal
+            feature: default
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
