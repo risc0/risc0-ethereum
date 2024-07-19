@@ -20,6 +20,7 @@ use alloy_primitives::{BlockNumber, Bytes, Sealable, Sealed, B256, U256};
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
 use state::StateDb;
 
+pub mod beacon;
 pub mod config;
 mod contract;
 pub mod ethereum;

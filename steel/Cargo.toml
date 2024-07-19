@@ -19,12 +19,15 @@ alloy-rlp = { workspace = true }
 alloy-rlp-derive = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
+beacon-api-client = { workspace = true, optional = true }
+ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 nybbles = { workspace = true }
 once_cell = { workspace = true }
 revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
+sha2 = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 
@@ -37,4 +40,12 @@ test-log = { workspace = true }
 
 [features]
 default = []
-host = ["dep:alloy", "dep:log", "dep:serde_json", "dep:tokio", "dep:url"]
+host = [
+    "dep:alloy",
+    "dep:beacon-api-client",
+    "dep:ethereum-consensus",
+    "dep:log",
+    "dep:serde_json",
+    "dep:tokio",
+    "dep:url",
+]

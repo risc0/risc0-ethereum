@@ -18,7 +18,7 @@
 use alloy_primitives::{address, Address};
 use alloy_sol_types::{sol, SolValue};
 use risc0_steel::{
-    ethereum::{EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
+    ethereum::{EthEvmBeaconInput, ETH_SEPOLIA_CHAIN_SPEC},
     Contract,
 };
 use risc0_zkvm::guest::env;
@@ -46,7 +46,7 @@ const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
 
 fn main() {
     // Read the input from the guest environment.
-    let input: EthEvmInput = env::read();
+    let input: EthEvmBeaconInput = env::read();
 
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
