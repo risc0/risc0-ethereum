@@ -20,20 +20,22 @@ use crate::{EvmBlockHeader, EvmInput, GuestEvmEnv, SolCommitment};
 
 #[cfg(feature = "host")]
 pub mod provider {
-    use super::{EvmBeaconInput, Proof};
-    use crate::{ethereum::EthBlockHeader, EvmInput};
+    use super::{EvmBeaconInput, MerkleProof};
+    use crate::ethereum::{EthBlockHeader, EthEvmInput};
 
     use alloy_primitives::Sealable;
-    use anyhow::Context;
+    use anyhow::{bail, ensure, Context};
     use beacon_api_client::{mainnet::Client, BeaconHeaderSummary, BlockId};
-    use ethereum_consensus::ssz::prelude::*;
+    use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
+    use proofs::{Proof, ProofAndWitness};
     use url::Url;
 
     impl EvmBeaconInput<EthBlockHeader> {
-        pub async fn from_rpc(
+        /// Creates a new [EvmBeaconInput] from a [EthEvmInput] and a Beacon Chain RPC endpoint.
+        pub async fn from_rpc_and_input(
             beacon_rpc_url: Url,
-            input: EvmInput<EthBlockHeader>,
-        ) -> anyhow::Result<EvmBeaconInput<EthBlockHeader>> {
+            input: EthEvmInput,
+        ) -> anyhow::Result<Self> {
             let client = Client::new(beacon_rpc_url);
 
             let block_hash = input.header.hash_slow();
@@ -41,68 +43,109 @@ pub mod provider {
                 .header
                 .inner()
                 .parent_beacon_block_root
-                .context("parent_beacon_block_root missing")?;
+                .context("parent_beacon_block_root missing in execution header")?;
 
-            // first get the parent and then the actual block
-            let resp = client
+            // first get the header of the parent and then the actual block header
+            let parent_beacon_header = client
                 .get_beacon_header(BlockId::Root(parent_beacon_block_root))
                 .await
                 .with_context(|| format!("failed to get header {}", parent_beacon_block_root))?;
-            let parent_beacon_header = resp.header.message;
-            let beacon_header = get_beacon_header_of_child(&client, parent_beacon_header.slot)
+            let beacon_header = get_child_beacon_header(&client, parent_beacon_header)
                 .await
                 .with_context(|| {
                     format!("failed to get child of block {}", parent_beacon_block_root)
                 })?;
 
-            let resp = client
+            // get the entire block
+            let signed_beacon_block = client
                 .get_beacon_block(BlockId::Root(beacon_header.root))
                 .await
                 .with_context(|| format!("failed to get block {}", beacon_header.root))?;
-            let block = &resp.deneb().context("no Daneb block")?.message;
-
-            // create the inclusion proof of the block hash
-            let (proof, beacon_root) = block.prove(&[
-                "body".into(),
-                "execution_payload".into(),
-                "block_hash".into(),
-            ])?;
-            debug_assert_eq!(proof.leaf, block_hash);
-            debug_assert_eq!(beacon_root, block.hash_tree_root().unwrap());
-
-            let proof = Proof {
-                path: proof.branch,
-                generalized_index: proof.index.try_into().context("proof index too large")?,
+            // create the inclusion proof of the execution block hash depending on the fork version
+            let (proof, beacon_root) = match signed_beacon_block {
+                SignedBeaconBlock::Deneb(signed_block) => {
+                    prove_block_hash_inclusion(signed_block.message)?
+                }
+                _ => {
+                    bail!(
+                        "invalid block version: expected {}; got {}",
+                        Fork::Deneb,
+                        signed_beacon_block.version()
+                    );
+                }
             };
-            assert_eq!(
-                proof.process(block_hash),
-                beacon_root,
-                "Proof verification failed"
+
+            // convert and verify the proof
+            let proof: MerkleProof = proof.try_into().context("invalid proof")?;
+            ensure!(
+                proof.process(block_hash) == beacon_root,
+                "proof does not verify",
             );
 
             Ok(EvmBeaconInput { proof, input })
         }
     }
 
-    async fn get_beacon_header_of_child(
+    /// Returns the inclusion proof of `block_hash` in the given `BeaconBlock`.
+    fn prove_block_hash_inclusion<T: SimpleSerialize>(
+        beacon_block: T,
+    ) -> Result<ProofAndWitness, MerkleizationError> {
+        // the `block_hash` is in the ExecutionPayload in the BeaconBlockBody in the BeaconBlock
+        beacon_block.prove(&[
+            "body".into(),
+            "execution_payload".into(),
+            "block_hash".into(),
+        ])
+    }
+
+    /// Returns the header, with `parent_root` equal to `parent.root`.
+    ///
+    /// It iteratively tries to fetch headers of successive slots until success.
+    /// TODO: use [Client::get_beacon_header_for_parent_root], which was not working reliably.
+    async fn get_child_beacon_header(
         client: &Client,
-        slot: u64,
+        parent: BeaconHeaderSummary,
     ) -> anyhow::Result<BeaconHeaderSummary> {
+        let parent_slot = parent.header.message.slot;
         let mut request_error = None;
-        for slot in (slot + 1)..=(slot + 12) {
+        for slot in (parent_slot + 1)..(parent_slot + 32) {
             match client.get_beacon_header(BlockId::Slot(slot)).await {
                 Err(err) => request_error = Some(err),
-                Ok(header) => return Ok(header),
+                Ok(resp) => {
+                    let header = &resp.header.message;
+                    ensure!(header.parent_root == parent.root);
+                    return Ok(resp);
+                }
             }
         }
+        // return the last error, if all calls failed
         Err(request_error.unwrap().into())
+    }
+
+    impl TryFrom<Proof> for MerkleProof {
+        type Error = anyhow::Error;
+
+        fn try_from(proof: Proof) -> Result<Self, Self::Error> {
+            let depth = proof.index.checked_ilog2().context("index is zero")?;
+            let index = proof.index - (1 << depth);
+            ensure!(proof.branch.len() == depth as usize, "index is invalid");
+
+            Ok(MerkleProof {
+                path: proof.branch,
+                index: index.try_into().context("index too large")?,
+            })
+        }
     }
 }
 
+/// The serializable input to derive and validate a [EvmEnv], committing to the corresponding
+/// Beacon Chain block root.
+///
+/// [EvmEnv]: crate::EvmEnv
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EvmBeaconInput<H> {
-    proof: Proof,
     input: EvmInput<H>,
+    proof: MerkleProof,
 }
 
 impl<H: EvmBlockHeader> EvmBeaconInput<H> {
@@ -119,19 +162,21 @@ impl<H: EvmBlockHeader> EvmBeaconInput<H> {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Proof {
+/// Merkle proof-of-inclusion.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MerkleProof {
+    /// Path of Merkle nodes to compute the root.
     pub path: Vec<B256>,
-    pub generalized_index: u32,
+    /// Index of the Merkle leaf to prove.
+    /// The left-most leaf has index 0 and the right-most leaf 2^depth - 1.
+    pub index: u32,
 }
 
-impl Proof {
-    /// Returns the rebuilt hash obtained by traversing a Merkle tree up from `leaf` using `path`.
+impl MerkleProof {
+    /// Returns the rebuilt hash obtained by traversing the Merkle tree up from `leaf`.
     #[inline]
     pub fn process(&self, leaf: B256) -> B256 {
-        let depth = self.generalized_index.ilog2();
-        let mut index = self.generalized_index - (1 << depth);
-
+        let mut index = self.index;
         let mut computed_hash = leaf;
         let mut hasher = Sha256::new();
         for node in &self.path {
@@ -158,13 +203,13 @@ pub(crate) mod tests {
     #[test]
     fn process_simple_proof() {
         let leaf = b256!("94159da973dfa9e40ed02535ee57023ba2d06bad1017e451055470967eb71cd5");
-        let proof = Proof {
+        let proof = MerkleProof {
             path: vec![
                 b256!("8f594dbb4f4219ad4967f86b9cccdb26e37e44995a291582a431eef36ecba45c"),
                 b256!("f8c2ed25e9c31399d4149dcaa48c51f394043a6a1297e65780a5979e3d7bb77c"),
                 b256!("382ba9638ce263e802593b387538faefbaed106e9f51ce793d405f161b105ee6"),
             ],
-            generalized_index: 2u32.pow(3) + 2,
+            index: 2,
         };
         assert_eq!(
             proof.process(leaf),

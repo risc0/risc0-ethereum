@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
 
     // Finally, construct the input from the environment.
     let input = env.into_input().await?;
-    let input = EvmBeaconInput::from_rpc(args.beacon_rpc_url, input).await?;
+    let input = EvmBeaconInput::from_rpc_and_input(args.beacon_rpc_url, input).await?;
 
     println!("Running the guest with the constructed input:");
     let session_info = {
