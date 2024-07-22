@@ -25,7 +25,7 @@ pub mod provider {
 
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
-    use beacon_api_client::{mainnet::Client, BeaconHeaderSummary, BlockId};
+    use beacon_api_client::{mainnet::Client as BeaconClient, BeaconHeaderSummary, BlockId};
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use proofs::{Proof, ProofAndWitness};
     use url::Url;
@@ -36,7 +36,7 @@ pub mod provider {
             beacon_rpc_url: Url,
             input: EthEvmInput,
         ) -> anyhow::Result<Self> {
-            let client = Client::new(beacon_rpc_url);
+            let client = BeaconClient::new(beacon_rpc_url);
 
             let block_hash = input.header.hash_slow();
             let parent_beacon_block_root = input
@@ -101,9 +101,9 @@ pub mod provider {
     /// Returns the header, with `parent_root` equal to `parent.root`.
     ///
     /// It iteratively tries to fetch headers of successive slots until success.
-    /// TODO: use [Client::get_beacon_header_for_parent_root], which was not working reliably.
+    /// TODO: use [BeaconClient::get_beacon_header_for_parent_root], which was not working reliably.
     async fn get_child_beacon_header(
-        client: &Client,
+        client: &BeaconClient,
         parent: BeaconHeaderSummary,
     ) -> anyhow::Result<BeaconHeaderSummary> {
         let parent_slot = parent.header.message.slot;
