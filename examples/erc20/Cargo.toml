@@ -19,8 +19,6 @@ alloy-rlp-derive = { version = "0.3.4", default-features = false }
 alloy-sol-types = { version = "0.7" }
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive", "env"] }
-ethers-core = "2.0"
-ethers-providers = "2.0"
 log = "0.4"
 erc20-methods = { path = "methods" }
 nybbles = { version = "0.2.1", features = ["serde"] }
