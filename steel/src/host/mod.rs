@@ -14,75 +14,93 @@
 
 //! Functionality that is only needed for the host and not the guest.
 
-use self::{
-    db::ProofDb,
-    provider::{EthersProvider, Provider},
-};
+use std::fmt::Debug;
+
 use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
-use alloy_primitives::{Sealable, B256};
-use anyhow::{ensure, Context};
-use ethers_providers::{Http, RetryClient};
+use alloy::{
+    network::{Ethereum, Network},
+    providers::{Provider, ProviderBuilder, RootProvider},
+    rpc::types::Header as RpcHeader,
+    transports::{
+        http::{Client, Http},
+        Transport,
+    },
+};
+use alloy_primitives::{Sealable, StorageKey};
+use anyhow::{anyhow, ensure, Context};
+use db::{AlloyDb, TraceDb};
 use log::debug;
 use revm::primitives::HashMap;
+use url::Url;
 
 pub mod db;
-pub mod provider;
+
+/// A block number (or tag - "latest", "earliest", "pending").
+pub type BlockNumberOrTag = alloy::rpc::types::BlockNumberOrTag;
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
+pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
 
-/// The Ethers client type.
-pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
-
-impl EthEvmEnv<ProofDb<EthersProvider<EthersClient>>> {
+impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an RPC endpoint.
-    pub fn from_rpc(url: &str, block_number: Option<u64>) -> anyhow::Result<Self> {
-        let client = EthersClient::new_client(url, 3, 500)?;
-        let provider = EthersProvider::new(client);
-
-        // get the latest block number if none is provided
-        let block_number = match block_number {
-            Some(n) => n,
-            None => provider.get_block_number()?,
-        };
-
-        EvmEnv::from_provider(provider, block_number)
+    pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> anyhow::Result<Self> {
+        let provider = ProviderBuilder::new().on_http(url);
+        EvmEnv::from_provider(provider, number).await
     }
 }
 
-impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
-    /// Creates a new provable [EvmEnv] from a [Provider].
-    pub fn from_provider(provider: P, block_number: u64) -> anyhow::Result<Self> {
-        let header = provider
-            .get_block_header(block_number)?
-            .with_context(|| format!("block {block_number} not found"))?;
+impl<T, N, P> EvmEnv<TraceDb<AlloyDb<T, N, P>>, <N as Network>::Header>
+where
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
+    <N as Network>::Header: EvmBlockHeader + TryFrom<RpcHeader>,
+    <<N as Network>::Header as TryFrom<RpcHeader>>::Error: Debug,
+{
+    /// Creates a new provable [EvmEnv] from an alloy [Provider].
+    pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> anyhow::Result<Self> {
+        let rpc_block = provider
+            .get_block_by_number(number, false)
+            .await?
+            .with_context(|| format!("block {number} not found"))?;
+        let header: <N as Network>::Header = try_into_header(rpc_block.header)?;
+        log::info!("Environment initialized for block {}", header.number());
 
-        // create a new database backed by the provider
-        let db = ProofDb::new(provider, block_number);
+        let db = TraceDb::new(AlloyDb::new(provider, header.number()));
 
         Ok(EvmEnv::new(db, header.seal_slow()))
     }
 }
 
-impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
+impl<T, N, P> EvmEnv<TraceDb<AlloyDb<T, N, P>>, <N as Network>::Header>
+where
+    T: Transport + Clone,
+    N: Network,
+    <N as Network>::Header: EvmBlockHeader + TryFrom<RpcHeader>,
+    <<N as Network>::Header as TryFrom<RpcHeader>>::Error: Debug,
+    P: Provider<T, N>,
+{
     /// Converts the environment into a [EvmInput].
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
-    pub fn into_input(self) -> anyhow::Result<EvmInput<P::Header>> {
-        let db = &self.db;
+    pub async fn into_input(self) -> anyhow::Result<EvmInput<<N as Network>::Header>> {
+        let db = &self.db.unwrap();
 
         // use the same provider as the database
-        let provider = db.provider();
+        let provider = db.inner().provider();
+        let block_number = db.inner().block_number();
 
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
         for (address, storage_keys) in db.accounts() {
-            let proof = provider.get_proof(
-                *address,
-                storage_keys.iter().map(|v| B256::from(*v)).collect(),
-                db.block_number(),
-            )?;
+            let proof = provider
+                .get_proof(
+                    *address,
+                    storage_keys.iter().map(|v| StorageKey::from(*v)).collect(),
+                )
+                .number(block_number)
+                .await?;
             proofs.push(proof);
         }
 
@@ -117,10 +135,12 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
         let mut ancestors = Vec::new();
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
-            for number in (block_hash_min_number..db.block_number()).rev() {
-                let header = provider
-                    .get_block_header(number)?
+            for number in (block_hash_min_number..block_number).rev() {
+                let rpc_block = provider
+                    .get_block_by_number(number.into(), false)
+                    .await?
                     .with_context(|| format!("block {number} not found"))?;
+                let header: <N as Network>::Header = try_into_header(rpc_block.header)?;
                 ancestors.push(header);
             }
         }
@@ -143,4 +163,15 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
             ancestors,
         })
     }
+}
+
+fn try_into_header<H: EvmBlockHeader + TryFrom<RpcHeader>>(
+    rpc_header: RpcHeader,
+) -> anyhow::Result<H>
+where
+    <H as TryFrom<RpcHeader>>::Error: Debug,
+{
+    rpc_header
+        .try_into()
+        .map_err(|err| anyhow!("invalid header {err:?}"))
 }

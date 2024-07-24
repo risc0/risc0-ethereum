@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #[cfg(feature = "host")]
-use crate::host::{provider::Provider, HostEvmEnv};
+use crate::host::HostEvmEnv;
 use crate::{EvmBlockHeader, GuestEvmEnv, MerkleTrie, StateDb};
-use alloy_primitives::{keccak256, Address, Sealed, TxKind, B256, U256};
+use alloy_primitives::{keccak256, Address, TxKind, B256, U256};
 use alloy_sol_types::{SolCall, SolType};
 use revm::{
     primitives::{
@@ -24,7 +24,7 @@ use revm::{
     },
     Database, Evm,
 };
-use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
+use std::{borrow::Borrow, convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 
 /// Represents a contract that is initialized with a specific environment and contract address.
 ///
@@ -40,11 +40,12 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 ///
 /// ### Examples
 /// ```rust no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+/// # use risc0_steel::{ethereum::EthEvmEnv, Contract, host::BlockNumberOrTag};
 /// # use alloy_primitives::{address};
 /// # use alloy_sol_types::sol;
 ///
-/// # fn main() -> anyhow::Result<()> {
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() -> anyhow::Result<()> {
 /// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
 /// sol! {
 ///     interface IERC20 {
@@ -57,11 +58,12 @@ use std::{convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 /// };
 ///
 /// // Host:
-/// let mut env = EthEvmEnv::from_rpc("https://ethereum-rpc.publicnode.com", None)?;
+/// let url = "https://ethereum-rpc.publicnode.com".parse()?;
+/// let mut env = EthEvmEnv::from_rpc(url, BlockNumberOrTag::Latest).await?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
-/// contract.call_builder(&get_balance).call()?;
+/// contract.call_builder(&get_balance).call().await?;
 ///
-/// let evm_input = env.into_input()?;
+/// let evm_input = env.into_input().await?;
 ///
 /// // Guest:
 /// let evm_env = evm_input.into_env();
@@ -93,9 +95,9 @@ impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
 }
 
 #[cfg(feature = "host")]
-impl<'a, P, H> Contract<&'a mut HostEvmEnv<P, H>>
+impl<'a, D, H> Contract<&'a mut HostEvmEnv<D, H>>
 where
-    P: Provider,
+    D: Database,
 {
     /// Constructor for preflighting calls to an Ethereum contract on the host.
     ///
@@ -103,15 +105,15 @@ where
     /// necessary data via the [Provider], and generating a storage proof for any accessed
     /// elements using [EvmEnv::into_input].
     ///
-    /// [Provider]: crate::host::provider::Provider
+    /// [Provider]: alloy::providers::Provider
     /// [EvmEnv::into_input]: crate::EvmEnv::into_input
     /// [EvmEnv]: crate::EvmEnv
-    pub fn preflight(address: Address, env: &'a mut HostEvmEnv<P, H>) -> Self {
+    pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H>) -> Self {
         Self { address, env }
     }
 
     /// Initializes a call builder to execute a call on the contract.
-    pub fn call_builder<C: SolCall>(&mut self, call: &C) -> CallBuilder<C, &mut HostEvmEnv<P, H>> {
+    pub fn call_builder<C: SolCall>(&mut self, call: &C) -> CallBuilder<C, &mut HostEvmEnv<D, H>> {
         CallBuilder::new(self.env, self.address, call)
     }
 }
@@ -173,24 +175,40 @@ impl<C, E> CallBuilder<C, E> {
 }
 
 #[cfg(feature = "host")]
-impl<'a, C, P, H> CallBuilder<C, &'a mut HostEvmEnv<P, H>>
+impl<'a, C, D, H> CallBuilder<C, &'a mut HostEvmEnv<D, H>>
 where
-    C: SolCall,
-    P: Provider,
-    H: EvmBlockHeader,
+    C: SolCall + Send + 'static,
+    <C as SolCall>::Return: Send,
+    D: Database + Send + 'static,
+    <D as Database>::Error: Debug,
+    H: EvmBlockHeader + Clone + Send + 'static,
 {
     /// Executes the call with a [EvmEnv] constructed with [Contract::preflight].
     ///
     /// [EvmEnv]: crate::EvmEnv
-    pub fn call(self) -> anyhow::Result<C::Return> {
+    pub async fn call(self) -> anyhow::Result<C::Return> {
         log::info!(
             "Executing preflight for '{}' on contract {}",
             C::SIGNATURE,
             self.tx.to
         );
 
-        let evm = new_evm(&mut self.env.db, self.env.cfg_env.clone(), &self.env.header);
-        self.tx.transact(evm).map_err(|err| anyhow::anyhow!(err))
+        let cfg = self.env.cfg_env.clone();
+        let header = self.env.header.inner().clone();
+        let db = self.env.db.take().unwrap();
+
+        let (res, db) = tokio::task::spawn_blocking(move || {
+            let mut evm = new_evm(db, cfg, header);
+            let res = self.tx.transact(&mut evm);
+            let (db, _) = evm.into_db_and_env_with_handler_cfg();
+
+            (res, db)
+        })
+        .await?;
+
+        self.env.db = Some(db);
+
+        res.map_err(|err| anyhow::anyhow!(err))
     }
 }
 
@@ -203,12 +221,13 @@ where
     ///
     /// [EvmEnv]: crate::EvmEnv
     pub fn call(self) -> C::Return {
-        let evm = new_evm(
-            WrapStateDb::new(&self.env.db),
+        let state_db = self.env.db.as_ref().unwrap();
+        let mut evm = new_evm::<_, H>(
+            WrapStateDb::new(state_db),
             self.env.cfg_env.clone(),
-            &self.env.header,
+            self.env.header.inner(),
         );
-        self.tx.transact(evm).unwrap()
+        self.tx.transact(&mut evm).unwrap()
     }
 }
 
@@ -232,7 +251,7 @@ impl<C: SolCall> CallTxData<C> {
     );
 
     /// Executes the call in the provided [Evm].
-    fn transact<DB>(self, mut evm: Evm<'_, (), DB>) -> Result<C::Return, String>
+    fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<C::Return, String>
     where
         DB: Database,
         <DB as Database>::Error: Debug,
@@ -251,17 +270,18 @@ impl<C: SolCall> CallTxData<C> {
         let ResultAndState { result, .. } = evm
             .transact_preverified()
             .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
-        let ExecutionResult::Success { reason, output, .. } = result else {
-            return Err(format!("Call '{}' failed", C::SIGNATURE));
-        };
-        // there must be a return value to decode
-        if reason != SuccessReason::Return {
-            return Err(format!(
-                "Call '{}' did not return: {:?}",
-                C::SIGNATURE,
-                reason
-            ));
-        }
+        let output = match result {
+            ExecutionResult::Success { reason, output, .. } => {
+                // there must be a return value to decode
+                if reason != SuccessReason::Return {
+                    Err(format!("Did not return: {:?}", reason))
+                } else {
+                    Ok(output)
+                }
+            }
+            ExecutionResult::Revert { output, .. } => Err(format!("Reverted: {}", output)),
+            ExecutionResult::Halt { reason, .. } => Err(format!("Halted: {:?}", reason)),
+        }?;
         let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
             format!(
                 "Call '{}' returned invalid type; expected '{}': {:?}",
@@ -275,15 +295,15 @@ impl<C: SolCall> CallTxData<C> {
     }
 }
 
-fn new_evm<'a, DB, H>(db: DB, cfg: CfgEnvWithHandlerCfg, header: &Sealed<H>) -> Evm<'a, (), DB>
+fn new_evm<'a, D, H>(db: D, cfg: CfgEnvWithHandlerCfg, header: impl Borrow<H>) -> Evm<'a, (), D>
 where
-    DB: Database,
+    D: Database,
     H: EvmBlockHeader,
 {
     Evm::builder()
         .with_db(db)
         .with_cfg_env_with_handler_cfg(cfg)
-        .modify_block_env(|blk_env| header.fill_block_env(blk_env))
+        .modify_block_env(|blk_env| header.borrow().fill_block_env(blk_env))
         .build()
 }
 

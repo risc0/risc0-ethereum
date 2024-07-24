@@ -105,7 +105,7 @@ pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
 /// The environment to execute the contract calls in.
 pub struct EvmEnv<D, H> {
-    db: D,
+    db: Option<D>,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
 }
@@ -117,7 +117,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
 
         Self {
-            db,
+            db: Some(db),
             cfg_env,
             header,
         }
