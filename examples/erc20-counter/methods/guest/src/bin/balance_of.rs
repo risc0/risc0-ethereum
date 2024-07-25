@@ -41,12 +41,9 @@ sol! {
 
 fn main() {
     // Read the input from the guest environment.
-    println!("Reading input");
     let input: EthEvmInput = env::read();
-    let contract: Address = Address::ZERO; // env::read();
-    let account: Address = Address::ZERO; // env::read();
-
-    println!("Reading input done");
+    let contract: Address = env::read();
+    let account: Address = env::read();
 
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the

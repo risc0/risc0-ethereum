@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Type aliases for Ethereum.
-use crate::EvmEnv;
+use crate::{serde::RlpHeader, EvmEnv};
 
 use super::{EvmBlockHeader, EvmInput};
 use alloy_primitives::{BlockNumber, B256, U256};
@@ -26,37 +26,39 @@ pub type EthEvmEnv<D> = EvmEnv<D, EthBlockHeader>;
 pub type EthEvmInput = EvmInput<EthBlockHeader>;
 
 /// [EvmBlockHeader] for Ethereum.
-pub type EthBlockHeader = alloy_consensus::Header;
+pub type EthBlockHeader = RlpHeader<alloy_consensus::Header>;
 
 impl EvmBlockHeader for EthBlockHeader {
     #[inline]
     fn parent_hash(&self) -> &B256 {
-        &self.parent_hash
+        &self.inner().parent_hash
     }
     #[inline]
     fn number(&self) -> BlockNumber {
-        self.number
+        self.inner().number
     }
     #[inline]
     fn timestamp(&self) -> u64 {
-        self.timestamp
+        self.inner().timestamp
     }
     #[inline]
     fn state_root(&self) -> &B256 {
-        &self.state_root
+        &self.inner().state_root
     }
 
     #[inline]
     fn fill_block_env(&self, blk_env: &mut BlockEnv) {
-        blk_env.number = U256::from(self.number);
-        blk_env.coinbase = self.beneficiary;
-        blk_env.timestamp = U256::from(self.timestamp);
-        blk_env.gas_limit = U256::from(self.gas_limit);
-        blk_env.basefee = U256::from(self.base_fee_per_gas.unwrap_or_default());
-        blk_env.difficulty = self.difficulty;
+        let header = self.inner();
+
+        blk_env.number = U256::from(header.number);
+        blk_env.coinbase = header.beneficiary;
+        blk_env.timestamp = U256::from(header.timestamp);
+        blk_env.gas_limit = U256::from(header.gas_limit);
+        blk_env.basefee = U256::from(header.base_fee_per_gas.unwrap_or_default());
+        blk_env.difficulty = header.difficulty;
         // technically, this is only valid after EIP-4399 but revm makes sure it is not used before
-        blk_env.prevrandao = Some(self.mix_hash);
-        if let Some(excess_blob_gas) = self.excess_blob_gas {
+        blk_env.prevrandao = Some(header.mix_hash);
+        if let Some(excess_blob_gas) = header.excess_blob_gas {
             blk_env.set_blob_excess_gas_and_price(excess_blob_gas.try_into().unwrap())
         };
     }

@@ -25,7 +25,7 @@ use alloy::{
     rpc::types::BlockNumberOrTag,
     transports::http::{Client, Http},
 };
-use alloy_primitives::{address, b256, uint, Address, U256};
+use alloy_primitives::{address, b256, uint, Address, Sealable, U256};
 use alloy_sol_types::SolCall;
 use once_cell::sync::Lazy;
 use revm::primitives::SpecId;
@@ -113,10 +113,6 @@ async fn test_provider() -> TestProvider {
     log::info!("Anvil started: {:?}", node_info);
     let instance = SteelTest::deploy(&provider).await.unwrap();
     assert_eq!(*instance.address(), STEEL_TEST_CONTRACT);
-    provider
-        .anvil_mine(Some(U256::from(254)), None)
-        .await
-        .unwrap();
 
     provider
 }
@@ -160,7 +156,7 @@ async fn eoa_account() {
     assert_eq!(result.size, uint!(0_U256));
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 async fn blockhash() {
     let provider = test_provider().await;
     let block_hash = provider.anvil_node_info().await.unwrap().current_block_hash;

@@ -15,14 +15,14 @@
 #![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
+use std::{fmt::Debug, rc::Rc};
+
+use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{
     b256, keccak256, Address, BlockNumber, Bytes, Sealable, Sealed, TxNumber, B256, U256,
 };
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
-
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
-use serde::{Deserialize, Serialize};
-use std::{fmt::Debug, rc::Rc};
 
 pub mod config;
 mod contract;
@@ -30,6 +30,7 @@ pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
 mod mpt;
+pub mod serde;
 
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
@@ -37,11 +38,11 @@ pub use mpt::MerkleTrie;
 /// The serializable input to derive and validate a [EvmEnv].
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EvmInput<H> {
-    pub header: H,
-    pub state_trie: MerkleTrie,
-    pub storage_tries: Vec<MerkleTrie>,
-    pub contracts: Vec<Bytes>,
-    pub ancestors: Vec<H>,
+    header: H,
+    state_trie: MerkleTrie,
+    storage_tries: Vec<MerkleTrie>,
+    contracts: Vec<Bytes>,
+    ancestors: Vec<H>,
 }
 
 impl<H: EvmBlockHeader> EvmInput<H> {

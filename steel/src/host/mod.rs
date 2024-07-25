@@ -26,7 +26,7 @@ use alloy::{
         Transport,
     },
 };
-use alloy_primitives::{Sealable, StorageKey};
+use alloy_primitives::StorageKey;
 use anyhow::{anyhow, ensure, Context};
 use db::{AlloyDb, TraceDb};
 use log::debug;
@@ -49,13 +49,13 @@ impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>
     }
 }
 
-impl<T, N, P> EvmEnv<TraceDb<AlloyDb<T, N, P>>, <N as Network>::Header>
+impl<T, N, P, H> EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>
 where
     T: Transport + Clone,
     N: Network,
     P: Provider<T, N>,
-    <N as Network>::Header: EvmBlockHeader + TryFrom<RpcHeader>,
-    <<N as Network>::Header as TryFrom<RpcHeader>>::Error: Debug,
+    H: EvmBlockHeader + TryFrom<RpcHeader>,
+    <H as TryFrom<RpcHeader>>::Error: Debug,
 {
     /// Creates a new provable [EvmEnv] from an alloy [Provider].
     pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> anyhow::Result<Self> {
@@ -63,7 +63,7 @@ where
             .get_block_by_number(number, false)
             .await?
             .with_context(|| format!("block {number} not found"))?;
-        let header: <N as Network>::Header = try_into_header(rpc_block.header)?;
+        let header: H = try_into_header(rpc_block.header)?;
         log::info!("Environment initialized for block {}", header.number());
 
         let db = TraceDb::new(AlloyDb::new(provider, header.number()));
@@ -72,19 +72,19 @@ where
     }
 }
 
-impl<T, N, P> EvmEnv<TraceDb<AlloyDb<T, N, P>>, <N as Network>::Header>
+impl<T, N, P, H> EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>
 where
     T: Transport + Clone,
     N: Network,
-    <N as Network>::Header: EvmBlockHeader + TryFrom<RpcHeader>,
-    <<N as Network>::Header as TryFrom<RpcHeader>>::Error: Debug,
     P: Provider<T, N>,
+    H: EvmBlockHeader + TryFrom<RpcHeader>,
+    <H as TryFrom<RpcHeader>>::Error: Debug,
 {
     /// Converts the environment into a [EvmInput].
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
-    pub async fn into_input(self) -> anyhow::Result<EvmInput<<N as Network>::Header>> {
+    pub async fn into_input(self) -> anyhow::Result<EvmInput<H>> {
         let db = &self.db.unwrap();
 
         // use the same provider as the database
@@ -140,7 +140,7 @@ where
                     .get_block_by_number(number.into(), false)
                     .await?
                     .with_context(|| format!("block {number} not found"))?;
-                let header: <N as Network>::Header = try_into_header(rpc_block.header)?;
+                let header: H = try_into_header(rpc_block.header)?;
                 ancestors.push(header);
             }
         }

@@ -32,6 +32,7 @@ url = { workspace = true }
 [dev-dependencies]
 alloy = { workspace = true, features = ["node-bindings"] }
 alloy-trie = { workspace = true }
+bincode = { workspace = true }
 risc0-steel = { path = ".", features = ["host"] }
 test-log = { workspace = true }
 
