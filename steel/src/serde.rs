@@ -12,58 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy_primitives::{keccak256, Sealable, Sealed, B256};
+use std::fmt;
+
+use alloy_primitives::{hex, keccak256, Sealable, Sealed, B256};
 use alloy_rlp::{Decodable, Encodable};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-pub mod rlp {
-    use core::{fmt, marker::PhantomData};
-
-    use alloy_rlp::{Decodable, Encodable};
-    use serde::de::{Error, Visitor};
-    use serde::{Deserializer, Serializer};
-
-    struct RlpVisitor<T>(PhantomData<T>);
-
-    impl<'de, T: Decodable> Visitor<'de> for RlpVisitor<T> {
-        type Value = T;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("RLP-encodes bytes")
-        }
-
-        #[inline]
-        fn visit_bytes<E: Error>(self, mut v: &[u8]) -> Result<Self::Value, E> {
-            T::decode(&mut v).map_err(Error::custom)
-        }
-    }
-
-    pub fn serialize<T, S>(source: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Encodable,
-        S: Serializer,
-    {
-        let rlp = alloy_rlp::encode(source);
-        serializer.serialize_bytes(&rlp)
-    }
-
-    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-    where
-        T: Decodable,
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_bytes(RlpVisitor(PhantomData))
-    }
-}
-
-/// A simple wrapper to serialize a header using the RLP-encoding.
+/// An efficient wrapper for header types that do not support serde serialization.
+///
+/// It implements deserialization using RLP encoding and does not discard the RLP data after
+/// decoding, instead keeping it for faster hash computation.
 #[derive(Clone)]
-pub struct RlpHeader<H: Encodable + Decodable> {
+pub struct RlpHeader<H: Encodable> {
     inner: H,
-    rlp: Option<Box<[u8]>>,
+    rlp: Option<Vec<u8>>,
 }
 
-impl<H: Encodable + Decodable> RlpHeader<H> {
+impl<H: Encodable> RlpHeader<H> {
     pub fn new(inner: H) -> Self {
         Self { inner, rlp: None }
     }
@@ -73,7 +38,7 @@ impl<H: Encodable + Decodable> RlpHeader<H> {
     }
 }
 
-impl<H: Encodable + Decodable> Sealable for RlpHeader<H> {
+impl<H: Encodable> Sealable for RlpHeader<H> {
     /// Calculate the seal hash, this may be slow.
     #[inline]
     fn hash_slow(&self) -> B256 {
@@ -90,17 +55,61 @@ impl<H: Encodable + Decodable> Sealable for RlpHeader<H> {
     }
 }
 
-impl<H: Encodable + Decodable> Serialize for RlpHeader<H> {
+impl<H: Encodable> Serialize for RlpHeader<H> {
+    #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let rlp = alloy_rlp::encode(&self.inner).into_boxed_slice();
-        rlp.serialize(serializer)
+        if serializer.is_human_readable() {
+            hex::serialize(alloy_rlp::encode(&self.inner), serializer)
+        } else {
+            serializer.serialize_bytes(&alloy_rlp::encode(&self.inner))
+        }
     }
 }
 
 impl<'de, H: Encodable + Decodable> Deserialize<'de> for RlpHeader<H> {
+    #[inline]
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let rlp = <Box<[u8]>>::deserialize(deserializer)?;
-        let header = H::decode(&mut rlp.as_ref()).map_err(serde::de::Error::custom)?;
+        struct BytesVisitor;
+
+        impl<'de> de::Visitor<'de> for BytesVisitor {
+            type Value = Vec<u8>;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("bytes represented as a hex string, sequence or raw bytes")
+            }
+
+            fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                hex::decode(v).map_err(de::Error::custom)
+            }
+            fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
+                Ok(v.to_vec())
+            }
+            fn visit_byte_buf<E: de::Error>(self, v: Vec<u8>) -> Result<Self::Value, E> {
+                Ok(v)
+            }
+            fn visit_seq<A: de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut values = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+                while let Some(value) = seq.next_element()? {
+                    values.push(value);
+                }
+                Ok(values)
+            }
+        }
+
+        // deserialize the byte vector
+        let rlp = if deserializer.is_human_readable() {
+            deserializer.deserialize_any(BytesVisitor)?
+        } else {
+            deserializer.deserialize_byte_buf(BytesVisitor)?
+        };
+        // the RLP-encoding is not malleable, as long as we make sure that there are no additional
+        // bytes after the RLP-encoded data
+        let mut buf = rlp.as_slice();
+        let header = H::decode(&mut buf).map_err(de::Error::custom)?;
+        if !buf.is_empty() {
+            return Err(de::Error::custom("trailing bytes"));
+        }
+
         Ok(RlpHeader {
             inner: header,
             rlp: Some(rlp),
@@ -116,9 +125,8 @@ where
     type Error = <H as TryFrom<alloy::rpc::types::Header>>::Error;
 
     fn try_from(value: alloy::rpc::types::Header) -> Result<Self, Self::Error> {
-        let header = value.try_into()?;
         Ok(Self {
-            inner: header,
+            inner: value.try_into()?,
             rlp: None,
         })
     }
@@ -126,36 +134,29 @@ where
 
 #[cfg(test)]
 mod tests {
-    use alloy_primitives::U256;
-    use serde::{Deserialize, Serialize};
+    use super::*;
 
-    use crate::serde::RlpHeader;
+    use alloy_primitives::Sealable;
 
     #[test]
-    fn serde_with() {
-        #[derive(Debug, PartialEq, Serialize, Deserialize)]
-        struct T {
-            #[serde(with = "super::rlp")]
-            uint: U256,
-        }
-        let t = T {
-            uint: U256::from(42),
-        };
+    fn bincode_rlp_header() {
+        let value = RlpHeader::new(alloy_consensus::Header::default());
+        assert_eq!(value.hash_slow(), value.inner().hash_slow());
 
-        let bin = bincode::serialize(&t).unwrap();
-        assert_eq!(bincode::deserialize::<T>(&bin).unwrap(), t);
+        let bin = bincode::serialize(&value).unwrap();
+        let de: RlpHeader<alloy_consensus::Header> = bincode::deserialize(&bin).unwrap();
+        assert_eq!(de.inner(), value.inner());
+        assert_eq!(de.hash_slow(), value.inner().hash_slow());
     }
 
     #[test]
-    fn rlp_header_roundtrip() {
+    fn serde_rlp_header() {
         let value = RlpHeader::new(alloy_consensus::Header::default());
+        assert_eq!(value.hash_slow(), value.inner().hash_slow());
 
-        let bin = bincode::serialize(&value).unwrap();
-        assert_eq!(
-            bincode::deserialize::<RlpHeader<alloy_consensus::Header>>(&bin)
-                .unwrap()
-                .inner(),
-            value.inner()
-        );
+        let json = serde_json::to_string(&value).unwrap();
+        let de: RlpHeader<alloy_consensus::Header> = serde_json::from_str(&json).unwrap();
+        assert_eq!(de.inner(), value.inner());
+        assert_eq!(de.hash_slow(), value.inner().hash_slow());
     }
 }
