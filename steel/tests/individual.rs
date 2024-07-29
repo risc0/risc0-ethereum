@@ -14,6 +14,8 @@
 
 #![cfg(feature = "host")]
 
+use std::fmt::Debug;
+
 use alloy::{
     network::{Ethereum, EthereumWallet},
     providers::{
@@ -22,16 +24,15 @@ use alloy::{
         layers::AnvilProvider,
         ProviderBuilder, RootProvider,
     },
-    rpc::types::BlockNumberOrTag,
     transports::http::{Client, Http},
+    uint,
 };
-use alloy_primitives::{address, b256, uint, Address, Sealable, U256};
-use alloy_sol_types::SolCall;
-use once_cell::sync::Lazy;
-use revm::primitives::SpecId;
-use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract, EvmBlockHeader};
-use std::fmt::Debug;
+use alloy_primitives::{address, b256, Address, U256};
+use common::{CallOptions, ANVIL_CHAIN_SPEC};
+use risc0_steel::{ethereum::EthEvmEnv, host::BlockNumberOrTag, Contract};
 use test_log::test;
+
+mod common;
 
 const STEEL_TEST_CONTRACT: Address = address!("5fbdb2315678afecb367f032d93f642f64180aa3");
 alloy::sol!(
@@ -91,9 +92,6 @@ alloy::sol!(
     }
 );
 
-static ANVIL_CHAIN_SPEC: Lazy<ChainSpec> =
-    Lazy::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
-
 type TestProvider = FillProvider<
     JoinFill<RecommendedFiller, WalletFiller<EthereumWallet>>,
     AnvilProvider<RootProvider<Http<Client>>, Http<Client>>,
@@ -101,6 +99,7 @@ type TestProvider = FillProvider<
     Ethereum,
 >;
 
+/// Returns an Anvil provider with the deployed [SteelTest] contract.
 async fn test_provider() -> TestProvider {
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
@@ -115,11 +114,11 @@ async fn test_provider() -> TestProvider {
 
 #[test(tokio::test)]
 async fn precompile() {
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testPrecompileCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::empty(),
+        SteelTest::testPrecompileCall {},
+        CallOptions::new(),
     )
     .await;
     assert_eq!(
@@ -130,11 +129,11 @@ async fn precompile() {
 
 #[test(tokio::test)]
 async fn nonexistent_account() {
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testNonexistentAccountCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::empty(),
+        SteelTest::testNonexistentAccountCall {},
+        CallOptions::new(),
     )
     .await;
     assert_eq!(result.size, uint!(0_U256));
@@ -142,11 +141,11 @@ async fn nonexistent_account() {
 
 #[test(tokio::test)]
 async fn eoa_account() {
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testEoaAccountCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::empty(),
+        SteelTest::testEoaAccountCall {},
+        CallOptions::new(),
     )
     .await;
     assert_eq!(result.size, uint!(0_U256));
@@ -162,11 +161,11 @@ async fn blockhash() {
         .await
         .unwrap();
 
-    let result = eth_call(
+    let result = common::eth_call(
         provider,
-        SteelTest::testBlockhashCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::empty(),
+        SteelTest::testBlockhashCall {},
+        CallOptions::new(),
     )
     .await;
     assert_eq!(result.h, block_hash);
@@ -174,11 +173,11 @@ async fn blockhash() {
 
 #[test(tokio::test)]
 async fn chainid() {
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testChainidCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::empty(),
+        SteelTest::testChainidCall {},
+        CallOptions::new(),
     )
     .await;
     assert_eq!(result._0, uint!(31337_U256));
@@ -187,11 +186,11 @@ async fn chainid() {
 #[test(tokio::test)]
 async fn origin() {
     let from = address!("0000000000000000000000000000000000000042");
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testOriginCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::from(from),
+        SteelTest::testOriginCall {},
+        CallOptions::with_from(from),
     )
     .await;
     assert_eq!(result._0, from);
@@ -200,11 +199,11 @@ async fn origin() {
 #[test(tokio::test)]
 async fn gasprice() {
     let gas_price = uint!(42_U256);
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testGaspriceCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::gas_price(gas_price),
+        SteelTest::testGaspriceCall {},
+        CallOptions::with_gas_price(gas_price),
     )
     .await;
     assert_eq!(result._0, gas_price);
@@ -212,11 +211,11 @@ async fn gasprice() {
 
 #[test(tokio::test)]
 async fn multi_contract_calls() {
-    let result = eth_call(
+    let result = common::eth_call(
         test_provider().await,
-        SteelTest::testMuliContractCallsCall {},
         STEEL_TEST_CONTRACT,
-        CallBuilderOverrides::empty(),
+        SteelTest::testMuliContractCallsCall {},
+        CallOptions::new(),
     )
     .await;
     assert_eq!(result._0, uint!(84_U256));
@@ -234,80 +233,4 @@ async fn call_eoa() {
         .call()
         .await
         .expect_err("calling an EOA should fail");
-}
-
-/// Simple struct to operate over different [CallBuilder] types.
-#[derive(Debug, Default)]
-struct CallBuilderOverrides {
-    gas_price: Option<U256>,
-    from: Option<Address>,
-}
-
-impl CallBuilderOverrides {
-    fn empty() -> Self {
-        CallBuilderOverrides::default()
-    }
-    fn from(from: Address) -> Self {
-        Self {
-            from: Some(from),
-            ..Default::default()
-        }
-    }
-    fn gas_price(gas_price: U256) -> Self {
-        Self {
-            gas_price: Some(gas_price),
-            ..Default::default()
-        }
-    }
-
-    fn set<E, C>(&self, mut builder: CallBuilder<E, C>) -> CallBuilder<E, C> {
-        if let Some(gas_price) = self.gas_price {
-            builder = builder.gas_price(gas_price);
-        }
-        if let Some(from) = self.from {
-            builder = builder.from(from);
-        }
-        builder
-    }
-}
-
-async fn eth_call<C>(
-    provider: TestProvider,
-    call: C,
-    address: Address,
-    call_overrides: CallBuilderOverrides,
-) -> C::Return
-where
-    C: SolCall + Send + 'static,
-    <C as SolCall>::Return: PartialEq + Debug + Send,
-{
-    let mut env = EthEvmEnv::from_provider(provider, BlockNumberOrTag::Latest)
-        .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
-    let block_hash = env.header().hash_slow();
-    let block_number = U256::from(env.header().number());
-
-    let mut preflight = Contract::preflight(address, &mut env);
-    let preflight_result = call_overrides
-        .set(preflight.call_builder(&call))
-        .call()
-        .await
-        .unwrap();
-
-    let input = env.into_input().await.unwrap();
-
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
-    let commitment = env.block_commitment();
-    assert_eq!(commitment.blockHash, block_hash, "invalid commitment");
-    assert_eq!(commitment.blockNumber, block_number, "invalid commitment");
-
-    let contract = Contract::new(address, &env);
-    let result = call_overrides.set(contract.call_builder(&call)).call();
-    assert_eq!(
-        result, preflight_result,
-        "mismatch in preflight and execution"
-    );
-
-    result
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy_primitives::{Address, Bytes, B256, U256};
+use alloy_primitives::{Address, Bytes, StorageKey, B256, U256};
 use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, HashSet},
     Database,
@@ -78,7 +78,11 @@ impl<DB: Database> Database for TraceDb<DB> {
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        log::trace!("STORAGE: address={}, index={}", address, index);
+        log::trace!(
+            "STORAGE: address={}, index={}",
+            address,
+            StorageKey::from(index)
+        );
         let storage = self.inner.storage(address, index)?;
         self.accounts.entry(address).or_default().insert(index);
 
