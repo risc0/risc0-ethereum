@@ -15,7 +15,6 @@
 //! [Database] implementations.
 //!
 //! [Database]: revm::Database
-
 mod alloy;
 mod trace;
 

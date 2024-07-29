@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fmt::Debug;
+
 use alloy_primitives::{b256, keccak256, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
 use nybbles::Nibbles;
 use revm::primitives::HashMap;
 use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
 use thiserror::Error as ThisError;
 
 /// Root hash of an empty Merkle Patricia trie, i.e. `keccak256(RLP(""))`.
@@ -374,8 +375,9 @@ fn resolve_trie(root: Node, nodes_by_hash: &HashMap<B256, Node>) -> Node {
 
 #[cfg(test)]
 mod tests {
+    use crate::state::StateAccount;
+
     use super::*;
-    use crate::StateAccount;
     use alloy_primitives::{address, uint, Bytes, U256};
     use alloy_trie::HashBuilder;
     use serde_json::json;
@@ -391,6 +393,11 @@ mod tests {
             }
         };
         out
+    }
+
+    #[test]
+    pub fn empty_root_hash() {
+        assert_eq!(EMPTY_ROOT_HASH, keccak256(Node::Null.rlp_encoded()));
     }
 
     #[test]

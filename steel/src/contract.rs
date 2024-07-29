@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::{
+    borrow::Borrow,
+    fmt::{Debug, Display},
+    marker::PhantomData,
+    mem,
+};
+
 #[cfg(feature = "host")]
 use crate::host::HostEvmEnv;
-use crate::{EvmBlockHeader, GuestEvmEnv, MerkleTrie, StateDb};
-use alloy_primitives::{keccak256, Address, TxKind, B256, U256};
+use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
+use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
 use revm::{
-    primitives::{
-        AccountInfo, Bytecode, CfgEnvWithHandlerCfg, ExecutionResult, HashMap, ResultAndState,
-        SuccessReason,
-    },
+    primitives::{CfgEnvWithHandlerCfg, ExecutionResult, ResultAndState, SuccessReason},
     Database, Evm,
 };
-use std::{borrow::Borrow, convert::Infallible, fmt::Debug, marker::PhantomData, mem, rc::Rc};
 
 /// Represents a contract that is initialized with a specific environment and contract address.
 ///
@@ -41,7 +44,7 @@ use std::{borrow::Borrow, convert::Infallible, fmt::Debug, marker::PhantomData, 
 /// ### Examples
 /// ```rust no_run
 /// # use risc0_steel::{ethereum::EthEvmEnv, Contract, host::BlockNumberOrTag};
-/// # use alloy_primitives::{address};
+/// # use alloy_primitives::address;
 /// # use alloy_sol_types::sol;
 ///
 /// # #[tokio::main(flavor = "current_thread")]
@@ -180,21 +183,24 @@ where
     C: SolCall + Send + 'static,
     <C as SolCall>::Return: Send,
     D: Database + Send + 'static,
-    <D as Database>::Error: Debug,
+    <D as Database>::Error: Display,
     H: EvmBlockHeader + Clone + Send + 'static,
 {
     /// Executes the call with a [EvmEnv] constructed with [Contract::preflight].
     ///
+    /// This uses [tokio::task::spawn_blocking] to run the blocking revm execution.
+    ///  
     /// [EvmEnv]: crate::EvmEnv
     pub async fn call(self) -> anyhow::Result<C::Return> {
         log::info!(
-            "Executing preflight for '{}' on contract {}",
+            "Executing preflight calling '{}' on {}",
             C::SIGNATURE,
             self.tx.to
         );
 
         let cfg = self.env.cfg_env.clone();
         let header = self.env.header.inner().clone();
+        // we cannot clone the database, so it gets moved in and out of the task
         let db = self.env.db.take().unwrap();
 
         let (res, db) = tokio::task::spawn_blocking(move || {
@@ -208,7 +214,7 @@ where
 
         self.env.db = Some(db);
 
-        res.map_err(|err| anyhow::anyhow!(err))
+        res.map_err(|err| anyhow::anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
     }
 }
 
@@ -254,7 +260,7 @@ impl<C: SolCall> CallTxData<C> {
     fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<C::Return, String>
     where
         DB: Database,
-        <DB as Database>::Error: Debug,
+        <DB as Database>::Error: Display,
     {
         #[allow(clippy::let_unit_value)]
         let _ = Self::RETURNS;
@@ -269,23 +275,22 @@ impl<C: SolCall> CallTxData<C> {
 
         let ResultAndState { result, .. } = evm
             .transact_preverified()
-            .map_err(|err| format!("Call '{}' failed: {:?}", C::SIGNATURE, err))?;
+            .map_err(|err| format!("EVM error: {}", err))?;
         let output = match result {
             ExecutionResult::Success { reason, output, .. } => {
                 // there must be a return value to decode
                 if reason != SuccessReason::Return {
-                    Err(format!("Did not return: {:?}", reason))
+                    Err(format!("did not return: {:?}", reason))
                 } else {
                     Ok(output)
                 }
             }
-            ExecutionResult::Revert { output, .. } => Err(format!("Reverted: {}", output)),
-            ExecutionResult::Halt { reason, .. } => Err(format!("Halted: {:?}", reason)),
+            ExecutionResult::Revert { output, .. } => Err(format!("reverted: {}", output)),
+            ExecutionResult::Halt { reason, .. } => Err(format!("halted: {:?}", reason)),
         }?;
         let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
             format!(
-                "Call '{}' returned invalid type; expected '{}': {:?}",
-                C::SIGNATURE,
+                "return type invalid; expected '{}': {}",
                 <C::ReturnTuple<'_> as SolType>::SOL_NAME,
                 err
             )
@@ -305,82 +310,4 @@ where
         .with_cfg_env_with_handler_cfg(cfg)
         .modify_block_env(|blk_env| header.borrow().fill_block_env(blk_env))
         .build()
-}
-
-struct WrapStateDb<'a> {
-    inner: &'a StateDb,
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
-}
-
-impl<'a> WrapStateDb<'a> {
-    /// Creates a new [Database] from the given [StateDb].
-    pub(crate) fn new(inner: &'a StateDb) -> Self {
-        Self {
-            inner,
-            account_storage: HashMap::new(),
-        }
-    }
-}
-
-impl Database for WrapStateDb<'_> {
-    /// The database does not return any errors.
-    type Error = Infallible;
-
-    /// Get basic account information.
-    #[inline]
-    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let account = self.inner.account(address);
-        match account {
-            Some(account) => {
-                // link storage trie to the account, if it exists
-                if let Some(storage_trie) = self.inner.storage_trie(&account.storage_root) {
-                    self.account_storage
-                        .insert(address, Some(storage_trie.clone()));
-                }
-
-                Ok(Some(AccountInfo {
-                    balance: account.balance,
-                    nonce: account.nonce,
-                    code_hash: account.code_hash,
-                    code: None, // we don't need the code here, `code_by_hash` will be used instead
-                }))
-            }
-            None => {
-                self.account_storage.insert(address, None);
-
-                Ok(None)
-            }
-        }
-    }
-
-    /// Get account code by its hash.
-    #[inline]
-    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
-        let code = self.inner.code_by_hash(code_hash);
-        Ok(Bytecode::new_raw(code.clone()))
-    }
-
-    /// Get storage value of address at index.
-    #[inline]
-    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let storage = self
-            .account_storage
-            .get(&address)
-            .unwrap_or_else(|| panic!("storage not found: {:?}", address));
-        match storage {
-            Some(storage) => {
-                let val = storage
-                    .get_rlp(keccak256(index.to_be_bytes::<32>()))
-                    .expect("invalid storage value");
-                Ok(val.unwrap_or_default())
-            }
-            None => Ok(U256::ZERO),
-        }
-    }
-
-    /// Get block hash by block number.
-    #[inline]
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
-        Ok(self.inner.block_hash(number))
-    }
 }

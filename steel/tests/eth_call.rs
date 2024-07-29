@@ -29,11 +29,7 @@ use alloy_primitives::{address, b256, uint, Address, Sealable, U256};
 use alloy_sol_types::SolCall;
 use once_cell::sync::Lazy;
 use revm::primitives::SpecId;
-use risc0_steel::{
-    config::{ChainSpec, EIP1559_CONSTANTS_DEFAULT},
-    ethereum::EthEvmEnv,
-    CallBuilder, Contract, EvmBlockHeader,
-};
+use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract, EvmBlockHeader};
 use std::fmt::Debug;
 use test_log::test;
 
@@ -96,7 +92,7 @@ alloy::sol!(
 );
 
 static ANVIL_CHAIN_SPEC: Lazy<ChainSpec> =
-    Lazy::new(|| ChainSpec::new_single(31337, SpecId::CANCUN, EIP1559_CONSTANTS_DEFAULT));
+    Lazy::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
 
 type TestProvider = FillProvider<
     JoinFill<RecommendedFiller, WalletFiller<EthereumWallet>>,
@@ -117,7 +113,7 @@ async fn test_provider() -> TestProvider {
     provider
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn precompile() {
     let result = eth_call(
         test_provider().await,
@@ -132,7 +128,7 @@ async fn precompile() {
     );
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn nonexistent_account() {
     let result = eth_call(
         test_provider().await,
@@ -144,7 +140,7 @@ async fn nonexistent_account() {
     assert_eq!(result.size, uint!(0_U256));
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn eoa_account() {
     let result = eth_call(
         test_provider().await,
@@ -156,7 +152,7 @@ async fn eoa_account() {
     assert_eq!(result.size, uint!(0_U256));
 }
 
-#[tokio::test]
+#[tokio::test] // Anvil crashes, if logging is enabled
 async fn blockhash() {
     let provider = test_provider().await;
     let block_hash = provider.anvil_node_info().await.unwrap().current_block_hash;
@@ -176,7 +172,7 @@ async fn blockhash() {
     assert_eq!(result.h, block_hash);
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn chainid() {
     let result = eth_call(
         test_provider().await,
@@ -188,7 +184,7 @@ async fn chainid() {
     assert_eq!(result._0, uint!(31337_U256));
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn origin() {
     let from = address!("0000000000000000000000000000000000000042");
     let result = eth_call(
@@ -201,7 +197,7 @@ async fn origin() {
     assert_eq!(result._0, from);
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn gasprice() {
     let gas_price = uint!(42_U256);
     let result = eth_call(

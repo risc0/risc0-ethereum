@@ -62,20 +62,23 @@ impl<DB: Database> Database for TraceDb<DB> {
     type Error = DB::Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        log::trace!("BASIC: address={}", address);
         let basic = self.inner.basic(address)?;
         self.accounts.entry(address).or_default();
 
         Ok(basic)
     }
 
-    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
-        let code = self.inner.code_by_hash(code_hash)?;
-        self.contracts.insert(code_hash, code.original_bytes());
+    fn code_by_hash(&mut self, hash: B256) -> Result<Bytecode, Self::Error> {
+        log::trace!("CODE: hash={}", hash);
+        let code = self.inner.code_by_hash(hash)?;
+        self.contracts.insert(hash, code.original_bytes());
 
         Ok(code)
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        log::trace!("STORAGE: address={}, index={}", address, index);
         let storage = self.inner.storage(address, index)?;
         self.accounts.entry(address).or_default().insert(index);
 
@@ -83,6 +86,7 @@ impl<DB: Database> Database for TraceDb<DB> {
     }
 
     fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
+        log::trace!("BLOCK: number={}", number);
         let block_hash = self.inner.block_hash(number)?;
         self.block_hash_numbers.insert(number);
 

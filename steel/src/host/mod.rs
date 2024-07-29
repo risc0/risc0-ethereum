@@ -13,8 +13,7 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
-
-use std::fmt::Debug;
+use std::fmt::Display;
 
 use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
 use alloy::{
@@ -55,14 +54,15 @@ where
     N: Network,
     P: Provider<T, N>,
     H: EvmBlockHeader + TryFrom<RpcHeader>,
-    <H as TryFrom<RpcHeader>>::Error: Debug,
+    <H as TryFrom<RpcHeader>>::Error: Display,
 {
     /// Creates a new provable [EvmEnv] from an alloy [Provider].
     pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> anyhow::Result<Self> {
         let rpc_block = provider
             .get_block_by_number(number, false)
-            .await?
-            .with_context(|| format!("block {number} not found"))?;
+            .await
+            .context("eth_getBlockByNumber failed")?
+            .with_context(|| format!("block {} not found", number))?;
         let header: H = try_into_header(rpc_block.header)?;
         log::info!("Environment initialized for block {}", header.number());
 
@@ -78,7 +78,7 @@ where
     N: Network,
     P: Provider<T, N>,
     H: EvmBlockHeader + TryFrom<RpcHeader>,
-    <H as TryFrom<RpcHeader>>::Error: Debug,
+    <H as TryFrom<RpcHeader>>::Error: Display,
 {
     /// Converts the environment into a [EvmInput].
     ///
@@ -100,14 +100,14 @@ where
                     storage_keys.iter().map(|v| StorageKey::from(*v)).collect(),
                 )
                 .number(block_number)
-                .await?;
+                .await
+                .context("eth_getProof failed")?;
             proofs.push(proof);
         }
 
         // build the sparse MPT for the state and verify against the header
         let state_nodes = proofs.iter().flat_map(|p| p.account_proof.iter());
-        let state_trie =
-            MerkleTrie::from_rlp_nodes(state_nodes).context("invalid account proof")?;
+        let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
         ensure!(
             self.header.state_root() == &state_trie.hash_slow(),
             "root of the state trie does not match the header"
@@ -123,7 +123,7 @@ where
 
             let storage_nodes = proof.storage_proof.iter().flat_map(|p| p.proof.iter());
             let storage_trie =
-                MerkleTrie::from_rlp_nodes(storage_nodes).context("invalid storage proof")?;
+                MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
             storage_tries.insert(storage_trie.hash_slow(), storage_trie);
         }
         let storage_tries: Vec<_> = storage_tries.into_values().collect();
@@ -138,8 +138,9 @@ where
             for number in (block_hash_min_number..block_number).rev() {
                 let rpc_block = provider
                     .get_block_by_number(number.into(), false)
-                    .await?
-                    .with_context(|| format!("block {number} not found"))?;
+                    .await
+                    .context("eth_getBlockByNumber failed")?
+                    .with_context(|| format!("block {} not found", number))?;
                 let header: H = try_into_header(rpc_block.header)?;
                 ancestors.push(header);
             }
@@ -169,9 +170,9 @@ fn try_into_header<H: EvmBlockHeader + TryFrom<RpcHeader>>(
     rpc_header: RpcHeader,
 ) -> anyhow::Result<H>
 where
-    <H as TryFrom<RpcHeader>>::Error: Debug,
+    <H as TryFrom<RpcHeader>>::Error: Display,
 {
     rpc_header
         .try_into()
-        .map_err(|err| anyhow!("invalid header {err:?}"))
+        .map_err(|err| anyhow!("header invalid: {}", err))
 }

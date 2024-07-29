@@ -12,12 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Type aliases for Ethereum.
-use crate::{serde::RlpHeader, EvmEnv};
+//! Type aliases and specifications for Ethereum.
+use std::collections::BTreeMap;
 
-use super::{EvmBlockHeader, EvmInput};
+use crate::{
+    config::{ChainSpec, ForkCondition},
+    serde::RlpHeader,
+    EvmBlockHeader, EvmEnv, EvmInput,
+};
 use alloy_primitives::{BlockNumber, B256, U256};
-use revm::primitives::BlockEnv;
+use once_cell::sync::Lazy;
+use revm::primitives::{BlockEnv, SpecId};
+
+/// The Ethereum Sepolia [ChainSpec].
+pub static ETH_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+    chain_id: 11155111,
+    max_spec_id: SpecId::CANCUN,
+    hard_forks: BTreeMap::from([
+        (SpecId::LONDON, ForkCondition::Block(0)),
+        (SpecId::MERGE, ForkCondition::Block(1735371)),
+        (SpecId::SHANGHAI, ForkCondition::Timestamp(1677557088)),
+        (SpecId::CANCUN, ForkCondition::Timestamp(1706655072)),
+    ]),
+});
+
+/// The Ethereum Holešky [ChainSpec].
+pub static ETH_HOLESKY_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+    chain_id: 17000,
+    max_spec_id: SpecId::CANCUN,
+    hard_forks: BTreeMap::from([
+        (SpecId::MERGE, ForkCondition::Block(0)),
+        (SpecId::SHANGHAI, ForkCondition::Timestamp(1696000704)),
+        (SpecId::CANCUN, ForkCondition::Timestamp(1707305664)),
+    ]),
+});
+
+/// The Ethereum Mainnet [ChainSpec].
+pub static ETH_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+    chain_id: 1,
+    max_spec_id: SpecId::CANCUN,
+    hard_forks: BTreeMap::from([
+        (SpecId::MERGE, ForkCondition::Block(15537394)),
+        (SpecId::SHANGHAI, ForkCondition::Timestamp(1681338455)),
+        (SpecId::CANCUN, ForkCondition::Timestamp(1710338135)),
+    ]),
+});
 
 /// [EvmEnv] for Ethereum.
 pub type EthEvmEnv<D> = EvmEnv<D, EthBlockHeader>;

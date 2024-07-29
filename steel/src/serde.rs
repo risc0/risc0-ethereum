@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Serde related helpers.
 use std::fmt;
 
 use alloy_primitives::{hex, keccak256, Sealable, Sealed, B256};
