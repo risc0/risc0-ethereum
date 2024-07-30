@@ -15,7 +15,9 @@
 //! Functionality that is only needed for the host and not the guest.
 use std::fmt::Display;
 
-use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
+use crate::{
+    ethereum::EthEvmEnv, state::StateAccount, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie,
+};
 use alloy::{
     network::{Ethereum, Network},
     providers::{Provider, ProviderBuilder, RootProvider},
@@ -25,7 +27,7 @@ use alloy::{
         Transport,
     },
 };
-use alloy_primitives::StorageKey;
+use alloy_primitives::{keccak256, StorageKey};
 use anyhow::{anyhow, ensure, Context};
 use db::{AlloyDb, TraceDb};
 use log::debug;
@@ -105,12 +107,12 @@ where
             proofs.push(proof);
         }
 
-        // build the sparse MPT for the state and verify against the header
+        // build the sparse MPT for the state and verify it against the header
         let state_nodes = proofs.iter().flat_map(|p| p.account_proof.iter());
         let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
         ensure!(
             self.header.state_root() == &state_trie.hash_slow(),
-            "root of the state trie does not match the header"
+            "accountProof root does not match header's stateRoot"
         );
 
         // build the sparse MPT for account storages and filter duplicates
@@ -121,10 +123,23 @@ where
                 continue;
             }
 
+            // build the sparse MPT for that account's storage by iterating over all storage proofs
             let storage_nodes = proof.storage_proof.iter().flat_map(|p| p.proof.iter());
             let storage_trie =
                 MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
-            storage_tries.insert(storage_trie.hash_slow(), storage_trie);
+            let storage_root_hash = storage_trie.hash_slow();
+            // verify it against the state trie
+            let account: StateAccount = state_trie
+                .get_rlp(keccak256(proof.address))
+                .with_context(|| format!("invalid RLP value in state trie for {}", proof.address))?
+                .unwrap_or_default();
+            ensure!(
+                account.storage_root == storage_root_hash,
+                "storageProof of {} does not match storageRoot in the state",
+                proof.address
+            );
+
+            storage_tries.insert(storage_root_hash, storage_trie);
         }
         let storage_tries: Vec<_> = storage_tries.into_values().collect();
 
