@@ -11,6 +11,10 @@ permissions:
   pull-requests: write
   repository-projects: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   create-linear-issue-pr:
     runs-on: ubuntu-latest
