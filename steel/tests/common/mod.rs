@@ -75,8 +75,9 @@ where
 /// Simple struct to operate over different [CallBuilder] types.
 #[derive(Debug, Default)]
 pub struct CallOptions {
-    gas_price: Option<U256>,
     from: Option<Address>,
+    gas: Option<u64>,
+    gas_price: Option<U256>,
 }
 
 #[allow(dead_code)]
@@ -90,6 +91,12 @@ impl CallOptions {
             ..Default::default()
         }
     }
+    pub fn with_gas(gas: u64) -> Self {
+        Self {
+            gas: Some(gas),
+            ..Default::default()
+        }
+    }
     pub fn with_gas_price(gas_price: U256) -> Self {
         Self {
             gas_price: Some(gas_price),
@@ -98,11 +105,14 @@ impl CallOptions {
     }
 
     fn apply<E, C>(&self, mut builder: CallBuilder<E, C>) -> CallBuilder<E, C> {
-        if let Some(gas_price) = self.gas_price {
-            builder = builder.gas_price(gas_price);
-        }
         if let Some(from) = self.from {
             builder = builder.from(from);
+        }
+        if let Some(gas) = self.gas {
+            builder = builder.gas(gas);
+        }
+        if let Some(gas_price) = self.gas_price {
+            builder = builder.gas_price(gas_price);
         }
         builder
     }

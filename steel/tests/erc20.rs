@@ -35,9 +35,8 @@ alloy::sol!(
 
 #[test(tokio::test)]
 async fn usdt_mainnet() {
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
+    let provider =
+        ProviderBuilder::new().on_anvil_with_config(|anvil| anvil.args(["--hardfork", "cancun"]));
     let node_info = provider.anvil_node_info().await.unwrap();
     log::info!("Anvil started: {:?}", node_info);
 
