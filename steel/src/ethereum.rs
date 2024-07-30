@@ -29,7 +29,6 @@ pub static ETH_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
     chain_id: 11155111,
     max_spec_id: SpecId::CANCUN,
     hard_forks: BTreeMap::from([
-        (SpecId::LONDON, ForkCondition::Block(0)),
         (SpecId::MERGE, ForkCondition::Block(1735371)),
         (SpecId::SHANGHAI, ForkCondition::Timestamp(1677557088)),
         (SpecId::CANCUN, ForkCondition::Timestamp(1706655072)),
