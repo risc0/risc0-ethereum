@@ -46,4 +46,3 @@ thiserror = "1.0"
 tokio = { version = "1.35" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5" }
-wiremock = { version = "0.6" }
