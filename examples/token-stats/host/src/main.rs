@@ -18,7 +18,9 @@ use clap::Parser;
 use core::{APRCommitment, CometMainInterface, CONTRACT};
 use methods::TOKEN_STATS_ELF;
 use risc0_steel::{
-    config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthEvmEnv, host::BlockNumberOrTag, Contract,
+    ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+    host::BlockNumberOrTag,
+    Contract,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
