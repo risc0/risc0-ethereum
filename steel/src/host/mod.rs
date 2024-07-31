@@ -168,16 +168,17 @@ where
             storage_tries.iter().map(|t| t.size()).sum::<usize>()
         );
         debug!("contracts: {}", contracts.len());
-        debug!("blocks: {}", ancestors.len());
+        debug!("ancestor blocks: {}", ancestors.len());
 
-        let header = self.header.into_inner();
-        Ok(EvmInput {
-            header,
+        let input = EvmInput {
+            header: self.header.into_inner(),
             state_trie,
             storage_tries,
             contracts,
             ancestors,
-        })
+        };
+
+        Ok(input)
     }
 }
 

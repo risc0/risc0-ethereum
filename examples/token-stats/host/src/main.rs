@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
         rate
     );
     // Get the commitment to verify execution later.
-    let commitment = env.block_commitment();
+    let commitment = env.commitment().clone();
 
     // Finally, construct the input from the environment.
     let input = env.into_input().await?;

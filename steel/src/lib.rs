@@ -15,11 +15,10 @@
 #![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use std::fmt::Debug;
-
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{BlockNumber, Bytes, Sealable, Sealed, B256, U256};
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
+use state::StateDb;
 
 pub mod config;
 mod contract;
@@ -34,7 +33,7 @@ pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
 /// The serializable input to derive and validate a [EvmEnv].
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct EvmInput<H> {
     header: H,
     state_trie: MerkleTrie,
@@ -65,7 +64,7 @@ impl<H: EvmBlockHeader> EvmInput<H> {
             assert_eq!(
                 previous_header.parent_hash(),
                 &ancestor_hash,
-                "Invalid chain: block {} is not the parent of block {}",
+                "Invalid ancestor chain: block {} is not the parent of block {}",
                 ancestor.number(),
                 previous_header.number()
             );
@@ -98,7 +97,17 @@ mod private {
 
 /// Solidity struct representing the committed block used for validation.
 pub use private::Commitment as SolCommitment;
-use state::StateDb;
+
+impl SolCommitment {
+    /// Constructs a commitment from a sealed [EvmBlockHeader].
+    #[inline]
+    fn from_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Self {
+        SolCommitment {
+            blockNumber: U256::from(header.number()),
+            blockHash: header.seal(),
+        }
+    }
+}
 
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
@@ -108,6 +117,7 @@ pub struct EvmEnv<D, H> {
     db: Option<D>,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
+    commitment: SolCommitment,
 }
 
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
@@ -115,11 +125,15 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
+        let commitment = SolCommitment::from_header(&header);
+        #[cfg(feature = "host")]
+        log::info!("Commitment to block {}", commitment.blockHash);
 
         Self {
             db: Some(db),
             cfg_env,
             header,
+            commitment,
         }
     }
 
@@ -132,18 +146,22 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         self
     }
 
-    /// Returns the [SolCommitment] used to validate the environment.
-    pub fn block_commitment(&self) -> SolCommitment {
-        SolCommitment {
-            blockHash: self.header.seal(),
-            blockNumber: U256::from(self.header.number()),
-        }
-    }
-
     /// Returns the header of the environment.
     #[inline]
     pub fn header(&self) -> &H {
         self.header.inner()
+    }
+
+    /// Returns the [SolCommitment] used to validate the environment.
+    #[inline]
+    pub fn commitment(&self) -> &SolCommitment {
+        &self.commitment
+    }
+
+    /// Consumes and returns the [SolCommitment] used to validate the environment.
+    #[inline]
+    pub fn into_commitment(self) -> SolCommitment {
+        self.commitment
     }
 }
 

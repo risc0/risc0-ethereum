@@ -56,7 +56,7 @@ where
     let input = env.into_input().await.unwrap();
     let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
 
-    let commitment = env.block_commitment();
+    let commitment = env.commitment();
     assert_eq!(commitment.blockHash, block_hash, "invalid commitment");
     assert_eq!(commitment.blockNumber, block_number, "invalid commitment");
 
