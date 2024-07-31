@@ -34,14 +34,14 @@ use tokio::runtime::{self, Handle, Runtime};
 /// immediate context is only synchronous, but a transitive caller is async, use
 /// [tokio::task::spawn_blocking] around the calls that need to be blocked.
 pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
-    /// The provider to fetch the data from.
+    /// Provider to fetch the data from.
     provider: P,
-    /// The block number on which the queries will be based on.
+    /// Block number on which the queries will be based on.
     block_number: BlockNumber,
-    /// handle to the tokio runtime
+    /// Handle to the tokio runtime
     runtime_handle: HandleOrRuntime,
-    /// Cache for code hashes to contract addresses.
-    code_hashes: HashMap<B256, Address>,
+    /// Bytecode cache to allow querying by code hash instead of address.
+    contracts: HashMap<B256, Bytecode>,
 
     _marker: PhantomData<fn() -> (T, N)>,
 }
@@ -70,15 +70,18 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
             provider,
             block_number,
             runtime_handle,
-            code_hashes: HashMap::new(),
+            contracts: HashMap::new(),
             _marker: PhantomData,
         }
     }
 
-    pub(crate) fn provider(&self) -> &P {
+    /// Returns the underlying provider.
+    pub fn provider(&self) -> &P {
         &self.provider
     }
-    pub(crate) fn block_number(&self) -> BlockNumber {
+
+    /// Returns the block number used for the queries.
+    pub fn block_number(&self) -> BlockNumber {
         self.block_number
     }
 
@@ -96,27 +99,41 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
     type Error = TransportError;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        // use `eth_getProof` to get all the account info with a single call
-        let proof = self.block_on(
-            self.provider
-                .get_proof(address, vec![])
-                .number(self.block_number)
-                .into_future(),
-        )?;
-        // for non-existent accounts, the code hash is zero
-        // see https://github.com/ethereum/go-ethereum/issues/28441
-        if proof.code_hash == B256::ZERO {
+        let f = async {
+            let get_nonce = self
+                .provider
+                .get_transaction_count(address)
+                .number(self.block_number);
+            let get_balance = self.provider.get_balance(address).number(self.block_number);
+            let get_code = self.provider.get_code_at(address).number(self.block_number);
+
+            tokio::join!(
+                get_nonce.into_future(),
+                get_balance.into_future(),
+                get_code.into_future()
+            )
+        };
+        let (nonce, balance, code) = self.block_on(f);
+
+        let nonce = nonce?;
+        let balance = balance?;
+        let code = Bytecode::new_raw(code?.0.into());
+
+        // if the account is empty return None
+        // in the EVM emptiness is treated as equivalent to nonexistence
+        if nonce == 0 && balance.is_zero() && code.is_empty() {
             return Ok(None);
         }
+
         // cache the code hash to address mapping, so we can later retrieve the code
-        self.code_hashes
-            .insert(proof.code_hash.0.into(), proof.address);
+        let code_hash = code.hash_slow();
+        self.contracts.insert(code_hash, code);
 
         Ok(Some(AccountInfo {
-            nonce: proof.nonce,
-            balance: proof.balance,
-            code_hash: proof.code_hash,
-            code: None,
+            nonce,
+            balance,
+            code_hash,
+            code: None, // will be queried later using code_by_hash
         }))
     }
 
@@ -127,18 +144,12 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         }
 
         // this works because we always call `basic` first
-        let contract_address = *self
-            .code_hashes
+        let code = self
+            .contracts
             .get(&code_hash)
             .expect("`basic` must be called first for the corresponding account");
-        let code = self.block_on(
-            self.provider
-                .get_code_at(contract_address)
-                .number(self.block_number)
-                .into_future(),
-        )?;
 
-        Ok(Bytecode::new_raw(code.0.into()))
+        Ok(code.clone())
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
