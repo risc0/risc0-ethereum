@@ -49,7 +49,9 @@ pub mod provider {
             let parent_beacon_header = client
                 .get_beacon_header(BlockId::Root(parent_beacon_block_root))
                 .await
-                .with_context(|| format!("failed to get header {}", parent_beacon_block_root))?;
+                .with_context(|| {
+                    format!("failed to get block header {}", parent_beacon_block_root)
+                })?;
             let beacon_header = get_child_beacon_header(&client, parent_beacon_header)
                 .await
                 .with_context(|| {
@@ -149,6 +151,9 @@ pub struct EvmBeaconInput<H> {
 }
 
 impl<H: EvmBlockHeader> EvmBeaconInput<H> {
+    /// Converts the input into a [EvmEnv] for execution.
+    ///
+    /// [EvmEnv]: crate::EvmEnv
     pub fn into_env(self) -> GuestEvmEnv<H> {
         let mut env = self.input.into_env();
 
