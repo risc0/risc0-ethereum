@@ -81,7 +81,7 @@ jobs:
             feature: cuda
             device: nvidia_rtx_a5000
           - os: macOS
-            feature: metal
+            feature: default
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
