@@ -24,7 +24,7 @@ use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, KECCAK_EMPTY},
     Database,
 };
-use tokio::runtime::{self, Handle, Runtime};
+use tokio::runtime::Handle;
 
 /// A revm [Database] backed by an alloy [Provider].
 ///
@@ -38,40 +38,25 @@ pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
     provider: P,
     /// Block number on which the queries will be based on.
     block_number: BlockNumber,
-    /// Handle to the tokio runtime
-    runtime_handle: HandleOrRuntime,
-    /// Bytecode cache to allow querying by code hash instead of address.
+    /// Handle to the Tokio runtime.
+    handle: Handle,
+    /// Bytecode cache to allow querying bytecode by hash instead of address.
     contracts: HashMap<B256, Bytecode>,
 
-    _marker: PhantomData<fn() -> (T, N)>,
-}
-
-/// Holds a tokio runtime handle or full runtime
-#[derive(Debug)]
-enum HandleOrRuntime {
-    Handle(Handle),
-    Runtime(Runtime),
+    phantom: PhantomData<fn() -> (T, N)>,
 }
 
 impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
+    /// Create a new AlloyDb instance, with a [Provider] and a block.
+    ///
+    /// This will panic if called outside the context of a Tokio runtime.
     pub fn new(provider: P, block_number: BlockNumber) -> Self {
-        let runtime_handle = match Handle::try_current() {
-            Ok(handle) => HandleOrRuntime::Handle(handle),
-            Err(_) => {
-                let runtime = runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap();
-                HandleOrRuntime::Runtime(runtime)
-            }
-        };
-
         Self {
             provider,
             block_number,
-            runtime_handle,
+            handle: Handle::current(),
             contracts: HashMap::new(),
-            _marker: PhantomData,
+            phantom: PhantomData,
         }
     }
 
@@ -83,15 +68,6 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
     /// Returns the block number used for the queries.
     pub fn block_number(&self) -> BlockNumber {
         self.block_number
-    }
-
-    /// internal utility function to call tokio feature and wait for output
-    #[inline]
-    fn block_on<F: std::future::Future>(&self, f: F) -> F::Output {
-        match &self.runtime_handle {
-            HandleOrRuntime::Handle(handle) => handle.block_on(f),
-            HandleOrRuntime::Runtime(rt) => rt.block_on(f),
-        }
     }
 }
 
@@ -113,7 +89,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
                 get_code.into_future()
             )
         };
-        let (nonce, balance, code) = self.block_on(f);
+        let (nonce, balance, code) = self.handle.block_on(f);
 
         let nonce = nonce?;
         let balance = balance?;
@@ -153,7 +129,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let storage = self.block_on(
+        let storage = self.handle.block_on(
             self.provider
                 .get_storage_at(address, index)
                 .number(self.block_number)
@@ -165,7 +141,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
 
     fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
         // SAFETY: We know number <= u64::MAX, so we can safely convert it to u64
-        let block = self.block_on(
+        let block = self.handle.block_on(
             self.provider
                 .get_block_by_number(number.to::<u64>().into(), false),
         )?;
