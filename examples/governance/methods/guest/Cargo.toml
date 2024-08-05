@@ -1,0 +1,24 @@
+[package]
+name = "bonsai-governance-showcase-guest"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "finalize_votes"
+path = "src/bin/finalize_votes.rs"
+
+[dependencies]
+k256 = { version = "=0.13.1", features = [
+  "arithmetic",
+  "serde",
+  "expose-field",
+  "std",
+  "ecdsa",
+], default-features = false }
+risc0-zkvm = { workspace = true, default-features = false, features = ["std"] }
+tiny-keccak = { version = "2.0", features = ["keccak"] }
+
+[profile.release]
+lto = "thin"
+opt-level = 3
+debug = true
