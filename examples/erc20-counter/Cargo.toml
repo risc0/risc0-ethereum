@@ -18,7 +18,7 @@ risc0-build = { git = "https://github.com/risc0/risc0", branch = "main", feature
 risc0-zkvm = { git = "https://github.com/risc0/risc0", branch = "main", default-features = false }
 risc0-zkp = { git = "https://github.com/risc0/risc0", branch = "main", default-features = false }
 
-alloy = { git = "https://github.com/alloy-rs/alloy.git", rev = "067cc464bd1357e745653709db051707b949cc6b", features = ["full"] }
+alloy = { version = "0.2.1", features = ["full"] }
 alloy-primitives = { version = "0.7", features = ["rlp", "serde", "std"] }
 alloy-sol-types = { version = "0.7" }
 anyhow = { version = "1.0.75" }

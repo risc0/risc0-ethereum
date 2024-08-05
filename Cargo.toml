@@ -22,14 +22,14 @@ risc0-zkp = { git = "https://github.com/risc0/risc0", branch = "main", default-f
 risc0-zkvm = { git = "https://github.com/risc0/risc0", branch = "main", default-features = false }
 
 # Alloy guest dependencies
-alloy-consensus = { git = "https://github.com/alloy-rs/alloy.git", rev = "067cc464bd1357e745653709db051707b949cc6b" }
+alloy-consensus = { version = "0.2.1" }
 alloy-primitives = { version = "0.7", features = ["serde", "rlp", "std"] }
 alloy-rlp = { version = "0.3.7", default-features = false }
 alloy-rlp-derive = { version = "0.3.7", default-features = false }
 alloy-sol-types = { version = "0.7" }
 
 # Alloy host dependencies
-alloy = { git = "https://github.com/alloy-rs/alloy.git", rev = "067cc464bd1357e745653709db051707b949cc6b", features = ["full"] }
+alloy = { version = "0.2.1", features = ["full"] }
 alloy-trie = { version = "0.4.0" }
 
 anyhow = { version = "1.0" }
