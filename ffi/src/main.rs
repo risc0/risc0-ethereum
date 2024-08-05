@@ -17,10 +17,8 @@ use std::io::Write;
 use alloy::{primitives::Bytes, sol_types::SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use risc0_ethereum_contracts::groth16::encode;
-use risc0_zkvm::{
-    default_prover, is_dev_mode, sha::Digestible, ExecutorEnv, ProverOpts, VerifierContext,
-};
+use risc0_ethereum_contracts::groth16::RiscZeroVerifierSeal;
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -78,14 +76,6 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
 
     let journal = receipt.clone().journal.bytes;
 
-    let seal = match is_dev_mode() {
-        true => {
-            let mut seal = Vec::new();
-            seal.extend(vec![0u8; 4]);
-            seal.extend(receipt.claim()?.digest().as_bytes());
-            seal
-        }
-        false => encode(receipt.inner.groth16()?),
-    };
-    Ok((journal, seal))
+    let seal = RiscZeroVerifierSeal::try_from(&receipt)?;
+    Ok((journal, seal.into()))
 }
