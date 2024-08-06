@@ -103,16 +103,10 @@ impl<'de, H: Encodable + Decodable> Deserialize<'de> for RlpHeader<H> {
         } else {
             deserializer.deserialize_byte_buf(BytesVisitor)?
         };
-        // the RLP-encoding is not malleable, as long as we make sure that there are no additional
-        // bytes after the RLP-encoded data
-        let mut buf = rlp.as_slice();
-        let header = H::decode(&mut buf).map_err(de::Error::custom)?;
-        if !buf.is_empty() {
-            return Err(de::Error::custom("trailing bytes"));
-        }
+        let inner = alloy_rlp::decode_exact(&rlp).map_err(de::Error::custom)?;
 
         Ok(RlpHeader {
-            inner: header,
+            inner,
             rlp: Some(rlp),
         })
     }

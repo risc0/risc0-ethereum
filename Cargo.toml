@@ -23,9 +23,9 @@ risc0-zkvm = { git = "https://github.com/risc0/risc0", branch = "main", default-
 
 # Alloy guest dependencies
 alloy-consensus = { version = "0.2.1" }
-alloy-primitives = { version = "0.7", features = ["serde", "rlp", "std"] }
-alloy-rlp = { version = "0.3.7", default-features = false }
-alloy-rlp-derive = { version = "0.3.7", default-features = false }
+alloy-primitives = { version = "0.7", features = ["rlp", "std"] }
+alloy-rlp = { version = "0.3.8", default-features = false }
+alloy-rlp-derive = { version = "0.3.8", default-features = false }
 alloy-sol-types = { version = "0.7" }
 
 # Alloy host dependencies
@@ -42,7 +42,6 @@ revm = { version = "10.0", default-features = false, features = ["std"] }
 serde = "1.0"
 serde_json = "1.0"
 test-log = "0.2.15"
-thiserror = "1.0"
 tokio = { version = "1.35" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5" }

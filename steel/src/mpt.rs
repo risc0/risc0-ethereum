@@ -19,23 +19,10 @@ use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_
 use nybbles::Nibbles;
 use revm::primitives::HashMap;
 use serde::{Deserialize, Serialize};
-use thiserror::Error as ThisError;
 
 /// Root hash of an empty Merkle Patricia trie, i.e. `keccak256(RLP(""))`.
 pub const EMPTY_ROOT_HASH: B256 =
     b256!("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421");
-
-/// The error type that is returned when parsing a [MerkleTrie] node.
-#[derive(Debug, ThisError)]
-pub enum ParseNodeError {
-    // Error that occurs when a node has data after its RLP encoding.
-    #[error("Node has additional bytes")]
-    AdditionalBytes,
-
-    /// Error that occurs when parsing the RLP encoding of a node.
-    #[error("RLP error")]
-    Rlp(#[from] alloy_rlp::Error),
-}
 
 /// A sparse Merkle Patricia trie storing byte values.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,7 +76,7 @@ impl MerkleTrie {
     /// that the root hash can be computed and matches the root hash of the fully resolved trie.
     pub fn from_rlp_nodes<T: AsRef<[u8]>>(
         nodes: impl IntoIterator<Item = T>,
-    ) -> Result<Self, ParseNodeError> {
+    ) -> alloy_rlp::Result<Self> {
         let mut nodes_by_hash = HashMap::new();
         let mut root_node_opt = None;
 
@@ -222,12 +209,12 @@ impl Decodable for Node {
                 // branch node: 17-item node [ v0 ... v15, value ]
                 17 => {
                     let mut children: [Option<Box<Node>>; 16] = Default::default();
-                    for (i, mut node_rlp) in items.into_iter().enumerate() {
+                    for (i, node_rlp) in items.into_iter().enumerate() {
                         if node_rlp != [EMPTY_STRING_CODE] {
                             if i == 16 {
                                 return Err(alloy_rlp::Error::Custom("branch node with value"));
                             } else {
-                                children[i] = Some(Box::new(Node::decode(&mut node_rlp)?));
+                                children[i] = Some(Box::new(alloy_rlp::decode_exact(node_rlp)?));
                             }
                         }
                     }
@@ -242,7 +229,7 @@ impl Decodable for Node {
                         let value = Header::decode_bytes(&mut items[1], false)?;
                         Ok(Node::Leaf(path, value.into()))
                     } else {
-                        let node = Node::decode(&mut items[1])?;
+                        let node = alloy_rlp::decode_exact(items[1])?;
                         if node == Node::Null {
                             return Err(alloy_rlp::Error::Custom("extension node with null child"));
                         }
@@ -338,14 +325,9 @@ fn decode_path(buf: &mut &[u8]) -> alloy_rlp::Result<(Nibbles, bool)> {
 }
 
 /// Returns the decoded node and its RLP hash.
-fn parse_node(rlp: impl AsRef<[u8]>) -> Result<(Option<B256>, Node), ParseNodeError> {
+fn parse_node(rlp: impl AsRef<[u8]>) -> alloy_rlp::Result<(Option<B256>, Node)> {
     let rlp = rlp.as_ref();
-    // decode the node without advancing
-    let mut buf = rlp;
-    let node = Node::decode(&mut buf)?;
-    if !buf.is_empty() {
-        return Err(ParseNodeError::AdditionalBytes);
-    }
+    let node = alloy_rlp::decode_exact(rlp)?;
 
     // the hash is only needed for RLP length >= 32
     Ok(((rlp.len() >= 32).then(|| keccak256(rlp)), node))
