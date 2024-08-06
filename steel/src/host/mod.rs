@@ -13,86 +13,106 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
+use std::fmt::Display;
 
-use self::{
-    db::ProofDb,
-    provider::{EthersProvider, Provider},
+use crate::{
+    ethereum::EthEvmEnv, state::StateAccount, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie,
 };
-use crate::{ethereum::EthEvmEnv, EvmBlockHeader, EvmEnv, EvmInput, MerkleTrie};
-use alloy_primitives::{Sealable, B256};
-use anyhow::{ensure, Context};
-use ethers_providers::{Http, RetryClient};
+use alloy::{
+    network::{Ethereum, Network},
+    providers::{Provider, ProviderBuilder, RootProvider},
+    rpc::types::Header as RpcHeader,
+    transports::{
+        http::{Client, Http},
+        Transport,
+    },
+};
+use alloy_primitives::{keccak256, StorageKey};
+use anyhow::{anyhow, ensure, Context};
+use db::{AlloyDb, TraceDb};
 use log::debug;
 use revm::primitives::HashMap;
+use url::Url;
 
 pub mod db;
-pub mod provider;
+
+/// A block number (or tag - "latest", "earliest", "pending").
+pub type BlockNumberOrTag = alloy::rpc::types::BlockNumberOrTag;
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
+pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
 
-/// The Ethers client type.
-pub type EthersClient = ethers_providers::Provider<RetryClient<Http>>;
-
-impl EthEvmEnv<ProofDb<EthersProvider<EthersClient>>> {
+impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an RPC endpoint.
-    pub fn from_rpc(url: &str, block_number: Option<u64>) -> anyhow::Result<Self> {
-        let client = EthersClient::new_client(url, 3, 500)?;
-        let provider = EthersProvider::new(client);
-
-        // get the latest block number if none is provided
-        let block_number = match block_number {
-            Some(n) => n,
-            None => provider.get_block_number()?,
-        };
-
-        EvmEnv::from_provider(provider, block_number)
+    pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> anyhow::Result<Self> {
+        let provider = ProviderBuilder::new().on_http(url);
+        EvmEnv::from_provider(provider, number).await
     }
 }
 
-impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
-    /// Creates a new provable [EvmEnv] from a [Provider].
-    pub fn from_provider(provider: P, block_number: u64) -> anyhow::Result<Self> {
-        let header = provider
-            .get_block_header(block_number)?
-            .with_context(|| format!("block {block_number} not found"))?;
+impl<T, N, P, H> EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>
+where
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
+    H: EvmBlockHeader + TryFrom<RpcHeader>,
+    <H as TryFrom<RpcHeader>>::Error: Display,
+{
+    /// Creates a new provable [EvmEnv] from an alloy [Provider].
+    pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> anyhow::Result<Self> {
+        let rpc_block = provider
+            .get_block_by_number(number, false)
+            .await
+            .context("eth_getBlockByNumber failed")?
+            .with_context(|| format!("block {} not found", number))?;
+        let header: H = try_into_header(rpc_block.header)?;
+        log::info!("Environment initialized for block {}", header.number());
 
-        // create a new database backed by the provider
-        let db = ProofDb::new(provider, block_number);
+        let db = TraceDb::new(AlloyDb::new(provider, header.number()));
 
         Ok(EvmEnv::new(db, header.seal_slow()))
     }
 }
 
-impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
+impl<T, N, P, H> EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>
+where
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
+    H: EvmBlockHeader + TryFrom<RpcHeader>,
+    <H as TryFrom<RpcHeader>>::Error: Display,
+{
     /// Converts the environment into a [EvmInput].
     ///
     /// The resulting input contains inclusion proofs for all the required chain state data. It can
     /// therefore be used to execute the same calls in a verifiable way in the zkVM.
-    pub fn into_input(self) -> anyhow::Result<EvmInput<P::Header>> {
-        let db = &self.db;
+    pub async fn into_input(self) -> anyhow::Result<EvmInput<H>> {
+        let db = &self.db.unwrap();
 
         // use the same provider as the database
-        let provider = db.provider();
+        let provider = db.inner().provider();
+        let block_number = db.inner().block_number();
 
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
         for (address, storage_keys) in db.accounts() {
-            let proof = provider.get_proof(
-                *address,
-                storage_keys.iter().map(|v| B256::from(*v)).collect(),
-                db.block_number(),
-            )?;
+            let proof = provider
+                .get_proof(
+                    *address,
+                    storage_keys.iter().map(|v| StorageKey::from(*v)).collect(),
+                )
+                .number(block_number)
+                .await
+                .context("eth_getProof failed")?;
             proofs.push(proof);
         }
 
-        // build the sparse MPT for the state and verify against the header
+        // build the sparse MPT for the state and verify it against the header
         let state_nodes = proofs.iter().flat_map(|p| p.account_proof.iter());
-        let state_trie =
-            MerkleTrie::from_rlp_nodes(state_nodes).context("invalid account proof")?;
+        let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
         ensure!(
             self.header.state_root() == &state_trie.hash_slow(),
-            "root of the state trie does not match the header"
+            "accountProof root does not match header's stateRoot"
         );
 
         // build the sparse MPT for account storages and filter duplicates
@@ -103,10 +123,23 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
                 continue;
             }
 
+            // build the sparse MPT for that account's storage by iterating over all storage proofs
             let storage_nodes = proof.storage_proof.iter().flat_map(|p| p.proof.iter());
             let storage_trie =
-                MerkleTrie::from_rlp_nodes(storage_nodes).context("invalid storage proof")?;
-            storage_tries.insert(storage_trie.hash_slow(), storage_trie);
+                MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
+            let storage_root_hash = storage_trie.hash_slow();
+            // verify it against the state trie
+            let account: StateAccount = state_trie
+                .get_rlp(keccak256(proof.address))
+                .with_context(|| format!("invalid RLP value in state trie for {}", proof.address))?
+                .unwrap_or_default();
+            ensure!(
+                account.storage_root == storage_root_hash,
+                "storageProof of {} does not match storageRoot in the state",
+                proof.address
+            );
+
+            storage_tries.insert(storage_root_hash, storage_trie);
         }
         let storage_tries: Vec<_> = storage_tries.into_values().collect();
 
@@ -117,10 +150,13 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
         let mut ancestors = Vec::new();
         if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
             let block_hash_min_number: u64 = block_hash_min_number.to();
-            for number in (block_hash_min_number..db.block_number()).rev() {
-                let header = provider
-                    .get_block_header(number)?
-                    .with_context(|| format!("block {number} not found"))?;
+            for number in (block_hash_min_number..block_number).rev() {
+                let rpc_block = provider
+                    .get_block_by_number(number.into(), false)
+                    .await
+                    .context("eth_getBlockByNumber failed")?
+                    .with_context(|| format!("block {} not found", number))?;
+                let header: H = try_into_header(rpc_block.header)?;
                 ancestors.push(header);
             }
         }
@@ -132,15 +168,27 @@ impl<P: Provider> EvmEnv<ProofDb<P>, P::Header> {
             storage_tries.iter().map(|t| t.size()).sum::<usize>()
         );
         debug!("contracts: {}", contracts.len());
-        debug!("blocks: {}", ancestors.len());
+        debug!("ancestor blocks: {}", ancestors.len());
 
-        let header = self.header.into_inner();
-        Ok(EvmInput {
-            header,
+        let input = EvmInput {
+            header: self.header.into_inner(),
             state_trie,
             storage_tries,
             contracts,
             ancestors,
-        })
+        };
+
+        Ok(input)
     }
+}
+
+fn try_into_header<H: EvmBlockHeader + TryFrom<RpcHeader>>(
+    rpc_header: RpcHeader,
+) -> anyhow::Result<H>
+where
+    <H as TryFrom<RpcHeader>>::Error: Display,
+{
+    rpc_header
+        .try_into()
+        .map_err(|err| anyhow!("header invalid: {}", err))
 }
