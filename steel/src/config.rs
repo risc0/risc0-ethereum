@@ -49,10 +49,8 @@ impl ForkCondition {
 pub struct ChainSpec {
     /// Chain identifier.
     pub chain_id: ChainId,
-    /// ID of the latest supported revm specification.
-    pub max_spec_id: SpecId,
     /// Map revm specification IDs to their respective activation condition.
-    pub hard_forks: BTreeMap<SpecId, ForkCondition>,
+    pub forks: BTreeMap<SpecId, ForkCondition>,
 }
 
 impl ChainSpec {
@@ -60,80 +58,51 @@ impl ChainSpec {
     pub fn new_single(chain_id: ChainId, spec_id: SpecId) -> Self {
         ChainSpec {
             chain_id,
-            max_spec_id: spec_id,
-            hard_forks: BTreeMap::from([(spec_id, ForkCondition::Block(0))]),
-        }
-    }
-    /// Returns the network chain ID.
-    pub fn chain_id(&self) -> ChainId {
-        self.chain_id
-    }
-    /// Validates a [SpecId].
-    pub fn validate_spec_id(&self, spec_id: SpecId) -> anyhow::Result<()> {
-        let (min_spec_id, _) = self.hard_forks.first_key_value().unwrap();
-        if spec_id < *min_spec_id {
-            bail!("expected >= {:?}, got {:?}", min_spec_id, spec_id);
-        }
-        if spec_id > self.max_spec_id {
-            bail!("expected <= {:?}, got {:?}", self.max_spec_id, spec_id);
-        }
-        Ok(())
-    }
-    /// Returns the [SpecId] for a given block number and timestamp or an error if not
-    /// supported.
-    pub fn active_fork(&self, block_number: BlockNumber, timestamp: u64) -> anyhow::Result<SpecId> {
-        match self.spec_id(block_number, timestamp) {
-            Some(spec_id) => {
-                if spec_id > self.max_spec_id {
-                    bail!("expected <= {:?}, got {:?}", self.max_spec_id, spec_id);
-                } else {
-                    Ok(spec_id)
-                }
-            }
-            None => bail!("no supported fork for block {}", block_number),
+            forks: BTreeMap::from([(spec_id, ForkCondition::Block(0))]),
         }
     }
 
-    fn spec_id(&self, block_number: BlockNumber, timestamp: u64) -> Option<SpecId> {
-        for (spec_id, fork) in self.hard_forks.iter().rev() {
+    /// Returns the network chain ID.
+    #[inline]
+    pub fn chain_id(&self) -> ChainId {
+        self.chain_id
+    }
+
+    /// Returns the [SpecId] for a given block number and timestamp or an error if not supported.
+    pub fn active_fork(&self, block_number: BlockNumber, timestamp: u64) -> anyhow::Result<SpecId> {
+        for (spec_id, fork) in self.forks.iter().rev() {
             if fork.active(block_number, timestamp) {
-                return Some(*spec_id);
+                return Ok(*spec_id);
             }
         }
-        None
+        bail!("no supported fork for block {}", block_number)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::u64;
+
     use super::*;
 
-    use once_cell::sync::Lazy;
-
-    static ETH_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
-        chain_id: 1,
-        max_spec_id: SpecId::CANCUN,
-        hard_forks: BTreeMap::from([
-            (SpecId::MERGE, ForkCondition::Block(15537394)),
-            (SpecId::SHANGHAI, ForkCondition::Timestamp(1681338455)),
-            (SpecId::CANCUN, ForkCondition::Timestamp(1710338135)),
-        ]),
-    });
-
     #[test]
-    fn spec_id() {
-        assert_eq!(ETH_MAINNET_CHAIN_SPEC.spec_id(15537393, 0), None);
+    fn active_fork() {
+        let spec = ChainSpec {
+            chain_id: 1,
+            forks: BTreeMap::from([
+                (SpecId::MERGE, ForkCondition::Block(2)),
+                (SpecId::CANCUN, ForkCondition::Timestamp(60)),
+                (SpecId::PRAGUE, ForkCondition::TBD),
+            ]),
+        };
+
+        assert!(spec.active_fork(0, 0).is_err());
+        assert_eq!(spec.active_fork(2, 0).unwrap(), SpecId::MERGE);
+        assert_eq!(spec.active_fork(u64::MAX, 59).unwrap(), SpecId::MERGE);
+        assert_eq!(spec.active_fork(0, 60).unwrap(), SpecId::CANCUN);
         assert_eq!(
-            ETH_MAINNET_CHAIN_SPEC.spec_id(15537394, 0),
-            Some(SpecId::MERGE)
-        );
-        assert_eq!(
-            ETH_MAINNET_CHAIN_SPEC.spec_id(17034869, 0),
-            Some(SpecId::MERGE)
-        );
-        assert_eq!(
-            ETH_MAINNET_CHAIN_SPEC.spec_id(0, 1681338455),
-            Some(SpecId::SHANGHAI)
+            spec.active_fork(u64::MAX, u64::MAX).unwrap(),
+            SpecId::CANCUN
         );
     }
 }

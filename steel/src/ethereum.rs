@@ -27,8 +27,7 @@ use revm::primitives::{BlockEnv, SpecId};
 /// The Ethereum Sepolia [ChainSpec].
 pub static ETH_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
     chain_id: 11155111,
-    max_spec_id: SpecId::CANCUN,
-    hard_forks: BTreeMap::from([
+    forks: BTreeMap::from([
         (SpecId::MERGE, ForkCondition::Block(1735371)),
         (SpecId::SHANGHAI, ForkCondition::Timestamp(1677557088)),
         (SpecId::CANCUN, ForkCondition::Timestamp(1706655072)),
@@ -38,8 +37,7 @@ pub static ETH_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 /// The Ethereum Holešky [ChainSpec].
 pub static ETH_HOLESKY_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
     chain_id: 17000,
-    max_spec_id: SpecId::CANCUN,
-    hard_forks: BTreeMap::from([
+    forks: BTreeMap::from([
         (SpecId::MERGE, ForkCondition::Block(0)),
         (SpecId::SHANGHAI, ForkCondition::Timestamp(1696000704)),
         (SpecId::CANCUN, ForkCondition::Timestamp(1707305664)),
@@ -49,8 +47,7 @@ pub static ETH_HOLESKY_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 /// The Ethereum Mainnet [ChainSpec].
 pub static ETH_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
     chain_id: 1,
-    max_spec_id: SpecId::CANCUN,
-    hard_forks: BTreeMap::from([
+    forks: BTreeMap::from([
         (SpecId::MERGE, ForkCondition::Block(15537394)),
         (SpecId::SHANGHAI, ForkCondition::Timestamp(1681338455)),
         (SpecId::CANCUN, ForkCondition::Timestamp(1710338135)),
