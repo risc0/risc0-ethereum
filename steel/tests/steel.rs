@@ -151,7 +151,7 @@ async fn eoa_account() {
     assert_eq!(result.size, uint!(0_U256));
 }
 
-#[tokio::test] // Anvil crashes, if logging is enabled
+#[test(tokio::test)]
 async fn blockhash() {
     let provider = test_provider().await;
     let block_hash = provider.anvil_node_info().await.unwrap().current_block_hash;
