@@ -26,7 +26,7 @@ revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
-url = { workspace = true }
+url = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy = { workspace = true, features = ["node-bindings"] }
@@ -37,4 +37,4 @@ test-log = { workspace = true }
 
 [features]
 default = []
-host = ["dep:alloy", "dep:log", "dep:serde_json", "dep:tokio"]
+host = ["dep:alloy", "dep:log", "dep:serde_json", "dep:tokio", "dep:url"]
