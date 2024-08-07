@@ -11,6 +11,8 @@
 
      <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
      * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
+     * Update the version string in contracts that contain it:
+       * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
          >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
@@ -19,7 +21,10 @@
          * Run `cargo update`.
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
-   * The other PR should bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
+   * The other PR should:
+     * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
+     * Update the version string in contracts that contain it:
+       * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
