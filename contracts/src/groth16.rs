@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::{primitives::Bytes, sol_types::SolValue};
+use alloy::sol_types::SolValue;
 use anyhow::{bail, Result};
 use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters, InnerReceipt, Receipt};
 
@@ -21,9 +21,14 @@ pub fn abi_encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     Ok(encode(seal)?.abi_encode())
 }
 
-/// Encoding of a Groth16 seal by prefixing it with the verifier selector,
-/// taken from the first 4 bytes of the hash of the verifier parameters including the Groth16
-/// verification key and the control IDs that commit to the RISC Zero circuits.
+/// Encoding of a Groth16 seal by prefixing it with the verifier selector.
+///
+/// The verifier selector is determined from the first 4 bytes of the hash of the verifier
+/// parameters including the Groth16 verification key and the control IDs that commit to the RISC
+/// Zero circuits.
+///
+/// NOTE: Selector value of the current zkVM version is used. If you need to use a selector from a
+/// different version of the zkVM, use the [encode_seal] method instead.
 pub fn encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
     let selector = &verifier_parameters_digest.as_bytes()[..4];
@@ -35,29 +40,12 @@ pub fn encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     Ok(selector_seal)
 }
 
-/// The encoded cryptographic proof.
-pub struct RiscZeroVerifierSeal(Vec<u8>);
-
-impl TryFrom<&Receipt> for RiscZeroVerifierSeal {
-    type Error = anyhow::Error;
-    fn try_from(value: &Receipt) -> std::result::Result<Self, Self::Error> {
-        Ok(Self(encode_from_receipt(value)?))
-    }
-}
-
-impl Into<Vec<u8>> for RiscZeroVerifierSeal {
-    fn into(self) -> Vec<u8> {
-        self.0.clone()
-    }
-}
-
-impl Into<Bytes> for RiscZeroVerifierSeal {
-    fn into(self) -> Bytes {
-        self.0.clone().into()
-    }
-}
-
-fn encode_from_receipt(receipt: &Receipt) -> Result<Vec<u8>> {
+/// Encode the seal of the given receipt for use with EVM smart contract verifiers.
+///
+/// Appends the verifier selector, determined from the first 4 bytes of the verifier parameters
+/// including the Groth16 verification key and the control IDs that commit to the RISC Zero
+/// circuits.
+pub fn encode_seal(receipt: &Receipt) -> Result<Vec<u8>> {
     let seal = match receipt.inner.clone() {
         InnerReceipt::Fake(receipt) => {
             let seal = receipt.claim.digest().as_bytes().to_vec();
@@ -68,7 +56,14 @@ fn encode_from_receipt(receipt: &Receipt) -> Result<Vec<u8>> {
             selector_seal.extend_from_slice(&seal);
             selector_seal
         }
-        InnerReceipt::Groth16(receipt) => encode(receipt.seal)?,
+        InnerReceipt::Groth16(receipt) => {
+            let selector = &receipt.verifier_parameters.as_bytes()[..4];
+            // Create a new vector with the capacity to hold both selector and seal
+            let mut selector_seal = Vec::with_capacity(selector.len() + receipt.seal.len());
+            selector_seal.extend_from_slice(selector);
+            selector_seal.extend_from_slice(receipt.seal.as_ref());
+            selector_seal
+        }
         _ => bail!("Unsupported receipt type"),
     };
     Ok(seal)
