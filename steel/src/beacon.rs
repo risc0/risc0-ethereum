@@ -31,11 +31,8 @@ pub mod provider {
     use url::Url;
 
     impl EvmBeaconInput<EthBlockHeader> {
-        /// Creates a new [EvmBeaconInput] from a [EthEvmInput] and a Beacon Chain RPC endpoint.
-        pub async fn from_rpc_and_input(
-            url: Url,
-            input: EthEvmInput,
-        ) -> anyhow::Result<Self> {
+        /// Creates a new [EvmBeaconInput] from a Beacon Chain RPC endpoint and an [EthEvmInput].
+        pub async fn from_endpoint_and_input(url: Url, input: EthEvmInput) -> anyhow::Result<Self> {
             let client = BeaconClient::new(url);
 
             let block_hash = input.header.hash_slow();
