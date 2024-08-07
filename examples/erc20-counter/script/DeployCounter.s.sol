@@ -19,7 +19,7 @@ pragma solidity ^0.8.20;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
-import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
+import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 
 import {Counter} from "../contracts/Counter.sol";
 import {ERC20} from "../contracts/ERC20.sol";
@@ -30,7 +30,7 @@ import {ERC20} from "../contracts/ERC20.sol";
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract CounterrDeploy is Script {
+contract CounterDeploy is Script, RiscZeroCheats {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
 
@@ -39,8 +39,7 @@ contract CounterrDeploy is Script {
         ERC20 toyken = new ERC20("TOYKEN", "TOY", 0);
         console2.log("Deployed ERC20 TOYKEN to", address(toyken));
 
-        IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+        IRiscZeroVerifier verifier = deployRiscZeroVerifier();
 
         Counter counter = new Counter(verifier, address(toyken));
         console2.log("Deployed Counter to", address(counter));

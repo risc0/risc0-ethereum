@@ -48,7 +48,6 @@ echo "Counter Address: $COUNTER_ADDRESS"
 # Publish a new state
 echo "Publishing a new state..."
 cargo run --bin publisher -- \
-    --chain-id=31337 \
     --rpc-url=http://localhost:8545 \
     --contract=${COUNTER_ADDRESS:?} \
     --token=${TOYKEN_ADDRESS:?} \
