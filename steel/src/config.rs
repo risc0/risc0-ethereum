@@ -81,8 +81,6 @@ impl ChainSpec {
 
 #[cfg(test)]
 mod tests {
-    use std::u64;
-
     use super::*;
 
     #[test]
