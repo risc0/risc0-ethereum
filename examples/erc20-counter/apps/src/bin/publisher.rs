@@ -26,7 +26,7 @@ use alloy_primitives::Address;
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
 use erc20_counter_methods::BALANCE_OF_ELF;
-use risc0_ethereum_contracts::groth16::encode;
+use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
@@ -134,12 +134,10 @@ async fn main() -> Result<()> {
     .await?
     .context("failed to create proof")?;
     let receipt = prove_info.receipt;
+    let seal = encode_seal(&receipt)?;
 
     // Create an alloy instance of the Counter contract.
     let contract = ICounter::new(args.contract, provider);
-
-    // Encode the groth16 seal with the selector and call the increment function of the contract.
-    let seal = encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Call the increment function of the contract and wait for confirmation.
     println!(

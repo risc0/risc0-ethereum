@@ -14,13 +14,11 @@
 
 use std::io::Write;
 
+use alloy::{primitives::Bytes, sol_types::SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use ethers::abi::Token;
-use risc0_ethereum_contracts::groth16::encode;
-use risc0_zkvm::{
-    default_prover, is_dev_mode, sha::Digestible, ExecutorEnv, ProverOpts, VerifierContext,
-};
+use risc0_ethereum_contracts::encode_seal;
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -54,8 +52,8 @@ pub fn main() -> Result<()> {
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<()> {
     let elf = std::fs::read(elf_path).unwrap();
     let (journal, seal) = prove(&elf, &input)?;
-    let calldata = vec![Token::Bytes(journal), Token::Bytes(seal)];
-    let output = hex::encode(ethers::abi::encode(&calldata));
+    let calldata = vec![Bytes(journal.into()), Bytes(seal.into())];
+    let output = hex::encode(calldata.abi_encode());
 
     // Forge test FFI calls expect hex encoded bytes sent to stdout
     print!("{output}");
@@ -77,15 +75,6 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
         .receipt;
 
     let journal = receipt.clone().journal.bytes;
-
-    let seal = match is_dev_mode() {
-        true => {
-            let mut seal = Vec::new();
-            seal.extend(vec![0u8; 4]);
-            seal.extend(receipt.claim()?.digest().as_bytes());
-            seal
-        }
-        false => encode(receipt.inner.groth16()?.seal.clone())?,
-    };
+    let seal = encode_seal(&receipt)?;
     Ok((journal, seal))
 }
