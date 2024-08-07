@@ -19,13 +19,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🚨 Breaking Changes
 
-- `EthEvmEnv::from_rpc` now takes an `Url` instead of a `&str`.
-- `EvmEnv::from_provider`now takes an `alloy` provider, the `u64` block number was changed to a `BlockNumberOrTag`.
-- `CachedProvider` is no longer available:
-  - During tests the fork mode of `Anvil` can be used for a similar effect, or
-  - use the upcoming cache feature of `alloy`. 
-- `EvmEnv::sol_commitment` has been changed to `EvmEnv::commitment` to get a reference, or `EvmEnv::into_commitment`.
+- `EthEvmEnv::from_rpc` now accepts a `Url` instead of a `&str` for the HTTP RPC endpoint.
+- `EvmEnv::from_provider` now requires an `alloy` provider, and the block number parameter has been changed to a `BlockNumberOrTag`.
+- `EvmEnv::sol_commitment` has been replaced with `EvmEnv::commitment` (to get a reference), or `EvmEnv::into_commitment` (to consume and return the commitment).
 - `ETH_SEPOLIA_CHAIN_SPEC` and `ETH_MAINNET_CHAIN_SPEC` have been moved to the `ethereum` module.
+- `CachedProvider` has been removed completely. As alternatives, you can:
+  - Use `anvil --fork-url https://ethereum-rpc.publicnode.com@20475759` to create a cached fork for block `20475759`. 
+  - Cache the RPC responses on an HTTP level using [Tower](https://crates.io/crates/tower) or a caching forward proxy.
 - The host functions are now `async` instead of blocking:
 ```rust
 // Create an EVM environment from an RPC endpoint and a block number or tag.
