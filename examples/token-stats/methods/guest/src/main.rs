@@ -14,7 +14,10 @@
 
 use alloy_sol_types::SolValue;
 use core::{APRCommitment, CometMainInterface, CONTRACT};
-use risc0_steel::{config::ETH_MAINNET_CHAIN_SPEC, ethereum::EthEvmInput, Contract};
+use risc0_steel::{
+    ethereum::{EthEvmInput, ETH_MAINNET_CHAIN_SPEC},
+    Contract,
+};
 use risc0_zkvm::guest::env;
 
 const SECONDS_PER_YEAR: u64 = 60 * 60 * 24 * 365;
@@ -51,7 +54,7 @@ fn main() {
 
     // This commits the APR at current utilization rate for this given block.
     let journal = APRCommitment {
-        commitment: env.block_commitment(),
+        commitment: env.into_commitment(),
         annualSupplyRate: annual_supply_rate,
     };
     env::commit_slice(&journal.abi_encode());
