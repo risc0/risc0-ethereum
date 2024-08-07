@@ -43,7 +43,7 @@ pub type BlockNumberOrTag = alloy::rpc::types::BlockNumberOrTag;
 pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
 
 impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
-    /// Creates a new provable [EvmEnv] for Ethereum from an RPC endpoint.
+    /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> anyhow::Result<Self> {
         let provider = ProviderBuilder::new().on_http(url);
         EvmEnv::from_provider(provider, number).await
