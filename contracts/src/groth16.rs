@@ -13,8 +13,8 @@
 // limitations under the License.
 
 use alloy::sol_types::SolValue;
-use anyhow::{bail, Result};
-use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters, InnerReceipt, Receipt};
+use anyhow::Result;
+use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
 
 /// ABI encoding of the seal.
 pub fn abi_encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
@@ -38,35 +38,6 @@ pub fn encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     selector_seal.extend_from_slice(seal.as_ref());
 
     Ok(selector_seal)
-}
-
-/// Encode the seal of the given receipt for use with EVM smart contract verifiers.
-///
-/// Appends the verifier selector, determined from the first 4 bytes of the verifier parameters
-/// including the Groth16 verification key and the control IDs that commit to the RISC Zero
-/// circuits.
-pub fn encode_seal(receipt: &Receipt) -> Result<Vec<u8>> {
-    let seal = match receipt.inner.clone() {
-        InnerReceipt::Fake(receipt) => {
-            let seal = receipt.claim.digest().as_bytes().to_vec();
-            let selector = &[0u8; 4];
-            // Create a new vector with the capacity to hold both selector and seal
-            let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
-            selector_seal.extend_from_slice(selector);
-            selector_seal.extend_from_slice(&seal);
-            selector_seal
-        }
-        InnerReceipt::Groth16(receipt) => {
-            let selector = &receipt.verifier_parameters.as_bytes()[..4];
-            // Create a new vector with the capacity to hold both selector and seal
-            let mut selector_seal = Vec::with_capacity(selector.len() + receipt.seal.len());
-            selector_seal.extend_from_slice(selector);
-            selector_seal.extend_from_slice(receipt.seal.as_ref());
-            selector_seal
-        }
-        _ => bail!("Unsupported receipt type"),
-    };
-    Ok(seal)
 }
 
 #[cfg(test)]
