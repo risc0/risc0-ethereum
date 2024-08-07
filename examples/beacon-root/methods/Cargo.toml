@@ -1,0 +1,11 @@
+[package]
+name = "beacon-root-methods"
+version = { workspace = true }
+edition = { workspace = true }
+
+[build-dependencies]
+risc0-build = { workspace = true }
+risc0-build-ethereum = { workspace = true }
+
+[package.metadata.risc0]
+methods = ["guest"]

@@ -18,10 +18,9 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
 use risc0_steel::{
-    beacon::EvmBeaconInput,
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
-    Contract, SolCommitment,
+    Contract,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
@@ -50,11 +49,8 @@ const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
 #[command(about, long_about = None)]
 struct Args {
     /// URL of the RPC endpoint
-    #[arg(short, long, env = "ETH_RPC_URL")]
-    eth_rpc_url: Url,
-
-    #[arg(short, long, env = "BEACON_RPC_URL")]
-    beacon_rpc_url: Url,
+    #[arg(short, long, env = "RPC_URL")]
+    rpc_url: Url,
 }
 
 #[tokio::main]
@@ -67,7 +63,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Create an EVM environment from an RPC endpoint and a block number or tag.
-    let mut env = EthEvmEnv::from_rpc(args.eth_rpc_url, BlockNumberOrTag::Latest).await?;
+    let mut env = EthEvmEnv::from_rpc(args.rpc_url, BlockNumberOrTag::Latest).await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
@@ -82,12 +78,13 @@ async fn main() -> Result<()> {
         CONTRACT,
         returns._0
     );
+    // Get the commitment to verify execution later.
+    let commitment = env.commitment().clone();
 
     // Finally, construct the input from the environment.
     let input = env.into_input().await?;
-    let input = EvmBeaconInput::from_rpc_and_input(args.beacon_rpc_url, input).await?;
 
-    println!("Running the guest with the constructed input:");
+    println!("Running the guest with the constructed input...");
     let session_info = {
         let env = ExecutorEnv::builder()
             .write(&input)
@@ -99,13 +96,9 @@ async fn main() -> Result<()> {
             .context("failed to run executor")?
     };
 
-    // Validate the commitment
+    // The commitment in the journal should match.
     let bytes = session_info.journal.as_ref();
-    let commitment = SolCommitment::abi_decode(bytes, true).context("invalid journal")?;
-    println!(
-        "The guest committed to slot {} at timestamp {}",
-        commitment.blockHash, commitment.blockNumber
-    );
+    assert!(bytes.starts_with(&commitment.abi_encode()));
 
     Ok(())
 }
