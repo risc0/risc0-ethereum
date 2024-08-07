@@ -33,10 +33,10 @@ pub mod provider {
     impl EvmBeaconInput<EthBlockHeader> {
         /// Creates a new [EvmBeaconInput] from a [EthEvmInput] and a Beacon Chain RPC endpoint.
         pub async fn from_rpc_and_input(
-            beacon_rpc_url: Url,
+            url: Url,
             input: EthEvmInput,
         ) -> anyhow::Result<Self> {
-            let client = BeaconClient::new(beacon_rpc_url);
+            let client = BeaconClient::new(url);
 
             let block_hash = input.header.hash_slow();
             let parent_beacon_block_root = input
@@ -103,7 +103,7 @@ pub mod provider {
     /// Returns the header, with `parent_root` equal to `parent.root`.
     ///
     /// It iteratively tries to fetch headers of successive slots until success.
-    /// TODO: use [BeaconClient::get_beacon_header_for_parent_root], which was not working reliably.
+    /// TODO: use [BeaconClient::get_beacon_header_for_parent_root], once it is supported.
     async fn get_child_beacon_header(
         client: &BeaconClient,
         parent: BeaconHeaderSummary,
@@ -115,7 +115,13 @@ pub mod provider {
                 Err(err) => request_error = Some(err),
                 Ok(resp) => {
                     let header = &resp.header.message;
-                    ensure!(header.parent_root == parent.root);
+                    ensure!(
+                        header.parent_root == parent.root,
+                        "block {} has wrong parent_root: expected {}; got {}",
+                        resp.root,
+                        parent.root,
+                        header.parent_root
+                    );
                     return Ok(resp);
                 }
             }
