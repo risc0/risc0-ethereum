@@ -26,7 +26,6 @@ nybbles = { workspace = true }
 once_cell = { workspace = true }
 revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
-serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
@@ -36,6 +35,7 @@ alloy = { workspace = true, features = ["node-bindings"] }
 alloy-trie = { workspace = true }
 bincode = { workspace = true }
 risc0-steel = { path = ".", features = ["host"] }
+serde_json = { workspace = true }
 test-log = { workspace = true }
 
 [features]
@@ -45,7 +45,6 @@ host = [
     "dep:beacon-api-client",
     "dep:ethereum-consensus",
     "dep:log",
-    "dep:serde_json",
     "dep:tokio",
     "dep:url",
 ]
