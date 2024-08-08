@@ -1,5 +1,5 @@
 [package]
-name = "beacon-root-methods"
+name = "methods"
 version = { workspace = true }
 edition = { workspace = true }
 

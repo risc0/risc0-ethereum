@@ -16,8 +16,6 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use std::time::Duration;
-
 use alloy::{
     network::EthereumWallet,
     providers::ProviderBuilder,
@@ -26,8 +24,8 @@ use alloy::{
 };
 use alloy_primitives::Address;
 use anyhow::{ensure, Context, Result};
-use beacon_root_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use clap::Parser;
+use methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmBeaconInput, EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
@@ -40,12 +38,12 @@ use tracing_subscriber::EnvFilter;
 use url::Url;
 
 alloy::sol! {
+    /// Interface to be called by the guest.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
     }
-}
 
-alloy::sol! {
+    /// Data committed to by the guest.
     struct Journal {
         SolCommitment commitment;
         address tokenContract;
@@ -57,30 +55,30 @@ alloy::sol!(
     "../contracts/src/ICounter.sol"
 );
 
+/// Simple program to create a proof to increment the Counter contract.
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Private key.
+    /// Private key
     #[clap(long, env)]
     eth_wallet_private_key: PrivateKeySigner,
 
-    /// Ethereum RPC endpoint URL.
+    /// Ethereum RPC endpoint URL
     #[clap(long, env)]
     eth_rpc_url: Url,
 
-    /// Beacon API endpoint URL.
+    /// Beacon API endpoint URL
     #[clap(long, env)]
     beacon_api_url: Url,
 
-    /// Address of the Counter verifier.
+    /// Address of the Counter verifier
     #[clap(long)]
     counter: Address,
 
-    /// Address of the ERC20 token contract.
+    /// Address of the ERC20 token contract
     #[clap(long, env)]
     token_contract: Address,
 
-    /// Address to query the token balance of.
+    /// Address to query the token balance of
     #[clap(long)]
     account: Address,
 }
@@ -175,10 +173,7 @@ async fn main() -> Result<()> {
     let call_builder = contract.increment(receipt.journal.bytes.into(), seal.into());
     log::debug!("Send {} {}", contract.address(), call_builder.calldata());
     let pending_tx = call_builder.send().await?;
-    let receipt = pending_tx
-        .with_timeout(Some(Duration::from_secs(60)))
-        .get_receipt()
-        .await?;
+    let receipt = pending_tx.get_receipt().await?;
     ensure!(receipt.status(), "transaction failed");
 
     let value = contract.counter().call().await?._0;

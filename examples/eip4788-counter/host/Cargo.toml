@@ -7,10 +7,10 @@ edition = { workspace = true }
 alloy = { workspace = true }
 alloy-primitives = { workspace = true }
 anyhow = { workspace = true }
-beacon-root-methods = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 dotenvy = { workspace = true }
 log = { workspace = true }
+methods = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }

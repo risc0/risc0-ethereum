@@ -11,12 +11,17 @@ Explore a more advanced interaction between [Steel] and a custom Ethereum smart 
 - Verify ERC20 token ownership (minimum 1 token required) before incrementing.
 - Leverage RISC Zero as a [coprocessor] for efficient proof generation and verification.
 
+## [ERC20 Counter using EIP-4788 Commitment Validation](./eip4788-counter/README.md)
+
+This example is very similar to the previous ERC20 Counter Example. The only difference being that [Steel] is used to produce a commitment with respect to the Beacon block root instead of the Execution block hash.
+This commitment is using the [EIP-4788] Beacon roots contract.
+
 ## [Compound Token Stats (APR Proof)](./token-stats/README.md)
 
 This example shows how the [Steel] library can be used to call multiple view functions of a contract.
 This example generates a proof of a [Compound] cToken's APR (Annual Percentage Rate), showcasing the potential for on-chain verification of complex financial metrics.
 
-[Counter]: ./erc20-counter/contracts/Counter.sol
 [coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
 [Steel]: ../steel
 [Compound]: https://compound.finance/
+[EIP-4788]: https://eips.ethereum.org/EIPS/eip-4788

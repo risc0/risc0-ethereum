@@ -1,4 +1,4 @@
-# RISC Zero View Call Proofs ERC20-Counter Example
+# ERC20-Counter Example
 
 This example implements a counter that increments based on off-chain RISC Zero [Steel] proofs submitted to the [Counter] contract.
 The contract interacts with ERC-20 tokens, using [Steel] proofs to verify that an account holds at least 1 token before incrementing the counter.

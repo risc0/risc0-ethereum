@@ -46,7 +46,7 @@ library Beacon {
     /// @notice Validates if the provided Commitment matches the Beacon block root of the given timestamp.
     /// @param commitment The Commitment struct to validate.
     /// @return isValid True if the commitment's block hash matches the Beacon block root, false otherwise.
-    function validateCommitment(Steel.Commitment memory commitment) internal view returns (bool isValid) {
+    function validateCommitment(Steel.Commitment memory commitment) internal view returns (bool) {
         // for Beacon Chain commitments the blockNumber corresponds to the timestamp and blockHash to the root
         bytes32 blockHash = Beacon.blockRoot(commitment.blockNumber);
         return commitment.blockHash == blockHash;
