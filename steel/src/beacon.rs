@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy_primitives::{B256, U256};
+use alloy_primitives::B256;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::{EvmBlockHeader, EvmInput, GuestEvmEnv, SolCommitment};
+use crate::{CommitmentVersion, EvmBlockHeader, EvmInput, GuestEvmEnv, SolCommitment};
 
 #[cfg(feature = "host")]
 pub mod provider {
@@ -166,8 +166,11 @@ impl<H: EvmBlockHeader> EvmBeaconInput<H> {
 
         let beacon_root = self.proof.process(env.header.seal());
         env.commitment = SolCommitment {
-            blockNumber: U256::from(env.header().timestamp()),
-            blockHash: beacon_root,
+            blockID: SolCommitment::encode_id(
+                env.header().timestamp(),
+                CommitmentVersion::Beacon as u16,
+            ),
+            blockDigest: beacon_root,
         };
 
         env
