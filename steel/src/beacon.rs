@@ -67,7 +67,8 @@ pub mod provider {
                 }
                 _ => {
                     bail!(
-                        "invalid block version: expected {}; got {}",
+                        "invalid version of block {}: expected {}; got {}",
+                        beacon_header.root,
                         Fork::Deneb,
                         signed_beacon_block.version()
                     );
@@ -75,10 +76,12 @@ pub mod provider {
             };
 
             // convert and verify the proof
-            let proof: MerkleProof = proof.try_into().context("invalid proof")?;
+            let proof: MerkleProof = proof
+                .try_into()
+                .context("proof derived from API is invalid")?;
             ensure!(
                 proof.process(block_hash) == beacon_root,
-                "proof does not verify",
+                "proof derived from API does not verify",
             );
 
             Ok(EvmBeaconInput { proof, input })
@@ -100,14 +103,14 @@ pub mod provider {
     /// Returns the header, with `parent_root` equal to `parent.root`.
     ///
     /// It iteratively tries to fetch headers of successive slots until success.
-    /// TODO: use [BeaconClient::get_beacon_header_for_parent_root], once it is supported.
+    /// TODO: use [BeaconClient::get_beacon_header_for_parent_root], once it is supported by the nodes.
     async fn get_child_beacon_header(
         client: &BeaconClient,
         parent: BeaconHeaderSummary,
     ) -> anyhow::Result<BeaconHeaderSummary> {
         let parent_slot = parent.header.message.slot;
         let mut request_error = None;
-        for slot in (parent_slot + 1)..(parent_slot + 32) {
+        for slot in (parent_slot + 1)..=(parent_slot + 32) {
             match client.get_beacon_header(BlockId::Slot(slot)).await {
                 Err(err) => request_error = Some(err),
                 Ok(resp) => {
@@ -124,7 +127,8 @@ pub mod provider {
             }
         }
         // return the last error, if all calls failed
-        Err(request_error.unwrap().into())
+        let err = anyhow::Error::from(request_error.unwrap());
+        Err(err.context("no valid response received for the 32 consecutive slots"))
     }
 
     impl TryFrom<Proof> for MerkleProof {
