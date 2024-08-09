@@ -57,7 +57,11 @@ where
 
     let commitment = env.commitment();
     assert_eq!(commitment.blockDigest, block_hash, "invalid commitment");
-    assert_eq!(commitment.blockID, U256::from(block_number), "invalid commitment");
+    assert_eq!(
+        commitment.blockID,
+        U256::from(block_number),
+        "invalid commitment"
+    );
 
     let result = {
         let contract = Contract::new(address, &env);
