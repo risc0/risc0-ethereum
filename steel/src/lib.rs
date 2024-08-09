@@ -16,13 +16,14 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{
-    ruint::FromUintError, uint, BlockNumber, Bytes, Sealable, Sealed, B256, U256,
-};
-use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
+use alloy_primitives::{ruint::FromUintError, uint, BlockNumber, Sealable, Sealed, B256, U256};
+use beacon::BeaconInput;
+use block::BlockInput;
+use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 use state::StateDb;
 
 pub mod beacon;
+pub mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
@@ -35,54 +36,25 @@ mod state;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
-/// The serializable input to derive and validate a [EvmEnv].
+/// The serializable input to derive and validate an [EvmEnv] from.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct EvmInput<H> {
-    header: H,
-    state_trie: MerkleTrie,
-    storage_tries: Vec<MerkleTrie>,
-    contracts: Vec<Bytes>,
-    ancestors: Vec<H>,
+pub enum EvmInput<H> {
+    /// Input committing to the corresponding execution block hash.
+    Block(BlockInput<H>),
+    /// Input committing to the corresponding Beacon Chain block root.
+    Beacon(BeaconInput<H>),
 }
 
 impl<H: EvmBlockHeader> EvmInput<H> {
     /// Converts the input into a [EvmEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
+    #[inline]
     pub fn into_env(self) -> GuestEvmEnv<H> {
-        // verify that the state root matches the state trie
-        let state_root = self.state_trie.hash_slow();
-        assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
-
-        // seal the header to compute its block hash
-        let header = self.header.seal_slow();
-
-        // validate that ancestor headers form a valid chain
-        let mut block_hashes = HashMap::with_capacity(self.ancestors.len() + 1);
-        block_hashes.insert(header.number(), header.seal());
-
-        let mut previous_header = header.inner();
-        for ancestor in &self.ancestors {
-            let ancestor_hash = ancestor.hash_slow();
-            assert_eq!(
-                previous_header.parent_hash(),
-                &ancestor_hash,
-                "Invalid ancestor chain: block {} is not the parent of block {}",
-                ancestor.number(),
-                previous_header.number()
-            );
-            block_hashes.insert(ancestor.number(), ancestor_hash);
-            previous_header = ancestor;
+        match self {
+            EvmInput::Block(input) => input.into_env(),
+            EvmInput::Beacon(input) => input.into_env(),
         }
-
-        let db = StateDb::new(
-            self.state_trie,
-            self.storage_tries,
-            self.contracts,
-            block_hashes,
-        );
-
-        EvmEnv::new(db, header)
     }
 }
 
@@ -161,9 +133,11 @@ pub trait EvmBlockHeader: Sealable {
 mod private {
     alloy_sol_types::sol! {
         #![sol(all_derives)]
-        /// A Commitment struct representing a block number and its block hash.
+        /// A commitment to a specific block in the blockchain.
         struct Commitment {
+            /// Encodes both the block identifier (block number or timestamp) and the version.
             uint256 blockID;
+            /// The block hash or beacon block root, used for validation.
             bytes32 blockDigest;
         }
     }
@@ -189,15 +163,21 @@ impl SolCommitment {
         }
     }
 
+    /// Returns the block identifier without the commitment version.
+    #[inline]
+    pub fn block_id(&self) -> u64 {
+        Self::decode_id(self.blockID).unwrap().0
+    }
+
     /// Encodes an ID and version into a single [U256] value.
     #[inline]
-    pub fn encode_id(id: u64, version: u16) -> U256 {
+    pub(crate) fn encode_id(id: u64, version: u16) -> U256 {
         U256::from_limbs([id, 0, 0, (version as u64) << 48])
     }
 
     /// Decodes an ID and version from a single [U256] value.
     #[inline]
-    pub fn decode_id(mut id: U256) -> Result<(u64, u16), FromUintError<u64>> {
+    pub(crate) fn decode_id(mut id: U256) -> Result<(u64, u16), FromUintError<u64>> {
         let version = (id.as_limbs()[3] >> 48) as u16;
         id &= uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
         Ok((id.try_into()?, version))

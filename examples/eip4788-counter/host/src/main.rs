@@ -28,7 +28,7 @@ use clap::Parser;
 use methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
-    ethereum::{EthEvmBeaconInput, EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
+    ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
     Contract, SolCommitment,
 };
@@ -86,19 +86,15 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
     // Parse the command line arguments.
     dotenvy::dotenv()?;
     let args = Args::try_parse()?;
 
     // Create an alloy provider for that private key and URL.
     let wallet = EthereumWallet::from(args.eth_wallet_private_key);
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .wallet(wallet)
-        .on_http(args.eth_rpc_url);
+    let provider =
+        ProviderBuilder::new().with_recommended_fillers().wallet(wallet).on_http(args.eth_rpc_url);
 
     // Create an EVM environment from that provider and a block number.
     let mut env = EthEvmEnv::from_provider(provider.clone(), BlockNumberOrTag::Latest).await?;
@@ -106,9 +102,7 @@ async fn main() -> Result<()> {
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
     // Prepare the function call
-    let call = IERC20::balanceOfCall {
-        account: args.account,
-    };
+    let call = IERC20::balanceOfCall { account: args.account };
 
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
@@ -122,9 +116,7 @@ async fn main() -> Result<()> {
     );
 
     // Finally, construct the input from the environment.
-    let evm_input = env.into_input().await?;
-    let evm_input =
-        EthEvmBeaconInput::from_endpoint_and_input(args.beacon_api_url, evm_input).await?;
+    let evm_input = env.into_beacon_input(args.beacon_api_url).await?;
 
     println!("Creating proof for the constructed input...");
     let prove_info = task::spawn_blocking(move || {
@@ -151,7 +143,8 @@ async fn main() -> Result<()> {
     let journal = Journal::abi_decode(journal, true).context("invalid journal")?;
     println!(
         "The guest committed to Beacon block {} at timestamp {}",
-        journal.commitment.blockHash, journal.commitment.blockNumber
+        journal.commitment.blockDigest,
+        journal.commitment.block_id()
     );
 
     // ABI encode the seal.

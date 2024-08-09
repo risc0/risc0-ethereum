@@ -18,7 +18,7 @@
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolValue};
 use risc0_steel::{
-    ethereum::{EthEvmBeaconInput, ETH_SEPOLIA_CHAIN_SPEC},
+    ethereum::{EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
     Contract, SolCommitment,
 };
 use risc0_zkvm::guest::env;
@@ -43,7 +43,7 @@ sol! {
 
 fn main() {
     // Read the input from the guest environment.
-    let input: EthEvmBeaconInput = env::read();
+    let input: EthEvmInput = env::read();
     let contract: Address = env::read();
     let account: Address = env::read();
 

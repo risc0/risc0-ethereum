@@ -16,7 +16,6 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    beacon::EvmBeaconInput,
     config::{ChainSpec, ForkCondition},
     serde::RlpHeader,
     EvmBlockHeader, EvmEnv, EvmInput,
@@ -60,9 +59,6 @@ pub type EthEvmEnv<D> = EvmEnv<D, EthBlockHeader>;
 
 /// [EvmInput] for Ethereum.
 pub type EthEvmInput = EvmInput<EthBlockHeader>;
-
-/// [EvmBeaconInput] for Ethereum.
-pub type EthEvmBeaconInput = EvmBeaconInput<EthBlockHeader>;
 
 /// [EvmBlockHeader] for Ethereum.
 pub type EthBlockHeader = RlpHeader<alloy_consensus::Header>;
