@@ -16,7 +16,9 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{BlockNumber, Bytes, Sealable, Sealed, B256, U256};
+use alloy_primitives::{
+    ruint::FromUintError, uint, BlockNumber, Bytes, Sealable, Sealed, B256, U256,
+};
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, HashMap, SpecId};
 use state::StateDb;
 
@@ -84,32 +86,6 @@ impl<H: EvmBlockHeader> EvmInput<H> {
     }
 }
 
-// Keep everything in the Steel library private except the commitment.
-mod private {
-    alloy_sol_types::sol! {
-        #![sol(all_derives)]
-        /// A Commitment struct representing a block number and its block hash.
-        struct Commitment {
-            uint256 blockNumber; // Block number at which the commitment was made.
-            bytes32 blockHash; // Hash of the block at the specified block number.
-        }
-    }
-}
-
-/// Solidity struct representing the committed block used for validation.
-pub use private::Commitment as SolCommitment;
-
-impl SolCommitment {
-    /// Constructs a commitment from a sealed [EvmBlockHeader].
-    #[inline]
-    fn from_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Self {
-        SolCommitment {
-            blockNumber: U256::from(header.number()),
-            blockHash: header.seal(),
-        }
-    }
-}
-
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
@@ -128,7 +104,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
         let commitment = SolCommitment::from_header(&header);
         #[cfg(feature = "host")]
-        log::info!("Commitment to block {}", commitment.blockHash);
+        log::info!("Commitment to block {}", commitment.blockDigest);
 
         Self {
             db: Some(db),
@@ -179,4 +155,65 @@ pub trait EvmBlockHeader: Sealable {
 
     /// Fills the EVM block environment with the header's data.
     fn fill_block_env(&self, blk_env: &mut BlockEnv);
+}
+
+// Keep everything in the Steel library private except the commitment.
+mod private {
+    alloy_sol_types::sol! {
+        #![sol(all_derives)]
+        /// A Commitment struct representing a block number and its block hash.
+        struct Commitment {
+            uint256 blockID;
+            bytes32 blockDigest;
+        }
+    }
+}
+
+/// Solidity struct representing the committed block used for validation.
+pub use private::Commitment as SolCommitment;
+
+/// The different versions of a [SolCommitment].
+#[repr(u16)]
+enum CommitmentVersion {
+    Block,
+    Beacon,
+}
+
+impl SolCommitment {
+    /// Constructs a commitment from a sealed [EvmBlockHeader].
+    #[inline]
+    fn from_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Self {
+        SolCommitment {
+            blockID: Self::encode_id(header.number(), CommitmentVersion::Block as u16),
+            blockDigest: header.seal(),
+        }
+    }
+
+    /// Encodes an ID and version into a single [U256] value.
+    #[inline]
+    pub fn encode_id(id: u64, version: u16) -> U256 {
+        U256::from_limbs([id, 0, 0, (version as u64) << 48])
+    }
+
+    /// Decodes an ID and version from a single [U256] value.
+    #[inline]
+    pub fn decode_id(mut id: U256) -> Result<(u64, u16), FromUintError<u64>> {
+        let version = (id.as_limbs()[3] >> 48) as u16;
+        id &= uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
+        Ok((id.try_into()?, version))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SolCommitment;
+
+    #[test]
+    fn versioned_id() {
+        let tests = vec![(u64::MAX, u16::MAX), (u64::MAX, 0), (0, u16::MAX), (0, 0)];
+        for test in tests {
+            let id = SolCommitment::encode_id(test.0, test.1);
+            assert_eq!(SolCommitment::decode_id(id).unwrap(), test);
+        }
+    }
 }

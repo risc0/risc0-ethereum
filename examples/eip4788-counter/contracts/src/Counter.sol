@@ -18,7 +18,6 @@ pragma solidity ^0.8.20;
 
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
-import {Beacon} from "./Beacon.sol";
 import {ICounter} from "./ICounter.sol";
 import {ImageID} from "./ImageID.sol"; // auto-generated contract after running `cargo build`.
 
@@ -57,7 +56,7 @@ contract Counter is ICounter {
         // Decode and validate the journal data
         Journal memory journal = abi.decode(journalData, (Journal));
         require(journal.tokenContract == tokenContract, "Invalid token address");
-        require(Beacon.validateCommitment(journal.commitment), "Invalid commitment");
+        require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
 
         // Verify the proof
         bytes32 journalHash = sha256(journalData);
