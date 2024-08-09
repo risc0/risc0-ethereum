@@ -44,6 +44,7 @@ where
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);
     let block_hash = env.header().hash_slow();
+    let block_number = env.header().inner().number;
 
     let preflight_result = {
         let mut preflight = Contract::preflight(address, &mut env);
@@ -56,6 +57,7 @@ where
 
     let commitment = env.commitment();
     assert_eq!(commitment.blockDigest, block_hash, "invalid commitment");
+    assert_eq!(commitment.blockID, U256::from(block_number), "invalid commitment");
 
     let result = {
         let contract = Contract::new(address, &env);
