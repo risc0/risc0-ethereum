@@ -17,8 +17,8 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: v2024-04-22.0
-  RISC0_MONOREPO_REF: "main"
+  RISC0_TOOLCHAIN_VERSION: r0.1.79.0
+  RISC0_MONOREPO_REF: "release-1.1"
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
