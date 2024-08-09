@@ -19,7 +19,9 @@ pragma solidity ^0.8.9;
 /// @title Steel Library
 /// @notice This library provides a collection of utilities to work with Steel commitments in Solidity.
 library Steel {
-    /// @notice A Commitment struct representing a block number and its block hash.
+    /// @notice Represents a commitment to a specific block in the blockchain.
+    /// @dev The `blockID` encodes both the block identifier (block number or timestamp) and the version.
+    /// @dev The `blockDigest` is the block hash or beacon block root, used for validation.
     struct Commitment {
         uint256 blockID;
         bytes32 blockDigest;
@@ -50,7 +52,7 @@ library Steel {
     /// @param blockHash The block hash to validate.
     /// @return True if the block's block hash matches the block hash, false otherwise.
     function validateBlockCommitment(uint256 blockNumber, bytes32 blockHash) internal view returns (bool) {
-        if (blockNumber < block.number - 256) {
+        if (block.number - blockNumber > 256) {
             revert CommitmentTooOld();
         }
         return blockHash == blockhash(blockNumber);
@@ -61,7 +63,7 @@ library Steel {
     /// @param blockRoot The block root to validate.
     /// @return True if the block's block root matches the block root, false otherwise.
     function validateBeaconCommitment(uint256 blockTimestamp, bytes32 blockRoot) internal view returns (bool) {
-        if (blockTimestamp < block.timestamp - 12 * 8191) {
+        if (block.timestamp - blockTimestamp > 12 * 8191) {
             revert CommitmentTooOld();
         }
         return blockRoot == Beacon.blockRoot(blockTimestamp);
