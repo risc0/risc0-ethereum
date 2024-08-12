@@ -21,7 +21,7 @@ use std::{
 
 #[cfg(feature = "host")]
 use crate::host::HostEvmEnv;
-use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
+use crate::{host::db::AlloyDb, state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
 use revm::{
@@ -174,6 +174,24 @@ impl<C, E> CallBuilder<C, E> {
     pub fn value(mut self, value: U256) -> Self {
         self.tx.value = value;
         self
+    }
+}
+
+#[cfg(feature = "host")]
+impl<'a, C, T, N, P, H> CallBuilder<C, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H>>
+where
+    T: alloy::transports::Transport + Clone,
+    N: alloy::network::Network,
+    P: alloy::providers::Provider<T, N>,
+{
+    /// Sets the `access_list` in the transaction to the provided value
+    pub async fn access_list(
+        self,
+        access_list: alloy::eips::eip2930::AccessList,
+    ) -> anyhow::Result<Self> {
+        let db = self.env.db.as_mut().unwrap();
+        db.add_access_list(access_list).await?;
+        Ok(self)
     }
 }
 

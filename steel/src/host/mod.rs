@@ -31,7 +31,7 @@ use alloy::{
     },
 };
 use anyhow::{anyhow, Context, Result};
-use db::{AlloyDb, TraceDb};
+use db::{AlloyDb, ProofDb};
 use url::Url;
 
 pub mod db;
@@ -40,9 +40,9 @@ pub mod db;
 pub type BlockNumberOrTag = alloy::rpc::types::BlockNumberOrTag;
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
+pub(crate) type HostEvmEnv<D, H> = EvmEnv<ProofDb<D>, H>;
 
-impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
+impl EthEvmEnv<ProofDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
         let provider = ProviderBuilder::new().on_http(url);
@@ -50,7 +50,7 @@ impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>
     }
 }
 
-impl<T, N, P, H> EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>
+impl<T, N, P, H> EvmEnv<ProofDb<AlloyDb<T, N, P>>, H>
 where
     T: Transport + Clone,
     N: Network,
@@ -71,7 +71,7 @@ where
             .map_err(|err| anyhow!("header invalid: {}", err))?;
         log::info!("Environment initialized for block {}", header.number());
 
-        let db = TraceDb::new(AlloyDb::new(provider, header.number()));
+        let db = ProofDb::new(AlloyDb::new(provider, header.number()));
 
         Ok(EvmEnv::new(db, header.seal_slow()))
     }

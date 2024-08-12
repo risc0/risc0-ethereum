@@ -68,6 +68,10 @@ impl MerkleTrie {
         }
     }
 
+    pub fn join(&mut self, other: MerkleTrie) {
+        self.0.join(other.0);
+    }
+
     /// Creates a new trie from the given RLP encoded nodes.
     ///
     /// The first node provided must always be the root node. The remaining nodes can be in any
@@ -192,6 +196,38 @@ impl Node {
                 out
             }
             Node::Digest(digest) => alloy_rlp::encode(digest),
+        }
+    }
+
+    pub fn join(&mut self, other: Node) -> bool {
+        match self {
+            Node::Null | Node::Leaf(_, _) => self == &other,
+            Node::Extension(prefix, child) => match other {
+                Node::Extension(other_prefix, other_child) if prefix == &other_prefix => {
+                    child.join(*other_child)
+                }
+                _ => false,
+            },
+            Node::Branch(children) => match other {
+                Node::Branch(other_children) => children
+                    .iter_mut()
+                    .zip(other_children)
+                    .map(|(child, other_child)| match (child, other_child) {
+                        (Some(child), Some(other_child)) => child.join(*other_child),
+                        (None, None) => true,
+                        _ => false,
+                    })
+                    .all(|x| x),
+                _ => false,
+            },
+            Node::Digest(digest) => {
+                if *digest == keccak256(other.rlp_encoded()) {
+                    *self = other;
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 }

@@ -16,7 +16,7 @@
 //!
 //! [Database]: revm::Database
 mod alloy;
-mod trace;
+mod proof;
 
 pub use alloy::AlloyDb;
-pub use trace::TraceDb;
+pub use proof::ProofDb;
