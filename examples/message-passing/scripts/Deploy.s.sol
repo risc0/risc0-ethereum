@@ -26,38 +26,41 @@ import {L1CrossDomainMessenger} from "../contracts/src/L1CrossDomainMessenger.so
 import {IL2CrossDomainMessenger} from "../contracts/src/IL2CrossDomainMessenger.sol";
 import {L2CrossDomainMessenger} from "../contracts/src/L2CrossDomainMessenger.sol";
 import {IL1Block} from "../contracts/src/IL1Block.sol";
-import {L1BlockMock} from "../contracts/test/L1BlockMock.sol";
 import {ImageID} from "../contracts/src/ImageID.sol";
 import {Counter} from "../contracts/src/Counter.sol";
 
 contract Deploy is Script, RiscZeroCheats {
+    // In OP the L1Block contract on L2 is always at the same predeployed address
+    IL1Block constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
+
     function run() external {
-        // Read and log the chainID
-        uint256 chainId = block.chainid;
-        console2.log("You are deploying on ChainID %d", chainId);
-
-        deployAnvil();
-    }
-
-    function deployAnvil() internal {
         // load ENV variables first
-        uint256 key = vm.envUint("L1_ADMIN_PRIVATE_KEY");
-       
-        vm.startBroadcast(key);
+        uint256 key1 = vm.envUint("L1_ADMIN_PRIVATE_KEY");
+        uint256 key2 = vm.envUint("L2_ADMIN_PRIVATE_KEY");
+        uint256 l1 = vm.createFork(vm.envString("L1_RPC_URL"));
+        uint256 l2 = vm.createFork(vm.envString("L2_RPC_URL"));
+
+        vm.selectFork(l1);
+        vm.startBroadcast(key1);
 
         IL1CrossDomainMessenger l1CrossDomainMessenger = new L1CrossDomainMessenger();
         console2.log("Deployed L1 IL1CrossDomainMessenger to", address(l1CrossDomainMessenger));
 
+        vm.stopBroadcast();
+
+        vm.selectFork(l2);
+        vm.startBroadcast(key2);
+
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
 
-        IL1Block l1Block = new L1BlockMock();
-        
-        IL2CrossDomainMessenger l2CrossDomainMessenger = new L2CrossDomainMessenger(verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger), l1Block);
+        IL2CrossDomainMessenger l2CrossDomainMessenger = new L2CrossDomainMessenger(
+            verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger), L1_BLOCK
+        );
         console2.log("Deployed L2 L2CrossDomainMessenger to", address(l2CrossDomainMessenger));
 
         Counter counter = new Counter(l2CrossDomainMessenger, address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266));
         console2.log("Deployed L1 Counter to", address(counter));
 
         vm.stopBroadcast();
-    }  
+    }
 }

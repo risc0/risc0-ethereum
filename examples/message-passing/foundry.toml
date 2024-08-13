@@ -3,6 +3,7 @@ src = "contracts"
 out = "out"
 libs = ["../../lib", "../../contracts/src"]
 test = "tests"
+script = "scripts"
 ffi = true
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

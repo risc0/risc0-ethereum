@@ -45,9 +45,13 @@ sol!("../contracts/src/ICounter.sol");
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Ethereum Node endpoint.
+    /// L1 private key.
     #[clap(long, env)]
-    eth_wallet_private_key: PrivateKeySigner,
+    l1_wallet_private_key: PrivateKeySigner,
+
+    /// L2 private key.
+    #[clap(long, env)]
+    l2_wallet_private_key: PrivateKeySigner,
 
     /// Ethereum Node endpoint.
     #[clap(long, env)]
@@ -59,7 +63,7 @@ struct Args {
 
     /// Target's contract address on L2
     #[clap(long, env)]
-    target_address: Address,
+    counter_address: Address,
 
     /// l1_cross_domain_messenger_address's contract address on L1
     #[clap(long, env)]
@@ -77,18 +81,20 @@ async fn main() -> Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
     // Parse the command line arguments.
-    let args = Args::parse();
+    dotenvy::dotenv()?;
+    let args = Args::try_parse()?;
 
     // Create an alloy provider for that private key and URL.
-    let wallet = EthereumWallet::from(args.eth_wallet_private_key);
+    let wallet = EthereumWallet::from(args.l1_wallet_private_key);
     let l1_provider = ProviderBuilder::new()
         .with_recommended_fillers()
-        .wallet(wallet.clone())
+        .wallet(wallet)
         .on_http(args.l1_rpc_url);
 
+    let wallet = EthereumWallet::from(args.l2_wallet_private_key);
     let l2_provider = ProviderBuilder::new()
         .with_recommended_fillers()
-        .wallet(wallet.clone())
+        .wallet(wallet)
         .on_http(args.l2_rpc_url);
 
     // Instantiate all the contracts we want to call.
@@ -104,7 +110,7 @@ async fn main() -> Result<()> {
         IBookmarkService::new(args.l2_cross_domain_messenger_address, l2_provider.clone());
 
     // Prepare the message to be passed from L1 to L2
-    let target = args.target_address;
+    let target = args.counter_address;
     let data = ICounter::incrementCall {}.abi_encode();
 
     // Send a transaction calling IL1CrossDomainMessenger.sendMessage
