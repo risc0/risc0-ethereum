@@ -54,7 +54,7 @@ contract E2ETest is Test {
         l2CrossDomainMessenger = new L2CrossDomainMessenger(
             verifier, CROSS_DOMAIN_MESSENGER_IMAGE_ID, address(l1CrossDomainMessenger), l1Block
         );
-        counter = new Counter(l2CrossDomainMessenger, address(sender));
+        counter = new Counter(l2CrossDomainMessenger);
     }
 
     function testCounterIncrement() public {

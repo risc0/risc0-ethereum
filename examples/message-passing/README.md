@@ -12,4 +12,16 @@ Call `L1CrossDomainMessenger.sendMessage` with the message you want to relay to 
 ## Advantages
 This method eliminates unnecessary bridging operations, significantly reducing L1 gas costs. The Steel approach also avoids the `OptimismPortal` L1 gas burn, which can vary depending on the usage.
 
-## 
+## How to run
+We deployed this example on Sepolia and OP-Sepolia. You can export:
+
+```bash
+L1_WALLET_PRIVATE_KEY="YOUR_SEPOLIA_WALLET_PRIVATE_KEY"
+L2_WALLET_PRIVATE_KEY="YOUR_OP_SEPOLIA_WALLET_PRIVATE_KEY"
+```
+
+and finally run
+
+```bash
+RISC0_DEV_MODE=1 RUST_LOG=info cargo run
+```
