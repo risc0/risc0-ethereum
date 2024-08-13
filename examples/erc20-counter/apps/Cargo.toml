@@ -9,6 +9,7 @@ alloy-primitives = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 erc20-counter-methods = { workspace = true }
+log = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }

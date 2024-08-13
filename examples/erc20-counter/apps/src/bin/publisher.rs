@@ -16,61 +16,69 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use std::time::Duration;
-
 use alloy::{
-    network::EthereumWallet, providers::ProviderBuilder, signers::local::PrivateKeySigner,
-    sol_types::SolCall,
+    network::EthereumWallet,
+    providers::ProviderBuilder,
+    signers::local::PrivateKeySigner,
+    sol_types::{SolCall, SolValue},
 };
 use alloy_primitives::Address;
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
-use erc20_counter_methods::BALANCE_OF_ELF;
+use erc20_counter_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
-    Contract,
+    Contract, SolCommitment,
 };
-use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
 alloy::sol! {
-    /// ERC-20 balance function signature.
-    /// This must match the signature in the guest.
+    /// Interface to be called by the guest.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
+    }
+
+    /// Data committed to by the guest.
+    struct Journal {
+        SolCommitment commitment;
+        address tokenContract;
     }
 }
 
 alloy::sol!(
-    #[sol(rpc)]
-    "../contracts/ICounter.sol"
+    #[sol(rpc, all_derives)]
+    "../contracts/src/ICounter.sol"
 );
 
-/// Arguments of the publisher CLI.
+/// Simple program to create a proof to increment the Counter contract.
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Ethereum Node endpoint.
+    /// Private key
     #[clap(long, env)]
     eth_wallet_private_key: PrivateKeySigner,
 
-    /// Ethereum Node endpoint.
+    /// Ethereum RPC endpoint URL
     #[clap(long, env)]
-    rpc_url: Url,
+    eth_rpc_url: Url,
 
-    /// Counter's contract address on Ethereum
+    /// Beacon API endpoint URL
+    #[clap(long, env)]
+    beacon_api_url: Option<Url>,
+
+    /// Address of the Counter verifier
     #[clap(long)]
-    contract: Address,
+    counter: Address,
 
-    /// ERC20 contract address on Ethereum
-    #[clap(long)]
-    token: Address,
+    /// Address of the ERC20 token contract
+    #[clap(long, env)]
+    token_contract: Address,
 
-    /// Account address to read the balance_of on Ethereum
+    /// Address to query the token balance of
     #[clap(long)]
     account: Address,
 }
@@ -82,14 +90,14 @@ async fn main() -> Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
     // Parse the command line arguments.
-    let args = Args::parse();
+    let args = Args::try_parse()?;
 
     // Create an alloy provider for that private key and URL.
     let wallet = EthereumWallet::from(args.eth_wallet_private_key);
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .wallet(wallet)
-        .on_http(args.rpc_url);
+        .on_http(args.eth_rpc_url);
 
     // Create an EVM environment from that provider and a block number.
     let mut env = EthEvmEnv::from_provider(provider.clone(), BlockNumberOrTag::Latest).await?;
@@ -103,23 +111,29 @@ async fn main() -> Result<()> {
 
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
-    let mut contract = Contract::preflight(args.token, &mut env);
+    let mut contract = Contract::preflight(args.token_contract, &mut env);
     let returns = contract.call_builder(&call).call().await?;
     println!(
         "Call {} Function on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,
-        args.token,
+        args.token_contract,
         returns._0
     );
 
     // Finally, construct the input from the environment.
-    let view_call_input = env.into_input().await?;
+    // There are two options: Use EIP-4788 for verification by providing a Beacon API endpoint,
+    // or use the regular `blockhash' opcode.
+    let evm_input = if let Some(beacon_api_url) = args.beacon_api_url {
+        env.into_beacon_input(beacon_api_url).await?
+    } else {
+        env.into_input().await?
+    };
 
     println!("Creating proof for the constructed input...");
     let prove_info = task::spawn_blocking(move || {
         let env = ExecutorEnv::builder()
-            .write(&view_call_input)?
-            .write(&args.token)?
+            .write(&evm_input)?
+            .write(&args.token_contract)?
             .write(&args.account)?
             .build()
             .unwrap();
@@ -134,10 +148,24 @@ async fn main() -> Result<()> {
     .await?
     .context("failed to create proof")?;
     let receipt = prove_info.receipt;
+    let journal = &receipt.journal.bytes;
+
+    // Decode and log the commitment
+    let journal = Journal::abi_decode(journal, true).context("invalid journal")?;
+    println!(
+        "The guest committed to block {}",
+        journal.commitment.blockDigest
+    );
+
+    // ABI encode the seal.
     let seal = encode_seal(&receipt)?;
 
     // Create an alloy instance of the Counter contract.
-    let contract = ICounter::new(args.contract, provider);
+    let contract = ICounter::new(args.counter, provider);
+
+    // Call ICounter::imageID() to check that the contract has been deployed correctly.
+    let contract_image_id = Digest::from(contract.imageID().call().await?._0.0);
+    ensure!(contract_image_id == Digest::from(BALANCE_OF_ID));
 
     // Call the increment function of the contract and wait for confirmation.
     println!(
@@ -146,11 +174,9 @@ async fn main() -> Result<()> {
         contract.address()
     );
     let call_builder = contract.increment(receipt.journal.bytes.into(), seal.into());
+    log::debug!("Send {} {}", contract.address(), call_builder.calldata());
     let pending_tx = call_builder.send().await?;
-    let receipt = pending_tx
-        .with_timeout(Some(Duration::from_secs(60)))
-        .get_receipt()
-        .await?;
+    let receipt = pending_tx.get_receipt().await?;
     ensure!(receipt.status(), "transaction failed");
 
     let value = contract.get().call().await?._0;

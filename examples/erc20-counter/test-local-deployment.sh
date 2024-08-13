@@ -31,7 +31,7 @@ cargo build
 
 # Deploy the Counter contract
 echo "Deploying the Counter contract..."
-forge script --rpc-url http://localhost:8545 --broadcast script/DeployCounter.s.sol
+forge script --rpc-url http://localhost:8545 --broadcast DeployCounter
 
 # Extract the Toyken address
 export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
@@ -48,9 +48,9 @@ echo "Counter Address: $COUNTER_ADDRESS"
 # Publish a new state
 echo "Publishing a new state..."
 cargo run --bin publisher -- \
-    --rpc-url=http://localhost:8545 \
-    --contract=${COUNTER_ADDRESS:?} \
-    --token=${TOYKEN_ADDRESS:?} \
+    --eth-rpc-url=http://localhost:8545 \
+    --counter=${COUNTER_ADDRESS:?} \
+    --token-contract=${TOYKEN_ADDRESS:?} \
     --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
 
 # Attempt to verify counter value as part of the script logic

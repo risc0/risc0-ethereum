@@ -21,8 +21,8 @@ import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 
-import {Counter} from "../contracts/Counter.sol";
-import {ERC20} from "../contracts/ERC20.sol";
+import {Counter} from "../src/Counter.sol";
+import {ERC20} from "../src/ERC20.sol";
 
 /// @notice Deployment script for the Counter contract.
 /// @dev Use the following environment variable to control the deployment:
@@ -30,7 +30,7 @@ import {ERC20} from "../contracts/ERC20.sol";
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract CounterDeploy is Script, RiscZeroCheats {
+contract DeployCounter is Script, RiscZeroCheats {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
 
