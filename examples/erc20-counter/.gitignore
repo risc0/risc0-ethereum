@@ -15,9 +15,6 @@ anvil_logs.txt
 contracts/src/ImageID.sol
 contracts/src/Elf.sol
 
-# Dotenv file
-.env
-
 # Cargo
 target/
 
