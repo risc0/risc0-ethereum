@@ -20,9 +20,8 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
-
 import {Counter} from "../src/Counter.sol";
-import {ERC20} from "../src/ERC20.sol";
+import {ERC20FixedSupply} from "../test/Counter.t.sol";
 
 /// @notice Deployment script for the Counter contract.
 /// @dev Use the following environment variable to control the deployment:
@@ -33,10 +32,11 @@ import {ERC20} from "../src/ERC20.sol";
 contract DeployCounter is Script, RiscZeroCheats {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
+        address tokenOwner = vm.envAddress("TOKEN_OWNER");
 
         vm.startBroadcast(deployerKey);
 
-        ERC20 toyken = new ERC20("TOYKEN", "TOY", 0);
+        ERC20FixedSupply toyken = new ERC20FixedSupply("TOYKEN", "TOY", tokenOwner);
         console2.log("Deployed ERC20 TOYKEN to", address(toyken));
 
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
