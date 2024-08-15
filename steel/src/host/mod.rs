@@ -96,15 +96,23 @@ where
         // retrieve EIP-1186 proofs for all accounts
         let mut proofs = Vec::new();
         for (address, storage_keys) in db.accounts() {
-            let proof = provider
-                .get_proof(
-                    *address,
-                    storage_keys.iter().map(|v| StorageKey::from(*v)).collect(),
-                )
+            log::info!("getting proofs: {}", address);
+            let mut keys: Vec<_> = storage_keys.iter().map(|v| StorageKey::from(*v)).collect();
+            keys.sort();
+            let mut iter = keys.chunks(2000);
+            let mut account_proof = provider
+                .get_proof(*address, iter.next().unwrap_or_default().into())
                 .number(block_number)
-                .await
-                .context("eth_getProof failed")?;
-            proofs.push(proof);
+                .await?;
+            while let Some(keys) = iter.next() {
+                let proof = provider
+                    .get_proof(*address, keys.into())
+                    .number(block_number)
+                    .await?;
+                account_proof.storage_proof.extend(proof.storage_proof);
+            }
+
+            proofs.push(account_proof);
         }
 
         // build the sparse MPT for the state and verify it against the header
@@ -119,7 +127,7 @@ where
         let mut storage_tries = HashMap::new();
         for proof in proofs {
             // skip non-existing accounts or accounts where no storage slots were requested
-            if proof.storage_proof.is_empty() || proof.storage_hash.is_zero() {
+            if proof.storage_proof.is_empty() {
                 continue;
             }
 

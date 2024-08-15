@@ -277,11 +277,18 @@ impl<C: SolCall> CallTxData<C> {
             .transact_preverified()
             .map_err(|err| format!("EVM error: {}", err))?;
         let output = match result {
-            ExecutionResult::Success { reason, output, .. } => {
+            ExecutionResult::Success {
+                reason,
+                output,
+                gas_used,
+                ..
+            } => {
                 // there must be a return value to decode
                 if reason != SuccessReason::Return {
                     Err(format!("did not return: {:?}", reason))
                 } else {
+                    #[cfg(feature = "host")]
+                    log::debug!("gas_used={}", gas_used);
                     Ok(output)
                 }
             }

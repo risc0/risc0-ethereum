@@ -85,6 +85,7 @@ impl<DB: Database> Database for TraceDb<DB> {
         );
         let storage = self.inner.storage(address, index)?;
         self.accounts.entry(address).or_default().insert(index);
+        log::trace!("STORAGE: {}", storage);
 
         Ok(storage)
     }
