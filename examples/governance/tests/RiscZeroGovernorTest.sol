@@ -175,6 +175,9 @@ contract RiscZeroGovernorTest is Test {
             signature
         ); // Vote in favor
 
+        //move forward after vote
+        vm.roll(block.number + riscZeroGovernor.votingPeriod() + 1);
+
         // riscZeroGovernor.castVoteBySig(proposalId, bobSupport, bob); // Vote against
 
         // Note: We can't check vote counts here as they're not immediately updated in RiscZeroGovernor
@@ -271,7 +274,7 @@ contract RiscZeroGovernorTest is Test {
             description
         );
 
-        aliceSupport = 1;        
+        aliceSupport = 1;
         bobSupport = 1;
 
         vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);

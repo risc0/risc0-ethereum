@@ -184,11 +184,11 @@ contract RiscZeroGovernor is
 
         // parse the journal
         uint256 proposalId = uint256(bytes32(journal[0:32]));
-        bytes32 finalBallotBoxAccum = bytes32(journal[32:64]);
+        bytes32 finalBallotBoxCommit = bytes32(journal[32:64]);
         bytes calldata encodedBallots = journal[64:];
 
         // finalize the votes
-        _finalizeVotes(proposalId, finalBallotBoxAccum, encodedBallots);
+        _finalizeVotes(proposalId, finalBallotBoxCommit, encodedBallots);
     }
 
     function _castVote(
