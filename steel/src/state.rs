@@ -81,9 +81,7 @@ impl StateDb {
     }
 
     #[inline]
-    fn block_hash(&self, number: U256) -> B256 {
-        // block number is never bigger then u64::MAX
-        let number: u64 = number.to();
+    fn block_hash(&self, number: u64) -> B256 {
         let hash = self
             .block_hashes
             .get(&number)
@@ -176,7 +174,7 @@ impl Database for WrapStateDb<'_> {
 
     /// Get block hash by block number.
     #[inline]
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
+    fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
         Ok(self.inner.block_hash(number))
     }
 }
