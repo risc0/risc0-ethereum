@@ -7,6 +7,7 @@ import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
 import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
 import {VoteToken} from "../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
+import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
 import {ImageID} from "../contracts/utils/ImageID.sol";
 import {RiscZeroMockVerifier, Receipt as VerifierReceipt} from "../contracts/groth16/RiscZeroMockVerifier.sol";
 import {IRiscZeroVerifier} from "../contracts/groth16/IRiscZeroVerifier.sol";
@@ -17,15 +18,18 @@ contract BenchmarkGovernorsTest is Test {
     VoteToken public voteToken;
     RiscZeroMockVerifier public mockVerifier;
 
-    address public alice;
     uint8 public forSupport = 1;
     uint8 public againstSupport = 1;
+    address[] public addresses;
+    address public owner;
+    address public alice;
     address public bob;
-    address public charlie;
     address public voterOneAddress;
     address public voterTwoAddress;
     uint256 public voterOnePk;
     uint256 public voterTwoPk;
+    mapping(address => bytes) public signatures;
+    mapping(address => uint256) public keys;
     bytes32 public constant IMAGE_ID = ImageID.FINALIZE_VOTES_ID;
     bytes4 public constant MOCK_SELECTOR = bytes4(uint32(1337));
 
@@ -41,18 +45,15 @@ contract BenchmarkGovernorsTest is Test {
 
         alice = vm.addr(1);
         bob = vm.addr(2);
-        charlie = vm.addr(3);
+        owner = vm.addr(3);
 
         voteToken.mint(alice, 100);
         voteToken.mint(bob, 50);
-        voteToken.mint(charlie, 30);
 
         vm.prank(alice);
         voteToken.delegate(alice);
         vm.prank(bob);
         voteToken.delegate(bob);
-        vm.prank(charlie);
-        voteToken.delegate(charlie);
 
         (voterOneAddress, voterOnePk) = makeAddrAndKey("voter_one");
         (voterTwoAddress, voterTwoPk) = makeAddrAndKey("voter_two");
@@ -74,10 +75,10 @@ contract BenchmarkGovernorsTest is Test {
         );
 
         // set up two voters with PKs
-        vm.prank(alice);
+        vm.startPrank(alice);
         voteToken.transfer(voterOneAddress, 50);
-        vm.prank(alice);
         voteToken.transfer(voterTwoAddress, 50);
+        vm.stopPrank();
 
         vm.prank(voterOneAddress);
         voteToken.delegate(voterOneAddress);
@@ -133,7 +134,6 @@ contract BenchmarkGovernorsTest is Test {
             uint256(IGovernor.ProposalState.Executed),
             "Proposal should be executed"
         );
-
     }
 
     function testRiscZeroWorkflow() public {
@@ -184,11 +184,10 @@ contract BenchmarkGovernorsTest is Test {
 
         // Move to end of voting period
         vm.roll(block.number + baselineGovernor.votingPeriod() + 1);
-        
+
         // call `verifyAndFinalizeVotes` and assert expectations
         bytes memory journal = getJournal(proposalId);
         riscZeroGovernor.verifyAndFinalizeVotes(receipt.seal, journal);
-
 
         // execute proposal
         riscZeroGovernor.execute(
@@ -202,7 +201,27 @@ contract BenchmarkGovernorsTest is Test {
             uint256(IGovernor.ProposalState.Executed),
             "Proposal should be executed"
         );
+    }
 
+    function testGeneratingHellaSigs() public {
+        (
+            address[] memory targets,
+            uint256[] memory values,
+            bytes[] memory calldatas,
+            string memory description
+        ) = _createProposalParams();
+
+        uint256 proposalId = baselineGovernor.propose(
+            targets,
+            values,
+            calldatas,
+            description
+        );
+
+
+        generateAccounts(10);
+
+        generateSignatures(proposalId);
     }
 
     function getSignature(
@@ -215,6 +234,31 @@ contract BenchmarkGovernorsTest is Test {
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
         signature = abi.encodePacked(r, s, v);
+    }
+
+    function generateAccounts(uint256 noOfAccounts) public noGasMetering {
+        for (uint256 i = 0; i < noOfAccounts; i++) {
+            string memory base = string(
+                abi.encodePacked("yolo", Strings.toString(i))
+            );
+            (address tempAddress, uint256 tempPk) = makeAddrAndKey(base);
+            addresses.push(tempAddress);
+            keys[tempAddress] = tempPk;
+        }
+    }
+
+    function generateSignatures(uint256 proposalId) public noGasMetering {
+        for (uint256 i = 0; i < addresses.length; i++) {
+            address currentAddress = addresses[i];
+            signatures[currentAddress] = getSignature(
+                1,
+                proposalId,
+                currentAddress,
+                keys[currentAddress]
+            );
+
+            console2.logBytes(signatures[currentAddress]);
+        }
     }
 
     function getJournalDigest(
