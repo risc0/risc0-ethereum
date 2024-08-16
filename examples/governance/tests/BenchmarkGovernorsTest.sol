@@ -59,7 +59,9 @@ contract BenchmarkGovernorsTest is Test {
         (voterTwoAddress, voterTwoPk) = makeAddrAndKey("voter_two");
     }
 
-    function testBaselineWorkflow() public {
+    function testBaselineManySigs() public {
+        uint256 noOfAccounts = 10;
+
         (
             address[] memory targets,
             uint256[] memory values,
@@ -74,50 +76,35 @@ contract BenchmarkGovernorsTest is Test {
             description
         );
 
-        // set up two voters with PKs
-        vm.startPrank(alice);
-        voteToken.transfer(voterOneAddress, 50);
-        voteToken.transfer(voterTwoAddress, 50);
-        vm.stopPrank();
+        // generate accounts
+        generateAccounts(noOfAccounts);
 
-        vm.prank(voterOneAddress);
-        voteToken.delegate(voterOneAddress);
-        vm.prank(voterTwoAddress);
-        voteToken.delegate(voterTwoAddress);
+        // mint and delegate these accounts ERC20 token for voting power
+        for (uint256 i = 0; i < noOfAccounts; i++) {
+            address currentAddress = addresses[i];
+            voteToken.mint(currentAddress, 100);
+            vm.prank(currentAddress);
+            voteToken.delegate(currentAddress);
+        }
 
-        // get signatures
-        bytes memory signatureOne = getSignature(
-            forSupport,
-            proposalId,
-            voterOneAddress,
-            voterOnePk
-        );
-        bytes memory signatureTwo = getSignature(
-            forSupport,
-            proposalId,
-            voterTwoAddress,
-            voterTwoPk
-        );
+        // generate signatures
+        generateSignatures(proposalId);
 
         // move to active voting period
         vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
 
         // cast votes
-        baselineGovernor.castVoteBySig(
-            proposalId,
-            forSupport,
-            voterOneAddress,
-            signatureOne
-        );
+        for (uint256 i = 0; i < noOfAccounts; i++) {
+            address currentAddress = addresses[i];
+            baselineGovernor.castVoteBySig(
+                proposalId,
+                forSupport,
+                currentAddress,
+                signatures[currentAddress]
+            );
 
-        vm.roll(block.number + 1);
-
-        baselineGovernor.castVoteBySig(
-            proposalId,
-            forSupport,
-            voterTwoAddress,
-            signatureTwo
-        );
+            vm.roll(block.number + 1);
+        }
 
         // Move to end of voting period
         vm.roll(block.number + baselineGovernor.votingPeriod() + 1);
@@ -203,7 +190,7 @@ contract BenchmarkGovernorsTest is Test {
         );
     }
 
-    function testGeneratingHellaSigs() public {
+    function testBaselineWorkflow() public {
         (
             address[] memory targets,
             uint256[] memory values,
@@ -218,10 +205,66 @@ contract BenchmarkGovernorsTest is Test {
             description
         );
 
+        // set up two voters with PKs
+        vm.startPrank(alice);
+        voteToken.transfer(voterOneAddress, 50);
+        voteToken.transfer(voterTwoAddress, 50);
+        vm.stopPrank();
 
-        generateAccounts(10);
+        vm.prank(voterOneAddress);
+        voteToken.delegate(voterOneAddress);
+        vm.prank(voterTwoAddress);
+        voteToken.delegate(voterTwoAddress);
 
-        generateSignatures(proposalId);
+        // get signatures
+        bytes memory signatureOne = getSignature(
+            forSupport,
+            proposalId,
+            voterOneAddress,
+            voterOnePk
+        );
+        bytes memory signatureTwo = getSignature(
+            forSupport,
+            proposalId,
+            voterTwoAddress,
+            voterTwoPk
+        );
+
+        // move to active voting period
+        vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
+
+        // cast votes
+        baselineGovernor.castVoteBySig(
+            proposalId,
+            forSupport,
+            voterOneAddress,
+            signatureOne
+        );
+
+        vm.roll(block.number + 1);
+
+        baselineGovernor.castVoteBySig(
+            proposalId,
+            forSupport,
+            voterTwoAddress,
+            signatureTwo
+        );
+
+        // Move to end of voting period
+        vm.roll(block.number + baselineGovernor.votingPeriod() + 1);
+
+        // execute proposal
+        baselineGovernor.execute(
+            targets,
+            values,
+            calldatas,
+            keccak256(bytes(description))
+        );
+        assertEq(
+            uint256(baselineGovernor.state(proposalId)),
+            uint256(IGovernor.ProposalState.Executed),
+            "Proposal should be executed"
+        );
     }
 
     function getSignature(
@@ -251,13 +294,11 @@ contract BenchmarkGovernorsTest is Test {
         for (uint256 i = 0; i < addresses.length; i++) {
             address currentAddress = addresses[i];
             signatures[currentAddress] = getSignature(
-                1,
+                forSupport,
                 proposalId,
                 currentAddress,
                 keys[currentAddress]
             );
-
-            console2.logBytes(signatures[currentAddress]);
         }
     }
 
@@ -328,22 +369,6 @@ contract BenchmarkGovernorsTest is Test {
 
         return (finalBallotBoxAccum, encodedBallots);
     }
-
-    // function createBaselineProposal() public returns (uint256 proposalId) {
-    //     (
-    //         address[] memory targets,
-    //         uint256[] memory values,
-    //         bytes[] memory calldatas,
-    //         string memory description
-    //     ) = _createProposalParams();
-
-    //     proposalId = baselineGovernor.propose(
-    //         targets,
-    //         values,
-    //         calldatas,
-    //         description
-    //     );
-    // }
 
     function _createProposalParams()
         internal
