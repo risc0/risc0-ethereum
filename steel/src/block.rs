@@ -162,8 +162,7 @@ pub mod host {
 
             // retrieve ancestor block headers
             let mut ancestors = Vec::new();
-            if let Some(block_hash_min_number) = db.block_hash_numbers().iter().min() {
-                let block_hash_min_number: u64 = block_hash_min_number.to();
+            if let Some(&block_hash_min_number) = db.block_hash_numbers().iter().min() {
                 for number in (block_hash_min_number..block_number).rev() {
                     let rpc_block = provider
                         .get_block_by_number(number.into(), false)
