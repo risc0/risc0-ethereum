@@ -423,32 +423,4 @@ contract RiscZeroGovernorTest is Test {
         return (finalBallotBoxAccum, encodedBallots);
     }
 
-    function testGasMeasurements() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-
-        uint256 gasBefore = gasleft();
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
-        uint256 gasAfter = gasleft();
-        console2.log("Gas used for proposal creation:", gasBefore - gasAfter);
-
-        vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
-
-        gasBefore = gasleft();
-        vm.prank(alice);
-        riscZeroGovernor.castVote(proposalId, 1);
-        gasAfter = gasleft();
-        console2.log("Gas used for casting a vote:", gasBefore - gasAfter);
-
-        // Note: We can't measure execution gas here as we need to implement verifyAndFinalizeVotes first
-    }
 }

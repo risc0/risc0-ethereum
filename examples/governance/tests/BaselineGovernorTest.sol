@@ -2,7 +2,6 @@
 pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
 import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
 import {VoteToken} from "../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
@@ -297,49 +296,4 @@ contract BaselineGovernorTest is Test {
         return (targets, values, calldatas, description);
     }
 
-    // gas only measured for proposal, a single vote, and execution
-    // we need proper gas benchmarking for a significant no. of votes
-    function testGasMeasurements() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-
-        uint256 gasBefore = gasleft();
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
-        uint256 gasAfter = gasleft();
-        console2.log("Gas used for proposal creation:", gasBefore - gasAfter);
-
-        // Move to active state
-        vm.roll(block.number + baselineGovernor.votingDelay() + 1);
-
-        gasBefore = gasleft();
-        vm.prank(alice);
-        baselineGovernor.castVote(proposalId, 1);
-        gasAfter = gasleft();
-        console2.log("Gas used for casting a vote:", gasBefore - gasAfter);
-
-        // Move to end of voting period
-        vm.roll(block.number + baselineGovernor.votingPeriod() + 1);
-
-        gasBefore = gasleft();
-        baselineGovernor.execute(
-            targets,
-            values,
-            calldatas,
-            keccak256(bytes(description))
-        );
-        gasAfter = gasleft();
-        console2.log(
-            "Gas used for executing a proposal:",
-            gasBefore - gasAfter
-        );
-    }
 }
