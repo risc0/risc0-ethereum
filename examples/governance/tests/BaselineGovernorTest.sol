@@ -8,7 +8,6 @@ import {VoteToken} from "../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
 
 contract BaselineGovernorTest is Test, GovernorTestBase {
-
     function setUp() public override {
         super.setUp();
     }
@@ -164,11 +163,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
         );
 
         // Check the vote was counted
-        (
-            uint256 againstVotes,
-            uint256 forVotes,
-            uint256 abstainVotes
-        ) = baselineGovernor.proposalVotes(proposalId);
+        (, uint256 forVotes, ) = baselineGovernor.proposalVotes(proposalId);
 
         assertEq(forVotes, 100, "For votes should be 100");
     }
@@ -246,5 +241,4 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             "Proposal should be defeated due to not reaching quorum"
         );
     }
-
 }
