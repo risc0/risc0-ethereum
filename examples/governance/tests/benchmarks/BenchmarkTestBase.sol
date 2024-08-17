@@ -1,4 +1,4 @@
-// spdx-license-identifier: apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
