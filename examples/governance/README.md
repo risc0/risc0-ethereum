@@ -8,7 +8,7 @@ This example contains a modified version of OpenZeppelin's [Governor] example, w
 
 It depends on how many votes are casted. Concretely, it depends on how many unique accounts cast a vote. The more accounts cast a vote, the more signature verifications are moved from onchain to offchain in the RISC Zero's zkVM.
 
-Using Foundry's gas reporting and fuzz testing, the data below were generated across 1000 runs.
+Using Foundry's gas reporting and fuzz testing, the data were generated using between 100 and 1000 accounts and across 1000 runs for averaging.
 
 ![gas usage comparison graph](tests/benchmarks/gas_usage_comparison.png)
 
