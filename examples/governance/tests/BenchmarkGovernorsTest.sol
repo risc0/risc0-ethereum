@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
+import {console2} from "forge-std/console2.sol";
 import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
 import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
 import {BenchmarkTestBase} from "./BenchmarkTestBase.sol";
@@ -18,6 +19,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
     }
 
     function testFuzz_BaselineWorkflow(uint8 numAccounts) public {
+        vm.pauseGasMetering();
         numAccounts = uint8(bound(numAccounts, 100, 1000));
 
         // Generate accounts and mint tokens
@@ -28,6 +30,10 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
             vm.prank(currentAddress);
             voteToken.delegate(currentAddress);
         }
+        vm.resumeGasMetering();
+
+        // metering for output
+        uint256 gasUsed = gasleft();
 
         (
             address[] memory targets,
@@ -73,6 +79,9 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
             keccak256(bytes(description))
         );
 
+        gasUsed = gasUsed - gasleft();
+        console2.log("BaselineGovernor,", numAccounts, ",", gasUsed);
+
         assertEq(
             uint256(baselineGovernor.state(baselineProposalId)),
             uint256(IGovernor.ProposalState.Executed),
@@ -81,6 +90,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
     }
 
     function testFuzz_RiscZeroWorkflow(uint8 numAccounts) public {
+        vm.pauseGasMetering();
         numAccounts = uint8(bound(numAccounts, 100, 1000));
 
         // Generate accounts and mint tokens
@@ -91,6 +101,10 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
             vm.prank(currentAddress);
             voteToken.delegate(currentAddress);
         }
+        vm.resumeGasMetering();
+
+        // metering for output
+        uint256 gasUsed = gasleft();
 
         (
             address[] memory targets,
@@ -152,11 +166,13 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
             keccak256(bytes(description))
         );
 
+        gasUsed = gasUsed - gasleft();
+        console2.log("RiscZeroGovernor,", numAccounts, ",", gasUsed);
+
         assertEq(
             uint256(riscZeroGovernor.state(proposalId)),
             uint256(IGovernor.ProposalState.Executed),
             "Proposal should be executed"
         );
     }
-
 }

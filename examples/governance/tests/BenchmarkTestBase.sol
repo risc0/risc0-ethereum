@@ -55,7 +55,7 @@ contract BenchmarkTestBase is Test {
         uint256 proposalId,
         address signer,
         uint256 privateKey
-    ) public noGasMetering returns (bytes memory signature) {
+    ) internal noGasMetering returns (bytes memory signature) {
         bytes32 digest = baselineGovernor.voteHash(proposalId, support, signer);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
@@ -66,7 +66,7 @@ contract BenchmarkTestBase is Test {
         uint256 proposalId,
         uint256 noOfSignatures,
         bool isBaseline
-    ) public noGasMetering {
+    ) internal noGasMetering {
         for (uint256 i = 0; i < noOfSignatures; i++) {
             address currentAddress = accounts[i];
             bytes memory signature = getSignature(
@@ -87,7 +87,7 @@ contract BenchmarkTestBase is Test {
     function getJournal(
         uint256 proposalId,
         uint256 noOfAccounts
-    ) public returns (bytes memory journal) {
+    ) internal noGasMetering returns (bytes memory journal) {
         (
             bytes32 finalBallotBoxAccum,
             bytes memory encodedBallots
@@ -103,7 +103,7 @@ contract BenchmarkTestBase is Test {
     function getJournalDigest(
         uint256 proposalId,
         uint256 noOfAccounts
-    ) public returns (bytes32 journalDigest) {
+    ) internal noGasMetering returns (bytes32 journalDigest) {
         bytes memory journal = getJournal(proposalId, noOfAccounts);
         journalDigest = sha256(journal);
     }
