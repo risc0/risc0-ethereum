@@ -79,9 +79,6 @@ def plot_gas_usage(filename):
             verticalalignment='bottom', horizontalalignment='right',
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 
-    # Add subtitle with date (removed 'Data collected on')
-    plt.suptitle('2024-08-17', fontsize=10, y=0.95)
-
     # Save the plot as a PNG file (removed '_improved')
     plt.savefig('gas_usage_comparison.png', dpi=300, bbox_inches='tight')
     print("Plot saved as gas_usage_comparison.png")
