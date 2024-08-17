@@ -18,9 +18,9 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         super.setUp();
     }
 
-    function testFuzz_BaselineWorkflow(uint8 numAccounts) public {
+    function testFuzz_BaselineWorkflow(uint16 numAccounts) public {
         vm.pauseGasMetering();
-        numAccounts = uint8(bound(numAccounts, 100, 1000));
+        numAccounts = uint16(bound(numAccounts, 100, 1000));
 
         // Generate accounts and mint tokens
         generateAccounts(numAccounts);
@@ -80,7 +80,17 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         );
 
         gasUsed = gasUsed - gasleft();
-        console2.log("BaselineGovernor,", numAccounts, ",", gasUsed);
+        vm.writeLine(
+            "gas_data.csv",
+            string(
+                abi.encodePacked(
+                    "BaselineGovernor,",
+                    vm.toString(numAccounts),
+                    ",",
+                    vm.toString(gasUsed)
+                )
+            )
+        );
 
         assertEq(
             uint256(baselineGovernor.state(baselineProposalId)),
@@ -89,9 +99,9 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         );
     }
 
-    function testFuzz_RiscZeroWorkflow(uint8 numAccounts) public {
+    function testFuzz_RiscZeroWorkflow(uint16 numAccounts) public {
         vm.pauseGasMetering();
-        numAccounts = uint8(bound(numAccounts, 100, 1000));
+        numAccounts = uint16(bound(numAccounts, 100, 1000));
 
         // Generate accounts and mint tokens
         generateAccounts(numAccounts);
@@ -158,6 +168,9 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         bytes memory journal = getJournal(proposalId, numAccounts);
         riscZeroGovernor.verifyAndFinalizeVotes(receipt.seal, journal);
 
+        // Offsetting gas by real verification cost for more accurate benchmarks
+        gasUsed += 250000;
+
         // execute proposal
         riscZeroGovernor.execute(
             targets,
@@ -167,7 +180,17 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         );
 
         gasUsed = gasUsed - gasleft();
-        console2.log("RiscZeroGovernor,", numAccounts, ",", gasUsed);
+        vm.writeLine(
+            "gas_data.csv",
+            string(
+                abi.encodePacked(
+                    "RiscZeroGovernor,",
+                    vm.toString(numAccounts),
+                    ",",
+                    vm.toString(gasUsed)
+                )
+            )
+        );
 
         assertEq(
             uint256(riscZeroGovernor.state(proposalId)),
