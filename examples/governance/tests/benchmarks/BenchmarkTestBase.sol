@@ -3,14 +3,14 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
-import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
-import {VoteToken} from "../contracts/VoteToken.sol";
+import {BaselineGovernor} from "../../contracts/BaselineGovernor.sol";
+import {RiscZeroGovernor} from "../../contracts/RiscZeroGovernor.sol";
+import {VoteToken} from "../../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
 import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
-import {ImageID} from "../contracts/utils/ImageID.sol";
-import {RiscZeroMockVerifier, Receipt as VerifierReceipt} from "../contracts/groth16/RiscZeroMockVerifier.sol";
-import {IRiscZeroVerifier} from "../contracts/groth16/IRiscZeroVerifier.sol";
+import {ImageID} from "../../contracts/utils/ImageID.sol";
+import {RiscZeroMockVerifier, Receipt as VerifierReceipt} from "../../contracts/groth16/RiscZeroMockVerifier.sol";
+import {IRiscZeroVerifier} from "../../contracts/groth16/IRiscZeroVerifier.sol";
 
 contract BenchmarkTestBase is Test {
     BaselineGovernor public baselineGovernor;

@@ -2,41 +2,15 @@
 pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
+import {GovernorTestBase} from "./GovernorTestBase.sol";
 import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
 import {VoteToken} from "../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
 
-contract BaselineGovernorTest is Test {
-    BaselineGovernor public baselineGovernor;
-    VoteToken public voteToken;
-    address public alice;
-    address public bob;
-    address public charlie;
-    address public voterAddress;
-    uint256 public voterPk;
+contract BaselineGovernorTest is Test, GovernorTestBase {
 
-    function setUp() public {
-        voteToken = new VoteToken();
-        baselineGovernor = new BaselineGovernor(voteToken);
-
-        alice = vm.addr(1);
-        bob = vm.addr(2);
-        charlie = vm.addr(3);
-
-        // mint some tokens and delegate
-        voteToken.mint(alice, 100);
-        voteToken.mint(bob, 50);
-        voteToken.mint(charlie, 30);
-
-        vm.prank(alice);
-        voteToken.delegate(alice);
-        vm.prank(bob);
-        voteToken.delegate(bob);
-        vm.prank(charlie);
-        voteToken.delegate(charlie);
-
-        // instantiate new voter + PK for signing
-        (voterAddress, voterPk) = makeAddrAndKey("voter");
+    function setUp() public override {
+        super.setUp();
     }
 
     function testProposalCreation() public {
@@ -63,8 +37,6 @@ contract BaselineGovernorTest is Test {
     }
 
     function testProposalThreshold() public {
-        uint256 proposalThreshold = baselineGovernor.proposalThreshold();
-
         // Try to create a proposal with Charlie (who has 30 tokens)
         vm.prank(charlie);
         (
@@ -273,27 +245,6 @@ contract BaselineGovernorTest is Test {
             uint256(IGovernor.ProposalState.Defeated),
             "Proposal should be defeated due to not reaching quorum"
         );
-    }
-
-    function _createProposalParams()
-        internal
-        pure
-        returns (
-            address[] memory,
-            uint256[] memory,
-            bytes[] memory,
-            string memory
-        )
-    {
-        address[] memory targets = new address[](1);
-        targets[0] = address(0x4);
-        uint256[] memory values = new uint256[](1);
-        values[0] = 0;
-        bytes[] memory calldatas = new bytes[](1);
-        calldatas[0] = abi.encodeWithSignature("doSomething()");
-        string memory description = "Do something";
-
-        return (targets, values, calldatas, description);
     }
 
 }
