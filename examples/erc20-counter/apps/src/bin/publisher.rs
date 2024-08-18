@@ -66,7 +66,10 @@ struct Args {
     #[clap(long, env)]
     eth_rpc_url: Url,
 
-    /// Beacon API endpoint URL
+    /// Optional Beacon API endpoint URL
+    ///
+    /// When provided, Steel uses a beacon block commitment instead of the execution block. This
+    /// allows proofs to be validated using the EIP-4788 beacon roots contract.
     #[clap(long, env)]
     beacon_api_url: Option<Url>,
 
