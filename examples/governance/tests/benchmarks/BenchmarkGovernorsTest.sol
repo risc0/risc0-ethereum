@@ -151,9 +151,8 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
 
         // mock call to verifier called in verifyAndFinalizeVotes()
         address verifierAddress = riscZeroGovernor.verifier.address;
-        bytes4 verifySelector = IRiscZeroVerifier.verify.selector;
         bytes memory expectedCalldata = abi.encodeWithSelector(
-            verifySelector,
+            IRiscZeroVerifier.verify.selector,
             receipt.seal,
             IMAGE_ID,
             journalDigest

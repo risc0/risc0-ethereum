@@ -22,8 +22,8 @@ def print_nice_table(filename):
 
     # Create and populate the table
     table = PrettyTable()
-    table.field_names = ["Accounts", "BaselineGovernor Gas", "RiscZeroGovernor Gas", "Gas Savings", "% Savings"]
-    table.align["Accounts"] = "r"
+    table.field_names = ["Votes", "BaselineGovernor Gas", "RiscZeroGovernor Gas", "Gas Savings", "% Savings"]
+    table.align["Votes"] = "r"
     table.align["BaselineGovernor Gas"] = "r"
     table.align["RiscZeroGovernor Gas"] = "r"
     table.align["Gas Savings"] = "r"

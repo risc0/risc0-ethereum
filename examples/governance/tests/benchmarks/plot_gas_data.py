@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import ScalarFormatter, NullFormatter
 
-def plot_gas_usage(filename):
+def plot_gas_data(filename):
     baseline_data = {}
     risczero_data = {}
 
@@ -37,9 +37,9 @@ def plot_gas_usage(filename):
     ax.plot(baseline_x, baseline_y, label='BaselineGovernor', marker='o', linestyle='-', linewidth=2)
     ax.plot(risczero_x, risczero_y, label='RiscZeroGovernor', marker='s', linestyle='--', linewidth=2)
 
-    ax.set_xlabel('Number of Accounts')
-    ax.set_ylabel('Gas Usage')
-    ax.set_title('Gas Usage Comparison: BaselineGovernor vs RiscZeroGovernor')
+    ax.set_xlabel('Number of Votes')
+    ax.set_ylabel('Gas Spent')
+    ax.set_title('Gas Data Comparison: BaselineGovernor vs RiscZeroGovernor')
     
     # Move legend to upper left
     ax.legend(loc='upper left')
@@ -80,8 +80,8 @@ def plot_gas_usage(filename):
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 
     # Save the plot as a PNG file (removed '_improved')
-    plt.savefig('gas_usage_comparison.png', dpi=300, bbox_inches='tight')
-    print("Plot saved as gas_usage_comparison.png")
+    plt.savefig('gas_data_comparison.png', dpi=300, bbox_inches='tight')
+    print("Plot saved as gas_data_comparison.png")
 
 # Usage
-plot_gas_usage('gas_data.csv')
+plot_gas_data('gas_data.csv')

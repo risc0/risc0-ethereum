@@ -210,19 +210,19 @@ abstract contract RiscZeroGovernorCounting is Governor {
 
     function _finalizeVotes(
         uint256 proposalId,
-        bytes32 finalBallotBoxCommit,
-        bytes calldata encodedBallots
+        bytes32 ballotHash,
+        bytes calldata votingData
     ) internal {
         require(clock() > proposalDeadline(proposalId), "voting has not ended");
         ProposalVote memory proposalVote = _proposalVotes[proposalId];
         require(!proposalVote.finalized, "votes have already been finalized");
         require(
-            proposalVote.ballotBoxCommit == finalBallotBoxCommit,
+            proposalVote.ballotBoxCommit == ballotHash,
             "ballot box accumulator mismatch"
         );
 
         require(
-            encodedBallots.length % 24 == 0,
+            votingData.length % 24 == 0,
             "must encode a whole number of encoded ballots"
         );
 
@@ -234,12 +234,12 @@ abstract contract RiscZeroGovernorCounting is Governor {
         // Iterate through the encoded ballots in chunks of 24 bytes.
         for (
             uint256 offset = 0;
-            offset < encodedBallots.length;
+            offset < votingData.length;
             offset = offset + 24
         ) {
             // Decode the packed ballot encoding.
             // { uint16(0), uint8(support), uint8(0), address }
-            bytes24 ballot = bytes24(encodedBallots[offset:offset + 24]);
+            bytes24 ballot = bytes24(votingData[offset:offset + 24]);
             uint8 support = uint8(uint192(ballot) >> 168);
             address account = address(uint160(uint192(ballot)));
 
