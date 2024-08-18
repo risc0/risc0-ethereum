@@ -81,7 +81,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
 
         gasUsed = gasUsed - gasleft();
         vm.writeLine(
-            "gas_data.csv",
+            "tests/benchmarks/gas_data.csv",
             string(
                 abi.encodePacked(
                     "BaselineGovernor,",
@@ -180,7 +180,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
 
         gasUsed = gasUsed - gasleft();
         vm.writeLine(
-            "gas_data.csv",
+            "tests/benchmarks/gas_data.csv",
             string(
                 abi.encodePacked(
                     "RiscZeroGovernor,",
