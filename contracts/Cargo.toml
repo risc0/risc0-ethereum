@@ -11,14 +11,14 @@ repository = { workspace = true }
 anyhow = "1.0"
 
 [dependencies]
-alloy-sol-types = { workspace = true }
+alloy = { workspace = true, features = ["sol-types", "contract"] }
 anyhow = { workspace = true }
-ethers = { version = "2.0", features = ["rustls", "ws"] }
 risc0-zkvm = { workspace = true }
 
 [dev-dependencies]
+hex = "0.4"
 regex = "1.10"
-tokio = { version = "1", features = ["macros", "rt"] }
+tokio = { workspace = true, features = ["macros", "rt"] }
 
 [lib]
 doctest = false

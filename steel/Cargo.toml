@@ -1,7 +1,7 @@
 [package]
 name = "risc0-steel"
 description = "Query Ethereum state, or any other EVM-based blockchain state within the RISC Zero zkVM."
-version = "0.12.0-alpha.1"
+version = "0.13.0-alpha.1"
 edition = { workspace = true }
 license = { workspace = true }
 homepage = { workspace = true }
@@ -12,34 +12,29 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
+alloy = { workspace = true, optional = true }
+alloy-consensus = { workspace = true, features = ["serde"] }
 alloy-primitives = { workspace = true }
 alloy-rlp = { workspace = true }
 alloy-rlp-derive = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
-ethers-core = { workspace = true, optional = true }
-ethers-providers = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 nybbles = { workspace = true }
 once_cell = { workspace = true }
 revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
-thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
 
 [dev-dependencies]
+alloy = { workspace = true, features = ["node-bindings"] }
 alloy-trie = { workspace = true }
+bincode = { workspace = true }
 risc0-steel = { path = ".", features = ["host"] }
 test-log = { workspace = true }
 
 [features]
 default = []
-host = [
-    "dep:ethers-core",
-    "dep:ethers-providers",
-    "dep:log",
-    "dep:serde_json",
-    "dep:tokio",
-    "revm/ethersdb",
-]
+host = ["dep:alloy", "dep:log", "dep:serde_json", "dep:tokio", "dep:url"]

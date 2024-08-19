@@ -34,26 +34,10 @@ The contract includes functionality to query the current value of the counter at
 
 ## Dependencies
 
-First, [install Rust] and [Foundry], and then restart your terminal.
-
-```sh
-# Install Rust
-curl https://sh.rustup.rs -sSf | sh
-# Install Foundry
-curl -L https://foundry.paradigm.xyz | bash
-```
-
-Next, you will need to install the `cargo risczero` tool.
-We'll use [`cargo binstall`][cargo-binstall] to get `cargo-risczero` installed, and then install the `risc0` toolchain.
-See [RISC Zero installation] for more details.
-
-```sh
-cargo install cargo-binstall
-cargo binstall cargo-risczero
-cargo risczero install
-```
-
-Now you have all the tools you need to develop and deploy an application with [RISC Zero].
+To get started, you need to have the following installed:
+- [Rust]
+- [Foundry]
+- [RISC Zero]
 
 ### Configuring Bonsai
 
@@ -73,11 +57,10 @@ When you're ready, follow the [deployment guide] to get your application running
 
 [Foundry]: https://getfoundry.sh/
 [Groth16 SNARK proof]: https://www.risczero.com/news/on-chain-verification
-[RISC Zero installation]: https://dev.risczero.com/api/zkvm/install
-[RISC Zero]: https://www.risczero.com/
+[RISC Zero]: https://dev.risczero.com/api/zkvm/install
 [Sepolia]: https://www.alchemy.com/overviews/sepolia-testnet
 [cargo-binstall]: https://github.com/cargo-bins/cargo-binstall#cargo-binaryinstall
 [deployment guide]: ./deployment-guide.md
-[install Rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html
+[Rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html
 [Counter]: ./contracts/Counter.sol
 [Steel]: https://www.risczero.com/blog/introducing-steel

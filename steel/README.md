@@ -60,17 +60,18 @@ fn main() {
 Here is a snippet to the [relevant code](../examples/erc20/host/src/main.rs) on the host, it requires the same arguments as the guest:
 
 ```rust
-// Create a view call environment from an RPC endpoint and a block number. If no block number is
-// provided, the latest block is used.
-let mut env = EthViewCallEnv::from_rpc(&args.rpc_url, None)?;
+// Create an EVM environment from an RPC endpoint and a block number or tag.
+let mut env = EthEvmEnv::from_rpc(args.rpc_url, BlockNumberOrTag::Latest).await?;
 //  The `with_chain_spec` method is used to specify the chain configuration.
 env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
-// Preflight the call to construct the input that is required to execute the function in
-// the guest. It also returns the result of the call.
+// Preflight the call to prepare the input that is required to execute the function in
+// the guest without RPC access. It also returns the result of the call.
 let mut contract = Contract::preflight(CONTRACT, &mut env);
-let returns = contract.call_builder(&CALL).from(CALLER).call()?;
-let input = env.into_input()?;
+let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+
+// Finally, construct the input from the environment.
+let input = env.into_input().await?;
 ```
 
 ## Ethereum integration
