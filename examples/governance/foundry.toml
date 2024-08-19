@@ -1,10 +1,10 @@
 [profile.default]
 src = "contracts"
 out = "out"
-libs = ["lib"]
+libs = ["../../lib", "../../contracts/src"]
 test = "tests"
 ffi = true
-fs_permissions = [{ access = "read-write", path = "./"}]
+fs_permissions = [{ access = "read-write", path = "./tests/benchmarks"}]
 
 [fuzz]
 runs = 10
