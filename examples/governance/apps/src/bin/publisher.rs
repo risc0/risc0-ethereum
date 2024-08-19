@@ -150,7 +150,7 @@ fn main() -> Result<()> {
     // let image_id_fixed_bytes = FixedBytes::<32>::from(image_id_bytes);
 
     // Encode the seal with the selector.
-    let seal = groth16::encode(receipt.inner.groth16()?.seal.clone())?;
+    let seal = risc0_ethereum_contracts::encode_seal(&receipt)?;
 
     // Extract the journal from the receipt.
     let journal = receipt.journal.bytes.clone();
