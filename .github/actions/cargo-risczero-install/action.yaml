@@ -28,7 +28,7 @@ runs:
           ref: ${{ inputs.ref }}
           lfs: true
       - name: install cargo-risczero
-        run: cargo install --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
+        run: cargo install --path risc0/cargo-risczero --features "${{ inputs.features }}"
         working-directory: tmp/risc0
         shell: bash
       - name: install r0vm
