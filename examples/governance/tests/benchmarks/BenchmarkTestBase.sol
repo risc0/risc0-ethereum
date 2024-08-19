@@ -9,8 +9,8 @@ import {VoteToken} from "../../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
 import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
 import {ImageID} from "../../contracts/utils/ImageID.sol";
-import {RiscZeroMockVerifier, Receipt as VerifierReceipt} from "../../contracts/groth16/RiscZeroMockVerifier.sol";
-import {IRiscZeroVerifier} from "../../contracts/groth16/IRiscZeroVerifier.sol";
+import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
+import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
 contract BenchmarkTestBase is Test {
     BaselineGovernor public baselineGovernor;

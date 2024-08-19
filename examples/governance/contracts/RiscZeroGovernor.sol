@@ -23,7 +23,7 @@ import {GovernorVotesQuorumFraction} from "openzeppelin/contracts/governance/ext
 
 import {RiscZeroGovernorCounting} from "./RiscZeroGovernorCounting.sol";
 import {ExtendedGovernorBase} from "./ExtendedGovernorBase.sol";
-import {IRiscZeroVerifier} from "./groth16/IRiscZeroVerifier.sol";
+import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
 import {IERC6372} from "openzeppelin/contracts/interfaces/IERC6372.sol";
 

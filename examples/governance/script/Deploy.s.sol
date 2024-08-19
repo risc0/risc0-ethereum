@@ -18,10 +18,10 @@ pragma solidity ^0.8.17;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
-import {RiscZeroCheats} from "../contracts/utils/RiscZeroCheats.sol";
+import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 import {ImageID} from "../contracts/utils/ImageID.sol";
-import {ControlID, RiscZeroGroth16Verifier} from "../contracts/groth16/RiscZeroGroth16Verifier.sol";
-import {IRiscZeroVerifier} from "../contracts/groth16/IRiscZeroVerifier.sol";
+import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
+import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {IVotes} from "openzeppelin/contracts/governance/utils/IVotes.sol";
 
 import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
