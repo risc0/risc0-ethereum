@@ -55,6 +55,7 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             previous_header = ancestor;
         }
 
+        // TODO(victor): When do we check that the storage tries are ok?
         let db = StateDb::new(
             self.state_trie,
             self.storage_tries,

@@ -35,6 +35,7 @@ The contract includes functionality to query the current value of the counter at
 ## Dependencies
 
 To get started, you need to have the following installed:
+
 - [Rust]
 - [Foundry]
 - [RISC Zero]
@@ -59,7 +60,6 @@ When you're ready, follow the [deployment guide] to get your application running
 [Groth16 SNARK proof]: https://www.risczero.com/news/on-chain-verification
 [RISC Zero]: https://dev.risczero.com/api/zkvm/install
 [Sepolia]: https://www.alchemy.com/overviews/sepolia-testnet
-[cargo-binstall]: https://github.com/cargo-bins/cargo-binstall#cargo-binaryinstall
 [deployment guide]: ./deployment-guide.md
 [Rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html
 [Counter]: ./contracts/Counter.sol

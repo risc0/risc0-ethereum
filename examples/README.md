@@ -19,4 +19,3 @@ This example generates a proof of a [Compound] cToken's APR (Annual Percentage R
 [coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
 [Steel]: ../steel
 [Compound]: https://compound.finance/
-[EIP-4788]: https://eips.ethereum.org/EIPS/eip-4788

@@ -39,7 +39,7 @@ contract CounterTest is Test {
     bytes32 private imageId;
 
     function setUp() public {
-        // fork from the actual chain to get realestic Beacon block roots
+        // fork from the actual chain to get realistic Beacon block roots
         string memory RPC_URL = vm.envString("ETH_RPC_URL");
         vm.createSelectFork(RPC_URL);
 

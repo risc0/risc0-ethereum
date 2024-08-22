@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{block::BlockInput, CommitmentVersion, EvmBlockHeader, GuestEvmEnv, SolCommitment};
+use crate::{block::BlockInput, Commitment, CommitmentVersion, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::B256;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -34,8 +34,8 @@ impl<H: EvmBlockHeader> BeaconInput<H> {
         let mut env = self.input.into_env();
 
         let beacon_root = self.proof.process(env.header.seal());
-        env.commitment = SolCommitment {
-            blockID: SolCommitment::encode_id(
+        env.commitment = Commitment {
+            blockID: Commitment::encode_id(
                 env.header().timestamp(),
                 CommitmentVersion::Beacon as u16,
             ),

@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### 🚨 Breaking Changes
 
 - `EvmInput` has been changed to an `enum` to support different input types for the guest, such as the new `BeaconInput`. This changes the binary input data, but does not require any code changes.
+- `SolCommitment` has been renamed to `Commitment`.
 
 ## [0.12.0](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.12.0) - 2024-08-09
 

@@ -30,7 +30,7 @@ use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
-    Contract, SolCommitment,
+    Commitment, Contract,
 };
 use risc0_zkvm::{default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
@@ -45,7 +45,7 @@ alloy::sol! {
 
     /// Data committed to by the guest.
     struct Journal {
-        SolCommitment commitment;
+        Commitment commitment;
         address tokenContract;
     }
 }

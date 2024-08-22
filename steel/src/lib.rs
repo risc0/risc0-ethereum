@@ -37,6 +37,7 @@ pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 
 /// The serializable input to derive and validate an [EvmEnv] from.
+#[non_exhaustive]
 #[derive(Clone, Serialize, Deserialize)]
 pub enum EvmInput<H> {
     /// Input committing to the corresponding execution block hash.
@@ -66,7 +67,7 @@ pub struct EvmEnv<D, H> {
     db: Option<D>,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
-    commitment: SolCommitment,
+    commitment: Commitment,
 }
 
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
@@ -74,7 +75,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// It uses the default configuration for the latest specification.
     pub fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-        let commitment = SolCommitment::from_header(&header);
+        let commitment = Commitment::from_header(&header);
         #[cfg(feature = "host")]
         log::info!("Commitment to block {}", commitment.blockDigest);
 
@@ -101,15 +102,15 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         self.header.inner()
     }
 
-    /// Returns the [SolCommitment] used to validate the environment.
+    /// Returns the [Commitment] used to validate the environment.
     #[inline]
-    pub fn commitment(&self) -> &SolCommitment {
+    pub fn commitment(&self) -> &Commitment {
         &self.commitment
     }
 
-    /// Consumes and returns the [SolCommitment] used to validate the environment.
+    /// Consumes and returns the [Commitment] used to validate the environment.
     #[inline]
-    pub fn into_commitment(self) -> SolCommitment {
+    pub fn into_commitment(self) -> Commitment {
         self.commitment
     }
 }
@@ -144,20 +145,20 @@ mod private {
 }
 
 /// Solidity struct representing the committed block used for validation.
-pub use private::Commitment as SolCommitment;
+pub use private::Commitment;
 
-/// The different versions of a [SolCommitment].
+/// The different versions of a [Commitment].
 #[repr(u16)]
 enum CommitmentVersion {
     Block,
     Beacon,
 }
 
-impl SolCommitment {
+impl Commitment {
     /// Constructs a commitment from a sealed [EvmBlockHeader].
     #[inline]
     fn from_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Self {
-        SolCommitment {
+        Commitment {
             blockID: Self::encode_id(header.number(), CommitmentVersion::Block as u16),
             blockDigest: header.seal(),
         }
@@ -186,14 +187,14 @@ impl SolCommitment {
 
 #[cfg(test)]
 mod tests {
-    use super::SolCommitment;
+    use super::Commitment;
 
     #[test]
     fn versioned_id() {
         let tests = vec![(u64::MAX, u16::MAX), (u64::MAX, 0), (0, u16::MAX), (0, 0)];
         for test in tests {
-            let id = SolCommitment::encode_id(test.0, test.1);
-            assert_eq!(SolCommitment::decode_id(id).unwrap(), test);
+            let id = Commitment::encode_id(test.0, test.1);
+            assert_eq!(Commitment::decode_id(id).unwrap(), test);
         }
     }
 }
