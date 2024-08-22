@@ -26,7 +26,7 @@ alloy-consensus = { version = "0.2.1" }
 alloy-primitives = { version = "0.7", features = ["rlp", "std"] }
 alloy-rlp = { version = "0.3.8", default-features = false }
 alloy-rlp-derive = { version = "0.3.8", default-features = false }
-alloy-sol-types = { version = "0.7" }
+alloy-sol-types = { version = "0.8" }
 
 # Alloy host dependencies
 alloy = { version = "0.2.1", features = ["full"] }
