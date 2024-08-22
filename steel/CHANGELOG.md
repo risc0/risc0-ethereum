@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+- Add support for creating a commitment to a beacon block root using `EvmEnv::into_beacon_input`, which can be verified using the [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788) beacon roots contract.
+
+### 🚨 Breaking Changes
+
+- `EvmInput` has been changed to an `enum` to support different input types for the guest, such as the new `BeaconInput`. This changes the binary input data, but does not require any code changes.
+
+## [0.12.0](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.12.0) - 2024-08-09
+
+### ⚡️ Features
+
 - Replace `ethers` dependency completely with `alloy`.
 - Make `host` functions `async`.
 - Add support to build `EvmEnv` from any `alloy` provider.
