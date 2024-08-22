@@ -42,6 +42,10 @@ alloy-trie = { version = "0.5" }
 beacon-api-client = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
 ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
 
+# Beacon chain support
+beacon-api-client = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
+ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
+
 anyhow = { version = "1.0" }
 bincode = { version = "1.3" }
 clap = { version = "4.5", features = ["derive", "env"] }
