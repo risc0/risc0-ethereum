@@ -15,24 +15,23 @@ cargo run --bin publisher
 ```text
 $ cargo run --bin publisher -- --help
 
-Usage: publisher --eth-wallet-private-key <ETH_WALLET_PRIVATE_KEY> --rpc-url <RPC_URL> --contract <CONTRACT> --token <TOKEN> --account <ACCOUNT>
+Usage: publisher [OPTIONS] --eth-wallet-private-key <ETH_WALLET_PRIVATE_KEY> --eth-rpc-url <ETH_RPC_URL> --counter <COUNTER> --token-contract <TOKEN_CONTRACT> --account <ACCOUNT>
 
 Options:
       --eth-wallet-private-key <ETH_WALLET_PRIVATE_KEY>
-          Ethereum Node endpoint [env: ETH_WALLET_PRIVATE_KEY=]
-      --rpc-url <RPC_URL>
-          Ethereum Node endpoint [env: RPC_URL=]
-      --contract <CONTRACT>
-          Counter's contract address on Ethereum
-      --token <TOKEN>
-          ERC20 contract address on Ethereum
+          Private key [env: ETH_WALLET_PRIVATE_KEY=]
+      --eth-rpc-url <ETH_RPC_URL>
+          Ethereum RPC endpoint URL [env: ETH_RPC_URL=]
+      --beacon-api-url <BEACON_API_URL>
+          Beacon API endpoint URL [env: BEACON_API_URL=]
+      --counter <COUNTER>
+          Address of the Counter verifier
+      --token-contract <TOKEN_CONTRACT>
+          Address of the ERC20 token contract [env: TOKEN_CONTRACT=]
       --account <ACCOUNT>
-          Account address to read the balance_of on Ethereum
+          Address to query the token balance of
   -h, --help
-          Print help
-  -V, --version
-          Print version
-```
+          Print help```
 
 [publisher]: ./src/bin/publisher.rs
 [Counter]: ../contracts/Counter.sol

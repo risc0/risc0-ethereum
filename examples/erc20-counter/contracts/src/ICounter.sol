@@ -23,4 +23,7 @@ interface ICounter {
 
     /// @notice Returns the value of the counter.
     function get() external view returns (uint256);
+
+    /// @notice Returns the image ID used for verification.
+    function imageID() external view returns (bytes32);
 }

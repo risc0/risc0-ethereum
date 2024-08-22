@@ -19,7 +19,7 @@ use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolValue};
 use risc0_steel::{
     ethereum::{EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
-    Contract, SolCommitment,
+    Commitment, Contract,
 };
 use risc0_zkvm::guest::env;
 
@@ -37,7 +37,7 @@ sol! {
 /// ABI encodable journal data.
 sol! {
     struct Journal {
-        SolCommitment commitment;
+        Commitment commitment;
         address tokenAddress;
     }
 }
