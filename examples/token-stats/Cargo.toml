@@ -7,9 +7,9 @@ members = ["core", "host", "methods"]
 risc0-steel = { path = "../../steel" }
 
 # risc0 monorepo dependencies.
-risc0-build = { version = "1.1.0-rc.1" }
-risc0-zkvm = { version = "1.1.0-rc.1", default-features = false }
-risc0-zkp = { version = "1.1.0-rc.1", default-features = false }
+risc0-build = { version = "1.1.0-rc.2" }
+risc0-zkvm = { version = "1.1.0-rc.2", default-features = false }
+risc0-zkp = { version = "1.1.0-rc.2", default-features = false }
 
 alloy-primitives = { version = "0.7", features = ["serde", "rlp", "std"] }
 alloy-rlp = { version = "0.3", default-features = false }
