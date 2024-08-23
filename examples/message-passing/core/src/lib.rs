@@ -14,7 +14,7 @@
 
 use alloy_primitives::{Address, B256};
 use alloy_sol_types::{sol, SolStruct};
-use risc0_steel::SolCommitment;
+use risc0_steel::Commitment;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_os = "zkvm"))]
@@ -39,7 +39,7 @@ sol! {
 
     /// Journal returned by the guest.
     struct Journal {
-        SolCommitment commitment;
+        Commitment commitment;
         address l1CrossDomainMessenger;
         Message message;
         bytes32 messageDigest;
@@ -66,7 +66,7 @@ impl CrossDomainMessengerInput {
         let digest = self.message.digest();
 
         Journal {
-            commitment: SolCommitment::default(),
+            commitment: Commitment::default(),
             l1CrossDomainMessenger: self.l1_cross_domain_messenger,
             message: self.message,
             messageDigest: digest,
