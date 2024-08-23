@@ -2,6 +2,9 @@
 In order for Smart contracts on L1 to interact with smart contracts on L2, Optimism is using a process called "bridging". For more information on Optimism's bridging process, refer to their [documentation](https://docs.optimism.io/builders/app-developers/bridging/messaging).
 
 This example showcases an alternative using the Steel library to do secure and efficient OP-compatible message passing.
+It also showcases a *bookmarking block commitment validation* technique, by saving the target block hash to the contract state before generating a Steel proof that targets that specific block. Once the block hash is bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state.
+
+> **Note:** Even though the example specifically targets OP-compatible message passing, most of the code is chain agnostic and can be easily adapted to any EVM-based chain.  
 
 ## Key Steps
 1. **Send Message from L1:**<br>
