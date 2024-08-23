@@ -14,7 +14,7 @@
 
 use alloy_primitives::{address, Address};
 use alloy_sol_types::sol;
-use risc0_steel::SolCommitment;
+use risc0_steel::Commitment;
 
 /// Address of Compound USDC (cUSDCv3) token.
 pub const CONTRACT: Address = address!("c3d688B66703497DAA19211EEdff47f25384cdc3");
@@ -29,7 +29,7 @@ sol! {
 
 sol! {
     struct APRCommitment {
-        SolCommitment commitment;
+        Commitment commitment;
         uint64 annualSupplyRate;
     }
 }

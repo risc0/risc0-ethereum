@@ -27,13 +27,13 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
 contract Counter is ICounter {
     /// @notice Image ID of the only zkVM binary to accept verification from.
-    bytes32 public constant imageId = ImageID.BALANCE_OF_ID;
+    bytes32 public constant imageID = ImageID.BALANCE_OF_ID;
 
     /// @notice RISC Zero verifier contract address.
     IRiscZeroVerifier public immutable verifier;
 
     /// @notice Address of the ERC-20 token contract.
-    address public immutable tokenAddress;
+    address public immutable tokenContract;
 
     /// @notice Counter to track the number of successful verifications.
     uint256 public counter;
@@ -41,13 +41,13 @@ contract Counter is ICounter {
     /// @notice Journal that is committed to by the guest.
     struct Journal {
         Steel.Commitment commitment;
-        address tokenAddress;
+        address tokenContract;
     }
 
     /// @notice Initialize the contract, binding it to a specified RISC Zero verifier and ERC-20 token address.
     constructor(IRiscZeroVerifier _verifier, address _tokenAddress) {
         verifier = _verifier;
-        tokenAddress = _tokenAddress;
+        tokenContract = _tokenAddress;
         counter = 0;
     }
 
@@ -55,12 +55,12 @@ contract Counter is ICounter {
     function increment(bytes calldata journalData, bytes calldata seal) external {
         // Decode and validate the journal data
         Journal memory journal = abi.decode(journalData, (Journal));
-        require(journal.tokenAddress == tokenAddress, "Invalid token address");
+        require(journal.tokenContract == tokenContract, "Invalid token address");
         require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
 
         // Verify the proof
         bytes32 journalHash = sha256(journalData);
-        verifier.verify(seal, imageId, journalHash);
+        verifier.verify(seal, imageID, journalHash);
 
         counter += 1;
     }

@@ -139,12 +139,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         Ok(storage)
     }
 
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
-        // SAFETY: We know number <= u64::MAX, so we can safely convert it to u64
-        let block = self.handle.block_on(
-            self.provider
-                .get_block_by_number(number.to::<u64>().into(), false),
-        )?;
+    fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
+        let block = self
+            .handle
+            .block_on(self.provider.get_block_by_number(number.into(), false))?;
         let header = block.unwrap().header;
         Ok(header.hash.unwrap())
     }

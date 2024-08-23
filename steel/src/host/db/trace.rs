@@ -22,7 +22,7 @@ use revm::{
 pub struct TraceDb<D> {
     accounts: HashMap<Address, HashSet<U256>>,
     contracts: HashMap<B256, Bytes>,
-    block_hash_numbers: HashSet<U256>,
+    block_hash_numbers: HashSet<u64>,
 
     inner: D,
 }
@@ -46,7 +46,7 @@ impl<D: Database> TraceDb<D> {
         &self.contracts
     }
     /// Returns all the queried block numbers.
-    pub fn block_hash_numbers(&self) -> &HashSet<U256> {
+    pub fn block_hash_numbers(&self) -> &HashSet<u64> {
         &self.block_hash_numbers
     }
 
@@ -89,7 +89,7 @@ impl<DB: Database> Database for TraceDb<DB> {
         Ok(storage)
     }
 
-    fn block_hash(&mut self, number: U256) -> Result<B256, Self::Error> {
+    fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
         log::trace!("BLOCK: number={}", number);
         let block_hash = self.inner.block_hash(number)?;
         self.block_hash_numbers.insert(number);

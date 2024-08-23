@@ -96,11 +96,11 @@ function validate(bytes calldata journalData, bytes calldata seal) external {
 The guest code to create the journal would look like the following:
 
 ```rust
-use risc0_steel::SolCommitment;
+use risc0_steel::Commitment;
 
 sol! {
     struct Journal {
-        SolCommitment commitment;
+        Commitment commitment;
         address tokenAddress;
     }
 }

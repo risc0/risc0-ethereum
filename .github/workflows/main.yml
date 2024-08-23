@@ -154,12 +154,19 @@ jobs:
       - name: build erc20-Counter
         run: cargo build
         working-directory: examples/erc20-counter
+      - name: forge test erc20-Counter
+        run: forge test
+        working-directory: examples/erc20-counter
+        env:
+          ETH_RPC_URL: https://ethereum-sepolia-rpc.publicnode.com
       - name: build token-stats
         run: cargo build
         working-directory: examples/token-stats
       - name: test erc20-Counter
         run: ./test-local-deployment.sh
         working-directory: examples/erc20-counter
+        env:
+          RISC0_DEV_MODE: true
       - run: sccache --show-stats
 
   doc:
