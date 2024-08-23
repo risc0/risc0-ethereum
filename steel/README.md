@@ -10,7 +10,7 @@ In the realm of Ethereum and smart contracts, obtaining data directly from the b
 Traditionally, these operations, especially when it comes to proving and verifying off-chain computations, involve a degree of complexity: either via proof of storage mechanisms requiring detailed knowledge of slot indexes, or via query-specific circuit development.
 
 In contrast, this library abstracts away these complexities, allowing developers to query Ethereum's state by just defining the Solidity method they wish to call.
-To demonstrate a simple instance of using the view call library, let's consider possibly the most common view call: querying the balance of an ERC-20 token for a specific address.
+To demonstrate a simple instance of using this library, let's consider possibly the most common view call: querying the balance of an ERC-20 token for a specific address.
 You can find the full example [here](../examples/erc20/README.md).
 
 ## Guest code
@@ -114,19 +114,26 @@ let journal = Journal {
 env::commit_slice(&journal.abi_encode());
 ```
 
-We also provide an example, [erc20-counter], showcasing such integration.
+We provide several examples showcasing such integration, including [erc20-counter], [token-stats], and [message-passing].
 
 ### Block hash validation
 
-Since internally the `blockhash` opcode is used for validation, the commitment must not be older than 256 blocks.
-Given a block time of 12 seconds, this allows just over 50 minutes to create the proof and ensure that the validating transaction is included in a block.
-In many cases, this will work just fine: even very large computations such as proving an entire Ethereum block can be done in well under 50 minutes with sufficient resources.
+Validating the block hash committed by a Steel proof is essential to ensure that the proof accurately reflects the correct blockchain state. 
+Steel supports three methods for block hash validation, each suited to different use cases.
 
-For scenarios needing a verified block hash older than 256 blocks:
+#### 1. Blockhash Opcode Commitment
+This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old. With Ethereum's 12-second block time, this provides a window of approximately 50 minutes to generate the proof and ensure the validating transaction is included in a block. This approach is ideal for most scenarios, including complex computations, as it typically allows sufficient time for proof generation.
 
-* Save the required block hash to the contract state if known in advance (e.g., when initiating a governance proposal).
-* Use RISC Zero to prove the hash chain from the queried block up to a block within the most recent 256.
+#### 2. Beacon Block Root Commitment
+The second method enables validation using the [EIP-4788] beacon roots contract. This technique extends the time available for proof generation to 24 hours, making it suitable for scenarios that require more extensive computation. It requires access to a beacon chain RPC node and can be activated via calling `EvmEnv::into_beacon_input`. 
+However, this approach is specific to Ethereum Steel proofs and depends on the implementation of [EIP-4788]. Note that EIP-4788 only provides access to the parent's beacon root, necessitating iterative queries in Solidity to retrieve the target beacon root for validation. This iterative process can lead to slightly higher gas costs when compared to using the `blockhash` opcode. Overall it is suited for environments where longer proof generation times are required.
+
+#### 3. Block Hash Bookmarking
+The Bookmarking technique involves saving the target block hash to the contract state before generating a Steel proof that targets that specific block. Once the block hash is bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state. This method is demonstrated in the [message-passing] example and offers flexibility by decoupling the proof generation from immediate block constraints.
 
 [erc20-counter]: ../examples/erc20-counter/README.md
+[token-stats]: ../examples/token-stats/README.md
+[message-passing]: ../examples/message-passing/README.md
 [Bonsai Foundry Template]: https://github.com/risc0/bonsai-foundry-template
 [Steel library]: ../contracts/src/steel/Steel.sol
+[EIP-4788]: https://eips.ethereum.org/EIPS/eip-4788

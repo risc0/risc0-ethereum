@@ -1,7 +1,7 @@
 # Cross-Domain Messaging with Steel
 In order for Smart contracts on L1 to interact with smart contracts on L2, Optimism is using a process called "bridging". For more information on Optimism's bridging process, refer to their [documentation](https://docs.optimism.io/builders/app-developers/bridging/messaging).
 
-This examples showcases an alternative using the Steel library to do secure and efficient OP-compatible message passing.
+This example showcases an alternative using the Steel library to do secure and efficient OP-compatible message passing.
 
 ## Key Steps
 1. **Send Message from L1:**<br>
