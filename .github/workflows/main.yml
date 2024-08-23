@@ -162,6 +162,12 @@ jobs:
       - name: build token-stats
         run: cargo build
         working-directory: examples/token-stats
+      - name: build message-passing
+        run: cargo build
+        working-directory: examples/message-passing
+      - name: forge test message-passing
+        run: forge test
+        working-directory: examples/message-passing
       - name: test erc20-Counter
         run: ./test-local-deployment.sh
         working-directory: examples/erc20-counter
