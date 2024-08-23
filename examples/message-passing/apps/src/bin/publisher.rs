@@ -53,11 +53,11 @@ struct Args {
     #[clap(long, env)]
     l2_wallet_private_key: PrivateKeySigner,
 
-    /// Ethereum Node endpoint.
+    /// L1 RPC node endpoint.
     #[clap(long, env)]
     l1_rpc_url: Url,
 
-    /// Ethereum Node endpoint.
+    /// L2 RPC node endpoint.
     #[clap(long, env)]
     l2_rpc_url: Url,
 
