@@ -116,20 +116,19 @@ env::commit_slice(&journal.abi_encode());
 
 We provide several examples showcasing such integration, including [erc20-counter], [token-stats], and [message-passing].
 
-### Block hash validation
+### Block commitment validation
 
-Validating the block hash committed by a Steel proof is essential to ensure that the proof accurately reflects the correct blockchain state. 
-Steel supports three methods for block hash validation, each suited to different use cases.
+Validating the block committed by a Steel proof is essential to ensure that the proof accurately reflects the correct blockchain state. 
+Steel supports two methods for block validation (see the `validateCommitment` function in [Steel.sol](../contracts/src/steel/Steel.sol)).
 
-#### 1. Blockhash Opcode Commitment
+#### 1. Block hash Commitment
 This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old. With Ethereum's 12-second block time, this provides a window of approximately 50 minutes to generate the proof and ensure the validating transaction is included in a block. This approach is ideal for most scenarios, including complex computations, as it typically allows sufficient time for proof generation.
 
 #### 2. Beacon Block Root Commitment
 The second method enables validation using the [EIP-4788] beacon roots contract. This technique extends the time available for proof generation to 24 hours, making it suitable for scenarios that require more extensive computation. It requires access to a beacon chain RPC node and can be activated via calling `EvmEnv::into_beacon_input`. 
 However, this approach is specific to Ethereum Steel proofs and depends on the implementation of [EIP-4788]. Note that EIP-4788 only provides access to the parent's beacon root, necessitating iterative queries in Solidity to retrieve the target beacon root for validation. This iterative process can lead to slightly higher gas costs when compared to using the `blockhash` opcode. Overall it is suited for environments where longer proof generation times are required.
 
-#### 3. Block Hash Bookmarking
-The Bookmarking technique involves saving the target block hash to the contract state before generating a Steel proof that targets that specific block. Once the block hash is bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state. This method is demonstrated in the [message-passing] example and offers flexibility by decoupling the proof generation from immediate block constraints.
+A *bookmarking block commitment validation* technique can also be constructed on top of these. The idea is to save the target block hash to the contract state before generating a Steel proof that targets that specific block. Once the block hash (or beacon root) is bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state. This method is demonstrated in the [message-passing] example and offers flexibility by decoupling the proof generation from immediate block constraints.
 
 [erc20-counter]: ../examples/erc20-counter/README.md
 [token-stats]: ../examples/token-stats/README.md

@@ -78,7 +78,7 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger, Bookmark {
     }
 
     function validateCommitment(Steel.Commitment memory commitment) internal view returns (bool) {
-        return commitment.blockHash == Bookmark.blocks[commitment.blockNumber.toUint64()];
+        return commitment.blockDigest == Bookmark.blocks[commitment.blockID.toUint64()];
     }
 
     function relayVerifiedMessage(Message memory message, bytes32 digest) internal {
