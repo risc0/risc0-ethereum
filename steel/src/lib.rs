@@ -63,6 +63,7 @@ impl<H: EvmBlockHeader> EvmInput<H> {
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
 /// The environment to execute the contract calls in.
+#[derive(Clone)]
 pub struct EvmEnv<D, H> {
     db: Option<D>,
     cfg_env: CfgEnvWithHandlerCfg,

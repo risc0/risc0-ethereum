@@ -33,6 +33,7 @@ use tokio::runtime::Handle;
 /// must *not* be executed inside an async runtime, or it will panic when trying to block. If the
 /// immediate context is only synchronous, but a transitive caller is async, use
 /// [tokio::task::spawn_blocking] around the calls that need to be blocked.
+#[derive(Clone)]
 pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
     /// Provider to fetch the data from.
     provider: P,

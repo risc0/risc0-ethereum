@@ -19,6 +19,7 @@ use revm::{
 };
 
 /// A simple revm [Database] wrapper that records all DB queries.
+#[derive(Clone)]
 pub struct TraceDb<D> {
     accounts: HashMap<Address, HashSet<U256>>,
     contracts: HashMap<B256, Bytes>,
