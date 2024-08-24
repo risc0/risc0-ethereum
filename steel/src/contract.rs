@@ -20,8 +20,8 @@ use std::{
 };
 
 #[cfg(feature = "host")]
-use crate::host::HostEvmEnv;
-use crate::{host::db::AlloyDb, state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
+use crate::host::{db::AlloyDb, HostEvmEnv};
+use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
 use revm::{
