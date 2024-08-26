@@ -9,8 +9,9 @@ It also showcases a *bookmarking block commitment validation* technique, by savi
 ## Key Steps
 1. **Send Message from L1:**<br>
 Call `L1CrossDomainMessenger.sendMessage` with the message you want to relay to L2.
-2. **Generate Steel Proof:**<br> Generate a Steel proof verifying the message's inclusion in the L1 state.
-3. **Relay Message on L2:**<br> On L2, use `L2CrossDomainMessenger.relayMessage` with the message and Steel proof. Upon successful verification, the message will be relayed to the target contract, ensuring its validity as an L1 message.
+2. **Bookmark the block hash**<br> On L2, save the L1 block hash to the contract state before generating the Steel proof.
+3. **Generate Steel Proof:**<br> Generate a Steel proof verifying the message's inclusion in the L1 state, targeting the bookmarked block.
+4. **Relay Message on L2:**<br> On L2, use `L2CrossDomainMessenger.relayMessage` with the message and Steel proof. Upon successful verification, the message will be relayed to the target contract, ensuring its validity as an L1 message.
 
 ## Advantages
 This method eliminates unnecessary bridging operations, significantly reducing L1 gas costs. The Steel approach also avoids the `OptimismPortal` L1 gas burn, which can vary depending on the usage.

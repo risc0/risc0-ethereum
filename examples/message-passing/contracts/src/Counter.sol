@@ -21,11 +21,13 @@ import "./ICounter.sol";
 
 contract Counter is ICounter {
     IL2CrossDomainMessenger private immutable L2_CROSS_DOMAIN_MESSENGER;
+    address private immutable L1_SENDER;
 
     uint256 private count;
 
-    constructor(IL2CrossDomainMessenger l2CrossDomainMessenger) {
+    constructor(IL2CrossDomainMessenger l2CrossDomainMessenger, address l1_sender) {
         L2_CROSS_DOMAIN_MESSENGER = l2CrossDomainMessenger;
+        L1_SENDER = l1_sender;
         count = 0;
     }
 
@@ -34,7 +36,10 @@ contract Counter is ICounter {
             msg.sender == address(L2_CROSS_DOMAIN_MESSENGER),
             "Counter: Only L2CrossDomainMessenger can increment the counter"
         );
-        // require(L2_CROSS_DOMAIN_MESSENGER.xDomainMessageSender() == L1_SENDER, "Counter: Invalid L1 sender");
+        // Skip the check if L1_SENDER is not set
+        if (L1_SENDER != address(0)) {
+            require(L2_CROSS_DOMAIN_MESSENGER.xDomainMessageSender() == L1_SENDER, "Counter: Invalid L1 sender");
+        }
 
         count++;
     }
