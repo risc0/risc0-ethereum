@@ -21,13 +21,13 @@ import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
-import {IL1CrossDomainMessenger} from "../contracts/src/IL1CrossDomainMessenger.sol";
-import {L1CrossDomainMessenger} from "../contracts/src/L1CrossDomainMessenger.sol";
-import {IL2CrossDomainMessenger} from "../contracts/src/IL2CrossDomainMessenger.sol";
-import {L2CrossDomainMessenger} from "../contracts/src/L2CrossDomainMessenger.sol";
-import {IL1Block} from "../contracts/src/IL1Block.sol";
-import {ImageID} from "../contracts/src/ImageID.sol";
-import {Counter} from "../contracts/src/Counter.sol";
+import {IL1CrossDomainMessenger} from "../src/IL1CrossDomainMessenger.sol";
+import {L1CrossDomainMessenger} from "../src/L1CrossDomainMessenger.sol";
+import {IL2CrossDomainMessenger} from "../src/IL2CrossDomainMessenger.sol";
+import {L2CrossDomainMessenger} from "../src/L2CrossDomainMessenger.sol";
+import {IL1Block} from "../src/IL1Block.sol";
+import {ImageID} from "../src/ImageID.sol";
+import {Counter} from "../src/Counter.sol";
 
 contract Deploy is Script, RiscZeroCheats {
     // In OP the L1Block contract on L2 is always at the same predeployed address
