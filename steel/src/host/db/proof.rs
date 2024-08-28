@@ -24,7 +24,7 @@ use alloy::{
     transports::Transport,
 };
 use alloy_primitives::{Address, Bytes, StorageKey, StorageValue, B256, U256};
-use anyhow::Context;
+use anyhow::{ensure, Context, Result};
 use revm::{
     primitives::{AccountInfo, Bytecode},
     Database,
@@ -76,7 +76,7 @@ impl<D: Database> ProofDb<D> {
     ///
     /// The proof data will be used for lookups of the referenced storage keys.
     #[inline]
-    pub fn add_proof(&mut self, proof: EIP1186AccountProofResponse) {
+    pub fn add_proof(&mut self, proof: EIP1186AccountProofResponse) -> Result<()> {
         add_proof(&mut self.proofs, proof)
     }
 
@@ -90,20 +90,21 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// Max number of storage keys to request in a single `eth_getProof` call.
     pub const STORAGE_KEY_CHUNK_SIZE: usize = 1000;
 
-    pub async fn add_access_list(&mut self, access_list: AccessList) -> anyhow::Result<()> {
+    pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for item in access_list.0 {
             let proof = self
                 .get_eip1186_proof(item.address, item.storage_keys)
                 .await
                 .with_context(|| format!("eth_getProof failed for {}", item.address))?;
-            self.add_proof(proof);
+            self.add_proof(proof)
+                .context("invalid eth_getProof response")?;
         }
 
         Ok(())
     }
 
     /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
-    pub async fn ancestor_proof(&self) -> anyhow::Result<Vec<Header>> {
+    pub async fn ancestor_proof(&self) -> Result<Vec<Header>> {
         let mut ancestors = Vec::new();
         if let Some(&block_hash_min_number) = self.block_hash_numbers.iter().min() {
             let provider = self.inner.provider();
@@ -123,17 +124,17 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 
     /// Returns the proof (sparse [MerkleTrie]) of all account and storage queries recorded by the [Database].
-    pub async fn state_proof(&self) -> anyhow::Result<(MerkleTrie, Vec<MerkleTrie>)> {
+    pub async fn state_proof(&self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         let mut proofs = self.proofs.clone();
 
         for (address, storage_keys) in &self.accounts {
             match proofs.get(address) {
                 None => {
-                    let foo = self
+                    let proof = self
                         .get_eip1186_proof(*address, storage_keys.iter().cloned().collect())
                         .await
                         .context("eth_getProof failed")?;
-                    add_proof(&mut proofs, foo);
+                    add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
                 }
                 Some(proof) => {
                     let storage_proofs = &proof.storage_proofs;
@@ -143,11 +144,11 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                         .cloned()
                         .collect();
                     if !keys.is_empty() {
-                        let foo = self
+                        let proof = self
                             .get_eip1186_proof(*address, keys)
                             .await
                             .context("eth_getProof failed")?;
-                        add_proof(&mut proofs, foo);
+                        add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
                     }
                 }
             }
@@ -184,11 +185,14 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     async fn get_eip1186_proof(
         &self,
         address: Address,
-        keys: Vec<StorageKey>,
-    ) -> anyhow::Result<EIP1186AccountProofResponse> {
+        mut keys: Vec<StorageKey>,
+    ) -> Result<EIP1186AccountProofResponse> {
+        log::trace!("PROOF: address={}, #keys={}", address, keys.len());
         let provider = self.inner.provider();
         let number = self.inner.block_number();
 
+        // for certain RPC nodes it seemed beneficial when the keys are in the correct order
+        keys.sort_unstable();
         let mut iter = keys.chunks(Self::STORAGE_KEY_CHUNK_SIZE);
         let mut account_proof = provider
             .get_proof(address, iter.next().unwrap_or_default().into())
@@ -225,20 +229,15 @@ impl<DB: Database> Database for ProofDb<DB> {
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        log::trace!(
-            "STORAGE: address={}, index={}",
-            address,
-            StorageKey::from(index)
-        );
-        self.accounts
-            .entry(address)
-            .or_default()
-            .insert(StorageKey::from(index));
+        let key = StorageKey::from(index);
+        log::trace!("STORAGE: address={}, index={}", address, key);
+        self.accounts.entry(address).or_default().insert(key);
 
+        // try to get the storage value from the loaded proofs before querying the underlying DB
         match self
             .proofs
             .get(&address)
-            .and_then(|account| account.storage_proofs.get(&StorageKey::from(index)))
+            .and_then(|account| account.storage_proofs.get(&key))
         {
             Some(storage_proof) => Ok(storage_proof.value),
             None => self.inner.storage(address, index),
@@ -253,29 +252,41 @@ impl<DB: Database> Database for ProofDb<DB> {
     }
 }
 
-fn add_proof(proofs: &mut HashMap<Address, AccountProof>, proof: EIP1186AccountProofResponse) {
+fn add_proof(
+    proofs: &mut HashMap<Address, AccountProof>,
+    proof: EIP1186AccountProofResponse,
+) -> Result<()> {
     match proofs.entry(proof.address) {
-        Entry::Vacant(entry) => entry.insert(AccountProof {
-            account_proof: proof.account_proof,
-            storage_hash: proof.storage_hash,
-            storage_proofs: proof
-                .storage_proof
-                .into_iter()
-                .map(|proof| {
-                    (
-                        proof.key.0,
-                        StorageProof {
-                            value: proof.value,
-                            proof: proof.proof,
-                        },
-                    )
-                })
-                .collect(),
-        }),
+        Entry::Vacant(entry) => {
+            entry.insert(AccountProof {
+                account_proof: proof.account_proof,
+                storage_hash: proof.storage_hash,
+                storage_proofs: proof
+                    .storage_proof
+                    .into_iter()
+                    .map(|proof| {
+                        (
+                            proof.key.0,
+                            StorageProof {
+                                value: proof.value,
+                                proof: proof.proof,
+                            },
+                        )
+                    })
+                    .collect(),
+            });
+        }
         Entry::Occupied(mut entry) => {
             let account_proof = entry.get_mut();
-            assert_eq!(account_proof.account_proof, proof.account_proof);
-            assert_eq!(account_proof.storage_hash, proof.storage_hash);
+            ensure!(
+                account_proof.account_proof == proof.account_proof,
+                "account_proof does not match"
+            );
+            ensure!(
+                account_proof.storage_hash == proof.storage_hash,
+                "storage_hash does not match"
+            );
+
             for storage_proof in proof.storage_proof {
                 account_proof.storage_proofs.insert(
                     storage_proof.key.0,
@@ -285,8 +296,8 @@ fn add_proof(proofs: &mut HashMap<Address, AccountProof>, proof: EIP1186AccountP
                     },
                 );
             }
-
-            account_proof
         }
     };
+
+    Ok(())
 }
