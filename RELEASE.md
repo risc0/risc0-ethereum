@@ -57,6 +57,9 @@
 
 5. When changes have been made to the verifier contract, deploy a new verifier contract.
 
+    > [!WARNING]
+    > This section of the release process is out of date. It does not include the steps for the router or estop.
+
     <!-- TODO: Include instructions for the process including the emergency stop and index contracts, once those are ready -->
 
    * Deploy the contract to Sepolia, and verify the source code.

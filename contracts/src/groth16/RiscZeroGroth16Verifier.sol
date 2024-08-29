@@ -54,7 +54,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
     using SafeCast for uint256;
 
     /// Semantic version of the the RISC Zero system of which this contract is part.
-    string constant VERSION = "1.1.0-rc.2";
+    string constant VERSION = "1.1.0-rc.3";
 
     /// @notice Control root hash binding the set of circuits in the RISC Zero system.
     /// @dev This value controls what set of recursion programs (e.g. lift, join, resolve), and
