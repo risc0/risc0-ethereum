@@ -78,8 +78,8 @@ Deploy the contracts:
 
 ```console
 MIN_DELAY=1 \
-PROPOSER="${PUBLIC_KEY:?}" \
-EXECUTOR="${PUBLIC_KEY:?}" \
+PROPOSER="${ADMIN_PUBLIC_KEY:?}" \
+EXECUTOR="${ADMIN_PUBLIC_KEY:?}" \
 bash contracts/script/manage DeployTimelockRouter
 
 ...
