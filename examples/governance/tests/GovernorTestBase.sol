@@ -134,6 +134,14 @@ contract GovernorTestBase is Test {
         bytes[] memory calldatas = new bytes[](1);
         calldatas[0] = abi.encodeWithSignature("doSomething()");
         string memory description = "Do something";
+        
+        // log all the values
+        console2.log("In Solidity, _createProposalParams()");
+        console2.log("targets:", targets[0]);
+        console2.log("values", values[0]);
+        console2.log("calldatas:");
+        console2.logBytes(calldatas[0]);
+        console2.log("description", description);
 
         return (targets, values, calldatas, description);
     }

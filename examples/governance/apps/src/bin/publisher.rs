@@ -16,59 +16,32 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use alloy_sol_types::{sol, SolInterface};
 use anyhow::{Context, Result};
 use clap::Parser;
-use ethers::prelude::*;
 use hex::decode;
+
+use alloy::{
+    network::{EthereumWallet, TransactionBuilder},
+    primitives::{Address, Bytes}, 
+    providers::{Provider, ProviderBuilder}, 
+    rpc::types::TransactionRequest, 
+    signers::local::PrivateKeySigner, 
+    sol, 
+    // sol_types::SolInterface
+};
+
 use methods::FINALIZE_VOTES_ELF;
-use risc0_ethereum_contracts::groth16;
+use risc0_ethereum_contracts::encode_seal;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+// use tokio::task;
+use tracing_subscriber::EnvFilter;
+use url::Url;
 
 sol! {
+    /// ERC-20 balance function signature.
+    /// This must match the signature in the guest.
     interface RiscZeroGovernor {
         function verifyAndFinalizeVotes(bytes calldata seal, bytes calldata journal) public;
-    }
-}
-
-/// Wrapper of a `SignerMiddleware` client to send transactions to the given
-/// contract's `Address`.
-pub struct TxSender {
-    chain_id: u64,
-    client: SignerMiddleware<Provider<Http>, Wallet<k256::ecdsa::SigningKey>>,
-    contract: Address,
-}
-
-impl TxSender {
-    /// Creates a new `TxSender`.
-    pub fn new(chain_id: u64, rpc_url: &str, private_key: &str, contract: &str) -> Result<Self> {
-        let provider = Provider::<Http>::try_from(rpc_url)?;
-        let wallet: LocalWallet = private_key.parse::<LocalWallet>()?.with_chain_id(chain_id);
-        let client = SignerMiddleware::new(provider.clone(), wallet.clone());
-        let contract = contract.parse::<Address>()?;
-
-        Ok(TxSender {
-            chain_id,
-            client,
-            contract,
-        })
-    }
-
-    /// Send a transaction with the given calldata.
-    pub async fn send(&self, calldata: Vec<u8>) -> Result<Option<TransactionReceipt>> {
-        let tx = TransactionRequest::new()
-            .chain_id(self.chain_id)
-            .to(self.contract)
-            .from(self.client.address())
-            .data(calldata);
-
-        log::info!("Transaction request: {:?}", &tx);
-
-        let tx = self.client.send_transaction(tx, None).await?.await?;
-
-        log::info!("Transaction receipt: {:?}", &tx);
-
-        Ok(tx)
     }
 }
 
@@ -76,43 +49,44 @@ impl TxSender {
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Ethereum chain ID
-    #[clap(long)]
-    chain_id: u64,
-
     /// Ethereum Wallet Private Key
     #[clap(long, env)]
-    eth_wallet_private_key: String,
+    eth_wallet_private_key: PrivateKeySigner,
 
     /// Node RPC URL
     #[clap(long)]
-    rpc_url: String,
+    rpc_url: Url,
 
     /// Application's contract address on Ethereum
     #[clap(long)]
-    contract: String,
+    contract: Address,
 
     /// The proposal ID (32 bytes, hex-encoded)
+    /// perhaps we could use 256 bit type from alloy primitives here
     #[clap(long)]
-    proposal_id: String,
+    proposal_id: Bytes,
 
     /// The votes data (hex-encoded, multiple of 100 bytes)
+    /// could use fixed array of 100 bytes type from alloy fixed bytes?
     #[clap(long)]
-    votes_data: String,
+    votes_data: Bytes,
 }
 
-fn main() -> Result<()> {
-    env_logger::init();
-    // Parse CLI Arguments: The application starts by parsing command-line arguments provided by the user.
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+    // Parse the command line arguments.
     let args = Args::parse();
 
-    // Create a new transaction sender using the parsed arguments.
-    let tx_sender = TxSender::new(
-        args.chain_id,
-        &args.rpc_url,
-        &args.eth_wallet_private_key,
-        &args.contract,
-    )?;
+    // Create an alloy provider for that private key and URL.
+    let wallet = EthereumWallet::from(args.eth_wallet_private_key);
+    let provider = ProviderBuilder::new()
+        .with_recommended_fillers()
+        .wallet(wallet)
+        .on_http(args.rpc_url);
 
     // Decode the hex-encoded proposal ID and votes data
     let proposal_id = decode(&args.proposal_id).context("Failed to decode proposal ID")?;
@@ -130,6 +104,7 @@ fn main() -> Result<()> {
 
     // Combine proposal ID and votes data
     let input = [&proposal_id[..], &votes_data[..]].concat();
+
     let env = ExecutorEnv::builder().write_slice(&input).build()?;
 
     let receipt = default_prover()
@@ -141,35 +116,32 @@ fn main() -> Result<()> {
         )?
         .receipt;
 
-    // Compute the ImageID of `finalize_votes.rs` ELF binary.
-    // let image_id = compute_image_id(FINALIZE_VOTES_ELF)?;
-    // let image_id_bytes: [u8; 32] = image_id
-    //     .as_bytes()
-    //     .try_into()
-    //     .expect("Digest should be 32 bytes");
-    // let image_id_fixed_bytes = FixedBytes::<32>::from(image_id_bytes);
-
     // Encode the seal with the selector.
-    let seal = risc0_ethereum_contracts::encode_seal(&receipt)?;
+    let seal = encode_seal(&receipt)?;
 
     // Extract the journal from the receipt.
     let journal = receipt.journal.bytes.clone();
 
     // Construct function call for RiscZeroGovernor
-    let calldata = RiscZeroGovernor::RiscZeroGovernorCalls::verifyAndFinalizeVotes(
-        RiscZeroGovernor::verifyAndFinalizeVotesCall {
-            seal: seal.into(),
-            journal: journal,
-        },
-    )
-    .abi_encode();
-
-    // Initialize the async runtime environment to handle the transaction sending.
-    let runtime = tokio::runtime::Runtime::new()?;
-
-    // Send transaction: Finally, the TxSender component sends the transaction to the Ethereum blockchain,
-    // effectively calling the set function of the EvenNumber contract with the verified number and proof.
-    runtime.block_on(tx_sender.send(calldata))?;
+    // let calldata = RiscZeroGovernor::RiscZeroGovernorCalls::verifyAndFinalizeVotes(
+    //     RiscZeroGovernor::verifyAndFinalizeVotesCall {
+    //         seal: seal.into(),
+    //         journal: journal.into(),
+    //     },
+    // )
+    // .abi_encode();
+    
+   // build calldata 
+    let calldata = RiscZeroGovernor::verifyAndFinalizeVotesCall {
+        seal: seal.into(),
+        journal: journal.into(),
+    };
+   
+    // send tx to callback function: verifyAndFinalizeVotes
+    let contract = args.contract;
+    let tx = TransactionRequest::default().with_to(contract).with_call(&calldata);
+    let tx_hash = provider.send_transaction(tx).await.context("Failed to send transaction")?;
+    println!("Transaction sent with hash: {:?}", tx_hash);
 
     Ok(())
 }

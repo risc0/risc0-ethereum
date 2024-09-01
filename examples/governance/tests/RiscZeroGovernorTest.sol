@@ -17,7 +17,6 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {GovernorTestBase} from "./GovernorTestBase.sol";
-import {console2} from "forge-std/console2.sol";
 import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
 import {VoteToken} from "../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
@@ -147,14 +146,6 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             voterAddress,
             signature
         ); // Vote in favor
-
-        //move forward after vote
-        vm.roll(block.number + riscZeroGovernor.votingPeriod() + 1);
-
-        // riscZeroGovernor.castVoteBySig(proposalId, bobSupport, bob); // Vote against
-
-        // Note: We can't check vote counts here as they're not immediately updated in RiscZeroGovernor
-        // We'll need to finalize votes to see the results
     }
 
     function testVerifyAndFinalizeVotes() public {
@@ -342,5 +333,4 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             "Proposal should be defeated due to not reaching quorum"
         );
     }
-
 }

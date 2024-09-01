@@ -17,6 +17,7 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {GovernorTestBase} from "./GovernorTestBase.sol";
+import {console2} from "forge-std/console2.sol";
 import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
 import {VoteToken} from "../contracts/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
@@ -40,6 +41,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             calldatas,
             description
         );
+        console2.log("proposalId", proposalId);
 
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
         assertEq(
@@ -64,6 +66,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             calldatas,
             description
         );
+        console2.log("proposalId", proposalId);
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
 
         // Now try with Alice (who has 100 tokens) with different parameters
@@ -108,6 +111,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
+        console2.log("proposalId", proposalId);
         // Move to active state
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
 
@@ -143,6 +147,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
+        console2.log("proposalId", proposalId);
         // Transfer tokens from alice to the new voter address
         vm.prank(alice);
         voteToken.transfer(voterAddress, 100);
@@ -196,6 +201,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
+        console2.log("proposalId", proposalId);
         // Move to active state and vote
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
         vm.prank(alice);
@@ -239,6 +245,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
+        console2.log("proposalId", proposalId);
         // Move to active state
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
 
