@@ -91,8 +91,7 @@ pub mod host {
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
-    use client::BeaconClient;
-    use client::GetBlockHeaderResponse;
+    use client::{BeaconClient, GetBlockHeaderResponse};
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use proofs::{Proof, ProofAndWitness};
     use url::Url;
