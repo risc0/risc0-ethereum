@@ -91,7 +91,8 @@ pub mod host {
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
-    use beacon_api_client::{mainnet::Client as BeaconClient, BeaconHeaderSummary, BlockId};
+    use client::BeaconClient;
+    use client::GetBlockHeaderResponse;
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use proofs::{Proof, ProofAndWitness};
     use url::Url;
@@ -120,7 +121,7 @@ pub mod host {
 
             // first get the header of the parent and then the actual block header
             let parent_beacon_header = client
-                .get_beacon_header(BlockId::Root(parent_beacon_block_root))
+                .get_block_header(parent_beacon_block_root)
                 .await
                 .with_context(|| {
                     format!("failed to get block header {}", parent_beacon_block_root)
@@ -133,7 +134,7 @@ pub mod host {
 
             // get the entire block
             let signed_beacon_block = client
-                .get_beacon_block(BlockId::Root(beacon_header.root))
+                .get_block(beacon_header.root)
                 .await
                 .with_context(|| format!("failed to get block {}", beacon_header.root))?;
             // create the inclusion proof of the execution block hash depending on the fork version
@@ -164,6 +165,88 @@ pub mod host {
         }
     }
 
+    pub mod client {
+        use std::{collections::HashMap, fmt::Display};
+
+        use ethereum_consensus::{
+            phase0::SignedBeaconBlockHeader, primitives::Root, types::mainnet::SignedBeaconBlock,
+        };
+        use serde::{Deserialize, Serialize};
+        use url::Url;
+
+        /// Errors returned by the [BeaconClient].
+        #[derive(Debug, thiserror::Error)]
+        pub enum Error {
+            #[error("could not parse URL: {0}")]
+            Url(#[from] url::ParseError),
+            #[error("HTTP request failed: {0}")]
+            Http(#[from] reqwest::Error),
+        }
+
+        /// Response returned by the `get_block_header` API.
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct GetBlockHeaderResponse {
+            pub root: Root,
+            pub canonical: bool,
+            pub header: SignedBeaconBlockHeader,
+        }
+
+        /// Wrapper returned by the API calls.
+        #[derive(Serialize, Deserialize)]
+        struct Value<T> {
+            data: T,
+            #[serde(flatten)]
+            meta: HashMap<String, serde_json::Value>,
+        }
+
+        /// Simple beacon API client that can be used to query headers and blocks.
+        pub struct BeaconClient {
+            http: reqwest::Client,
+            endpoint: Url,
+        }
+
+        impl BeaconClient {
+            /// Creates a new beacon endpoint API client.
+            pub fn new<U: Into<Url>>(endpoint: U) -> Self {
+                let client = reqwest::Client::new();
+                Self {
+                    http: client,
+                    endpoint: endpoint.into(),
+                }
+            }
+
+            async fn http_get<T: serde::de::DeserializeOwned>(
+                &self,
+                path: &str,
+            ) -> Result<T, Error> {
+                let target = self.endpoint.join(path)?;
+                let resp = self.http.get(target).send().await?;
+                let value = resp.error_for_status()?.json().await?;
+                Ok(value)
+            }
+
+            /// Retrieves block header for given block id.
+            pub async fn get_block_header(
+                &self,
+                block_id: impl Display,
+            ) -> Result<GetBlockHeaderResponse, Error> {
+                let path = format!("eth/v1/beacon/headers/{block_id}");
+                let result: Value<GetBlockHeaderResponse> = self.http_get(&path).await?;
+                Ok(result.data)
+            }
+
+            /// Retrieves block details for given block id.
+            pub async fn get_block(
+                &self,
+                block_id: impl Display,
+            ) -> Result<SignedBeaconBlock, Error> {
+                let path = format!("eth/v2/beacon/blocks/{block_id}");
+                let result: Value<SignedBeaconBlock> = self.http_get(&path).await?;
+                Ok(result.data)
+            }
+        }
+    }
+
     /// Returns the inclusion proof of `block_hash` in the given `BeaconBlock`.
     fn prove_block_hash_inclusion<T: SimpleSerialize>(
         beacon_block: T,
@@ -179,15 +262,15 @@ pub mod host {
     /// Returns the header, with `parent_root` equal to `parent.root`.
     ///
     /// It iteratively tries to fetch headers of successive slots until success.
-    /// TODO: use [BeaconClient::get_beacon_header_for_parent_root], once the nodes add support.
+    /// TODO: use `parent_root` parameter, once the nodes add support.
     async fn get_child_beacon_header(
         client: &BeaconClient,
-        parent: BeaconHeaderSummary,
-    ) -> anyhow::Result<BeaconHeaderSummary> {
+        parent: GetBlockHeaderResponse,
+    ) -> anyhow::Result<GetBlockHeaderResponse> {
         let parent_slot = parent.header.message.slot;
         let mut request_error = None;
         for slot in (parent_slot + 1)..=(parent_slot + 32) {
-            match client.get_beacon_header(BlockId::Slot(slot)).await {
+            match client.get_block_header(slot).await {
                 Err(err) => request_error = Some(err),
                 Ok(resp) => {
                     let header = &resp.header.message;
