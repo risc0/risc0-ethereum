@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
-use std::fmt::Display;
+use std::{fmt::Display, marker::PhantomData};
 
 use crate::{
     beacon::BeaconInput,
@@ -23,7 +23,7 @@ use crate::{
 };
 use alloy::{
     network::{Ethereum, Network},
-    providers::{Provider, ProviderBuilder, RootProvider},
+    providers::{Provider, ProviderBuilder, ReqwestProvider, RootProvider},
     rpc::types::Header as RpcHeader,
     transports::{
         http::{Client, Http},
@@ -45,8 +45,11 @@ pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
 impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
-        let provider = ProviderBuilder::new().on_http(url);
-        EvmEnv::from_provider(provider, number).await
+        EthEvmEnv::builder()
+            .rpc(url)
+            .block_number_or_tag(number)
+            .build()
+            .await
     }
 }
 
@@ -60,20 +63,11 @@ where
 {
     /// Creates a new provable [EvmEnv] from an alloy [Provider].
     pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> Result<Self> {
-        let rpc_block = provider
-            .get_block_by_number(number, false)
+        EvmEnv::builder()
+            .provider(provider)
+            .block_number_or_tag(number)
+            .build()
             .await
-            .context("eth_getBlockByNumber failed")?
-            .with_context(|| format!("block {} not found", number))?;
-        let header: H = rpc_block
-            .header
-            .try_into()
-            .map_err(|err| anyhow!("header invalid: {}", err))?;
-        log::info!("Environment initialized for block {}", header.number());
-
-        let db = TraceDb::new(AlloyDb::new(provider, header.number()));
-
-        Ok(EvmEnv::new(db, header.seal_slow()))
     }
 }
 
@@ -101,5 +95,98 @@ where
         Ok(EvmInput::Beacon(
             BeaconInput::from_env_and_endpoint(self, url).await?,
         ))
+    }
+}
+
+impl<H> EvmEnv<(), H> {
+    /// Returns a builder for this environment.
+    pub fn builder() -> EvmEnvBuilder<NoProvider, H> {
+        EvmEnvBuilder::default()
+    }
+}
+
+/// Builder to construct an [EvmEnv] on the host.
+#[derive(Clone, Debug)]
+pub struct EvmEnvBuilder<P, H> {
+    provider: P,
+    block: BlockNumberOrTag,
+    phantom: PhantomData<H>,
+}
+
+/// First stage of the [EvmEnvBuilder] without a specified [Provider].
+pub struct NoProvider {}
+
+impl<H> Default for EvmEnvBuilder<NoProvider, H> {
+    fn default() -> Self {
+        Self {
+            provider: NoProvider {},
+            block: BlockNumberOrTag::Latest,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl EvmEnvBuilder<NoProvider, EthBlockHeader> {
+    /// Sets the Ethereum HTTP RPC endpoint that will be used by the [EvmEnv].
+    pub fn rpc(self, url: Url) -> EvmEnvBuilder<ReqwestProvider<Ethereum>, EthBlockHeader> {
+        self.provider(ProviderBuilder::new().on_http(url))
+    }
+}
+
+impl<H: EvmBlockHeader> EvmEnvBuilder<NoProvider, H> {
+    /// Sets the [Provider] that will be used by the [EvmEnv].
+    pub fn provider<T, N, P>(self, provider: P) -> EvmEnvBuilder<P, H>
+    where
+        T: Transport + Clone,
+        N: Network,
+        P: Provider<T, N>,
+        H: EvmBlockHeader + TryFrom<RpcHeader>,
+        <H as TryFrom<RpcHeader>>::Error: Display,
+    {
+        let Self { block, phantom, .. } = self;
+        EvmEnvBuilder {
+            provider,
+            block,
+            phantom,
+        }
+    }
+}
+
+impl<P, H> EvmEnvBuilder<P, H> {
+    /// Sets the block number.
+    pub fn block_number(self, number: u64) -> Self {
+        self.block_number_or_tag(BlockNumberOrTag::Number(number))
+    }
+
+    /// Sets the block number (or tag - "latest", "earliest", "pending").
+    pub fn block_number_or_tag(mut self, block: BlockNumberOrTag) -> Self {
+        self.block = block;
+        self
+    }
+
+    /// Builds the new provable [EvmEnv].
+    pub async fn build<T, N>(self) -> Result<EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>>
+    where
+        T: Transport + Clone,
+        N: Network,
+        P: Provider<T, N>,
+        H: EvmBlockHeader + TryFrom<RpcHeader>,
+        <H as TryFrom<RpcHeader>>::Error: Display,
+    {
+        let rpc_block = self
+            .provider
+            .get_block_by_number(self.block, false)
+            .await
+            .context("eth_getBlockByNumber failed")?
+            .with_context(|| format!("block {} not found", self.block))?;
+        let header: H = rpc_block
+            .header
+            .try_into()
+            .map_err(|err| anyhow!("header invalid: {}", err))?;
+        log::info!("Environment initialized for block {}", header.number());
+
+        let db = TraceDb::new(AlloyDb::new(self.provider, header.number()));
+
+        Ok(EvmEnv::new(db, header.seal_slow()))
     }
 }
