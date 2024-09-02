@@ -23,14 +23,13 @@ use alloy::{
     rpc::types::{EIP1186AccountProofResponse, Header},
     transports::Transport,
 };
-use alloy_primitives::{Address, Bytes, StorageKey, StorageValue, B256, U256};
+use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256};
 use anyhow::{ensure, Context, Result};
 use revm::{
     primitives::{AccountInfo, Bytecode},
     Database,
 };
 
-#[derive(Clone)]
 struct AccountProof {
     /// The hash of the storage of the account.
     storage_hash: B256,
@@ -40,7 +39,6 @@ struct AccountProof {
     storage_proofs: HashMap<StorageKey, StorageProof>,
 }
 
-#[derive(Clone)]
 struct StorageProof {
     /// Value that the key holds
     value: StorageValue,
@@ -52,7 +50,7 @@ struct StorageProof {
 pub struct ProofDb<D> {
     accounts: HashMap<Address, HashSet<StorageKey>>,
     contracts: HashMap<B256, Bytes>,
-    block_hash_numbers: HashSet<u64>,
+    block_hash_numbers: HashSet<BlockNumber>,
 
     proofs: HashMap<Address, AccountProof>,
 
@@ -75,7 +73,6 @@ impl<D: Database> ProofDb<D> {
     /// Adds a new response for EIP-1186 account proof `eth_getProof`.
     ///
     /// The proof data will be used for lookups of the referenced storage keys.
-    #[inline]
     pub fn add_proof(&mut self, proof: EIP1186AccountProofResponse) -> Result<()> {
         add_proof(&mut self.proofs, proof)
     }
@@ -125,8 +122,8 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
         Ok(ancestors)
     }
 
-    /// Returns the proof (sparse [MerkleTrie]) of all account and storage queries recorded by the
-    /// [Database].
+    /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
+    /// recorded by the [Database].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         let mut proofs = &mut self.proofs;
 

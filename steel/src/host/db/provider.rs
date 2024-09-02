@@ -17,7 +17,7 @@ use alloy::{
     transports::Transport,
 };
 use alloy_primitives::{Address, BlockNumber, StorageKey};
-use anyhow::ensure;
+use anyhow::{ensure, Result};
 use revm::Database;
 
 /// A [Database] backed by a [Provider].
@@ -30,7 +30,7 @@ where
     /// Max number of storage keys to request in a single `eth_getProof` call.
     const STORAGE_KEY_CHUNK_SIZE: usize = 1000;
 
-    /// Returns the provider.
+    /// Returns the [Provider].
     fn provider(&self) -> &P;
 
     /// Returns the block number used for the queries.
@@ -41,13 +41,15 @@ where
         &self,
         address: Address,
         mut keys: Vec<StorageKey>,
-    ) -> anyhow::Result<EIP1186AccountProofResponse> {
+    ) -> Result<EIP1186AccountProofResponse> {
         log::trace!("PROOF: address={}, #keys={}", address, keys.len());
         let number = self.block_number();
 
         // for certain RPC nodes it seemed beneficial when the keys are in the correct order
         keys.sort_unstable();
+
         let mut iter = keys.chunks(Self::STORAGE_KEY_CHUNK_SIZE);
+        // always make at least one call even if the keys are empty
         let mut account_proof = self
             .provider()
             .get_proof(address, iter.next().unwrap_or_default().into())
@@ -59,10 +61,10 @@ where
                 .get_proof(address, keys.into())
                 .number(number)
                 .await?;
-            // the account proof should not change
+            // only the keys have changed, the account proof should not change
             ensure!(
                 proof.account_proof == account_proof.account_proof,
-                "account_proof does not match"
+                "account_proof not consistent between calls"
             );
 
             account_proof.storage_proof.extend(proof.storage_proof);
