@@ -14,7 +14,7 @@
 
 use std::collections::{hash_map::Entry, HashMap, HashSet};
 
-use super::AlloyDb;
+use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
     eips::eip2930::AccessList,
@@ -82,7 +82,7 @@ impl<D: Database> ProofDb<D> {
 
     /// Returns the referenced contracts
     pub fn contracts(&self) -> &HashMap<B256, Bytes> {
-        return &self.contracts;
+        &self.contracts
     }
 }
 
@@ -90,9 +90,11 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// Max number of storage keys to request in a single `eth_getProof` call.
     pub const STORAGE_KEY_CHUNK_SIZE: usize = 1000;
 
+    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
     pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for item in access_list.0 {
             let proof = self
+                .inner
                 .get_eip1186_proof(item.address, item.storage_keys)
                 .await
                 .with_context(|| format!("eth_getProof failed for {}", item.address))?;
@@ -123,14 +125,16 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
         Ok(ancestors)
     }
 
-    /// Returns the proof (sparse [MerkleTrie]) of all account and storage queries recorded by the [Database].
-    pub async fn state_proof(&self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
-        let mut proofs = self.proofs.clone();
+    /// Returns the proof (sparse [MerkleTrie]) of all account and storage queries recorded by the
+    /// [Database].
+    pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
+        let mut proofs = &mut self.proofs;
 
         for (address, storage_keys) in &self.accounts {
             match proofs.get(address) {
                 None => {
                     let proof = self
+                        .inner
                         .get_eip1186_proof(*address, storage_keys.iter().cloned().collect())
                         .await
                         .context("eth_getProof failed")?;
@@ -145,6 +149,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                         .collect();
                     if !keys.is_empty() {
                         let proof = self
+                            .inner
                             .get_eip1186_proof(*address, keys)
                             .await
                             .context("eth_getProof failed")?;
@@ -180,33 +185,6 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
         let storage_tries = storage_tries.into_values().collect();
 
         Ok((state_trie, storage_tries))
-    }
-
-    async fn get_eip1186_proof(
-        &self,
-        address: Address,
-        mut keys: Vec<StorageKey>,
-    ) -> Result<EIP1186AccountProofResponse> {
-        log::trace!("PROOF: address={}, #keys={}", address, keys.len());
-        let provider = self.inner.provider();
-        let number = self.inner.block_number();
-
-        // for certain RPC nodes it seemed beneficial when the keys are in the correct order
-        keys.sort_unstable();
-        let mut iter = keys.chunks(Self::STORAGE_KEY_CHUNK_SIZE);
-        let mut account_proof = provider
-            .get_proof(address, iter.next().unwrap_or_default().into())
-            .number(number)
-            .await?;
-        while let Some(keys) = iter.next() {
-            let proof = provider
-                .get_proof(address, keys.into())
-                .number(number)
-                .await?;
-            account_proof.storage_proof.extend(proof.storage_proof);
-        }
-
-        Ok(account_proof)
     }
 }
 

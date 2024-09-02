@@ -96,7 +96,7 @@ pub mod host {
             H: EvmBlockHeader + TryFrom<RpcHeader>,
             <H as TryFrom<RpcHeader>>::Error: Display,
         {
-            let db = &env.db.unwrap();
+            let mut db = env.db.unwrap();
 
             let (state_trie, storage_tries) = db.state_proof().await?;
             ensure!(

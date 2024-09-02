@@ -17,6 +17,7 @@
 //! [Database]: revm::Database
 mod alloy;
 mod proof;
+mod provider;
 
 pub use alloy::AlloyDb;
 pub use proof::ProofDb;

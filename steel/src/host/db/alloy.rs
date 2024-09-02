@@ -14,6 +14,7 @@
 
 use std::{future::IntoFuture, marker::PhantomData};
 
+use super::provider::ProviderDb;
 use alloy::{
     network::Network,
     providers::Provider,
@@ -59,14 +60,14 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
             phantom: PhantomData,
         }
     }
+}
 
-    /// Returns the underlying provider.
-    pub fn provider(&self) -> &P {
+impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> for AlloyDb<T, N, P> {
+    fn provider(&self) -> &P {
         &self.provider
     }
 
-    /// Returns the block number used for the queries.
-    pub fn block_number(&self) -> BlockNumber {
+    fn block_number(&self) -> BlockNumber {
         self.block_number
     }
 }
