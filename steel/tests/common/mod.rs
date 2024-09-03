@@ -51,8 +51,8 @@ where
     let preflight_result = {
         let mut preflight = Contract::preflight(address, &mut env);
         let mut builder = preflight.call_builder(&call);
-        if let Some(access) = options.access_list.clone() {
-            builder = builder.prefetch_access_list(Some(access)).await.unwrap();
+        if let Some(access_list) = options.access_list.clone() {
+            builder = builder.prefetch_access_list(access_list).await.unwrap();
         }
         options.apply(builder).call().await.unwrap()
     };
