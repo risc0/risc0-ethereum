@@ -17,7 +17,7 @@ use std::collections::{hash_map::Entry, HashMap, HashSet};
 use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
-    eips::eip2930::AccessList,
+    eips::eip2930::{AccessList, AccessListItem},
     network::Network,
     providers::Provider,
     rpc::types::{EIP1186AccountProofResponse, Header},
@@ -92,19 +92,26 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
     /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
     pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
-        for item in access_list.0 {
-            log::trace!(
-                "PROOF: address={}, #keys={}",
-                item.address,
-                item.storage_keys.len()
-            );
-            let proof = self
-                .inner
-                .get_eip1186_proof(item.address, item.storage_keys)
-                .await
-                .with_context(|| format!("eth_getProof failed for {}", item.address))?;
-            self.add_proof(proof)
-                .context("invalid eth_getProof response")?;
+        for AccessListItem {
+            address,
+            storage_keys,
+        } in access_list.0
+        {
+            let storage_keys: Vec<_> = storage_keys
+                .into_iter()
+                .filter(filter_existing_keys(self.proofs.get(&address)))
+                .collect();
+
+            if !storage_keys.is_empty() {
+                log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
+                let proof = self
+                    .inner
+                    .get_eip1186_proof(address, storage_keys)
+                    .await
+                    .context("eth_getProof failed")?;
+                self.add_proof(proof)
+                    .context("invalid eth_getProof response")?;
+            }
         }
 
         Ok(())
@@ -136,35 +143,21 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
         let mut proofs = &mut self.proofs;
 
         for (address, storage_keys) in &self.accounts {
-            match proofs.get(address) {
-                // if no proof for this account exists, get the full proof and add it
-                None => {
-                    log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
-                    let proof = self
-                        .inner
-                        .get_eip1186_proof(*address, storage_keys.iter().cloned().collect())
-                        .await
-                        .context("eth_getProof failed")?;
-                    add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
-                }
-                // if a proof for this account exists, get the proof only for missing storage keys
-                Some(proof) => {
-                    let storage_proofs = &proof.storage_proofs;
-                    let keys: Vec<_> = storage_keys
-                        .iter()
-                        .filter(|key| !storage_proofs.contains_key(*key))
-                        .cloned()
-                        .collect();
-                    if !keys.is_empty() {
-                        log::trace!("PROOF: address={}, #keys={}", address, keys.len());
-                        let proof = self
-                            .inner
-                            .get_eip1186_proof(*address, keys)
-                            .await
-                            .context("eth_getProof failed")?;
-                        add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
-                    }
-                }
+            let account_proof = proofs.get(address);
+            let storage_keys: Vec<_> = storage_keys
+                .iter()
+                .cloned()
+                .filter(filter_existing_keys(account_proof))
+                .collect();
+
+            if account_proof.is_none() || !storage_keys.is_empty() {
+                log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
+                let proof = self
+                    .inner
+                    .get_eip1186_proof(*address, storage_keys)
+                    .await
+                    .context("eth_getProof failed")?;
+                add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
             }
         }
 
@@ -176,8 +169,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
         let mut storage_tries = HashMap::new();
         for (address, storage_keys) in &self.accounts {
-            // if no storage keys have been accessed, we don't need to prove anything pro this
-            // account
+            // if no storage keys have been accessed, we don't need to prove anything
             if storage_keys.is_empty() {
                 continue;
             }
@@ -207,7 +199,7 @@ impl<DB: Database> Database for ProofDb<DB> {
         self.accounts.entry(address).or_default();
 
         // it would be possible to also extract most of the account info from the proof, but since
-        // fetching the code is a bit tedious leave everything to the underlying DB
+        // fetching the code is a bit tedious, leave everything to the underlying DB
         self.inner.basic(address)
     }
 
@@ -242,6 +234,14 @@ impl<DB: Database> Database for ProofDb<DB> {
         self.block_hash_numbers.insert(number);
 
         self.inner.block_hash(number)
+    }
+}
+
+fn filter_existing_keys(account_proof: Option<&AccountProof>) -> impl Fn(&StorageKey) -> bool + '_ {
+    move |key| {
+        !account_proof
+            .map(|p| p.storage_proofs.contains_key(key))
+            .unwrap_or_default()
     }
 }
 

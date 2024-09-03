@@ -249,7 +249,7 @@ mod host {
         /// [CallBuilder::call]. See the corresponding methods for more information.
         ///
         /// [EvmEnv]: crate::EvmEnv
-        pub async fn call_with_access_list(self) -> Result<C::Return> {
+        pub async fn call_with_prefetch(self) -> Result<C::Return> {
             let access_list = {
                 let db = self.env.db.as_mut().unwrap();
 
