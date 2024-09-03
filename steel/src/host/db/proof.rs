@@ -93,6 +93,11 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
     pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for item in access_list.0 {
+            log::trace!(
+                "PROOF: address={}, #keys={}",
+                item.address,
+                item.storage_keys.len()
+            );
             let proof = self
                 .inner
                 .get_eip1186_proof(item.address, item.storage_keys)
@@ -134,6 +139,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
             match proofs.get(address) {
                 // if no proof for this account exists, get the full proof and add it
                 None => {
+                    log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
                     let proof = self
                         .inner
                         .get_eip1186_proof(*address, storage_keys.iter().cloned().collect())
@@ -150,6 +156,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                         .cloned()
                         .collect();
                     if !keys.is_empty() {
+                        log::trace!("PROOF: address={}, #keys={}", address, keys.len());
                         let proof = self
                             .inner
                             .get_eip1186_proof(*address, keys)

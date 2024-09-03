@@ -42,7 +42,6 @@ where
         address: Address,
         mut keys: Vec<StorageKey>,
     ) -> Result<EIP1186AccountProofResponse> {
-        log::trace!("PROOF: address={}, #keys={}", address, keys.len());
         let number = self.block_number();
 
         // for certain RPC nodes it seemed beneficial when the keys are in the correct order
