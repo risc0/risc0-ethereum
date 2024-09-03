@@ -234,6 +234,7 @@ async fn multi_contract_calls() {
 async fn call_eoa() {
     let mut env = EthEvmEnv::builder()
         .provider(test_provider.await)
+        .build()
         .await
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);

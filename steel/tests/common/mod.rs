@@ -37,12 +37,12 @@ where
     C: SolCall + Send + 'static,
     C::Return: PartialEq + Debug + Send,
 {
-    let env = EthEvmEnv::builder()
+    let mut env = EthEvmEnv::builder()
         .provider(provider)
         .build()
         .await
-        .unwrap();
-    let mut env = env.with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
     let block_hash = env.header().hash_slow();
     let block_number = env.header().inner().number;
 
