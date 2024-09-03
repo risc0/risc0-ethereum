@@ -16,20 +16,27 @@
 
 pragma solidity ^0.8.9;
 
-import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.sol";
-import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable, Ownable2Step} from "@openzeppelin-contracts-5.0.1/access/Ownable2Step.sol";
+import {Pausable} from "@openzeppelin-contracts-5.0.1/utils/Pausable.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
 /// @notice Wrapper for an IRiscZeroVerifier contract, providing emergency stop function.
-contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable2Step, Pausable {
+contract RiscZeroVerifierEmergencyStop is
+    IRiscZeroVerifier,
+    Ownable2Step,
+    Pausable
+{
     IRiscZeroVerifier public immutable verifier;
 
     /// @notice Error raised when calling estop with a receipt that cannot be verified as proof
     /// of an exploit on the verifier contract.
     error InvalidProofOfExploit();
 
-    constructor(IRiscZeroVerifier _verifier, address guardian) Ownable(guardian) {
+    constructor(
+        IRiscZeroVerifier _verifier,
+        address guardian
+    ) Ownable(guardian) {
         verifier = _verifier;
     }
 
@@ -59,13 +66,19 @@ contract RiscZeroVerifierEmergencyStop is IRiscZeroVerifier, Ownable2Step, Pausa
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view whenNotPaused {
+    function verify(
+        bytes calldata seal,
+        bytes32 imageId,
+        bytes32 journalDigest
+    ) external view whenNotPaused {
         // Forward the call on to the wrapped contract.
         verifier.verify(seal, imageId, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) public view whenNotPaused {
+    function verifyIntegrity(
+        Receipt calldata receipt
+    ) public view whenNotPaused {
         // Forward the call on to the wrapped contract.
         verifier.verifyIntegrity(receipt);
     }

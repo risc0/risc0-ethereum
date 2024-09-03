@@ -21,3 +21,6 @@ target/
 # Misc
 .DS_Store
 .idea
+
+# Soldeer
+dependencies/

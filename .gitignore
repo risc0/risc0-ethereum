@@ -22,3 +22,4 @@ out/
 # continually track and develop against risc0 main. When lock files are
 # tracked, CI will pin to a commit and only rarely update.
 Cargo.lock
+

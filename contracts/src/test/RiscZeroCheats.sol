@@ -16,10 +16,10 @@
 
 pragma solidity ^0.8.17;
 
-import {Test} from "forge-std/Test.sol";
-import {StdCheatsSafe} from "forge-std/StdCheats.sol";
-import {CommonBase} from "forge-std/Base.sol";
-import {console2} from "forge-std/console2.sol";
+import {Test} from "forge-std-1.8.2/src/Test.sol";
+import {StdCheatsSafe} from "forge-std-1.8.2/src/StdCheats.sol";
+import {CommonBase} from "forge-std-1.8.2/src/Base.sol";
+import {console2} from "forge-std-1.8.2/src/console2.sol";
 
 import {ControlID, RiscZeroGroth16Verifier} from "../groth16/RiscZeroGroth16Verifier.sol";
 import {IRiscZeroVerifier} from "../IRiscZeroVerifier.sol";
@@ -47,7 +47,10 @@ abstract contract RiscZeroCheats is CommonBase {
     ///       Uses the local prover or the Bonsai proving service to run the guest and produce an on-chain verifiable
     ///       SNARK attesting to the correctness of the journal output. URL and API key for Bonsai
     ///       should be specified using the BONSAI_API_URL and BONSAI_API_KEY environment variables.
-    function prove(string memory elf_path, bytes memory input) internal returns (bytes memory, bytes memory) {
+    function prove(
+        string memory elf_path,
+        bytes memory input
+    ) internal returns (bytes memory, bytes memory) {
         string[] memory imageRunnerInput = new string[](10);
         uint256 i = 0;
         imageRunnerInput[i++] = "cargo";
@@ -71,8 +74,14 @@ abstract contract RiscZeroCheats is CommonBase {
             console2.log("Deployed RiscZeroMockVerifier to", address(verifier));
             return verifier;
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-            console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
+                ControlID.CONTROL_ROOT,
+                ControlID.BN254_CONTROL_ID
+            );
+            console2.log(
+                "Deployed RiscZeroGroth16Verifier to",
+                address(verifier)
+            );
             return verifier;
         }
     }

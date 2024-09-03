@@ -16,7 +16,7 @@
 
 pragma solidity ^0.8.9;
 
-import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable, Ownable2Step} from "@openzeppelin-contracts-5.0.1/access/Ownable2Step.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
@@ -29,7 +29,8 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     /// @notice Value of an entry that has never been set.
     IRiscZeroVerifier internal constant UNSET = IRiscZeroVerifier(address(0));
     /// @notice A "tombstone" value used to mark verifier entries that have been removed from the mapping.
-    IRiscZeroVerifier internal constant TOMBSTONE = IRiscZeroVerifier(address(1));
+    IRiscZeroVerifier internal constant TOMBSTONE =
+        IRiscZeroVerifier(address(1));
 
     /// @notice Error raised when attempting to verify a receipt with a selector that is not
     ///         registered on this router. Generally, this indicates a version mismatch where the
@@ -46,7 +47,10 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     constructor(address admin) Ownable(admin) {}
 
     /// @notice Adds a verifier to the router, such that it can receive receipt verification calls.
-    function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external onlyOwner {
+    function addVerifier(
+        bytes4 selector,
+        IRiscZeroVerifier verifier
+    ) external onlyOwner {
         if (verifiers[selector] == TOMBSTONE) {
             revert SelectorRemoved({selector: selector});
         }
@@ -71,7 +75,9 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     }
 
     /// @notice Get the associatied verifier, reverting if the selector is unknown or removed.
-    function getVerifier(bytes4 selector) public view returns (IRiscZeroVerifier) {
+    function getVerifier(
+        bytes4 selector
+    ) public view returns (IRiscZeroVerifier) {
         IRiscZeroVerifier verifier = verifiers[selector];
         if (verifier == UNSET) {
             revert SelectorUnknown({selector: selector});
@@ -83,13 +89,19 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     }
 
     /// @notice Get the associatied verifier, reverting if the selector is unknown or removed.
-    function getVerifier(bytes calldata seal) public view returns (IRiscZeroVerifier) {
+    function getVerifier(
+        bytes calldata seal
+    ) public view returns (IRiscZeroVerifier) {
         // Use the first 4 bytes of the seal at the selector to look up in the mapping.
         return getVerifier(bytes4(seal[0:4]));
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view {
+    function verify(
+        bytes calldata seal,
+        bytes32 imageId,
+        bytes32 journalDigest
+    ) external view {
         getVerifier(seal).verify(seal, imageId, journalDigest);
     }
 

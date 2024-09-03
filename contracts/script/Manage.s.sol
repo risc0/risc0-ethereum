@@ -16,9 +16,9 @@
 
 pragma solidity ^0.8.9;
 
-import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
-import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
+import {Script} from "forge-std-1.8.2/src/Script.sol";
+import {console2} from "forge-std-1.8.2/src/console2.sol";
+import {TimelockController} from "@openzeppelin-contracts-5.0.1/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 import {IRiscZeroVerifier} from "../src//IRiscZeroVerifier.sol";
@@ -26,11 +26,15 @@ import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16
 
 /// @notice Compare strings for equality.
 function stringEq(string memory a, string memory b) pure returns (bool) {
-    return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    return (keccak256(abi.encodePacked((a))) ==
+        keccak256(abi.encodePacked((b))));
 }
 
 /// @notice Return the role code for the given named role
-function timelockControllerRole(TimelockController timelockController, string memory roleStr) view returns (bytes32) {
+function timelockControllerRole(
+    TimelockController timelockController,
+    string memory roleStr
+) view returns (bytes32) {
     if (stringEq(roleStr, "proposer")) {
         return timelockController.PROPOSER_ROLE();
     } else if (stringEq(roleStr, "executor")) {
@@ -55,8 +59,13 @@ contract RiscZeroManagementScript is Script {
         if (address(_timelockController) != address(0)) {
             return _timelockController;
         }
-        _timelockController = TimelockController(payable(vm.envAddress("TIMELOCK_CONTROLLER")));
-        console2.log("Using TimelockController at address", address(_timelockController));
+        _timelockController = TimelockController(
+            payable(vm.envAddress("TIMELOCK_CONTROLLER"))
+        );
+        console2.log(
+            "Using TimelockController at address",
+            address(_timelockController)
+        );
         return _timelockController;
     }
 
@@ -66,8 +75,13 @@ contract RiscZeroManagementScript is Script {
         if (address(_verifierRouter) != address(0)) {
             return _verifierRouter;
         }
-        _verifierRouter = RiscZeroVerifierRouter(vm.envAddress("VERIFIER_ROUTER"));
-        console2.log("Using RiscZeroVerifierRouter at address", address(_verifierRouter));
+        _verifierRouter = RiscZeroVerifierRouter(
+            vm.envAddress("VERIFIER_ROUTER")
+        );
+        console2.log(
+            "Using RiscZeroVerifierRouter at address",
+            address(_verifierRouter)
+        );
         return _verifierRouter;
     }
 
@@ -77,8 +91,13 @@ contract RiscZeroManagementScript is Script {
         if (address(_verifierEstop) != address(0)) {
             return _verifierEstop;
         }
-        _verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
-        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(_verifierEstop));
+        _verifierEstop = RiscZeroVerifierEmergencyStop(
+            vm.envAddress("VERIFIER_ESTOP")
+        );
+        console2.log(
+            "Using RiscZeroVerifierEmergencyStop at address",
+            address(_verifierEstop)
+        );
         return _verifierEstop;
     }
 
@@ -90,8 +109,13 @@ contract RiscZeroManagementScript is Script {
         if (address(_verifier) != address(0)) {
             return _verifier;
         }
-        _verifier = RiscZeroGroth16Verifier(address(verifierEstop().verifier()));
-        console2.log("Using RiscZeroGroth16Verifier at address", address(_verifier));
+        _verifier = RiscZeroGroth16Verifier(
+            address(verifierEstop().verifier())
+        );
+        console2.log(
+            "Using RiscZeroGroth16Verifier at address",
+            address(_verifier)
+        );
         return _verifier;
     }
 
@@ -101,7 +125,7 @@ contract RiscZeroManagementScript is Script {
         console2.logBytes(data);
         uint256 snapshot = vm.snapshot();
         vm.prank(address(timelockController()));
-        (bool success,) = dest.call(data);
+        (bool success, ) = dest.call(data);
         require(success, "simulation of transaction to schedule failed");
         vm.revertTo(snapshot);
         console2.log("Simulation successful");
@@ -139,12 +163,25 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
 
         // Deploy new contracts
         vm.broadcast();
-        _timelockController = new TimelockController(minDelay, proposers, executors, admin);
-        console2.log("Deployed TimelockController to", address(timelockController()));
+        _timelockController = new TimelockController(
+            minDelay,
+            proposers,
+            executors,
+            admin
+        );
+        console2.log(
+            "Deployed TimelockController to",
+            address(timelockController())
+        );
 
         vm.broadcast();
-        _verifierRouter = new RiscZeroVerifierRouter(address(timelockController()));
-        console2.log("Deployed RiscZeroVerifierRouter to", address(verifierRouter()));
+        _verifierRouter = new RiscZeroVerifierRouter(
+            address(timelockController())
+        );
+        console2.log(
+            "Deployed RiscZeroVerifierRouter to",
+            address(verifierRouter())
+        );
     }
 }
 
@@ -161,12 +198,24 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
 
         // Deploy new contracts
         vm.broadcast();
-        _verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier()));
+        _verifier = new RiscZeroGroth16Verifier(
+            ControlID.CONTROL_ROOT,
+            ControlID.BN254_CONTROL_ID
+        );
+        console2.log(
+            "Deployed RiscZeroGroth16Verifier to",
+            address(verifier())
+        );
 
         vm.broadcast();
-        _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
-        console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop()));
+        _verifierEstop = new RiscZeroVerifierEmergencyStop(
+            verifier(),
+            verifierEstopOwner
+        );
+        console2.log(
+            "Deployed RiscZeroVerifierEmergencyStop to",
+            address(verifierEstop())
+        );
     }
 }
 
@@ -186,10 +235,16 @@ contract ScheduleAddVerifier is RiscZeroManagementScript {
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
+        uint256 scheduleDelay = vm.envOr(
+            "SCHEDULE_DELAY",
+            timelockController().getMinDelay()
+        );
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
+        bytes memory data = abi.encodeCall(
+            verifierRouter().addVerifier,
+            (selector, verifierEstop())
+        );
         address dest = address(verifierRouter());
         simulate(dest, data);
 
@@ -213,7 +268,10 @@ contract FinishAddVerifier is RiscZeroManagementScript {
         console2.log("selector:");
         console2.logBytes4(selector);
 
-        bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
+        bytes memory data = abi.encodeCall(
+            verifierRouter().addVerifier,
+            (selector, verifierEstop())
+        );
 
         vm.broadcast();
         timelockController().execute(address(verifierRouter()), 0, data, 0, 0);
@@ -236,10 +294,16 @@ contract ScheduleRemoveVerifier is RiscZeroManagementScript {
         console2.logBytes4(selector);
 
         // Schedule the 'removeVerifier()' request
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
+        uint256 scheduleDelay = vm.envOr(
+            "SCHEDULE_DELAY",
+            timelockController().getMinDelay()
+        );
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
+        bytes memory data = abi.encodeCall(
+            verifierRouter().removeVerifier,
+            selector
+        );
         address dest = address(verifierRouter());
         simulate(dest, data);
 
@@ -263,7 +327,10 @@ contract FinishRemoveVerifier is RiscZeroManagementScript {
         console2.logBytes4(selector);
 
         // Execute the 'removeVerifier()' request
-        bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
+        bytes memory data = abi.encodeCall(
+            verifierRouter().removeVerifier,
+            selector
+        );
 
         vm.broadcast();
         timelockController().execute(address(verifierRouter()), 0, data, 0, 0);
@@ -284,10 +351,16 @@ contract ScheduleUpdateDelay is RiscZeroManagementScript {
         console2.log("minDelay:", minDelay);
 
         // Schedule the 'updateDelay()' request
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
+        uint256 scheduleDelay = vm.envOr(
+            "SCHEDULE_DELAY",
+            timelockController().getMinDelay()
+        );
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
+        bytes memory data = abi.encodeCall(
+            timelockController().updateDelay,
+            minDelay
+        );
         address dest = address(timelockController());
         simulate(dest, data);
 
@@ -309,10 +382,19 @@ contract FinishUpdateDelay is RiscZeroManagementScript {
         console2.log("minDelay:", minDelay);
 
         // Execute the 'updateDelay()' request
-        bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
+        bytes memory data = abi.encodeCall(
+            timelockController().updateDelay,
+            minDelay
+        );
 
         vm.broadcast();
-        timelockController().execute(address(timelockController()), 0, data, 0, 0);
+        timelockController().execute(
+            address(timelockController()),
+            0,
+            data,
+            0,
+            0
+        );
     }
 }
 
@@ -338,10 +420,16 @@ contract ScheduleGrantRole is RiscZeroManagementScript {
         console2.log("role: ");
         console2.logBytes32(role);
 
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
+        uint256 scheduleDelay = vm.envOr(
+            "SCHEDULE_DELAY",
+            timelockController().getMinDelay()
+        );
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
+        bytes memory data = abi.encodeCall(
+            timelockController().grantRole,
+            (role, account)
+        );
         address dest = address(timelockController());
         simulate(dest, data);
 
@@ -371,10 +459,19 @@ contract FinishGrantRole is RiscZeroManagementScript {
         console2.log("role: ");
         console2.logBytes32(role);
 
-        bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
+        bytes memory data = abi.encodeCall(
+            timelockController().grantRole,
+            (role, account)
+        );
 
         vm.broadcast();
-        timelockController().execute(address(timelockController()), 0, data, 0, 0);
+        timelockController().execute(
+            address(timelockController()),
+            0,
+            data,
+            0,
+            0
+        );
     }
 }
 
@@ -400,10 +497,16 @@ contract ScheduleRevokeRole is RiscZeroManagementScript {
         console2.log("role: ");
         console2.logBytes32(role);
 
-        uint256 scheduleDelay = vm.envOr("SCHEDULE_DELAY", timelockController().getMinDelay());
+        uint256 scheduleDelay = vm.envOr(
+            "SCHEDULE_DELAY",
+            timelockController().getMinDelay()
+        );
         console2.log("scheduleDelay:", scheduleDelay);
 
-        bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
+        bytes memory data = abi.encodeCall(
+            timelockController().revokeRole,
+            (role, account)
+        );
         address dest = address(timelockController());
         simulate(dest, data);
 
@@ -433,10 +536,19 @@ contract FinishRevokeRole is RiscZeroManagementScript {
         console2.log("role: ");
         console2.logBytes32(role);
 
-        bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
+        bytes memory data = abi.encodeCall(
+            timelockController().revokeRole,
+            (role, account)
+        );
 
         vm.broadcast();
-        timelockController().execute(address(timelockController()), 0, data, 0, 0);
+        timelockController().execute(
+            address(timelockController()),
+            0,
+            data,
+            0,
+            0
+        );
     }
 }
 
@@ -473,8 +585,13 @@ contract RenounceRole is RiscZeroManagementScript {
 contract ActivateEstop is RiscZeroManagementScript {
     function run() external {
         // Locate contracts
-        RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(vm.envAddress("VERIFIER_ESTOP"));
-        console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
+        RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(
+                vm.envAddress("VERIFIER_ESTOP")
+            );
+        console2.log(
+            "Using RiscZeroVerifierEmergencyStop at address",
+            address(verifierEstop)
+        );
 
         // Activate the emergency stop
         vm.broadcast();

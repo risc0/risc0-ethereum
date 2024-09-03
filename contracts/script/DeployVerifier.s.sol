@@ -16,8 +16,8 @@
 
 pragma solidity ^0.8.20;
 
-import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
+import {Script} from "forge-std-1.8.2/src/Script.sol";
+import {console2} from "forge-std-1.8.2/src/console2.sol";
 import {IRiscZeroVerifier} from "../src//IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 

@@ -1,7 +1,13 @@
-[profile.default]
-src = "src"
-out = "out"
-libs = ["../lib"]
-ffi = true
 
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+# Full reference https://github.com/foundry-rs/foundry/tree/master/crates/config
+
+[profile.default]
+script = "script"
+solc = "0.8.26"
+src = "src"
+test = "test"
+libs = ["dependencies"]
+
+[dependencies]
+forge-std = "1.8.2"
+"@openzeppelin-contracts" = "5.0.1"

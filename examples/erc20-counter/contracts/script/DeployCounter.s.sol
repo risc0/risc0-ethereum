@@ -16,8 +16,8 @@
 
 pragma solidity ^0.8.20;
 
-import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
+import {Script} from "forge-std-1.8.2/src/Script.sol";
+import {console2} from "forge-std-1.8.2/src/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 import {Counter} from "../src/Counter.sol";
@@ -36,7 +36,11 @@ contract DeployCounter is Script, RiscZeroCheats {
 
         vm.startBroadcast(deployerKey);
 
-        ERC20FixedSupply toyken = new ERC20FixedSupply("TOYKEN", "TOY", tokenOwner);
+        ERC20FixedSupply toyken = new ERC20FixedSupply(
+            "TOYKEN",
+            "TOY",
+            tokenOwner
+        );
         console2.log("Deployed ERC20 TOYKEN to", address(toyken));
 
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
