@@ -20,7 +20,7 @@ use std::{
 };
 
 #[cfg(feature = "host")]
-use crate::host::{db::AlloyDb, HostEvmEnv};
+use crate::host::{self, db::AlloyDb, HostEvmEnv};
 use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
@@ -184,13 +184,45 @@ where
     N: alloy::network::Network,
     P: alloy::providers::Provider<T, N>,
 {
-    /// Sets the `access_list` in the transaction to the provided value
-    pub async fn access_list(
+    /// Fetches EIP-1186 storage proofs from the `access_list` before executing the call. This can
+    /// help to drastically reduce the number of RPC calls required during execution, as
+    /// `eth_getStorageAt` calls are then only required for storage accesses not included in the
+    /// list. This does *not* set the access list as part of the transaction (as specified in
+    /// EIP-2930), and thus can only be specified during preflight on the host.
+    ///
+    /// When the provided access list is `None`, it will call `eth_createAccessList` to create an
+    /// access list.
+    pub async fn prefetch_access_list(
         self,
-        access_list: alloy::eips::eip2930::AccessList,
+        access_list: Option<alloy::eips::eip2930::AccessList>,
     ) -> anyhow::Result<Self> {
+        use alloy::network::TransactionBuilder;
+        use anyhow::Context;
+        use host::db::ProviderDb;
+
         let db = self.env.db.as_mut().unwrap();
+
+        let access_list = match access_list {
+            Some(access_list) => access_list,
+            None => {
+                let tx = <N as alloy::network::Network>::TransactionRequest::default()
+                    .with_from(self.tx.caller)
+                    .with_gas_limit(self.tx.gas_limit as u128)
+                    .with_gas_price(self.tx.gas_price.to())
+                    .with_to(self.tx.to)
+                    .with_value(self.tx.value)
+                    .with_input(self.tx.data.clone());
+                let provider = db.inner().provider();
+                let access_list = provider
+                    .create_access_list(&tx)
+                    .number(db.inner().block_number())
+                    .await
+                    .context("eth_createAccessList failed")?;
+                access_list.access_list
+            }
+        };
         db.add_access_list(access_list).await?;
+
         Ok(self)
     }
 }

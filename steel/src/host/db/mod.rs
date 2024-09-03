@@ -21,3 +21,4 @@ mod provider;
 
 pub use alloy::AlloyDb;
 pub use proof::ProofDb;
+pub(crate) use provider::ProviderDb;

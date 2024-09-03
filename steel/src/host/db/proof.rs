@@ -30,22 +30,6 @@ use revm::{
     Database,
 };
 
-struct AccountProof {
-    /// The hash of the storage of the account.
-    storage_hash: B256,
-    /// The account proof.
-    account_proof: Vec<Bytes>,
-    /// The storage proof.
-    storage_proofs: HashMap<StorageKey, StorageProof>,
-}
-
-struct StorageProof {
-    /// Value that the key holds
-    value: StorageValue,
-    /// proof for the pair
-    proof: Vec<Bytes>,
-}
-
 /// A simple revm [Database] wrapper that records all DB queries.
 pub struct ProofDb<D> {
     accounts: HashMap<Address, HashSet<StorageKey>>,
@@ -55,6 +39,20 @@ pub struct ProofDb<D> {
     proofs: HashMap<Address, AccountProof>,
 
     inner: D,
+}
+
+struct AccountProof {
+    /// The inclusion proof for this account.
+    account_proof: Vec<Bytes>,
+    /// The MPT inclusion proofs for several storage slots.
+    storage_proofs: HashMap<StorageKey, StorageProof>,
+}
+
+struct StorageProof {
+    /// The value that this key holds.
+    value: StorageValue,
+    /// In MPT inclusion proof for this particular slot.
+    proof: Vec<Bytes>,
 }
 
 impl<D: Database> ProofDb<D> {
@@ -81,13 +79,18 @@ impl<D: Database> ProofDb<D> {
     pub fn contracts(&self) -> &HashMap<B256, Bytes> {
         &self.contracts
     }
+
+    /// Returns the underlying [Database].
+    pub fn inner(&self) -> &D {
+        &self.inner
+    }
 }
 
 impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, P>> {
     /// Max number of storage keys to request in a single `eth_getProof` call.
     pub const STORAGE_KEY_CHUNK_SIZE: usize = 1000;
 
-    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
+    /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
     pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for item in access_list.0 {
             let proof = self
@@ -129,6 +132,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
         for (address, storage_keys) in &self.accounts {
             match proofs.get(address) {
+                // if no proof for this account exists, get the full proof and add it
                 None => {
                     let proof = self
                         .inner
@@ -137,6 +141,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                         .context("eth_getProof failed")?;
                     add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
                 }
+                // if a proof for this account exists, get the proof only for missing storage keys
                 Some(proof) => {
                     let storage_proofs = &proof.storage_proofs;
                     let keys: Vec<_> = storage_keys
@@ -164,6 +169,8 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
         let mut storage_tries = HashMap::new();
         for (address, storage_keys) in &self.accounts {
+            // if no storage keys have been accessed, we don't need to prove anything pro this
+            // account
             if storage_keys.is_empty() {
                 continue;
             }
@@ -192,6 +199,8 @@ impl<DB: Database> Database for ProofDb<DB> {
         log::trace!("BASIC: address={}", address);
         self.accounts.entry(address).or_default();
 
+        // it would be possible to also extract most of the account info from the proof, but since
+        // fetching the code is a bit tedious leave everything to the underlying DB
         self.inner.basic(address)
     }
 
@@ -205,7 +214,6 @@ impl<DB: Database> Database for ProofDb<DB> {
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
         let key = StorageKey::from(index);
-        log::trace!("STORAGE: address={}, index={}", address, key);
         self.accounts.entry(address).or_default().insert(key);
 
         // try to get the storage value from the loaded proofs before querying the underlying DB
@@ -215,7 +223,10 @@ impl<DB: Database> Database for ProofDb<DB> {
             .and_then(|account| account.storage_proofs.get(&key))
         {
             Some(storage_proof) => Ok(storage_proof.value),
-            None => self.inner.storage(address, index),
+            None => {
+                log::trace!("STORAGE: address={}, index={}", address, key);
+                self.inner.storage(address, index)
+            }
         }
     }
 
@@ -235,7 +246,6 @@ fn add_proof(
         Entry::Vacant(entry) => {
             entry.insert(AccountProof {
                 account_proof: proof.account_proof,
-                storage_hash: proof.storage_hash,
                 storage_proofs: proof
                     .storage_proof
                     .into_iter()
@@ -256,10 +266,6 @@ fn add_proof(
             ensure!(
                 account_proof.account_proof == proof.account_proof,
                 "account_proof does not match"
-            );
-            ensure!(
-                account_proof.storage_hash == proof.storage_hash,
-                "storage_hash does not match"
             );
 
             for storage_proof in proof.storage_proof {

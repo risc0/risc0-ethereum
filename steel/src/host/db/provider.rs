@@ -21,7 +21,7 @@ use anyhow::{ensure, Result};
 use revm::Database;
 
 /// A [Database] backed by a [Provider].
-pub(crate) trait ProviderDb<T, N, P>: Database
+pub trait ProviderDb<T, N, P>: Database
 where
     T: Transport + Clone,
     N: Network,
