@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 ### ⚡️ Features
 
 - Add support for creating a commitment to a beacon block root using `EvmEnv::into_beacon_input`, which can be verified using the [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788) beacon roots contract.
+- If an individual `eth_getProof` RPC call contains more than 1000 storage keys, it will be automatically split.
+- Add `CallBuilder::prefetch_access_list` and `CallBuilder::call_with_prefetch` for that host that prefetch storage proofs and values to drastically reduce the number of RPC calls. 
 
 ### 🚨 Breaking Changes
 
