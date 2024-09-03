@@ -232,7 +232,8 @@ async fn multi_contract_calls() {
 
 #[test(tokio::test)]
 async fn call_eoa() {
-    let mut env = EthEvmEnv::from_provider(test_provider().await, BlockNumberOrTag::Latest)
+    let mut env = EthEvmEnv::builder()
+        .provider(test_provider.await)
         .await
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);

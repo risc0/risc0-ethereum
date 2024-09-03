@@ -44,6 +44,7 @@ pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
 
 impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
+    #[deprecated(since = "0.12.0", note = "use `EthEvmEnv::builder().rpc()` instead")]
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
         EthEvmEnv::builder()
             .rpc(url)
@@ -62,6 +63,7 @@ where
     <H as TryFrom<RpcHeader>>::Error: Display,
 {
     /// Creates a new provable [EvmEnv] from an alloy [Provider].
+    #[deprecated(since = "0.12.0", note = "use `EvmEnv::builder().provider()` instead")]
     pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> Result<Self> {
         EvmEnv::builder()
             .provider(provider)
@@ -119,7 +121,7 @@ pub struct NoProvider;
 impl<H> Default for EvmEnvBuilder<NoProvider, H> {
     fn default() -> Self {
         Self {
-            provider: NoProvider {},
+            provider: NoProvider,
             block: BlockNumberOrTag::Latest,
             phantom: PhantomData,
         }
