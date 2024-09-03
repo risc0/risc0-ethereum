@@ -29,7 +29,7 @@ use alloy::{
 };
 use alloy_primitives::{address, b256, Address, U256};
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
-use risc0_steel::{ethereum::EthEvmEnv, host::BlockNumberOrTag, Contract};
+use risc0_steel::{ethereum::EthEvmEnv, Contract};
 use test_log::test;
 
 mod common;
@@ -233,7 +233,7 @@ async fn multi_contract_calls() {
 #[test(tokio::test)]
 async fn call_eoa() {
     let mut env = EthEvmEnv::builder()
-        .provider(test_provider.await)
+        .provider(test_provider().await)
         .build()
         .await
         .unwrap()
