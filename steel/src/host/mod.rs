@@ -114,7 +114,7 @@ pub struct EvmEnvBuilder<P, H> {
 }
 
 /// First stage of the [EvmEnvBuilder] without a specified [Provider].
-pub struct NoProvider {}
+pub struct NoProvider;
 
 impl<H> Default for EvmEnvBuilder<NoProvider, H> {
     fn default() -> Self {
