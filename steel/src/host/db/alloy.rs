@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{future::IntoFuture, marker::PhantomData};
+use std::{collections::HashMap, future::IntoFuture, marker::PhantomData};
 
 use super::provider::ProviderDb;
 use alloy::{
@@ -22,7 +22,7 @@ use alloy::{
 };
 use alloy_primitives::{Address, BlockNumber, B256, U256};
 use revm::{
-    primitives::{AccountInfo, Bytecode, HashMap, KECCAK_EMPTY},
+    primitives::{AccountInfo, Bytecode},
     Database,
 };
 use tokio::runtime::Handle;
@@ -94,17 +94,17 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
 
         let nonce = nonce?;
         let balance = balance?;
-        let code = Bytecode::new_raw(code?.0.into());
+        let bytecode = Bytecode::new_raw(code?.0.into());
 
         // if the account is empty return None
-        // in the EVM emptiness is treated as equivalent to nonexistence
-        if nonce == 0 && balance.is_zero() && code.is_empty() {
+        // in the EVM, emptiness is treated as equivalent to nonexistence
+        if nonce == 0 && balance.is_zero() && bytecode.is_empty() {
             return Ok(None);
         }
 
-        // cache the code hash to address mapping, so we can later retrieve the code
-        let code_hash = code.hash_slow();
-        self.contracts.insert(code_hash, code);
+        // index the code by its hash, so that we can later use code_by_hash
+        let code_hash = bytecode.hash_slow();
+        self.contracts.insert(code_hash, bytecode);
 
         Ok(Some(AccountInfo {
             nonce,
@@ -115,12 +115,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
     }
 
     fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
-        // avoid querying the RPC if the code hash is empty
-        if code_hash == KECCAK_EMPTY {
-            return Ok(Bytecode::new());
-        }
-
-        // this works because we always call `basic` first
+        // this works because `basic` is always called first
         let code = self
             .contracts
             .get(&code_hash)
