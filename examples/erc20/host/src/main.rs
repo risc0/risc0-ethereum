@@ -62,8 +62,8 @@ async fn main() -> Result<()> {
     // Parse the command line arguments.
     let args = Args::parse();
 
-    // Create an EVM environment from an RPC endpoint and a block number or tag.
-    let mut env = EthEvmEnv::from_rpc(args.rpc_url, BlockNumberOrTag::Latest).await?;
+    // Create an EVM environment from an RPC endpoint defaulting to the latest block.
+    let mut env = EthEvmEnv::builder().rpc(args.rpc_url).build().await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
