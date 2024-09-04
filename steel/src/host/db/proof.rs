@@ -247,45 +247,39 @@ fn filter_existing_keys(account_proof: Option<&AccountProof>) -> impl Fn(&Storag
 
 fn add_proof(
     proofs: &mut HashMap<Address, AccountProof>,
-    proof: EIP1186AccountProofResponse,
+    proof_response: EIP1186AccountProofResponse,
 ) -> Result<()> {
-    match proofs.entry(proof.address) {
-        Entry::Vacant(entry) => {
-            entry.insert(AccountProof {
-                account_proof: proof.account_proof,
-                storage_proofs: proof
-                    .storage_proof
-                    .into_iter()
-                    .map(|proof| {
-                        (
-                            proof.key.0,
-                            StorageProof {
-                                value: proof.value,
-                                proof: proof.proof,
-                            },
-                        )
-                    })
-                    .collect(),
-            });
-        }
+    // convert the response into a StorageProof
+    let storage_proofs = proof_response
+        .storage_proof
+        .into_iter()
+        .map(|proof| {
+            (
+                proof.key.0,
+                StorageProof {
+                    value: proof.value,
+                    proof: proof.proof,
+                },
+            )
+        })
+        .collect();
+
+    match proofs.entry(proof_response.address) {
         Entry::Occupied(mut entry) => {
             let account_proof = entry.get_mut();
             ensure!(
-                account_proof.account_proof == proof.account_proof,
+                account_proof.account_proof == proof_response.account_proof,
                 "account_proof does not match"
             );
-
-            for storage_proof in proof.storage_proof {
-                account_proof.storage_proofs.insert(
-                    storage_proof.key.0,
-                    StorageProof {
-                        value: storage_proof.value,
-                        proof: storage_proof.proof,
-                    },
-                );
-            }
+            account_proof.storage_proofs.extend(storage_proofs);
         }
-    };
+        Entry::Vacant(entry) => {
+            entry.insert(AccountProof {
+                account_proof: proof_response.account_proof,
+                storage_proofs,
+            });
+        }
+    }
 
     Ok(())
 }
