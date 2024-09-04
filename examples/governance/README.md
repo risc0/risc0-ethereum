@@ -16,15 +16,15 @@ You can read more at [What does RISC Zero enable].
 
 ## How much gas is saved?
 
-It depends on how many votes are casted. Concretely, it depends on how many unique accounts cast a vote. The more accounts cast a vote, the more signature verifications ([ecrecover]) are moved from the EVM to RISC Zero's zkVM.
+The more accounts cast a vote, the more signature verifications ([ecrecover]) are moved from the EVM to RISC Zero's zkVM.
 
-ests/benchmarks/gas_data_comparison.png)
+![Gas Data Comparison](tests/benchmarks/gas_data_comparison.png)
 
 <p align="center">
   <i>Figure 1: A direct comparison of a test voting workflow in BaselineGovernor (the OpenZeppelin implementation) and RiscZeroGovernor (a modified Governor that utilises offchain compute for signature verification. The relevant test files are located in tests/benchmarks. </i>
 </p>
 
-The x-axis details the number of votes (also the number of accounts, in the testing workflow, each account votes once), and the y-axis the amount of gas spent. This data was generated using [Foundry], specifically its gas reporting and fuzz testing features. Each workflow with a speicifc number of votes is run 1000 times to provide an average value. 
+The x-axis details the number of votes (also the number of accounts, in the testing workflow, each account votes once), and the y-axis the amount of gas spent. This data was generated using [Foundry], specifically its gas reporting and fuzz testing features. Each workflow with a specific number of votes is run 1000 times to provide an average value. 
 
 ## What computation is taken offchain?
 
@@ -60,7 +60,7 @@ This function calls a RISC Zero [verifier contract] to verify the RISC Zero `Gro
 
 When a user votes, this has both an onchain and an offchain aspect. The vote is processed offchain as seen in [finalize_votes.rs], and onchain `castVote` is called ([RiscZeroGovernor.sol]), which commits the vote by hashing its vote support (a `uint8` representing the vote state, i.e. 1 represents a `for` vote) and the account's address with a hash accumulator of all previous votes.
 
-This hash accumulator (`ballotHash`) can be used as a commit-reveal scheme which allows offchain voting state to be recreated and matched with state onchain; the order of voting will change the final hash and so `ballotHash` is a running representation of voting in an exact order. If an account votes more than once, there is logic to handle only its latest vote as the valid vote, but its data for previous votes is still hashed into `ballotHash`.
+This hash accumulator (`ballotHash`) is a commitment that allows offchain voting state to be matched with state onchain; the order of voting will change the final hash and so `ballotHash` is a running representation of voting in an exact order. If an account votes more than once, there is logic to handle only its latest vote as the valid vote, but its data for previous votes is still hashed into `ballotHash`.
 
 [ecrecover]: https://docs.soliditylang.org/en/latest/cheatsheet.html#index-7
 [finalize_votes.rs]: ./methods/guest/src/bin/finalize_votes.rs

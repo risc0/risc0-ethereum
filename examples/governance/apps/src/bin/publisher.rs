@@ -18,7 +18,6 @@
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use hex::decode;
 
 use alloy::{
     network::{EthereumWallet, TransactionBuilder},
@@ -89,8 +88,8 @@ async fn main() -> Result<()> {
         .on_http(args.rpc_url);
 
     // Decode the hex-encoded proposal ID and votes data
-    let proposal_id = decode(&args.proposal_id).context("Failed to decode proposal ID")?;
-    let votes_data = decode(&args.votes_data).context("Failed to decode votes data")?;
+    let proposal_id = hex::decode(&args.proposal_id).context("Failed to decode proposal ID")?;
+    let votes_data = hex::decode(&args.votes_data).context("Failed to decode votes data")?;
 
     // Validate input lengths
     if proposal_id.len() != 32 {
@@ -122,15 +121,6 @@ async fn main() -> Result<()> {
     // Extract the journal from the receipt.
     let journal = receipt.journal.bytes.clone();
 
-    // Construct function call for RiscZeroGovernor
-    // let calldata = RiscZeroGovernor::RiscZeroGovernorCalls::verifyAndFinalizeVotes(
-    //     RiscZeroGovernor::verifyAndFinalizeVotesCall {
-    //         seal: seal.into(),
-    //         journal: journal.into(),
-    //     },
-    // )
-    // .abi_encode();
-    
    // build calldata 
     let calldata = RiscZeroGovernor::verifyAndFinalizeVotesCall {
         seal: seal.into(),

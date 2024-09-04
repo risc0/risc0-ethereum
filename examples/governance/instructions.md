@@ -8,13 +8,7 @@ From the root of the example repo, run:
 
 ```sh
 cargo build
-```
-
-```sh
 forge install
-```
-
-```sh
 forge build
 ```
 

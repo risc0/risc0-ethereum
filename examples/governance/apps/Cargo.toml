@@ -15,7 +15,7 @@ log = { workspace = true }
 methods = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-zkvm = { workspace = true, features = ["client"] }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["full"]}
 tracing-subscriber = { workspace = true }
 url = {workspace = true}
 

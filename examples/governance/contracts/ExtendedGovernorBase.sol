@@ -29,7 +29,15 @@ abstract contract ExtendedGovernorBase is IGovernor, Governor {
         uint256 nonce = nonces(voter);
         return
             _hashTypedDataV4(
-                keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support, voter, nonce))
+                keccak256(
+                    abi.encode(
+                        BALLOT_TYPEHASH,
+                        proposalId,
+                        support,
+                        voter,
+                        nonce
+                    )
+                )
             );
     }
 

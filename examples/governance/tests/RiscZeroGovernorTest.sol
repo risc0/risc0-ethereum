@@ -16,6 +16,7 @@
 pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
+import {console2} from "forge-std/console2.sol";
 import {GovernorTestBase} from "./GovernorTestBase.sol";
 import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
 import {VoteToken} from "../contracts/VoteToken.sol";
@@ -81,17 +82,17 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
 
         vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
 
-        aliceSupport = 1;
+        aliceSupport = 1; // Vote in favor
         vm.prank(alice);
         vm.expectEmit();
         emit VoteCast(alice, proposalId, aliceSupport, 0, "");
-        riscZeroGovernor.castVote(proposalId, aliceSupport); // Vote in favor
+        riscZeroGovernor.castVote(proposalId, aliceSupport); 
 
-        bobSupport = 0;
+        bobSupport = 0; // Vote against
         vm.prank(bob);
         vm.expectEmit();
         emit VoteCast(bob, proposalId, bobSupport, 0, "");
-        riscZeroGovernor.castVote(proposalId, bobSupport); // Vote against
+        riscZeroGovernor.castVote(proposalId, bobSupport); 
     }
 
     function testVotingBySignature() public {
@@ -107,7 +108,7 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             calldatas,
             description
         );
-
+        
         // Transfer tokens from alice to the new voter address
         vm.prank(alice);
         voteToken.transfer(voterAddress, 100);
@@ -125,10 +126,10 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             forSupport,
             voterAddress
         );
-
+        
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(voterPk, digest);
         bytes memory signature = abi.encode(r, s, v);
-
+        
         bytes memory encoded = abi.encodePacked(
             uint16(1),
             forSupport,
@@ -137,7 +138,7 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             s,
             digest
         );
-
+        
         vm.expectEmit();
         emit CommittedBallot(proposalId, encoded);
         riscZeroGovernor.castVoteBySig(
@@ -145,7 +146,7 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             forSupport,
             voterAddress,
             signature
-        ); // Vote in favor
+        ); 
     }
 
     function testVerifyAndFinalizeVotes() public {
@@ -181,15 +182,13 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             bytes memory encodedBallots
         ) = hashBallots(aliceSupport, bobSupport);
 
-        // encode journal and hash
         bytes memory journal = abi.encodePacked(
             proposalId,
             finalBallotBoxAccum,
-            // abi.encode(alice, uint8(1), bob, uint8(0))
             encodedBallots
         );
 
-        // create journalDigest and `mockProve` to create receipt.
+        // create mock receipt
         bytes32 journalDigest = sha256(journal);
         VerifierReceipt memory receipt = mockVerifier.mockProve(
             ImageID.FINALIZE_VOTES_ID,
@@ -208,7 +207,6 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
 
         vm.mockCall(verifierAddress, expectedCalldata, abi.encode());
 
-        // call `verifyAndFinalizeVotes` and assert expectations
         riscZeroGovernor.verifyAndFinalizeVotes(receipt.seal, journal);
         (
             uint256 againstVotes,
@@ -324,8 +322,6 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
         riscZeroGovernor.castVote(proposalId, 1);
 
         vm.roll(block.number + riscZeroGovernor.votingPeriod() + 1);
-
-        // _mockVerifyAndFinalizeVotes(proposalId);
 
         assertEq(
             uint256(riscZeroGovernor.state(proposalId)),

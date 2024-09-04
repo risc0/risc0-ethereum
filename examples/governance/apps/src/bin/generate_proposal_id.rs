@@ -1,4 +1,4 @@
-use alloy_primitives::{address, Address, keccak256, U256};
+use alloy_primitives::{address, Address, Bytes, keccak256, U256};
 use alloy_sol_types::{sol, SolCall};
 
 sol! {
@@ -7,11 +7,11 @@ sol! {
     function hashProposal(address[] targets, uint256[] values, bytes[] calldatas, bytes32 descriptionHash) returns (uint256);
 }
 
-fn create_proposal_params() -> (Vec<Address>, Vec<U256>, Vec<Vec<u8>>, String) {
+fn create_proposal_params() -> (Vec<Address>, Vec<U256>, Vec<Bytes>, String) {
     let targets = vec![address!("0000000000000000000000000000000000000004")];
     let values = vec![U256::from(0)];
     let do_something_call = doSomethingCall {};
-    let calldatas = vec![do_something_call.abi_encode()];
+    let calldatas = vec![Bytes::from(do_something_call.abi_encode())];
     let description = "Do something".to_string();
     
     (targets, values, calldatas, description)

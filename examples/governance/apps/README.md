@@ -2,7 +2,7 @@
 
 In typical applications, an off-chain app is needed to do two main actions:
 
-* Produce a proof e.g. by sending a proof request to [Bonsai].
+* Produce a proof (see [proving options]).
 * Send a transaction to Ethereum to execute your on-chain logic.
 
 This template provides the `publisher` CLI as an example application to execute these steps.
@@ -10,7 +10,7 @@ In a production application, a back-end server or your dApp client may take on t
 
 ## Publisher
 
-The [`publisher` CLI][publisher], is an example application that sends an off-chain proof request to the [Bonsai] proving service, and publishes the received proofs to your deployed app contract.
+The [`publisher` CLI][publisher], is an example application that produces a proof and publishes it to your app contract.
 
 ### Usage
 
@@ -42,5 +42,5 @@ Options:
           Print version
 ```
 
+[proving-options]: https://dev.risczero.com/api/generating-proofs/proving-options
 [publisher]: ./src/bin/publisher.rs
-[Bonsai]: https://dev.bonsai.xyz/

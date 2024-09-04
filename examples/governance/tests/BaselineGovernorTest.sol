@@ -41,7 +41,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             calldatas,
             description
         );
-        console2.log("proposalId", proposalId);
 
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
         assertEq(
@@ -66,7 +65,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             calldatas,
             description
         );
-        console2.log("proposalId", proposalId);
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
 
         // Now try with Alice (who has 100 tokens) with different parameters
@@ -111,7 +109,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
-        console2.log("proposalId", proposalId);
         // Move to active state
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
 
@@ -132,7 +129,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
     }
 
     function testVotingBySignature() public {
-        // Create a proposal
         (
             address[] memory targets,
             uint256[] memory values,
@@ -147,7 +143,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
-        console2.log("proposalId", proposalId);
         // Transfer tokens from alice to the new voter address
         vm.prank(alice);
         voteToken.transfer(voterAddress, 100);
@@ -201,7 +196,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
-        console2.log("proposalId", proposalId);
         // Move to active state and vote
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
         vm.prank(alice);
@@ -245,7 +239,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             description
         );
 
-        console2.log("proposalId", proposalId);
         // Move to active state
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
 
