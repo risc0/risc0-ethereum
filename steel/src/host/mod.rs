@@ -101,13 +101,17 @@ where
 }
 
 impl<H> EvmEnv<(), H> {
-    /// Returns a builder for this environment.
+    /// Creates a builder for building an environment.
     pub fn builder() -> EvmEnvBuilder<NoProvider, H> {
-        EvmEnvBuilder::default()
+        EvmEnvBuilder {
+            provider: NoProvider,
+            block: BlockNumberOrTag::Latest,
+            phantom: PhantomData,
+        }
     }
 }
 
-/// Builder to construct an [EvmEnv] on the host.
+/// Builder for building an [EvmEnv] on the host.
 #[derive(Clone, Debug)]
 pub struct EvmEnvBuilder<P, H> {
     provider: P,
@@ -117,16 +121,6 @@ pub struct EvmEnvBuilder<P, H> {
 
 /// First stage of the [EvmEnvBuilder] without a specified [Provider].
 pub struct NoProvider;
-
-impl<H> Default for EvmEnvBuilder<NoProvider, H> {
-    fn default() -> Self {
-        Self {
-            provider: NoProvider,
-            block: BlockNumberOrTag::Latest,
-            phantom: PhantomData,
-        }
-    }
-}
 
 impl EvmEnvBuilder<NoProvider, EthBlockHeader> {
     /// Sets the Ethereum HTTP RPC endpoint that will be used by the [EvmEnv].
