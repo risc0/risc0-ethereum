@@ -1,4 +1,3 @@
-contracts/utils/ImageID.sol
 tests/Elf.sol
 tests/benchmarks/gas_data.csv
 broadcast/*

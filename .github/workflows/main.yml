@@ -157,7 +157,10 @@ jobs:
       - name: build governance
         run: cargo build
         working-directory: examples/governance
-      - name: forge test erc20-Counter
+      - name: forge test governance
+        run: forge test
+        working-directory: examples/governance
+      - name: forge test erc20-counter
         run: forge test
         working-directory: examples/erc20-counter
         env:
