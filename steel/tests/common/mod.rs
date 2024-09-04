@@ -19,9 +19,7 @@ use alloy_primitives::{Address, Sealable, U256};
 use alloy_sol_types::SolCall;
 use once_cell::sync::Lazy;
 use revm::primitives::SpecId;
-use risc0_steel::{
-    config::ChainSpec, ethereum::EthEvmEnv, host::BlockNumberOrTag, CallBuilder, Contract,
-};
+use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract};
 
 pub static ANVIL_CHAIN_SPEC: Lazy<ChainSpec> =
     Lazy::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
@@ -39,7 +37,9 @@ where
     C: SolCall + Send + 'static,
     C::Return: PartialEq + Debug + Send,
 {
-    let mut env = EthEvmEnv::from_provider(provider, BlockNumberOrTag::Latest)
+    let mut env = EthEvmEnv::builder()
+        .provider(provider)
+        .build()
         .await
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);

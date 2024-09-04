@@ -29,7 +29,6 @@ use erc20_counter_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
-    host::BlockNumberOrTag,
     Commitment, Contract,
 };
 use risc0_zkvm::{default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext};
@@ -102,8 +101,8 @@ async fn main() -> Result<()> {
         .wallet(wallet)
         .on_http(args.eth_rpc_url);
 
-    // Create an EVM environment from that provider and a block number.
-    let mut env = EthEvmEnv::from_provider(provider.clone(), BlockNumberOrTag::Latest).await?;
+    // Create an EVM environment from that provider defaulting to the latest block.
+    let mut env = EthEvmEnv::builder().provider(provider.clone()).build().await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
