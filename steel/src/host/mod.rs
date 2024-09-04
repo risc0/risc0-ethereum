@@ -163,6 +163,8 @@ impl<P, H> EvmEnvBuilder<P, H> {
     }
 
     /// Sets the max number of storage keys to request in a single `eth_getProof` call.
+    ///
+    /// The optimal number depends on the RPC node and its configuration, but the default is 1000.
     pub fn eip1186_proof_chunk_size(mut self, chunk_size: usize) -> Self {
         assert_ne!(chunk_size, 0, "chunk size must be non-zero");
         self.provider_config.eip1186_proof_chunk_size = chunk_size;
