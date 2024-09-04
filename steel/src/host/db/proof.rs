@@ -87,9 +87,6 @@ impl<D: Database> ProofDb<D> {
 }
 
 impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, P>> {
-    /// Max number of storage keys to request in a single `eth_getProof` call.
-    pub const STORAGE_KEY_CHUNK_SIZE: usize = 1000;
-
     /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
     pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for AccessListItem {
@@ -198,8 +195,9 @@ impl<DB: Database> Database for ProofDb<DB> {
         log::trace!("BASIC: address={}", address);
         self.accounts.entry(address).or_default();
 
-        // it would be possible to also extract most of the account info from the proof, but since
-        // fetching the code is a bit tedious, leave everything to the underlying DB
+        // eth_getProof also returns an account object. However, since the returned data is not
+        // always consistent, it is just simpler to forward the query to the underlying DB.
+        // See https://github.com/ethereum/go-ethereum/issues/28441
         self.inner.basic(address)
     }
 
