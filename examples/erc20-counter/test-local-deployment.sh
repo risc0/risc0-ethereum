@@ -24,6 +24,7 @@ echo "Anvil started with PID $ANVIL_PID"
 sleep 5
 
 export ETH_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+export TOKEN_OWNER=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
 
 # Build the project
 echo "Building the project..."
@@ -31,15 +32,11 @@ cargo build
 
 # Deploy the Counter contract
 echo "Deploying the Counter contract..."
-forge script --rpc-url http://localhost:8545 --broadcast script/DeployCounter.s.sol
+forge script --rpc-url http://localhost:8545 --broadcast DeployCounter
 
 # Extract the Toyken address
-export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
+export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20FixedSupply") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
 echo "ERC20 Toyken Address: $TOYKEN_ADDRESS"
-
-# Mint Toyken to a specific address
-echo "Minting Toyken to 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4..."
-cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $TOYKEN_ADDRESS 'mint(address, uint256)' 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4 100
 
 # Extract the Counter contract address
 export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
@@ -48,10 +45,10 @@ echo "Counter Address: $COUNTER_ADDRESS"
 # Publish a new state
 echo "Publishing a new state..."
 cargo run --bin publisher -- \
-    --rpc-url=http://localhost:8545 \
-    --contract=${COUNTER_ADDRESS:?} \
-    --token=${TOYKEN_ADDRESS:?} \
-    --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
+    --eth-rpc-url=http://localhost:8545 \
+    --counter=${COUNTER_ADDRESS:?} \
+    --token-contract=${TOYKEN_ADDRESS:?} \
+    --account=${TOKEN_OWNER:?}
 
 # Attempt to verify counter value as part of the script logic
 echo "Verifying state..."

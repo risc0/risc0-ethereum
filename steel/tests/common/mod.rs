@@ -19,10 +19,7 @@ use alloy_primitives::{Address, Sealable, U256};
 use alloy_sol_types::SolCall;
 use once_cell::sync::Lazy;
 use revm::primitives::SpecId;
-use risc0_steel::{
-    config::ChainSpec, ethereum::EthEvmEnv, host::BlockNumberOrTag, CallBuilder, Contract,
-    EvmBlockHeader,
-};
+use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract};
 
 pub static ANVIL_CHAIN_SPEC: Lazy<ChainSpec> =
     Lazy::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
@@ -40,12 +37,14 @@ where
     C: SolCall + Send + 'static,
     C::Return: PartialEq + Debug + Send,
 {
-    let mut env = EthEvmEnv::from_provider(provider, BlockNumberOrTag::Latest)
+    let mut env = EthEvmEnv::builder()
+        .provider(provider)
+        .build()
         .await
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);
     let block_hash = env.header().hash_slow();
-    let block_number = U256::from(env.header().number());
+    let block_number = env.header().inner().number;
 
     let preflight_result = {
         let mut preflight = Contract::preflight(address, &mut env);
@@ -57,8 +56,12 @@ where
     let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
 
     let commitment = env.commitment();
-    assert_eq!(commitment.blockHash, block_hash, "invalid commitment");
-    assert_eq!(commitment.blockNumber, block_number, "invalid commitment");
+    assert_eq!(commitment.blockDigest, block_hash, "invalid commitment");
+    assert_eq!(
+        commitment.blockID,
+        U256::from(block_number),
+        "invalid commitment"
+    );
 
     let result = {
         let contract = Contract::new(address, &env);
