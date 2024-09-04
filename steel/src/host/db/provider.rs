@@ -20,6 +20,19 @@ use alloy_primitives::{Address, BlockNumber, StorageKey};
 use anyhow::{ensure, Result};
 use revm::Database;
 
+pub struct ProviderConfig {
+    /// Max number of storage keys to request in a single `eth_getProof` call.
+    pub get_proof_key_chunk_size: usize,
+}
+
+impl Default for ProviderConfig {
+    fn default() -> Self {
+        Self {
+            get_proof_key_chunk_size: 1000,
+        }
+    }
+}
+
 /// A [Database] backed by a [Provider].
 pub trait ProviderDb<T, N, P>: Database
 where
@@ -27,8 +40,8 @@ where
     N: Network,
     P: Provider<T, N>,
 {
-    /// Max number of storage keys to request in a single `eth_getProof` call.
-    const STORAGE_KEY_CHUNK_SIZE: usize = 1000;
+    /// Returns the provider config.
+    fn config(&self) -> &ProviderConfig;
 
     /// Returns the [Provider].
     fn provider(&self) -> &P;
@@ -47,7 +60,7 @@ where
         // for certain RPC nodes it seemed beneficial when the keys are in the correct order
         keys.sort_unstable();
 
-        let mut iter = keys.chunks(Self::STORAGE_KEY_CHUNK_SIZE);
+        let mut iter = keys.chunks(self.config().get_proof_key_chunk_size);
         // always make at least one call even if the keys are empty
         let mut account_proof = self
             .provider()
