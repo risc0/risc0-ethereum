@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### ⚡️ Features
 
 - Add support for creating a commitment to a beacon block root using `EvmEnv::into_beacon_input`, which can be verified using the [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788) beacon roots contract.
+- Add the `EvmEnvBuilder` to simplify the creation of an `EvmEnv` on the host.
 
 ### 🚨 Breaking Changes
 
