@@ -80,7 +80,7 @@ impl MerkleProof {
 }
 
 #[cfg(feature = "host")]
-pub mod host {
+mod host {
     use super::{BeaconInput, MerkleProof};
     use crate::{
         block::BlockInput,
@@ -164,7 +164,7 @@ pub mod host {
         }
     }
 
-    pub mod client {
+    mod client {
         use std::{collections::HashMap, fmt::Display};
 
         use ethereum_consensus::{
