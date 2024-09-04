@@ -154,7 +154,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                     .get_eip1186_proof(*address, storage_keys)
                     .await
                     .context("eth_getProof failed")?;
-                add_proof(&mut proofs, proof).context("invalid eth_getProof response")?;
+                add_proof(proofs, proof).context("invalid eth_getProof response")?;
             }
         }
 

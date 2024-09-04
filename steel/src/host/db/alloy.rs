@@ -53,10 +53,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
     /// Creates a new AlloyDb instance, with a [Provider] and a block.
     ///
     /// This will panic if called outside the context of a Tokio runtime.
-    pub fn new(provider: P, block_number: BlockNumber) -> Self {
+    pub fn new(provider: P, config: ProviderConfig, block_number: BlockNumber) -> Self {
         Self {
             provider,
-            provider_config: ProviderConfig::default(),
+            provider_config: config,
             block_number,
             handle: Handle::current(),
             contracts: HashMap::new(),
