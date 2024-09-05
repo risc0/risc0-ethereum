@@ -31,7 +31,7 @@ use alloy::{
     },
 };
 use anyhow::{anyhow, Context, Result};
-use db::{AlloyDb, TraceDb};
+use db::{AlloyDb, ProofDb, ProviderConfig};
 use url::Url;
 
 pub mod db;
@@ -40,9 +40,9 @@ pub mod db;
 pub type BlockNumberOrTag = alloy::rpc::types::BlockNumberOrTag;
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<D, H> = EvmEnv<TraceDb<D>, H>;
+pub(crate) type HostEvmEnv<D, H> = EvmEnv<ProofDb<D>, H>;
 
-impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
+impl EthEvmEnv<ProofDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
     #[deprecated(since = "0.12.0", note = "use `EthEvmEnv::builder().rpc()` instead")]
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
@@ -54,7 +54,7 @@ impl EthEvmEnv<TraceDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>
     }
 }
 
-impl<T, N, P, H> EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>
+impl<T, N, P, H> EvmEnv<ProofDb<AlloyDb<T, N, P>>, H>
 where
     T: Transport + Clone,
     N: Network,
@@ -105,6 +105,7 @@ impl<H> EvmEnv<(), H> {
     pub fn builder() -> EvmEnvBuilder<NoProvider, H> {
         EvmEnvBuilder {
             provider: NoProvider,
+            provider_config: ProviderConfig::default(),
             block: BlockNumberOrTag::Latest,
             phantom: PhantomData,
         }
@@ -115,6 +116,7 @@ impl<H> EvmEnv<(), H> {
 #[derive(Clone, Debug)]
 pub struct EvmEnvBuilder<P, H> {
     provider: P,
+    provider_config: ProviderConfig,
     block: BlockNumberOrTag,
     phantom: PhantomData<H>,
 }
@@ -139,11 +141,11 @@ impl<H: EvmBlockHeader> EvmEnvBuilder<NoProvider, H> {
         H: EvmBlockHeader + TryFrom<RpcHeader>,
         <H as TryFrom<RpcHeader>>::Error: Display,
     {
-        let Self { block, phantom, .. } = self;
         EvmEnvBuilder {
             provider,
-            block,
-            phantom,
+            provider_config: self.provider_config,
+            block: self.block,
+            phantom: self.phantom,
         }
     }
 }
@@ -160,8 +162,17 @@ impl<P, H> EvmEnvBuilder<P, H> {
         self
     }
 
+    /// Sets the max number of storage keys to request in a single `eth_getProof` call.
+    ///
+    /// The optimal number depends on the RPC node and its configuration, but the default is 1000.
+    pub fn eip1186_proof_chunk_size(mut self, chunk_size: usize) -> Self {
+        assert_ne!(chunk_size, 0, "chunk size must be non-zero");
+        self.provider_config.eip1186_proof_chunk_size = chunk_size;
+        self
+    }
+
     /// Builds the new provable [EvmEnv].
-    pub async fn build<T, N>(self) -> Result<EvmEnv<TraceDb<AlloyDb<T, N, P>>, H>>
+    pub async fn build<T, N>(self) -> Result<EvmEnv<ProofDb<AlloyDb<T, N, P>>, H>>
     where
         T: Transport + Clone,
         N: Network,
@@ -182,7 +193,11 @@ impl<P, H> EvmEnvBuilder<P, H> {
         let sealed_header = header.seal_slow();
         log::info!("Environment initialized for block {}", sealed_header.seal());
 
-        let db = TraceDb::new(AlloyDb::new(self.provider, sealed_header.seal()));
+        let db = ProofDb::new(AlloyDb::new(
+            self.provider,
+            self.provider_config,
+            sealed_header.seal(),
+        ));
 
         Ok(EvmEnv::new(db, sealed_header))
     }
