@@ -42,5 +42,47 @@ Options:
           Print version
 ```
 
+## Vote Data Tools
+
+This repository contains two Rust scripts for handling voting-related operations:
+
+1. `generate_vote_data.rs`: Generates vote data for a proposal.
+2. `generate_proposal_id.rs`: Generates a proposal ID.
+
+## Usage
+
+### Generate Vote Data
+
+```
+cargo run --bin generate_vote_data -- --nonce <NONCE> --proposal-id <PROPOSAL_ID> --support <SUPPORT>
+```
+
+Where `<SUPPORT>` is one of: `against`, `for`, or `abstain`.
+
+### Generate Proposal ID
+
+```
+cargo run --bin generate_proposal_id
+```
+
+## Requirements
+
+- Rust
+- Required dependencies (see `Cargo.toml`)
+
+## Deployment-specific Configuration
+
+These scripts contain hardcoded values that need to be adjusted for your specific deployment:
+
+1. In `generate_vote_data.rs`:
+   - `voter_address`: Currently set to `"4DAfB91f6682136032C004768837e60Bc099E52C"`
+   - `verifyingContract` in `build_domain_separator()`: Currently set to `"5991A2dF15A8F6A256D3Ec51E99254Cd3fb576A9"` (RiscZeroGovernor address)
+   - `chainId`: Currently set to `31337` (local Hardhat/Foundry chain)
+
+2. In `generate_proposal_id.rs`:
+   - The target address in `create_proposal_params()`: Currently set to `"0000000000000000000000000000000000000004"`
+
+Ensure you update these values to match your specific deployment environment before using the scripts.
+
 [proving-options]: https://dev.risczero.com/api/generating-proofs/proving-options
 [publisher]: ./src/bin/publisher.rs
