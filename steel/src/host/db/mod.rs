@@ -16,7 +16,9 @@
 //!
 //! [Database]: revm::Database
 mod alloy;
-mod trace;
+mod proof;
+mod provider;
 
 pub use alloy::AlloyDb;
-pub use trace::TraceDb;
+pub use proof::ProofDb;
+pub(crate) use provider::{ProviderConfig, ProviderDb};

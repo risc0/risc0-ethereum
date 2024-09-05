@@ -87,7 +87,6 @@ mod host {
         ethereum::EthBlockHeader,
         host::{db::AlloyDb, HostEvmEnv},
     };
-
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
