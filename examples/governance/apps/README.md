@@ -53,7 +53,7 @@ This repository contains two Rust scripts for handling voting-related operations
 
 ### Generate Vote Data
 
-```
+```sh
 cargo run --bin generate_vote_data -- --nonce <NONCE> --proposal-id <PROPOSAL_ID> --support <SUPPORT>
 ```
 
@@ -61,7 +61,7 @@ Where `<SUPPORT>` is one of: `against`, `for`, or `abstain`.
 
 ### Generate Proposal ID
 
-```
+```sh
 cargo run --bin generate_proposal_id
 ```
 
