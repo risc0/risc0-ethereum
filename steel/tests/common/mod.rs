@@ -14,7 +14,9 @@
 
 use std::fmt::Debug;
 
-use alloy::{network::Ethereum, providers::Provider, transports::Transport};
+use alloy::{
+    eips::eip2930::AccessList, network::Ethereum, providers::Provider, transports::Transport,
+};
 use alloy_primitives::{Address, Sealable, U256};
 use alloy_sol_types::SolCall;
 use once_cell::sync::Lazy;
@@ -48,8 +50,11 @@ where
 
     let preflight_result = {
         let mut preflight = Contract::preflight(address, &mut env);
-        let call_builder = preflight.call_builder(&call);
-        options.apply(call_builder).call().await.unwrap()
+        let mut builder = preflight.call_builder(&call);
+        if let Some(access_list) = options.access_list.clone() {
+            builder = builder.prefetch_access_list(access_list).await.unwrap();
+        }
+        options.apply(builder).call().await.unwrap()
     };
 
     let input = env.into_input().await.unwrap();
@@ -81,6 +86,7 @@ pub struct CallOptions {
     from: Option<Address>,
     gas: Option<u64>,
     gas_price: Option<U256>,
+    access_list: Option<AccessList>,
 }
 
 #[allow(dead_code)]
@@ -103,6 +109,12 @@ impl CallOptions {
     pub fn with_gas_price(gas_price: U256) -> Self {
         Self {
             gas_price: Some(gas_price),
+            ..Default::default()
+        }
+    }
+    pub fn with_access_list(access_list: AccessList) -> Self {
+        Self {
+            access_list: Some(access_list),
             ..Default::default()
         }
     }
