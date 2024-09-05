@@ -21,6 +21,7 @@ use anyhow::{ensure, Result};
 use revm::Database;
 
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct ProviderConfig {
     /// Max number of storage keys to request in a single `eth_getProof` call.
     pub eip1186_proof_chunk_size: usize,
