@@ -73,15 +73,16 @@ pub mod host {
 
     use super::BlockInput;
     use crate::{
-        host::{db::AlloyDb, HostEvmEnv},
+        host::{
+            db::{AlloyDb, ProviderDb},
+            HostEvmEnv,
+        },
         EvmBlockHeader,
     };
     use alloy::{
         network::Network, providers::Provider, rpc::types::Header as RpcHeader,
         transports::Transport,
     };
-
-    use crate::host::db::ProviderDb;
     use anyhow::{anyhow, ensure};
     use log::debug;
 
