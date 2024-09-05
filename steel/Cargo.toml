@@ -12,16 +12,16 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-alloy = { workspace = true, optional = true }
-alloy-consensus = { workspace = true, features = ["serde"] }
-alloy-primitives = { workspace = true }
+alloy = { workspace = true, optional = true, features = ["eips", "network", "provider-http", "rpc-types"] }
+alloy-consensus = { workspace = true }
+alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
 alloy-rlp-derive = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
-nybbles = { workspace = true }
+nybbles = { workspace = true, features = ["serde"] }
 once_cell = { workspace = true }
 reqwest = { workspace = true, optional = true }
 revm = { workspace = true, features = ["serde"] }
@@ -33,7 +33,7 @@ tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 
 [dev-dependencies]
-alloy = { workspace = true, features = ["node-bindings"] }
+alloy = { workspace = true, features = ["contract", "node-bindings"] }
 alloy-trie = { workspace = true }
 bincode = { workspace = true }
 risc0-steel = { path = ".", features = ["host"] }
