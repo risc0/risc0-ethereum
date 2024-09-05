@@ -19,8 +19,6 @@ use std::{
     mem,
 };
 
-#[cfg(feature = "host")]
-use crate::host::HostEvmEnv;
 use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
@@ -97,30 +95,6 @@ impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
     }
 }
 
-#[cfg(feature = "host")]
-impl<'a, D, H> Contract<&'a mut HostEvmEnv<D, H>>
-where
-    D: Database,
-{
-    /// Constructor for preflighting calls to an Ethereum contract on the host.
-    ///
-    /// Initializes the environment for calling functions on the Ethereum contract, fetching
-    /// necessary data via the [Provider], and generating a storage proof for any accessed
-    /// elements using [EvmEnv::into_input].
-    ///
-    /// [Provider]: alloy::providers::Provider
-    /// [EvmEnv::into_input]: crate::EvmEnv::into_input
-    /// [EvmEnv]: crate::EvmEnv
-    pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H>) -> Self {
-        Self { address, env }
-    }
-
-    /// Initializes a call builder to execute a call on the contract.
-    pub fn call_builder<C: SolCall>(&mut self, call: &C) -> CallBuilder<C, &mut HostEvmEnv<D, H>> {
-        CallBuilder::new(self.env, self.address, call)
-    }
-}
-
 /// A builder for calling an Ethereum contract.
 ///
 /// Once configured, call with [CallBuilder::call].
@@ -178,43 +152,130 @@ impl<C, E> CallBuilder<C, E> {
 }
 
 #[cfg(feature = "host")]
-impl<'a, C, D, H> CallBuilder<C, &'a mut HostEvmEnv<D, H>>
-where
-    C: SolCall + Send + 'static,
-    <C as SolCall>::Return: Send,
-    D: Database + Send + 'static,
-    <D as Database>::Error: Display,
-    H: EvmBlockHeader + Clone + Send + 'static,
-{
-    /// Executes the call with a [EvmEnv] constructed with [Contract::preflight].
-    ///
-    /// This uses [tokio::task::spawn_blocking] to run the blocking revm execution.
-    ///  
-    /// [EvmEnv]: crate::EvmEnv
-    pub async fn call(self) -> anyhow::Result<C::Return> {
-        log::info!(
-            "Executing preflight calling '{}' on {}",
-            C::SIGNATURE,
-            self.tx.to
-        );
+mod host {
+    use super::*;
+    use crate::host::{
+        db::{AlloyDb, ProviderDb},
+        HostEvmEnv,
+    };
+    use alloy::{
+        eips::eip2930::AccessList,
+        network::{Network, TransactionBuilder},
+        providers::Provider,
+        transports::Transport,
+    };
+    use anyhow::{anyhow, Context, Result};
 
-        let cfg = self.env.cfg_env.clone();
-        let header = self.env.header.inner().clone();
-        // we cannot clone the database, so it gets moved in and out of the task
-        let db = self.env.db.take().unwrap();
+    impl<'a, D: Database, H> Contract<&'a mut HostEvmEnv<D, H>> {
+        /// Constructor for preflighting calls to an Ethereum contract on the host.
+        ///
+        /// Initializes the environment for calling functions on the Ethereum contract, fetching
+        /// necessary data via the [Provider], and generating a storage proof for any accessed
+        /// elements using [EvmEnv::into_input].
+        ///
+        /// [EvmEnv::into_input]: crate::EvmEnv::into_input
+        /// [EvmEnv]: crate::EvmEnv
+        pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H>) -> Self {
+            Self { address, env }
+        }
 
-        let (res, db) = tokio::task::spawn_blocking(move || {
-            let mut evm = new_evm(db, cfg, header);
-            let res = self.tx.transact(&mut evm);
-            let (db, _) = evm.into_db_and_env_with_handler_cfg();
+        /// Initializes a call builder to execute a call on the contract.
+        pub fn call_builder<C: SolCall>(
+            &mut self,
+            call: &C,
+        ) -> CallBuilder<C, &mut HostEvmEnv<D, H>> {
+            CallBuilder::new(self.env, self.address, call)
+        }
+    }
 
-            (res, db)
-        })
-        .await?;
+    impl<'a, C, T, N, P, H> CallBuilder<C, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H>>
+    where
+        T: Transport + Clone,
+        N: Network,
+        P: Provider<T, N> + Send + 'static,
+        C: SolCall + Send + 'static,
+        <C as SolCall>::Return: Send,
+        H: EvmBlockHeader + Clone + Send + 'static,
+    {
+        /// Fetches all the EIP-1186 storage proofs from the `access_list`. This can help to
+        /// drastically reduce the number of RPC calls required during execution, as
+        /// `eth_getStorageAt` calls are then only required for storage accesses not included in the
+        /// list. This does *not* set the access list as part of the transaction (as specified in
+        /// EIP-2930), and thus can only be specified during preflight on the host.
+        pub async fn prefetch_access_list(self, access_list: AccessList) -> Result<Self> {
+            let db = self.env.db.as_mut().unwrap();
+            db.add_access_list(access_list).await?;
 
-        self.env.db = Some(db);
+            Ok(self)
+        }
 
-        res.map_err(|err| anyhow::anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
+        /// Executes the call using an [EvmEnv] constructed with [Contract::preflight].
+        ///
+        /// This uses [tokio::task::spawn_blocking] to run the blocking revm execution.
+        ///
+        /// [EvmEnv]: crate::EvmEnv
+        pub async fn call(self) -> Result<C::Return> {
+            log::info!(
+                "Executing preflight calling '{}' on {}",
+                C::SIGNATURE,
+                self.tx.to
+            );
+
+            let cfg = self.env.cfg_env.clone();
+            let header = self.env.header.inner().clone();
+            // we cannot clone the database, so it gets moved in and out of the task
+            let db = self.env.db.take().unwrap();
+
+            let (result, db) = tokio::task::spawn_blocking(move || {
+                let mut evm = new_evm(db, cfg, header);
+                let result = self.tx.transact(&mut evm);
+                let (db, _) = evm.into_db_and_env_with_handler_cfg();
+
+                (result, db)
+            })
+            .await
+            .context("EVM execution panicked")?;
+
+            self.env.db = Some(db);
+
+            result.map_err(|err| anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
+        }
+
+        /// Automatically prefetches the access list before executing the call using an [EvmEnv]
+        /// constructed with [Contract::preflight].
+        ///
+        /// This is equivalent to calling [CallBuilder::prefetch_access_list] with the EIP-2930
+        /// access list as returned by the corresponding `eth_createAccessList` RPC and
+        /// [CallBuilder::call]. See the corresponding methods for more information.
+        ///
+        /// [EvmEnv]: crate::EvmEnv
+        pub async fn call_with_prefetch(self) -> Result<C::Return> {
+            let access_list = {
+                let db = self.env.db.as_mut().unwrap();
+
+                let tx = <N as Network>::TransactionRequest::default()
+                    .with_from(self.tx.caller)
+                    .with_gas_limit(self.tx.gas_limit as u128)
+                    .with_gas_price(self.tx.gas_price.to())
+                    .with_to(self.tx.to)
+                    .with_value(self.tx.value)
+                    .with_input(self.tx.data.clone());
+
+                let provider = db.inner().provider();
+                let access_list = provider
+                    .create_access_list(&tx)
+                    .hash(db.inner().block_hash())
+                    .await
+                    .context("eth_createAccessList failed")?;
+                access_list.access_list
+            };
+
+            self.prefetch_access_list(access_list)
+                .await
+                .context("prefetching access list failed")?
+                .call()
+                .await
+        }
     }
 }
 
