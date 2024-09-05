@@ -31,7 +31,7 @@ use alloy::{
     },
 };
 use anyhow::{anyhow, Context, Result};
-use db::{AlloyDb, ProofDb};
+use db::{AlloyDb, ProofDb, ProviderConfig};
 use url::Url;
 
 pub mod db;
@@ -105,6 +105,7 @@ impl<H> EvmEnv<(), H> {
     pub fn builder() -> EvmEnvBuilder<NoProvider, H> {
         EvmEnvBuilder {
             provider: NoProvider,
+            provider_config: ProviderConfig::default(),
             block: BlockNumberOrTag::Latest,
             phantom: PhantomData,
         }
@@ -115,6 +116,7 @@ impl<H> EvmEnv<(), H> {
 #[derive(Clone, Debug)]
 pub struct EvmEnvBuilder<P, H> {
     provider: P,
+    provider_config: ProviderConfig,
     block: BlockNumberOrTag,
     phantom: PhantomData<H>,
 }
@@ -139,11 +141,11 @@ impl<H: EvmBlockHeader> EvmEnvBuilder<NoProvider, H> {
         H: EvmBlockHeader + TryFrom<RpcHeader>,
         <H as TryFrom<RpcHeader>>::Error: Display,
     {
-        let Self { block, phantom, .. } = self;
         EvmEnvBuilder {
             provider,
-            block,
-            phantom,
+            provider_config: self.provider_config,
+            block: self.block,
+            phantom: self.phantom,
         }
     }
 }
@@ -157,6 +159,15 @@ impl<P, H> EvmEnvBuilder<P, H> {
     /// Sets the block number (or tag - "latest", "earliest", "pending").
     pub fn block_number_or_tag(mut self, block: BlockNumberOrTag) -> Self {
         self.block = block;
+        self
+    }
+
+    /// Sets the max number of storage keys to request in a single `eth_getProof` call.
+    ///
+    /// The optimal number depends on the RPC node and its configuration, but the default is 1000.
+    pub fn eip1186_proof_chunk_size(mut self, chunk_size: usize) -> Self {
+        assert_ne!(chunk_size, 0, "chunk size must be non-zero");
+        self.provider_config.eip1186_proof_chunk_size = chunk_size;
         self
     }
 
@@ -181,7 +192,11 @@ impl<P, H> EvmEnvBuilder<P, H> {
             .map_err(|err| anyhow!("header invalid: {}", err))?;
         log::info!("Environment initialized for block {}", header.number());
 
-        let db = ProofDb::new(AlloyDb::new(self.provider, header.number()));
+        let db = ProofDb::new(AlloyDb::new(
+            self.provider,
+            self.provider_config,
+            header.number(),
+        ));
 
         Ok(EvmEnv::new(db, header.seal_slow()))
     }

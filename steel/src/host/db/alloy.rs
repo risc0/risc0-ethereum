@@ -14,7 +14,7 @@
 
 use std::{collections::HashMap, future::IntoFuture, marker::PhantomData};
 
-use super::provider::ProviderDb;
+use super::provider::{ProviderConfig, ProviderDb};
 use alloy::{
     network::Network,
     providers::Provider,
@@ -37,6 +37,8 @@ use tokio::runtime::Handle;
 pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
     /// Provider to fetch the data from.
     provider: P,
+    /// Configuration of the provider.
+    provider_config: ProviderConfig,
     /// Block number on which the queries will be based on.
     block_number: BlockNumber,
     /// Handle to the Tokio runtime.
@@ -51,9 +53,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
     /// Creates a new AlloyDb instance, with a [Provider] and a block.
     ///
     /// This will panic if called outside the context of a Tokio runtime.
-    pub fn new(provider: P, block_number: BlockNumber) -> Self {
+    pub fn new(provider: P, config: ProviderConfig, block_number: BlockNumber) -> Self {
         Self {
             provider,
+            provider_config: config,
             block_number,
             handle: Handle::current(),
             contracts: HashMap::new(),
@@ -63,6 +66,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
 }
 
 impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> for AlloyDb<T, N, P> {
+    fn config(&self) -> &ProviderConfig {
+        &self.provider_config
+    }
+
     fn provider(&self) -> &P {
         &self.provider
     }
