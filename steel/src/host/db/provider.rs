@@ -20,6 +20,7 @@ use alloy_primitives::{Address, BlockNumber, StorageKey};
 use anyhow::{ensure, Result};
 use revm::Database;
 
+/// Additional configuration for a [Provider].
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct ProviderConfig {
