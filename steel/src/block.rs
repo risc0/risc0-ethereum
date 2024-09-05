@@ -102,7 +102,8 @@ pub mod host {
 
             // use the same provider as the database
             let provider = db.inner().provider();
-            let block_number = db.inner().block_number();
+            let block_hash = db.inner().block_hash();
+            assert_eq!(block_hash, env.header.seal(), "DB block mismatch");
 
             // retrieve EIP-1186 proofs for all accounts
             let mut proofs = Vec::new();
@@ -112,7 +113,7 @@ pub mod host {
                         *address,
                         storage_keys.iter().map(|v| StorageKey::from(*v)).collect(),
                     )
-                    .number(block_number)
+                    .hash(block_hash)
                     .await
                     .context("eth_getProof failed")?;
                 proofs.push(proof);
@@ -164,6 +165,7 @@ pub mod host {
             // retrieve ancestor block headers
             let mut ancestors = Vec::new();
             if let Some(&block_hash_min_number) = db.block_hash_numbers().iter().min() {
+                let block_number = env.header.number();
                 for number in (block_hash_min_number..block_number).rev() {
                     let rpc_block = provider
                         .get_block_by_number(number.into(), false)

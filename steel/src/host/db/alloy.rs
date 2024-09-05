@@ -19,7 +19,7 @@ use alloy::{
     providers::Provider,
     transports::{Transport, TransportError},
 };
-use alloy_primitives::{Address, BlockNumber, B256, U256};
+use alloy_primitives::{Address, BlockHash, B256, U256};
 use revm::{
     primitives::{AccountInfo, Bytecode, HashMap, KECCAK_EMPTY},
     Database,
@@ -36,8 +36,8 @@ use tokio::runtime::Handle;
 pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
     /// Provider to fetch the data from.
     provider: P,
-    /// Block number on which the queries will be based on.
-    block_number: BlockNumber,
+    /// Hash of the block on which the queries will be based.
+    block_hash: BlockHash,
     /// Handle to the Tokio runtime.
     handle: Handle,
     /// Bytecode cache to allow querying bytecode by hash instead of address.
@@ -50,10 +50,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
     /// Create a new AlloyDb instance, with a [Provider] and a block.
     ///
     /// This will panic if called outside the context of a Tokio runtime.
-    pub fn new(provider: P, block_number: BlockNumber) -> Self {
+    pub fn new(provider: P, block_hash: BlockHash) -> Self {
         Self {
             provider,
-            block_number,
+            block_hash,
             handle: Handle::current(),
             contracts: HashMap::new(),
             phantom: PhantomData,
@@ -66,8 +66,8 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
     }
 
     /// Returns the block number used for the queries.
-    pub fn block_number(&self) -> BlockNumber {
-        self.block_number
+    pub fn block_hash(&self) -> BlockHash {
+        self.block_hash
     }
 }
 
@@ -79,9 +79,9 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
             let get_nonce = self
                 .provider
                 .get_transaction_count(address)
-                .number(self.block_number);
-            let get_balance = self.provider.get_balance(address).number(self.block_number);
-            let get_code = self.provider.get_code_at(address).number(self.block_number);
+                .hash(self.block_hash);
+            let get_balance = self.provider.get_balance(address).hash(self.block_hash);
+            let get_code = self.provider.get_code_at(address).hash(self.block_hash);
 
             tokio::join!(
                 get_nonce.into_future(),
@@ -132,7 +132,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         let storage = self.handle.block_on(
             self.provider
                 .get_storage_at(address, index)
-                .number(self.block_number)
+                .hash(self.block_hash)
                 .into_future(),
         )?;
 
