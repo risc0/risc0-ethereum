@@ -183,7 +183,7 @@ Set up your [environment](#environment) for the target chain, as detailed above.
 2. Dry the transaction to cancel the operation.
 
     ```zsh
-    bash contracts/script/manage CancelOperation
+    bash contracts/script/manage CancelOperation -f
     ```
 
 3. Run the command again with `--broadcast`
