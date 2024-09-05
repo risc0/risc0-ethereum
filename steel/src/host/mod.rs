@@ -190,14 +190,15 @@ impl<P, H> EvmEnvBuilder<P, H> {
             .header
             .try_into()
             .map_err(|err| anyhow!("header invalid: {}", err))?;
-        log::info!("Environment initialized for block {}", header.number());
+        let sealed_header = header.seal_slow();
+        log::info!("Environment initialized for block {}", sealed_header.seal());
 
         let db = ProofDb::new(AlloyDb::new(
             self.provider,
             self.provider_config,
-            header.number(),
+            sealed_header.seal(),
         ));
 
-        Ok(EvmEnv::new(db, header.seal_slow()))
+        Ok(EvmEnv::new(db, sealed_header))
     }
 }

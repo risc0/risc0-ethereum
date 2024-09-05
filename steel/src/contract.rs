@@ -264,7 +264,7 @@ mod host {
                 let provider = db.inner().provider();
                 let access_list = provider
                     .create_access_list(&tx)
-                    .number(db.inner().block_number())
+                    .hash(db.inner().block_hash())
                     .await
                     .context("eth_createAccessList failed")?;
                 access_list.access_list

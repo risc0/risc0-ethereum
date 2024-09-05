@@ -81,6 +81,7 @@ pub mod host {
         transports::Transport,
     };
 
+    use crate::host::db::ProviderDb;
     use anyhow::{anyhow, ensure};
     use log::debug;
 
@@ -97,6 +98,11 @@ pub mod host {
             <H as TryFrom<RpcHeader>>::Error: Display,
         {
             let mut db = env.db.unwrap();
+            assert_eq!(
+                db.inner().block_hash(),
+                env.header.seal(),
+                "DB block mismatch"
+            );
 
             let (state_trie, storage_tries) = db.state_proof().await?;
             ensure!(
@@ -109,7 +115,7 @@ pub mod host {
 
             // retrieve ancestor block headers
             let mut ancestors = Vec::new();
-            for rlp_header in db.ancestor_proof().await? {
+            for rlp_header in db.ancestor_proof(env.header.number()).await? {
                 let header: H = rlp_header
                     .try_into()
                     .map_err(|err| anyhow!("header invalid: {}", err))?;

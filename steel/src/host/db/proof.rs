@@ -115,12 +115,12 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 
     /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
-    pub async fn ancestor_proof(&self) -> Result<Vec<Header>> {
+    pub async fn ancestor_proof(&self, block_number: BlockNumber) -> Result<Vec<Header>> {
         let mut ancestors = Vec::new();
         if let Some(&block_hash_min_number) = self.block_hash_numbers.iter().min() {
-            let provider = self.inner.provider();
-            let block_number = self.inner.block_number();
+            assert!(block_hash_min_number <= block_number);
 
+            let provider = self.inner.provider();
             for number in (block_hash_min_number..block_number).rev() {
                 let rpc_block = provider
                     .get_block_by_number(number.into(), false)

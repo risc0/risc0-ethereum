@@ -16,7 +16,7 @@ use alloy::{
     network::Network, providers::Provider, rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
 };
-use alloy_primitives::{Address, BlockNumber, StorageKey};
+use alloy_primitives::{Address, BlockHash, StorageKey};
 use anyhow::{ensure, Result};
 use revm::Database;
 
@@ -49,8 +49,8 @@ where
     /// Returns the [Provider].
     fn provider(&self) -> &P;
 
-    /// Returns the block number used for the queries.
-    fn block_number(&self) -> BlockNumber;
+    /// Returns the block hash used for the queries.
+    fn block_hash(&self) -> BlockHash;
 
     /// Get the EIP-1186 account and storage merkle proofs.
     async fn get_eip1186_proof(
@@ -58,7 +58,7 @@ where
         address: Address,
         mut keys: Vec<StorageKey>,
     ) -> Result<EIP1186AccountProofResponse> {
-        let number = self.block_number();
+        let hash = self.block_hash();
 
         // for certain RPC nodes it seemed beneficial when the keys are in the correct order
         keys.sort_unstable();
@@ -68,13 +68,13 @@ where
         let mut account_proof = self
             .provider()
             .get_proof(address, iter.next().unwrap_or_default().into())
-            .number(number)
+            .hash(hash)
             .await?;
         for keys in iter {
             let proof = self
                 .provider()
                 .get_proof(address, keys.into())
-                .number(number)
+                .hash(hash)
                 .await?;
             // only the keys have changed, the account proof should not change
             ensure!(
