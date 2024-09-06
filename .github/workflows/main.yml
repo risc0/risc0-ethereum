@@ -132,7 +132,9 @@ jobs:
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
-      - run: rm -rf /opt/actions-runner/_work/risc0-ethereum/risc0-ethereum/.git/modules/examples/message-passing/optimism/shallow.lock
+      - name: Clean the repo
+        working-directory: ${{ github.event.repository.name }}
+        run: find . -wholename "*.git/modules/*shallow.lock" -type f -delete
       - uses: actions/checkout@v4
         with:
           submodules: recursive
