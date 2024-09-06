@@ -118,50 +118,42 @@ jobs:
       - run: sccache --show-stats
 
   op-message-passing:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
-    strategy:
-      # Run only on Linux with GPU. Additional coverage is marginal, and GPU is fastest.
-      matrix:
-        include:
-          - os: Linux
-            feature: cuda
-            device: nvidia_rtx_a5000
+    # Run only on Linux with GPU.
+    runs-on: [ self-hosted, prod, "Linux", "nvidia_rtx_a5000" ]
     defaults:
       run:
         working-directory: examples/message-passing
     steps:
-      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
-      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Load versions.json
+      - name: Load OP versions
         run: jq -r 'to_entries[] | ["version_\(.key)",.value] | join("=")' optimism/versions.json >> "$GITHUB_ENV"
-      - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.version_go }}
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10' 
+          python-version: '3.10'
+      - uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
+          key: Linux-cuda
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-${{ env.version_foundry }}
       - name: Pull and tag OP docker images
         run: |
-          docker pull "$IMAGE_BASE_PREFIX/op-node:v1.9.1"
-          docker pull "$IMAGE_BASE_PREFIX/op-proposer:v1.9.1"
-          docker pull "$IMAGE_BASE_PREFIX/op-batcher:v1.9.1"
-          docker tag "$IMAGE_BASE_PREFIX/op-node:v1.9.1" "$IMAGE_BASE_PREFIX/op-node:devnet"
-          docker tag "$IMAGE_BASE_PREFIX/op-proposer:v1.9.1" "$IMAGE_BASE_PREFIX/op-proposer:devnet"
-          docker tag "$IMAGE_BASE_PREFIX/op-batcher:v1.9.1" "$IMAGE_BASE_PREFIX/op-batcher:devnet"
+          docker pull "$IMAGE_PREFIX/op-node:$OP_STACK_VERSION"
+          docker pull "$IMAGE_PREFIX/op-proposer:$OP_STACK_VERSION"
+          docker pull "$IMAGE_PREFIX/op-batcher:$OP_STACK_VERSION"
+          docker tag "$IMAGE_PREFIX/op-node:$OP_STACK_VERSION" "$IMAGE_PREFIX/op-node:devnet"
+          docker tag "$IMAGE_PREFIX/op-proposer:$OP_STACK_VERSION" "$IMAGE_PREFIX/op-proposer:devnet"
+          docker tag "$IMAGE_PREFIX/op-batcher:$OP_STACK_VERSION" "$IMAGE_PREFIX/op-batcher:devnet"
         env:
-          IMAGE_BASE_PREFIX: "us-docker.pkg.dev/oplabs-tools-artifacts/images"
+          IMAGE_PREFIX: "us-docker.pkg.dev/oplabs-tools-artifacts/images"
+          OP_STACK_VERSION: 'v1.9.1'
       - name: Bring up the OP stack
         run: make -C optimism devnet-up
         env:
@@ -172,11 +164,12 @@ jobs:
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: ${{ matrix.feature }}
+          features: cuda
       - run: cargo build
-      - run: forge test
+      - run: forge test -vvv
       - name: Run E2E test
         run: ./test-local-devnet.sh
+      - run: sccache --show-stats
 
   examples:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
