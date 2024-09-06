@@ -46,9 +46,7 @@ contract Deploy is Script, RiscZeroCheats {
         uint256 deployerKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
 
         if (deployerAddr != address(0) && deployerKey != uint256(0)) {
-            revert(
-                "only one of DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY should be set"
-            );
+            revert("only one of DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY should be set");
         }
         if (deployerAddr != address(0)) {
             vm.startBroadcast(deployerAddr);
@@ -56,14 +54,10 @@ contract Deploy is Script, RiscZeroCheats {
             vm.startBroadcast(deployerKey);
         } else if (block.chainid == 31337) {
             // On an Anvil local testnet, use the first private key by default.
-            deployerKey = uint256(
-                0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-            );
+            deployerKey = uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80);
             vm.startBroadcast(deployerKey);
         } else {
-            revert(
-                "specify a deployer with either DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY"
-            );
+            revert("specify a deployer with either DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY");
         }
     }
 
@@ -77,14 +71,8 @@ contract Deploy is Script, RiscZeroCheats {
             console2.log("Using IRiscZeroVerifier at ", address(verifierAddr));
             verifier = IRiscZeroVerifier(verifierAddr);
         } else {
-            verifier = new RiscZeroGroth16Verifier(
-                ControlID.CONTROL_ROOT,
-                ControlID.BN254_CONTROL_ID
-            );
-            console2.log(
-                "Deployed RiscZeroGroth16Verifier to ",
-                address(verifier)
-            );
+            verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+            console2.log("Deployed RiscZeroGroth16Verifier to ", address(verifier));
         }
         // Deploy the IVotes token used to grant voting rights.
         IVotes token;
@@ -100,12 +88,8 @@ contract Deploy is Script, RiscZeroCheats {
 
         // Deploy the RiscZeroGovernor.
         // importing ImageID from auto-generated ImageID.sol
-        bytes32 imageId = ImageID.FINALIZE_VOTES_ID; 
-        RiscZeroGovernor gov = new RiscZeroGovernor(
-            token,
-            imageId,
-            verifier
-        );
+        bytes32 imageId = ImageID.FINALIZE_VOTES_ID;
+        RiscZeroGovernor gov = new RiscZeroGovernor(token, imageId, verifier);
         console2.log("Deployed RiscZeroGovernor to ", address(gov));
 
         vm.stopBroadcast();

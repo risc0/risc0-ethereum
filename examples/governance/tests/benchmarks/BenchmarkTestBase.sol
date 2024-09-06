@@ -46,49 +46,33 @@ contract BenchmarkTestBase is Test {
         voteToken = new VoteToken();
         mockVerifier = new RiscZeroMockVerifier(MOCK_SELECTOR);
         baselineGovernor = new BaselineGovernor(voteToken);
-        riscZeroGovernor = new RiscZeroGovernor(
-            voteToken,
-            IMAGE_ID,
-            mockVerifier
-        );
+        riscZeroGovernor = new RiscZeroGovernor(voteToken, IMAGE_ID, mockVerifier);
     }
 
     function generateAccounts(uint256 noOfAccounts) public noGasMetering {
         for (uint256 i = 0; i < noOfAccounts; i++) {
-            string memory base = string(
-                abi.encodePacked("yolo", Strings.toString(i))
-            );
+            string memory base = string(abi.encodePacked("yolo", Strings.toString(i)));
             (address tempAddress, uint256 tempPk) = makeAddrAndKey(base);
             accounts.push(tempAddress);
             keys[tempAddress] = tempPk;
         }
     }
 
-    function getSignature(
-        uint8 support,
-        uint256 proposalId,
-        address signer,
-        uint256 privateKey
-    ) internal noGasMetering returns (bytes memory signature) {
+    function getSignature(uint8 support, uint256 proposalId, address signer, uint256 privateKey)
+        internal
+        noGasMetering
+        returns (bytes memory signature)
+    {
         bytes32 digest = baselineGovernor.voteHash(proposalId, support, signer);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
         signature = abi.encodePacked(r, s, v);
     }
 
-    function generateSignatures(
-        uint256 proposalId,
-        uint256 noOfSignatures,
-        bool isBaseline
-    ) internal noGasMetering {
+    function generateSignatures(uint256 proposalId, uint256 noOfSignatures, bool isBaseline) internal noGasMetering {
         for (uint256 i = 0; i < noOfSignatures; i++) {
             address currentAddress = accounts[i];
-            bytes memory signature = getSignature(
-                forSupport,
-                proposalId,
-                currentAddress,
-                keys[currentAddress]
-            );
+            bytes memory signature = getSignature(forSupport, proposalId, currentAddress, keys[currentAddress]);
 
             if (isBaseline) {
                 baselineSignatures[currentAddress] = signature;
@@ -98,33 +82,26 @@ contract BenchmarkTestBase is Test {
         }
     }
 
-    function getJournal(
-        uint256 proposalId,
-        uint256 noOfAccounts
-    ) internal noGasMetering returns (bytes memory journal) {
-        (
-            bytes32 finalBallotBoxAccum,
-            bytes memory encodedBallots
-        ) = hashBallots(noOfAccounts);
+    function getJournal(uint256 proposalId, uint256 noOfAccounts)
+        internal
+        noGasMetering
+        returns (bytes memory journal)
+    {
+        (bytes32 finalBallotBoxAccum, bytes memory encodedBallots) = hashBallots(noOfAccounts);
 
-        journal = abi.encodePacked(
-            proposalId,
-            finalBallotBoxAccum,
-            encodedBallots
-        );
+        journal = abi.encodePacked(proposalId, finalBallotBoxAccum, encodedBallots);
     }
 
-    function getJournalDigest(
-        uint256 proposalId,
-        uint256 noOfAccounts
-    ) internal noGasMetering returns (bytes32 journalDigest) {
+    function getJournalDigest(uint256 proposalId, uint256 noOfAccounts)
+        internal
+        noGasMetering
+        returns (bytes32 journalDigest)
+    {
         bytes memory journal = getJournal(proposalId, noOfAccounts);
         journalDigest = sha256(journal);
     }
 
-    function hashBallots(
-        uint256 noOfAccounts
-    ) internal noGasMetering returns (bytes32, bytes memory) {
+    function hashBallots(uint256 noOfAccounts) internal noGasMetering returns (bytes32, bytes memory) {
         bytes memory encodedBallots;
         bytes32 ballotHash = 0x296dc540e823507aa12a2e7be3c9c01672a7d9bb7840214223e8758fdb2986c7;
 
@@ -132,12 +109,7 @@ contract BenchmarkTestBase is Test {
         for (uint256 i = 0; i < noOfAccounts; i++) {
             address currentAddress = accounts[i];
 
-            bytes memory encodedVote = abi.encodePacked(
-                uint16(0),
-                forSupport,
-                uint8(0),
-                currentAddress
-            );
+            bytes memory encodedVote = abi.encodePacked(uint16(0), forSupport, uint8(0), currentAddress);
 
             encodedBallots = bytes.concat(encodedBallots, encodedVote);
             ballotHash = sha256(bytes.concat(ballotHash, encodedVote));
@@ -149,12 +121,7 @@ contract BenchmarkTestBase is Test {
     function _createProposalParams()
         internal
         pure
-        returns (
-            address[] memory,
-            uint256[] memory,
-            bytes[] memory,
-            string memory
-        )
+        returns (address[] memory, uint256[] memory, bytes[] memory, string memory)
     {
         address[] memory targets = new address[](1);
         targets[0] = address(0x4);

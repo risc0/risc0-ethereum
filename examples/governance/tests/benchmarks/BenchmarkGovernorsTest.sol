@@ -49,19 +49,10 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         // metering for output
         uint256 gasUsed = gasleft();
 
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        baselineProposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        baselineProposalId = baselineGovernor.propose(targets, values, calldatas, description);
 
         generateSignatures(baselineProposalId, numAccounts, true);
 
@@ -71,12 +62,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         // cast votes
         uint256 expectedForVotes = 0;
         for (uint256 i = 0; i < numAccounts; i++) {
-            baselineGovernor.castVoteBySig(
-                baselineProposalId,
-                forSupport,
-                accounts[i],
-                baselineSignatures[accounts[i]]
-            );
+            baselineGovernor.castVoteBySig(baselineProposalId, forSupport, accounts[i], baselineSignatures[accounts[i]]);
 
             expectedForVotes += 100; // Each account has 100 voting power
             vm.roll(block.number + 1);
@@ -86,24 +72,12 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         vm.roll(block.number + baselineGovernor.votingPeriod() + 1);
 
         // execute proposal
-        baselineGovernor.execute(
-            targets,
-            values,
-            calldatas,
-            keccak256(bytes(description))
-        );
+        baselineGovernor.execute(targets, values, calldatas, keccak256(bytes(description)));
 
         gasUsed = gasUsed - gasleft();
         vm.writeLine(
             "tests/benchmarks/gas_data.csv",
-            string(
-                abi.encodePacked(
-                    "BaselineGovernor,",
-                    vm.toString(numAccounts),
-                    ",",
-                    vm.toString(gasUsed)
-                )
-            )
+            string(abi.encodePacked("BaselineGovernor,", vm.toString(numAccounts), ",", vm.toString(gasUsed)))
         );
 
         assertEq(
@@ -130,19 +104,10 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         // metering for output
         uint256 gasUsed = gasleft();
 
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
 
         // move to active voting period
         vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
@@ -158,19 +123,12 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         bytes32 journalDigest = getJournalDigest(proposalId, numAccounts);
 
         // mock prove
-        VerifierReceipt memory receipt = mockVerifier.mockProve(
-            ImageID.FINALIZE_VOTES_ID,
-            journalDigest
-        );
+        VerifierReceipt memory receipt = mockVerifier.mockProve(ImageID.FINALIZE_VOTES_ID, journalDigest);
 
         // mock call to verifier called in verifyAndFinalizeVotes()
         address verifierAddress = riscZeroGovernor.verifier.address;
-        bytes memory expectedCalldata = abi.encodeWithSelector(
-            IRiscZeroVerifier.verify.selector,
-            receipt.seal,
-            IMAGE_ID,
-            journalDigest
-        );
+        bytes memory expectedCalldata =
+            abi.encodeWithSelector(IRiscZeroVerifier.verify.selector, receipt.seal, IMAGE_ID, journalDigest);
 
         vm.mockCall(verifierAddress, expectedCalldata, abi.encode());
 
@@ -185,24 +143,12 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
         gasUsed += 250000;
 
         // execute proposal
-        riscZeroGovernor.execute(
-            targets,
-            values,
-            calldatas,
-            keccak256(bytes(description))
-        );
+        riscZeroGovernor.execute(targets, values, calldatas, keccak256(bytes(description)));
 
         gasUsed = gasUsed - gasleft();
         vm.writeLine(
             "tests/benchmarks/gas_data.csv",
-            string(
-                abi.encodePacked(
-                    "RiscZeroGovernor,",
-                    vm.toString(numAccounts),
-                    ",",
-                    vm.toString(gasUsed)
-                )
-            )
+            string(abi.encodePacked("RiscZeroGovernor,", vm.toString(numAccounts), ",", vm.toString(gasUsed)))
         );
 
         assertEq(

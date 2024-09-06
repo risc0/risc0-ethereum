@@ -44,19 +44,10 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
     }
 
     function testProposalCreation() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
 
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
         assertEq(
@@ -67,18 +58,9 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
     }
 
     function testVoting() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
 
         vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
 
@@ -86,29 +68,20 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
         vm.prank(alice);
         vm.expectEmit();
         emit VoteCast(alice, proposalId, aliceSupport, 0, "");
-        riscZeroGovernor.castVote(proposalId, aliceSupport); 
+        riscZeroGovernor.castVote(proposalId, aliceSupport);
 
         bobSupport = 0; // Vote against
         vm.prank(bob);
         vm.expectEmit();
         emit VoteCast(bob, proposalId, bobSupport, 0, "");
-        riscZeroGovernor.castVote(proposalId, bobSupport); 
+        riscZeroGovernor.castVote(proposalId, bobSupport);
     }
 
     function testVotingBySignature() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
-        
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
+
         // Transfer tokens from alice to the new voter address
         vm.prank(alice);
         voteToken.transfer(voterAddress, 100);
@@ -121,48 +94,23 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
 
         uint8 forSupport = 1; // 1 for 'For'
 
-        bytes32 digest = riscZeroGovernor.voteHash(
-            proposalId,
-            forSupport,
-            voterAddress
-        );
-        
+        bytes32 digest = riscZeroGovernor.voteHash(proposalId, forSupport, voterAddress);
+
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(voterPk, digest);
         bytes memory signature = abi.encode(r, s, v);
-        
-        bytes memory encoded = abi.encodePacked(
-            uint16(1),
-            forSupport,
-            v,
-            r,
-            s,
-            digest
-        );
-        
+
+        bytes memory encoded = abi.encodePacked(uint16(1), forSupport, v, r, s, digest);
+
         vm.expectEmit();
         emit CommittedBallot(proposalId, encoded);
-        riscZeroGovernor.castVoteBySig(
-            proposalId,
-            forSupport,
-            voterAddress,
-            signature
-        ); 
+        riscZeroGovernor.castVoteBySig(proposalId, forSupport, voterAddress, signature);
     }
 
     function testVerifyAndFinalizeVotes() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
 
         aliceSupport = 1;
         bobSupport = 0;
@@ -177,42 +125,23 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
 
         vm.roll(block.number + riscZeroGovernor.votingPeriod() + 1);
 
-        (
-            bytes32 finalBallotBoxAccum,
-            bytes memory encodedBallots
-        ) = hashBallots(aliceSupport, bobSupport);
+        (bytes32 finalBallotBoxAccum, bytes memory encodedBallots) = hashBallots(aliceSupport, bobSupport);
 
-        bytes memory journal = abi.encodePacked(
-            proposalId,
-            finalBallotBoxAccum,
-            encodedBallots
-        );
+        bytes memory journal = abi.encodePacked(proposalId, finalBallotBoxAccum, encodedBallots);
 
         // create mock receipt
         bytes32 journalDigest = sha256(journal);
-        VerifierReceipt memory receipt = mockVerifier.mockProve(
-            ImageID.FINALIZE_VOTES_ID,
-            journalDigest
-        );
+        VerifierReceipt memory receipt = mockVerifier.mockProve(ImageID.FINALIZE_VOTES_ID, journalDigest);
 
         // mock call to verifier called in verifyAndFinalizeVotes()
         address verifierAddress = riscZeroGovernor.verifier.address;
         bytes4 verifySelector = IRiscZeroVerifier.verify.selector;
-        bytes memory expectedCalldata = abi.encodeWithSelector(
-            verifySelector,
-            receipt.seal,
-            IMAGE_ID,
-            journalDigest
-        );
+        bytes memory expectedCalldata = abi.encodeWithSelector(verifySelector, receipt.seal, IMAGE_ID, journalDigest);
 
         vm.mockCall(verifierAddress, expectedCalldata, abi.encode());
 
         riscZeroGovernor.verifyAndFinalizeVotes(receipt.seal, journal);
-        (
-            uint256 againstVotes,
-            uint256 forVotes,
-            uint256 abstainVotes
-        ) = riscZeroGovernor.proposalVotes(proposalId);
+        (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) = riscZeroGovernor.proposalVotes(proposalId);
 
         assertEq(forVotes, 100, "For votes should be 100");
         assertEq(againstVotes, 50, "Against votes should be 50");
@@ -222,19 +151,10 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
     }
 
     function testQuorumAndExecution() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
 
         aliceSupport = 1;
         bobSupport = 1;
@@ -249,32 +169,17 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
 
         vm.roll(block.number + riscZeroGovernor.votingPeriod() + 1);
 
-        (
-            bytes32 finalBallotBoxAccum,
-            bytes memory encodedBallots
-        ) = hashBallots(aliceSupport, bobSupport);
+        (bytes32 finalBallotBoxAccum, bytes memory encodedBallots) = hashBallots(aliceSupport, bobSupport);
 
-        bytes memory journal = abi.encodePacked(
-            proposalId,
-            finalBallotBoxAccum,
-            encodedBallots
-        );
+        bytes memory journal = abi.encodePacked(proposalId, finalBallotBoxAccum, encodedBallots);
         bytes32 journalDigest = sha256(journal);
 
-        VerifierReceipt memory receipt = mockVerifier.mockProve(
-            ImageID.FINALIZE_VOTES_ID,
-            journalDigest
-        );
+        VerifierReceipt memory receipt = mockVerifier.mockProve(ImageID.FINALIZE_VOTES_ID, journalDigest);
 
         // Mock the verifier call
         address verifierAddress = riscZeroGovernor.verifier.address;
         bytes4 verifySelector = IRiscZeroVerifier.verify.selector;
-        bytes memory expectedCalldata = abi.encodeWithSelector(
-            verifySelector,
-            receipt.seal,
-            IMAGE_ID,
-            journalDigest
-        );
+        bytes memory expectedCalldata = abi.encodeWithSelector(verifySelector, receipt.seal, IMAGE_ID, journalDigest);
         vm.mockCall(verifierAddress, expectedCalldata, abi.encode());
 
         // Call verifyAndFinalizeVotes
@@ -286,12 +191,7 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
             "Proposal should have succeeded"
         );
 
-        riscZeroGovernor.execute(
-            targets,
-            values,
-            calldatas,
-            keccak256(bytes(description))
-        );
+        riscZeroGovernor.execute(targets, values, calldatas, keccak256(bytes(description)));
         assertEq(
             uint256(riscZeroGovernor.state(proposalId)),
             uint256(IGovernor.ProposalState.Executed),
@@ -302,18 +202,9 @@ contract RiscZeroGovernorTest is Test, GovernorTestBase {
     }
 
     function testFailToReachQuorum() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = riscZeroGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = riscZeroGovernor.propose(targets, values, calldatas, description);
 
         vm.roll(block.number + riscZeroGovernor.votingDelay() + 1);
 
