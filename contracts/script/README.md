@@ -112,7 +112,7 @@ Set your public key, your Etherscan API key, and the necessary parameters for Fi
 > `FIREBLOCKS_API_PRIVATE_KEY_PATH` can be the key itself, rather than a path.
 
 > [!NOTE]
-> When this guide says "public key", it's equivelent to "address".
+> When this guide says "public key", it's equivalent to "address".
 
 ```bash
 export FIREBLOCKS_API_KEY="..."
@@ -141,7 +141,7 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
 1. Dry run the contract deployment:
 
     > [!IMPORTANT]
-    > Adjust the `MIN_DELAY` to a value appriate for the environment (e.g. 1 second for testnet and 604800 seconds (7 days) for mainnet).
+    > Adjust the `MIN_DELAY` to a value appropriate for the environment (e.g. 1 second for testnet and 604800 seconds (7 days) for mainnet).
 
     ```bash
     MIN_DELAY=1 \
@@ -164,7 +164,7 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
 
     This will result in two transactions sent from the deployer address.
 
-3. Verify the contracts on Etherscan (equivelent or its equivelent) by running the command again without `--broadcast` and add `--verify`.
+3. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
 
 4. Save the contract addresses to `deployment.toml`.
 
@@ -210,7 +210,8 @@ This is a two-step process, guarded by the `TimelockController`.
     bash contracts/script/manage DeployEstopVerifier
     ```
 
-    > [!IMPORTANT] Check the logs from this dry run to verify the estop owner is the expected address.
+    > [!IMPORTANT]
+    > Check the logs from this dry run to verify the estop owner is the expected address.
     > It should be equal to the RISC Zero admin address on the given chain.
     > Note that it should not be the `TimelockController`.
     > Also check the chain ID to ensure you are deploying to the chain you expect.
@@ -220,7 +221,11 @@ This is a two-step process, guarded by the `TimelockController`.
 
     This will result in two transactions sent from the deployer address.
 
-4. Verify the contracts on Etherscan (equivelent or its equivelent) by running the command again without `--broadcast` and add `--verify`.
+    > [!NOTE]
+    > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
+    > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
+
+4. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
 
 5. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
@@ -257,7 +262,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 8. Send the transaction for the scheduled update by running the command again with `--broadcast`.
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
     > [!IMPORTANT]
     > If the admin address is in Fireblocks, this will prompt the admins for approval.
@@ -285,7 +290,7 @@ Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
 
 3. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 4. Test the deployment.
 
@@ -318,7 +323,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 3. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 ### Finish the update
 
@@ -338,7 +343,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 3. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 4. Confirm it was removed.
 
@@ -364,7 +369,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 ### Finish the update
 
@@ -379,7 +384,7 @@ Execute the action:
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 3. Confirm the update.
 
@@ -437,7 +442,7 @@ Three roles are supported:
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 ### Finish the update
 
@@ -451,7 +456,7 @@ Three roles are supported:
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 3. Confirm the update:
 
@@ -493,7 +498,7 @@ Three roles are supported:
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 Confirm the role code:
 
@@ -516,7 +521,7 @@ cast call --rpc-url ${RPC_URL:?} \
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 3. Confirm the update:
 
@@ -557,7 +562,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 
 2. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 3. Confirm:
 
@@ -586,7 +591,7 @@ Activate the emergency stop:
     export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
-2. Dry run the transction
+2. Dry run the transaction
 
     ```bash
     VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
@@ -595,7 +600,7 @@ Activate the emergency stop:
 
 3. Run the command again with `--broadcast`
 
-    This will send one transction from the admin address.
+    This will send one transaction from the admin address.
 
 4. Test the activation:
 
