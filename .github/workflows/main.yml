@@ -87,6 +87,8 @@ jobs:
       FEATURE: ${{ matrix.feature }}
       RUST_BACKTRACE: full
     steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -133,7 +135,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Load versions JSON
+      - name: Load versions.json
         run: jq -r 'to_entries[] | ["version_\(.key)",.value] | join("=")' optimism/versions.json >> "$GITHUB_ENV"
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
@@ -150,11 +152,10 @@ jobs:
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: nightly-${{ env.version_foundry }}
-      - uses: ./.github/actions/cargo-risczero-install
-        with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
-          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: ${{ matrix.feature }}
+      - name: Install Geth
+        run: |
+            wget "https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-amd64-${version_geth_release}.tar.gz" -O - | tar xz
+            sudo cp "geth-alltools-linux-amd64-${version_geth_release}"/* /usr/local/bin
       - name: Pull and tag OP docker images
         run: |
           docker pull "$IMAGE_BASE_PREFIX/op-node:v1.9.1"
@@ -168,9 +169,15 @@ jobs:
       - name: Bring up the OP stack
         run: make -C optimism devnet-up
         env:
-          DEVNET_NO_BUILD: false
+          LOG_LEVEL: "INFO"
+          DEVNET_NO_BUILD: true
           DEVNET_L2OO: true
           DEVNET_ALTDA: false
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
 
   examples:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
