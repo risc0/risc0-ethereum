@@ -55,20 +55,15 @@
 
    See the [Cargo docs](https://doc.rust-lang.org/cargo/reference/publishing.html) for more details.
 
-5. When changes have been made to the verifier contract, deploy a new verifier contract.
+5. When changes have been made to the verifier contract, deploy a new verifier contract and add it to the verifier router on each supported chain.
 
-    <!-- TODO: Include instructions for the process including the emergency stop and index contracts, once those are ready -->
+   Refer to [contracts/script/README.md](./contracts/script/README.md) for instructions on the steps involved.
 
-   * Deploy the contract to Sepolia, and verify the source code.
+   1. Deploy the verifier contract and schedule the update.
 
-     Set the `ETHERSCAN_API_KEY` and `ETH_WALLET_PRIVATE_KEY` environment variables to a valid Etherscan API key and Sepolia private key respectively.
+   2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finsh the operation to add the new verifier to the router.
 
-     ```sh
-     # In the contracts directory
-     forge script script/DeployVerifier.s.sol:DeployVerifier --rpc-url $ALCHEMY_API_URL --broadcast --verify -vvvv
-     ```
-
-   * Document the new address and version in the `dev.risczero.com` docs.
+   3. Document the new addresses and version in the `dev.risczero.com` docs.
 
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 
