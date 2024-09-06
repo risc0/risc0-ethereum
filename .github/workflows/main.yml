@@ -126,20 +126,30 @@ jobs:
           - os: Linux
             feature: cuda
             device: nvidia_rtx_a5000
+    defaults:
+      run:
+        working-directory: examples/message-passing
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Load versions JSON
+        uses: rgarcia-phi/json-to-variables@v1.1.0
+        with:
+          prefix: version
+          filename: 'versions.json'
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.version_go }}
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: risc0/foundry-toolchain@${{ env.version_foundry }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -157,7 +167,6 @@ jobs:
           docker tag "$IMAGE_BASE_PREFIX/op-batcher:v1.9.1" "$IMAGE_BASE_PREFIX/op-batcher:devnet"
       - name: Bring up the OP stack
         run: DEVNET_NO_BUILD=false DEVNET_L2OO=true DEVNET_ALTDA=false make -C optimism devnet-up
-        working-directory: examples/message-passing
 
   examples:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
