@@ -1,9 +1,7 @@
 [profile.default]
-src = "contracts"
+src = "contracts/src"
 out = "out"
 libs = ["../../lib", "../../contracts/src"]
-test = "tests"
-script = "scripts"
-ffi = true
-
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+test = "contracts/test"
+script = "contracts/script"
+evm_version = 'cancun'

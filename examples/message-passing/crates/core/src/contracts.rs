@@ -33,18 +33,18 @@ use crate::{
 
 sol!(
     #[sol(rpc, all_derives)]
-    "../contracts/src/IL1CrossDomainMessenger.sol"
+    "../../contracts/src/IL1CrossDomainMessenger.sol"
 );
 
 sol!(
     #[sol(rpc, all_derives)]
-    "../contracts/src/IL2CrossDomainMessenger.sol"
+    "../../contracts/src/IL2CrossDomainMessenger.sol"
 );
 
 // Contract to bookmark L1 blocks for later verification.
 sol!(
     #[sol(rpc, all_derives)]
-    "../contracts/src/IBookmark.sol"
+    "../../contracts/src/IBookmark.sol"
 );
 
 #[derive(Clone)]

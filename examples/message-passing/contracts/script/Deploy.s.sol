@@ -19,11 +19,8 @@ pragma solidity ^0.8.20;
 import {Script, console2} from "forge-std/Script.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
-import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
-import {IL1CrossDomainMessenger} from "../src/IL1CrossDomainMessenger.sol";
 import {L1CrossDomainMessenger} from "../src/L1CrossDomainMessenger.sol";
-import {IL2CrossDomainMessenger} from "../src/IL2CrossDomainMessenger.sol";
 import {L2CrossDomainMessenger} from "../src/L2CrossDomainMessenger.sol";
 import {IL1Block} from "../src/IL1Block.sol";
 import {ImageID} from "../src/ImageID.sol";
@@ -39,11 +36,15 @@ contract Deploy is Script, RiscZeroCheats {
         uint256 key2 = vm.envUint("L2_ADMIN_PRIVATE_KEY");
         uint256 l1 = vm.createFork(vm.envString("L1_RPC_URL"));
         uint256 l2 = vm.createFork(vm.envString("L2_RPC_URL"));
+        address l1Sender = address(0x0);
+        try vm.envAddress("L1_WALLET_ADDRESS") returns (address val) {
+            l1Sender = val;
+        } catch {}
 
         vm.selectFork(l1);
         vm.startBroadcast(key1);
 
-        IL1CrossDomainMessenger l1CrossDomainMessenger = new L1CrossDomainMessenger();
+        L1CrossDomainMessenger l1CrossDomainMessenger = new L1CrossDomainMessenger();
         console2.log("Deployed L1 IL1CrossDomainMessenger to", address(l1CrossDomainMessenger));
 
         vm.stopBroadcast();
@@ -53,12 +54,12 @@ contract Deploy is Script, RiscZeroCheats {
 
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
 
-        IL2CrossDomainMessenger l2CrossDomainMessenger = new L2CrossDomainMessenger(
+        L2CrossDomainMessenger l2CrossDomainMessenger = new L2CrossDomainMessenger(
             verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger), L1_BLOCK
         );
         console2.log("Deployed L2 L2CrossDomainMessenger to", address(l2CrossDomainMessenger));
 
-        Counter counter = new Counter(l2CrossDomainMessenger, address(0x0));
+        Counter counter = new Counter(l2CrossDomainMessenger, l1Sender);
         console2.log("Deployed L1 Counter to", address(counter));
 
         vm.stopBroadcast();

@@ -39,10 +39,10 @@ use tracing_subscriber::EnvFilter;
 use url::Url;
 
 // Contract to call via L1.
-sol!("../contracts/src/ICounter.sol");
+sol!("../../contracts/src/ICounter.sol");
 
 /// Arguments of the publisher CLI.
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// L1 private key.
@@ -145,8 +145,7 @@ async fn main() -> Result<()> {
         let env = ExecutorEnv::builder()
             .write(&evm_input)?
             .write(&cross_domain_messenger_input)?
-            .build()
-            .unwrap();
+            .build()?;
 
         default_prover().prove_with_ctx(
             env,
@@ -155,8 +154,7 @@ async fn main() -> Result<()> {
             &ProverOpts::groth16(),
         )
     })
-    .await?
-    .context("failed to create proof")?;
+    .await??;
     println!(
         "Proving finished in {} cycles",
         prove_info.stats.total_cycles
