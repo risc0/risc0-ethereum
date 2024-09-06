@@ -49,6 +49,24 @@ contract RiscZeroManagementScript is Script {
     RiscZeroVerifierEmergencyStop internal _verifierEstop;
     RiscZeroGroth16Verifier internal _verifier;
 
+    /// @notice Returns the address of the deployer, set in the DEPLOYER_PUBLIC_KEY env var.
+    function deployerAddress() internal returns (address) {
+        address deployer = vm.envAddress("DEPLOYER_PUBLIC_KEY");
+        uint256 deployerKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (deployerKey != 0) {
+            require(vm.addr(deployerKey) == deployer, "DEPLOYER_PUBLIC_KEY and DEPLOYER_PRIVATE_KEY are inconsistent");
+            vm.rememberKey(deployerKey);
+        }
+        return deployer;
+    }
+
+    /// @notice Returns the address of the contract admin, set in the ADMIN_PUBLIC_KEY env var.
+    /// @dev This admin address will be set as the owner of the estop contracts, and the proposer
+    ///      of for the timelock controller. Note that it is not the "admin" on the timelock.
+    function adminAddress() internal view returns (address) {
+        return vm.envAddress("ADMIN_PUBLIC_KEY");
+    }
+
     /// @notice Determines the contract address of TimelockController from the environment.
     /// @dev Uses the TIMELOCK_CONTROLLER environment variable.
     function timelockController() internal returns (TimelockController) {
@@ -134,15 +152,16 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
         console2.log("executors:", executors[0]);
 
         // optional account to be granted admin role; disable with zero address
+        // When the admin is unset, the contract is self-administered.
         address admin = vm.envOr("ADMIN", address(0));
         console2.log("admin:", admin);
 
         // Deploy new contracts
-        vm.broadcast();
+        vm.broadcast(deployerAddress());
         _timelockController = new TimelockController(minDelay, proposers, executors, admin);
         console2.log("Deployed TimelockController to", address(timelockController()));
 
-        vm.broadcast();
+        vm.broadcast(deployerAddress());
         _verifierRouter = new RiscZeroVerifierRouter(address(timelockController()));
         console2.log("Deployed RiscZeroVerifierRouter to", address(verifierRouter()));
     }
@@ -160,13 +179,18 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
         // Deploy new contracts
-        vm.broadcast();
+        // TODO: Prints here construct a kind of mangled TOML block that can be copy-pasted into
+        // deployment.toml. It should be fixed up to create a proper block.
+        vm.broadcast(deployerAddress());
         _verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier()));
+        console2.log("version = \"", verifier().VERSION(), "\"");
+        console2.log("selector = \"");
+        console2.logBytes4(verifier().SELECTOR());
+        console2.log("verifier = \"", address(verifier()), "\"");
 
-        vm.broadcast();
+        vm.broadcast(deployerAddress());
         _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
-        console2.log("Deployed RiscZeroVerifierEmergencyStop to", address(verifierEstop()));
+        console2.log("estop = \"", address(verifierEstop()), "\"");
     }
 }
 
@@ -193,7 +217,7 @@ contract ScheduleAddVerifier is RiscZeroManagementScript {
         address dest = address(verifierRouter());
         simulate(dest, data);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
@@ -215,14 +239,14 @@ contract FinishAddVerifier is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(verifierRouter().addVerifier, (selector, verifierEstop()));
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().execute(address(verifierRouter()), 0, data, 0, 0);
     }
 }
 
 /// @notice Schedule removal of a verifier from the router.
 /// @dev Use the following environment variable to control the deployment:
-///     * SELECTOR the selector associated with this verifier
+///     * VERIFIER_SELECTOR the selector associated with this verifier
 ///     * SCHEDULE_DELAY (optional) minimum delay in seconds for the scheduled action
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
@@ -231,7 +255,7 @@ contract FinishAddVerifier is RiscZeroManagementScript {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract ScheduleRemoveVerifier is RiscZeroManagementScript {
     function run() external {
-        bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
+        bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
 
@@ -243,14 +267,14 @@ contract ScheduleRemoveVerifier is RiscZeroManagementScript {
         address dest = address(verifierRouter());
         simulate(dest, data);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
 
 /// @notice Finish removal of a verifier from the router.
 /// @dev Use the following environment variable to control the deployment:
-///     * SELECTOR the selector associated with this verifier
+///     * VERIFIER_SELECTOR the selector associated with this verifier
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
@@ -258,14 +282,14 @@ contract ScheduleRemoveVerifier is RiscZeroManagementScript {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract FinishRemoveVerifier is RiscZeroManagementScript {
     function run() external {
-        bytes4 selector = bytes4(vm.envBytes("SELECTOR"));
+        bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
 
         // Execute the 'removeVerifier()' request
         bytes memory data = abi.encodeCall(verifierRouter().removeVerifier, selector);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().execute(address(verifierRouter()), 0, data, 0, 0);
     }
 }
@@ -291,7 +315,7 @@ contract ScheduleUpdateDelay is RiscZeroManagementScript {
         address dest = address(timelockController());
         simulate(dest, data);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
@@ -311,8 +335,27 @@ contract FinishUpdateDelay is RiscZeroManagementScript {
         // Execute the 'updateDelay()' request
         bytes memory data = abi.encodeCall(timelockController().updateDelay, minDelay);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().execute(address(timelockController()), 0, data, 0, 0);
+    }
+}
+
+// TODO: Add this command to the README.md
+/// @notice Cancel a pending operation on the timelock controller
+/// @dev Use the following environment variable to control the script:
+///     * TIMELOCK_CONTROLLER contract address of TimelockController
+///     * OPERATION_ID identifier for the operation to cancel
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract CancelOperation is RiscZeroManagementScript {
+    function run() external {
+        bytes32 operationId = vm.envBytes32("OPERATION_ID");
+        console2.log("operationId:", uint256(operationId));
+
+        // Execute the 'cancel()' request
+        vm.broadcast(adminAddress());
+        timelockController().cancel(operationId);
     }
 }
 
@@ -345,7 +388,7 @@ contract ScheduleGrantRole is RiscZeroManagementScript {
         address dest = address(timelockController());
         simulate(dest, data);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
@@ -373,7 +416,7 @@ contract FinishGrantRole is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(timelockController().grantRole, (role, account));
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().execute(address(timelockController()), 0, data, 0, 0);
     }
 }
@@ -407,7 +450,7 @@ contract ScheduleRevokeRole is RiscZeroManagementScript {
         address dest = address(timelockController());
         simulate(dest, data);
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().schedule(dest, 0, data, 0, 0, scheduleDelay);
     }
 }
@@ -435,21 +478,24 @@ contract FinishRevokeRole is RiscZeroManagementScript {
 
         bytes memory data = abi.encodeCall(timelockController().revokeRole, (role, account));
 
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         timelockController().execute(address(timelockController()), 0, data, 0, 0);
     }
 }
 
 /// @notice Renounce role.
 /// @dev Use the following environment variable to control the deployment:
-///     * ROLE the role to be renounced
+///     * RENOUNCE_ADDRESS the address to send the renounce transaction
+///     * RENOUNCE_ROLE the role to be renounced
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract RenounceRole is RiscZeroManagementScript {
     function run() external {
-        string memory roleStr = vm.envString("ROLE");
+        address renouncer = vm.envAddress("RENOUNCE_ADDRESS");
+        string memory roleStr = vm.envString("RENOUNCE_ROLE");
+        console2.log("renouncer:", renouncer);
         console2.log("roleStr:", roleStr);
 
         console2.log("msg.sender:", msg.sender);
@@ -459,7 +505,7 @@ contract RenounceRole is RiscZeroManagementScript {
         console2.log("role: ");
         console2.logBytes32(role);
 
-        vm.broadcast();
+        vm.broadcast(renouncer);
         timelockController().renounceRole(role, msg.sender);
     }
 }
@@ -477,7 +523,7 @@ contract ActivateEstop is RiscZeroManagementScript {
         console2.log("Using RiscZeroVerifierEmergencyStop at address", address(verifierEstop));
 
         // Activate the emergency stop
-        vm.broadcast();
+        vm.broadcast(adminAddress());
         verifierEstop.estop();
     }
 }
