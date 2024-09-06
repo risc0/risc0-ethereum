@@ -136,20 +136,17 @@ jobs:
         with:
           submodules: recursive
       - name: Load versions JSON
-        uses: rgarcia-phi/json-to-variables@v1.1.0
-        with:
-          prefix: version
-          filename: 'versions.json'
+        run: jq -r 'to_entries[] | ["version_\(.key)",.value] | join("=")' optimism/versions.json >> "$GITHUB_ENV"
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.version_go }}
+          go-version: $version_go
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@${{ env.version_foundry }}
+      - uses: risc0/foundry-toolchain@$version_foundry
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
