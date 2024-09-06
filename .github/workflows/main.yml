@@ -55,11 +55,45 @@ jobs:
         with:
           node-version: 18
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      # cargo fmt
       - run: cargo fmt --all --check
-      - run: cargo sort --workspace --check
-      - run: cargo clippy --workspace
+      - run: cargo fmt --all --check
+        working-directory: examples/erc20
+      - run: cargo fmt --all --check
+        working-directory: examples/erc20-counter
+      - run: cargo fmt --all --check
+        working-directory: examples/token-stats
+      - run: cargo fmt --all --check
+        working-directory: examples/governance
+      # cargo sort
+      - run: cargo sort --worksapce --check
+      - run: cargo sort --worksapce --check
+        working-directory: examples/erc20
+      - run: cargo sort --worksapce --check
+        working-directory: examples/erc20-counter
+      - run: cargo sort --worksapce --check
+        working-directory: examples/token-stats
+      - run: cargo sort --worksapce --check
+        working-directory: examples/governance
+      # cargo clippy
+      - run: cargo clippy
+      - run: cargo clippy
+        working-directory: examples/erc20
+      - run: cargo clippy
+        working-directory: examples/erc20-counter
+      - run: cargo clippy
+        working-directory: examples/token-stats
+      - run: cargo clippy
+        working-directory: examples/governance
+      # forge fmt
       - run: forge fmt --check
         working-directory: contracts
+      - run: forge fmt --check
+        working-directory: examples/erc20-counter
+      - run: forge fmt --check
+        working-directory: examples/token-stats
+      - run: forge fmt --check
+        working-directory: examples/governance
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
