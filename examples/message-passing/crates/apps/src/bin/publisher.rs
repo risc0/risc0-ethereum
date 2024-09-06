@@ -123,8 +123,11 @@ async fn main() -> Result<()> {
 
     // Run Steel:
     // Create an EVM environment from that provider and a block number.
-    let mut env =
-        EthEvmEnv::from_provider(l1_provider.clone(), bookmark_block_number.into()).await?;
+    let mut env = EthEvmEnv::builder()
+        .provider(l1_provider.clone())
+        .block_number(bookmark_block_number)
+        .build()
+        .await?;
     // Prepare the function call to be called inside steal
     let call = IL1CrossDomainMessenger::containsCall {
         digest: message.digest(),

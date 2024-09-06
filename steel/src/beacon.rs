@@ -80,14 +80,13 @@ impl MerkleProof {
 }
 
 #[cfg(feature = "host")]
-pub mod host {
+mod host {
     use super::{BeaconInput, MerkleProof};
     use crate::{
         block::BlockInput,
         ethereum::EthBlockHeader,
         host::{db::AlloyDb, HostEvmEnv},
     };
-
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
