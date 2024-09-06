@@ -90,7 +90,7 @@ mod host {
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
-    use beacon_api_client::{mainnet::Client as BeaconClient, BeaconHeaderSummary, BlockId};
+    use beacon_api_client::{minimal::Client as BeaconClient, BeaconHeaderSummary, BlockId};
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use proofs::{Proof, ProofAndWitness};
     use url::Url;

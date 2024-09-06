@@ -22,14 +22,10 @@ import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
 import {L1CrossDomainMessenger} from "../src/L1CrossDomainMessenger.sol";
 import {L2CrossDomainMessenger} from "../src/L2CrossDomainMessenger.sol";
-import {IL1Block} from "../src/IL1Block.sol";
 import {ImageID} from "../src/ImageID.sol";
 import {Counter} from "../src/Counter.sol";
 
 contract Deploy is Script, RiscZeroCheats {
-    // In OP the L1Block contract on L2 is always at the same predeployed address
-    IL1Block constant L1_BLOCK = IL1Block(0x4200000000000000000000000000000000000015);
-
     function run() external {
         // load ENV variables first
         uint256 key1 = vm.envUint("L1_ADMIN_PRIVATE_KEY");
@@ -54,9 +50,8 @@ contract Deploy is Script, RiscZeroCheats {
 
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
 
-        L2CrossDomainMessenger l2CrossDomainMessenger = new L2CrossDomainMessenger(
-            verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger), L1_BLOCK
-        );
+        L2CrossDomainMessenger l2CrossDomainMessenger =
+            new L2CrossDomainMessenger(verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger));
         console2.log("Deployed L2 L2CrossDomainMessenger to", address(l2CrossDomainMessenger));
 
         Counter counter = new Counter(l2CrossDomainMessenger, l1Sender);

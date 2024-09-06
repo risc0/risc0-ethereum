@@ -25,8 +25,7 @@ use anyhow::{ensure, Result};
 use clap::Parser;
 use cross_domain_messenger_core::{
     contracts::{
-        IBookmarkService, IL1CrossDomainMessenger, IL1CrossDomainMessengerService,
-        IL2CrossDomainMessengerService,
+        IL1CrossDomainMessenger, IL1CrossDomainMessengerService, IL2CrossDomainMessengerService,
     },
     CrossDomainMessengerInput,
 };
@@ -56,6 +55,10 @@ struct Args {
     /// L1 RPC node endpoint.
     #[clap(long, env)]
     l1_rpc_url: Url,
+
+    /// Beacon API endpoint URL.
+    #[clap(long, env)]
+    beacon_api_url: Url,
 
     /// L2 RPC node endpoint.
     #[clap(long, env)]
@@ -106,8 +109,6 @@ async fn main() -> Result<()> {
         args.l2_cross_domain_messenger_address,
         l2_provider.clone(),
     );
-    let bookmark_contract =
-        IBookmarkService::new(args.l2_cross_domain_messenger_address, l2_provider.clone());
 
     // Prepare the message to be passed from L1 to L2
     let target = args.counter_address;
@@ -118,14 +119,11 @@ async fn main() -> Result<()> {
         .send_message(target, data.into())
         .await?;
 
-    // Bookmark the block number of the message
-    let bookmark_block_number = bookmark_contract.bookmark(message_block_number).await?;
-
     // Run Steel:
     // Create an EVM environment from that provider and a block number.
     let mut env = EthEvmEnv::builder()
         .provider(l1_provider.clone())
-        .block_number(bookmark_block_number)
+        .block_number(message_block_number)
         .build()
         .await?;
     // Prepare the function call to be called inside steal
@@ -137,7 +135,7 @@ async fn main() -> Result<()> {
     let success = contract.call_builder(&call).call().await?._0;
     ensure!(success, "message {} not found", call.digest);
     // Finally, construct the input for the guest.
-    let evm_input = env.into_input().await?;
+    let evm_input = env.into_beacon_input(args.beacon_api_url).await?;
     let cross_domain_messenger_input = CrossDomainMessengerInput {
         l1_cross_domain_messenger: args.l1_cross_domain_messenger_address,
         message,

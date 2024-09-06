@@ -20,12 +20,11 @@ use alloy::{
 };
 use alloy_primitives::{Address, Bytes, B256};
 use alloy_sol_types::SolEvent;
-use anyhow::{bail, ensure, Context, Result};
-use tokio::time;
+use anyhow::{bail, ensure, Result};
 
 use crate::{
     contracts::{
-        IBookmark::IBookmarkInstance, IL1CrossDomainMessenger::IL1CrossDomainMessengerInstance,
+        IL1CrossDomainMessenger::IL1CrossDomainMessengerInstance,
         IL2CrossDomainMessenger::IL2CrossDomainMessengerInstance,
     },
     Message,
@@ -39,12 +38,6 @@ sol!(
 sol!(
     #[sol(rpc, all_derives)]
     "../../contracts/src/IL2CrossDomainMessenger.sol"
-);
-
-// Contract to bookmark L1 blocks for later verification.
-sol!(
-    #[sol(rpc, all_derives)]
-    "../../contracts/src/IBookmark.sol"
 );
 
 #[derive(Clone)]
@@ -136,62 +129,6 @@ where
 
         let event = into_event::<IL2CrossDomainMessenger::RelayedMessage>(receipt)?;
         Ok(event.msgHash)
-    }
-}
-
-#[derive(Clone)]
-pub struct IBookmarkService<T, P> {
-    instance: IBookmarkInstance<T, P, Ethereum>,
-}
-
-impl<T, P> IBookmarkService<T, P>
-where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum> + 'static,
-{
-    pub const TX_TIMEOUT: Duration = Duration::from_secs(30);
-
-    pub fn new(address: Address, provider: P) -> Self {
-        let instance = IBookmark::new(address, provider);
-
-        IBookmarkService { instance }
-    }
-
-    pub fn instance(&self) -> &IBookmarkInstance<T, P, Ethereum> {
-        &self.instance
-    }
-
-    pub async fn bookmark(&self, message_block_number: u64) -> Result<u64> {
-        // Call IBookmark.bookmarkL1Block until we can bookmark a block that contains the sent message.
-        let bookmark_call = self.instance.bookmarkL1Block();
-        loop {
-            let current_block_number = bookmark_call.call().await?._0;
-            if current_block_number >= message_block_number {
-                break;
-            }
-            println!(
-                "Waiting for L1 block to catch up: {} < {}",
-                current_block_number, message_block_number
-            );
-            time::sleep(Duration::from_secs(5)).await;
-        }
-
-        // Send a transaction calling IBookmark.bookmarkL1Block to create an on-chain bookmark.
-        let pending_tx = bookmark_call
-            .send()
-            .await
-            .context("failed to send bookmarkL1Block")?;
-        let receipt = pending_tx
-            .with_timeout(Some(Duration::from_secs(60)))
-            .get_receipt()
-            .await
-            .context("failed to confirm tx")?;
-
-        // Get the number of the actual bookmarked block.
-        let event: IBookmark::BookmarkedL1Block = into_event(receipt)?;
-        let bookmark_block_number = event.number;
-
-        Ok(bookmark_block_number)
     }
 }
 
