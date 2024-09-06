@@ -1,6 +1,6 @@
 # Running this example locally
 
-Before starting, make sure to follow the [Installation guide] to have both Rust and RISC Zero's toolchain installed. You'll also need [Foundry] to be installed.
+Before starting, make sure to follow the [Installation guide][install-risc0] to have both Rust and RISC Zero's toolchain installed. You'll also need [Foundry][install-foundry] to be installed.
 
 ## Setup
 
@@ -15,11 +15,12 @@ forge build
 ## Running tests
 
 > [!TIP]
-> You can adjust the number of fuzz runs for each test case, by changing the `runs` variable in [foundry.toml]. Higher values gives more confidence in results at the cost of testing speed, see more info at [Fuzz - Foundry Docs].
+> You can adjust the number of fuzz runs for each test case, by changing the `runs` variable in [foundry.toml](./foundry.toml). Higher values gives more confidence in results at the cost of testing speed, see more info at [Fuzz - Foundry Docs][foundry-fuzz-docs].
 
 ```sh
 RISC0_DEV_MODE=true forge test -vvv
 ```
+
 Once completed, you should see some output similar to below.
 
 ```sh
@@ -55,12 +56,12 @@ Ran 3 test suites in 1.86s (1.86s CPU time): 14 tests passed, 0 failed, 0 skippe
 
 ## Generating data and gas plots
 
-In the `tests/benchmarks` folder, there are two Python files. They both handle data written to a csv from the [BenchmarkGovernorsTest.sol] file using Foundry's writing data cheatcode. 
+In the `tests/benchmarks` folder, there are two Python files. They both handle data written to a csv from the [BenchmarkGovernorsTest.sol](./tests/benchmarks/BenchmarkGovernorsTest.sol) file using Foundry's writing data cheatcode.
 
 - [print_gas_data.py]: pretty prints data from `gas_data.csv`
 - [plot_gas_data.py]: generates a matplotlib plot of gas usage in .png format: [gas_data_comparison.png]
 
-To set up your python environment, it is recommend to use a virtual environment such as `venv` or `conda`. 
+To set up your python environment, it is recommend to use a virtual environment such as `venv` or `conda`.
 
 ### Using venv
 
@@ -116,7 +117,7 @@ Change into the benchmarks directory with:
 cd tests/benchmarks
 ```
 
-Make sure the correct environment is activated and all the dependencies installed either with [venv] or an alternative like [conda].
+Make sure the correct environment is activated and all the dependencies installed either with [venv](#using-venv) or an alternative like [conda](#using-conda).
 
 The data is only generated when the tests are run, see [running tests].
 
@@ -132,16 +133,11 @@ The plot generated will be saved as [gas_data_comparison.png]:
 
 ![gas data comparison graph](tests/benchmarks/gas_data_comparison.png)
 
-
----
-[conda]: #using-conda
-[Foundry]: https://book.getfoundry.sh/getting-started/installation
-[foundryl.toml]: ./foundry.toml
-[Fuzz - Foundry Docs]: https://book.getfoundry.sh/reference/config/testing#fuzz
+[install-foundry]: https://book.getfoundry.sh/getting-started/installation
+[foundry-fuzz-docs]: https://book.getfoundry.sh/reference/config/testing#fuzz
 [gas_data_comparison.png]: ./tests/benchmarks/gas_data_comparison.png
-[Installation guide]: https://dev.risczero.com/api/zkvm/install
+[install-risc0]: https://dev.risczero.com/api/zkvm/install
 [print_gas_data.py]: ./tests/benchmarks/print_gas_data.py
 [plot_gas_data.py]: ./tests/benchmarks/plot_gas_data.py
 [running tests]: #running-tests
-[venv]: #using-venv
 
