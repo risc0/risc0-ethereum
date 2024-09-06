@@ -146,7 +146,7 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@main
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
           version: $version_foundry
       - uses: ./.github/actions/cargo-risczero-install
