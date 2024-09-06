@@ -2,6 +2,9 @@
 
 An operations guide for the RISC Zero Ethereum contracts.
 
+> [!NOTE]
+> All the commands in this guide assume your current working directory is the root of the repo.
+
 ## Dependencies
 
 Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
@@ -67,10 +70,10 @@ export CHAIN_KEY="xxx-testnet"
 Set your RPC URL, public and private key, and Etherscan API key:
 
 ```bash
-export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" deployment_secrets.toml | tee /dev/stderr)
-export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" deployment.toml | tee /dev/stderr)
-export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" deployment_secrets.toml | tee /dev/stderr)
-export ADMIN_PUBLIC_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" deployment.toml | tee /dev/stderr)
+export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" contracts/deployment_secrets.toml | tee /dev/stderr)
+export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" contracts/deployment.toml | tee /dev/stderr)
+export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" contracts/deployment_secrets.toml | tee /dev/stderr)
+export ADMIN_PUBLIC_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" contracts/deployment.toml | tee /dev/stderr)
 ```
 
 > [!TIP]
@@ -86,8 +89,8 @@ Example RPC URLs:
 If the timelock and router contracts are already deployed, you can also load their addresses:
 
 ```zsh
-export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" deployment.toml | tee /dev/stderr)
-export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" deployment.toml | tee /dev/stderr)
+export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
+export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
 ```
 
 > TIP: If you want to see a contract in Etherscan, you can run a command like the example below:
@@ -168,8 +171,8 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
     Load the addresses into your environment.
 
     ```bash
-    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" deployment.toml | tee /dev/stderr)
-    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" deployment.toml | tee /dev/stderr)
+    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
+    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
     ```
 
 5. Test the deployment:
@@ -224,9 +227,9 @@ This is a two-step process, guarded by the `TimelockController`.
     Load the deployed addresses into the environment:
 
     ```zsh
-    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" deployment.toml | tee /dev/stderr)
-    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" deployment.toml | tee /dev/stderr)
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" deployment.toml | tee /dev/stderr)
+    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
+    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
+    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
 6. Test the deployment.
@@ -271,7 +274,7 @@ Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
 
     ```zsh
     export VERIFIER_SELECTOR="0x..."
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" deployment.toml | tee /dev/stderr)
+    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
 2. Dry the transaction to execute the add verifier operation:
@@ -580,7 +583,7 @@ Activate the emergency stop:
 
     ```zsh
     export VERIFIER_SELECTOR="0x..."
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" deployment.toml | tee /dev/stderr)
+    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
 2. Dry run the transction
