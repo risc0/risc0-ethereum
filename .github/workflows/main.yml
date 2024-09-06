@@ -133,8 +133,8 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-      - name: Clean the repo
-        run: rm -rf /opt/actions-runner/_work/risc0-ethereum/risc0-ethereum/.git/modules/examples/message-passing/optimism/shallow.lock
+        with:
+          submodules: recursive
       - name: Load versions JSON
         run: jq -r 'to_entries[] | ["version_\(.key)",.value] | join("=")' optimism/versions.json >> "$GITHUB_ENV"
       - if: matrix.feature == 'cuda'
