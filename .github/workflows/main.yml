@@ -134,8 +134,7 @@ jobs:
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
       - name: Clean the repo
-        working-directory: ${{ github.event.repository.name }}
-        run: find . -wholename "*.git/modules/*shallow.lock" -type f -delete
+        run: rm -rf /opt/actions-runner/_work/risc0-ethereum/risc0-ethereum/.git/modules/examples/message-passing/optimism/shallow.lock
       - name: Load versions JSON
         run: jq -r 'to_entries[] | ["version_\(.key)",.value] | join("=")' optimism/versions.json >> "$GITHUB_ENV"
       - if: matrix.feature == 'cuda'
