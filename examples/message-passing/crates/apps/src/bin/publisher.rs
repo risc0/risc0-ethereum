@@ -21,7 +21,7 @@ use alloy::{
     sol_types::SolCall,
 };
 use alloy_primitives::Address;
-use anyhow::{ensure, Context, Result};
+use anyhow::{ensure, Result};
 use clap::Parser;
 use cross_domain_messenger_core::{
     contracts::{
