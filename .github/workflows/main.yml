@@ -141,14 +141,14 @@ jobs:
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: actions/setup-go@v5
         with:
-          go-version: ${{ var.version_go }}
+          go-version: ${{ env.version_go }}
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
         with:
-          version: ${{ var.version_foundry }}
+          version: ${{ env.version_foundry }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
