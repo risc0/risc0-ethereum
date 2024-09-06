@@ -146,7 +146,9 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@$version_foundry
+      - uses: risc0/foundry-toolchain@main
+        with:
+          version: $version_foundry
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -154,16 +156,20 @@ jobs:
           features: ${{ matrix.feature }}
       - name: Pull and tag OP docker images
         run: |
-          IMAGE_BASE_PREFIX="us-docker.pkg.dev/oplabs-tools-artifacts/images"
           docker pull "$IMAGE_BASE_PREFIX/op-node:v1.9.1"
           docker pull "$IMAGE_BASE_PREFIX/op-proposer:v1.9.1"
           docker pull "$IMAGE_BASE_PREFIX/op-batcher:v1.9.1"
-          # rename to the tags that the docker-compose of the devnet expects
           docker tag "$IMAGE_BASE_PREFIX/op-node:v1.9.1" "$IMAGE_BASE_PREFIX/op-node:devnet"
           docker tag "$IMAGE_BASE_PREFIX/op-proposer:v1.9.1" "$IMAGE_BASE_PREFIX/op-proposer:devnet"
           docker tag "$IMAGE_BASE_PREFIX/op-batcher:v1.9.1" "$IMAGE_BASE_PREFIX/op-batcher:devnet"
+        env:
+          IMAGE_BASE_PREFIX: "us-docker.pkg.dev/oplabs-tools-artifacts/images"
       - name: Bring up the OP stack
-        run: DEVNET_NO_BUILD=false DEVNET_L2OO=true DEVNET_ALTDA=false make -C optimism devnet-up
+        run: make -C optimism devnet-up
+        env:
+          DEVNET_NO_BUILD: false
+          DEVNET_L2OO: true
+          DEVNET_ALTDA: false
 
   examples:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
