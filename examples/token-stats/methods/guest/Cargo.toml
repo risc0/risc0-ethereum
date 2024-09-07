@@ -6,13 +6,10 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-alloy-sol-types = { version = "0.7" }
+alloy-sol-types = { version = "0.8" }
 core = { path = "../../core" }
 risc0-steel = { path = "../../../../steel" }
 risc0-zkvm = { version = "1.1.0-rc.3", default-features = false, features = ["std"] }
-
-# Force the `compile-time-rng` feature, to prevent `getrandom` from being used.
-ahash = { version = "0.8", default-features = false, features = ["compile-time-rng"] }
 
 [patch.crates-io]
 # use optimized risc0 circuit

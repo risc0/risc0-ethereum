@@ -11,8 +11,8 @@ risc0-build = { version = "1.1.0-rc.3" }
 risc0-zkvm = { version = "1.1.0-rc.3", default-features = false }
 risc0-zkp = { version = "1.1.0-rc.3", default-features = false }
 
-alloy-primitives = { version = "0.7" }
-alloy-sol-types = { version = "0.7" }
+alloy-primitives = { version = "0.8" }
+alloy-sol-types = { version = "0.8" }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive", "env"] }
 erc20-methods = { path = "methods" }
