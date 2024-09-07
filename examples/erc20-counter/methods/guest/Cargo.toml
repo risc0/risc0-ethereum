@@ -10,11 +10,8 @@ path = "src/bin/balance_of.rs"
 [workspace]
 
 [dependencies]
-
-# Force the `compile-time-rng` feature, to prevent `getrandom` from being used.
-ahash = { version = "0.8", default-features = false, features = ["compile-time-rng"] }
-alloy-primitives = { version = "0.7" }
-alloy-sol-types = { version = "0.7" }
+alloy-primitives = { version = "0.8" }
+alloy-sol-types = { version = "0.8" }
 risc0-steel = { path = "../../../../steel" }
 risc0-zkvm = { version = "1.1.0-rc.2", default-features = false, features = ["std"] }
 
