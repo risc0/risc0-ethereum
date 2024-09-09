@@ -82,7 +82,12 @@ impl MerkleProof {
 #[cfg(feature = "host")]
 mod host {
     use super::{BeaconInput, MerkleProof};
-    use crate::{block::BlockInput, ethereum::EthBlockHeader, host::{db::AlloyDb, HostEvmEnv}, EvmBlockHeader};
+    use crate::{
+        block::BlockInput,
+        ethereum::EthBlockHeader,
+        host::{db::AlloyDb, HostEvmEnv},
+        EvmBlockHeader,
+    };
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
@@ -159,8 +164,7 @@ mod host {
 
             info!(
                 "Commitment to beacon block root {} at {}",
-                beacon_root,
-                block_ts
+                beacon_root, block_ts
             );
 
             Ok(BeaconInput { input, proof })
