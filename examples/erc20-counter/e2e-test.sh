@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e -o pipefail
+set -x
 
 export TOKEN_OWNER=${ETH_WALLET_ADDRESS:?}
 
@@ -9,8 +10,7 @@ CHAIN_ID=$((CHAIN_ID))
 
 # Deploy the Counter contract
 echo "Deploying the Counter contract..."
-forge script --rpc-url ${ETH_RPC_URL:?} --private-key ${ETH_WALLET_PRIVATE_KEY:?} --broadcast DeployCounter ||
-forge script --rpc-url ${ETH_RPC_URL:?} --private-key ${ETH_WALLET_PRIVATE_KEY:?} --broadcast DeployCounter --resume
+forge script --rpc-url ${ETH_RPC_URL:?} --private-key ${ETH_WALLET_PRIVATE_KEY:?} --broadcast DeployCounter
 
 # Extract the Toyken address
 TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20FixedSupply") | .contractAddress' ./broadcast/DeployCounter.s.sol/$CHAIN_ID/run-latest.json)
