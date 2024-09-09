@@ -76,6 +76,8 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     pub fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
         let commitment = Commitment::from_header(&header);
+        #[cfg(feature = "host")]
+        log::info!("Commitment to block {}", commitment.blockDigest);
 
         Self {
             db: Some(db),
