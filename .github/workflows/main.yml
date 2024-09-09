@@ -221,7 +221,7 @@ jobs:
           ETH_WALLET_PRIVATE_KEY: "0x5d2344259f42259f82d2c140aa66102ba89b57b4883ee441a8b312622bd42491"
         working-directory: examples/erc20-counter
       - name: Stop local Ethereum testnet
-        if: steps.local-eth-testnet.outcome == 'success'
+        if: always()
         run: kurtosis enclave rm -f local-eth-testnet
 
   doc:
