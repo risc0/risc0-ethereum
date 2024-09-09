@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e -o pipefail
-set -x
 
 export TOKEN_OWNER=${ETH_WALLET_ADDRESS:?}
 
