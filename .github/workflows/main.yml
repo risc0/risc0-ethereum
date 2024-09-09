@@ -206,13 +206,16 @@ jobs:
           echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
         shell: bash
       - name: Instantiating a local Ethereum testnet
-        run: kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package
+        run: |
+          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package
+          echo "ETH_TESTNET_EL_URL=http://$(kurtosis port print local-eth-testnet el-1-geth-lighthouse rpc)" >> $GITHUB_ENV
+          echo "ETH_TESTNET_CL_URL=$(kurtosis port print local-eth-testnet cl-1-lighthouse-geth http)" >> $GITHUB_ENV
       - run: cargo build
         working-directory: examples/erc20-counter
       - name: Run E2E test (Block Commitment)
         run: ./e2e-test.sh
         env:
-          ETH_RPC_URL: "http://127.0.0.1:61561"
+          ETH_RPC_URL: ${{ env.ETH_TESTNET_EL_URL }}
           ETH_WALLET_ADDRESS: "0x802dCbE1B1A97554B4F50DB5119E37E8e7336417"
           ETH_WALLET_PRIVATE_KEY: "0x5d2344259f42259f82d2c140aa66102ba89b57b4883ee441a8b312622bd42491"
         working-directory: examples/erc20-counter
