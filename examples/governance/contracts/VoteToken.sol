@@ -29,17 +29,11 @@ contract VoteToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
         _mint(to, amount);
     }
 
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal override(ERC20, ERC20Votes) {
+    function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
         super._update(from, to, value);
     }
 
-    function nonces(
-        address owner
-    ) public view override(Nonces, ERC20Permit) returns (uint256) {
+    function nonces(address owner) public view override(Nonces, ERC20Permit) returns (uint256) {
         return super.nonces(owner);
     }
 }

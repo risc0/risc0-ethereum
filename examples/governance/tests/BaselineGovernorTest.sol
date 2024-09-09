@@ -28,19 +28,10 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
     }
 
     function testProposalCreation() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
 
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
         assertEq(
@@ -53,61 +44,26 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
     function testProposalThreshold() public {
         // Try to create a proposal with Charlie (who has 30 tokens)
         vm.prank(charlie);
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
         assertGt(proposalId, 0, "Proposal should be created with non-zero ID");
 
         // Now try with Alice (who has 100 tokens) with different parameters
         vm.prank(alice);
-        (
-            address[] memory targets2,
-            uint256[] memory values2,
-            bytes[] memory calldatas2,
-            string memory description2
-        ) = _createProposalParams();
+        (address[] memory targets2, uint256[] memory values2, bytes[] memory calldatas2, string memory description2) =
+            _createProposalParams();
         targets2[0] = address(0x5); // Change target address
         description2 = "Do something else"; // Change description
-        uint256 proposalId2 = baselineGovernor.propose(
-            targets2,
-            values2,
-            calldatas2,
-            description2
-        );
-        assertGt(
-            proposalId2,
-            0,
-            "Second proposal should be created with non-zero ID"
-        );
-        assertNotEq(
-            proposalId,
-            proposalId2,
-            "Proposal IDs should be different"
-        );
+        uint256 proposalId2 = baselineGovernor.propose(targets2, values2, calldatas2, description2);
+        assertGt(proposalId2, 0, "Second proposal should be created with non-zero ID");
+        assertNotEq(proposalId, proposalId2, "Proposal IDs should be different");
     }
 
     function testVoting() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
 
         // Move to active state
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
@@ -118,30 +74,17 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
         vm.prank(bob);
         baselineGovernor.castVote(proposalId, 0); // Vote against
 
-        (
-            uint256 againstVotes,
-            uint256 forVotes,
-            uint256 abstainVotes
-        ) = baselineGovernor.proposalVotes(proposalId);
+        (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes) = baselineGovernor.proposalVotes(proposalId);
         assertEq(forVotes, 100, "For votes should be 100");
         assertEq(againstVotes, 50, "Against votes should be 50");
         assertEq(abstainVotes, 0, "Abstain votes should be 0");
     }
 
     function testVotingBySignature() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
 
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
 
         // Transfer tokens from alice to the new voter address
         vm.prank(alice);
@@ -158,43 +101,25 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
         uint8 support = 1; // 1 for 'For'
 
         // Generate the vote hash
-        bytes32 digest = baselineGovernor.voteHash(
-            proposalId,
-            support,
-            voterAddress
-        );
+        bytes32 digest = baselineGovernor.voteHash(proposalId, support, voterAddress);
 
         // Sign the vote hash
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(voterPk, digest);
         bytes memory signature = abi.encodePacked(r, s, v);
 
         // Cast vote by signature
-        baselineGovernor.castVoteBySig(
-            proposalId,
-            support,
-            voterAddress,
-            signature
-        );
+        baselineGovernor.castVoteBySig(proposalId, support, voterAddress, signature);
 
         // Check the vote was counted
-        (, uint256 forVotes, ) = baselineGovernor.proposalVotes(proposalId);
+        (, uint256 forVotes,) = baselineGovernor.proposalVotes(proposalId);
 
         assertEq(forVotes, 100, "For votes should be 100");
     }
 
     function testQuorumAndExecution() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
 
         // Move to active state and vote
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);
@@ -212,12 +137,7 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
             "Proposal should have succeeded"
         );
 
-        baselineGovernor.execute(
-            targets,
-            values,
-            calldatas,
-            keccak256(bytes(description))
-        );
+        baselineGovernor.execute(targets, values, calldatas, keccak256(bytes(description)));
         assertEq(
             uint256(baselineGovernor.state(proposalId)),
             uint256(IGovernor.ProposalState.Executed),
@@ -226,18 +146,9 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
     }
 
     function testFailToReachQuorum() public {
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = baselineGovernor.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
 
         // Move to active state
         vm.roll(block.number + baselineGovernor.votingDelay() + 1);

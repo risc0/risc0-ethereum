@@ -46,9 +46,7 @@ contract GenerateVoteData is Script, RiscZeroCheats {
         uint256 deployerKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
 
         if (deployerAddr != address(0) && deployerKey != uint256(0)) {
-            revert(
-                "only one of DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY should be set"
-            );
+            revert("only one of DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY should be set");
         }
         if (deployerAddr != address(0)) {
             vm.startBroadcast(deployerAddr);
@@ -56,14 +54,10 @@ contract GenerateVoteData is Script, RiscZeroCheats {
             vm.startBroadcast(deployerKey);
         } else if (block.chainid == 31337) {
             // On an Anvil local testnet, use the first private key by default.
-            deployerKey = uint256(
-                0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-            );
+            deployerKey = uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80);
             vm.startBroadcast(deployerKey);
         } else {
-            revert(
-                "specify a deployer with either DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY"
-            );
+            revert("specify a deployer with either DEPLOYER_ADDRESS or DEPLOYER_PRIVATE_KEY");
         }
     }
 
@@ -77,14 +71,8 @@ contract GenerateVoteData is Script, RiscZeroCheats {
             console2.log("Using IRiscZeroVerifier at ", address(verifierAddr));
             verifier = IRiscZeroVerifier(verifierAddr);
         } else {
-            verifier = new RiscZeroGroth16Verifier(
-                ControlID.CONTROL_ROOT,
-                ControlID.BN254_CONTROL_ID
-            );
-            console2.log(
-                "Deployed RiscZeroGroth16Verifier to ",
-                address(verifier)
-            );
+            verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+            console2.log("Deployed RiscZeroGroth16Verifier to ", address(verifier));
         }
         // Deploy the IVotes token used to grant voting rights.
         IVotes token;
@@ -105,32 +93,17 @@ contract GenerateVoteData is Script, RiscZeroCheats {
         console2.log("Deployed RiscZeroGovernor to ", address(gov));
 
         // Initiate proposal
-        (
-            address[] memory targets,
-            uint256[] memory values,
-            bytes[] memory calldatas,
-            string memory description
-        ) = _createProposalParams();
-        uint256 proposalId = gov.propose(
-            targets,
-            values,
-            calldatas,
-            description
-        );
+        (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
+            _createProposalParams();
+        uint256 proposalId = gov.propose(targets, values, calldatas, description);
 
-        
         vm.stopBroadcast();
     }
 
     function _createProposalParams()
         internal
         pure
-        returns (
-            address[] memory,
-            uint256[] memory,
-            bytes[] memory,
-            string memory
-        )
+        returns (address[] memory, uint256[] memory, bytes[] memory, string memory)
     {
         address[] memory targets = new address[](1);
         targets[0] = address(0x4);

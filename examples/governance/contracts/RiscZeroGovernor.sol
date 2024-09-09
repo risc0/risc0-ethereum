@@ -39,11 +39,7 @@ contract RiscZeroGovernor is
     bytes32 public immutable imageId;
     IRiscZeroVerifier public immutable verifier;
 
-    constructor(
-        IVotes token_,
-        bytes32 imageId_,
-        IRiscZeroVerifier verifier_
-    )
+    constructor(IVotes token_, bytes32 imageId_, IRiscZeroVerifier verifier_)
         Governor("RiscZeroGovernor")
         GovernorSettings(300, /* blocks */ 21000, /* blocks */ 0)
         GovernorVotes(token_)
@@ -57,18 +53,13 @@ contract RiscZeroGovernor is
      * @notice Calculate the current state of the proposal.
      * @dev See {IGovernor-state}.
      */
-    function state(
-        uint256 proposalId
-    ) public view override(IGovernor, Governor) returns (ProposalState) {
+    function state(uint256 proposalId) public view override(IGovernor, Governor) returns (ProposalState) {
         ProposalState superState = super.state(proposalId);
 
         // If the votes have not been finalized, by proving the off-chain verified list of validated
         // ballots, then keep the proposal status as active. IGovernor does not provide a state to
         // indicate that voting has ended, but the result is unknown.
-        if (
-            superState == ProposalState.Defeated &&
-            !_proposalVotesFinalized(proposalId)
-        ) {
+        if (superState == ProposalState.Defeated && !_proposalVotesFinalized(proposalId)) {
             return ProposalState.Active;
         }
         return superState;
@@ -78,10 +69,7 @@ contract RiscZeroGovernor is
      * @dev See {IGovernor-castVote}.
      *      Does not return the voter's balance, since balance lookups are deferred.
      */
-    function castVote(
-        uint256 proposalId,
-        uint8 support
-    ) public override(Governor, IGovernor) returns (uint256) {
+    function castVote(uint256 proposalId, uint8 support) public override(Governor, IGovernor) returns (uint256) {
         address voter = _msgSender();
         _commitVote(proposalId, support, voter);
         emit VoteCast(voter, proposalId, support, 0, "");
@@ -92,11 +80,11 @@ contract RiscZeroGovernor is
      * @dev See {IGovernor-castVoteWithReason}.
      *      Does not return the voter's balance, since balance lookups are deferred.
      */
-    function castVoteWithReason(
-        uint256 proposalId,
-        uint8 support,
-        string calldata reason
-    ) public override(Governor, IGovernor) returns (uint256) {
+    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason)
+        public
+        override(Governor, IGovernor)
+        returns (uint256)
+    {
         address voter = _msgSender();
         _commitVote(proposalId, support, voter);
         emit VoteCast(voter, proposalId, support, 0, reason);
@@ -107,16 +95,12 @@ contract RiscZeroGovernor is
      * @dev See {IGovernor-castVoteWithReasonAndParams}.
      *      Does not return the voter's balance, since balance lookups are deferred.
      */
-    function castVoteWithReasonAndParams(
-        uint256 proposalId,
-        uint8 support,
-        string calldata reason,
-        bytes memory params
-    ) public override(Governor, IGovernor) returns (uint256) {
-        require(
-            params.length == 0,
-            "RiscZeroGovernor: params are not supported"
-        );
+    function castVoteWithReasonAndParams(uint256 proposalId, uint8 support, string calldata reason, bytes memory params)
+        public
+        override(Governor, IGovernor)
+        returns (uint256)
+    {
+        require(params.length == 0, "RiscZeroGovernor: params are not supported");
 
         address voter = _msgSender();
         _commitVote(proposalId, support, voter);
@@ -129,12 +113,11 @@ contract RiscZeroGovernor is
      *      Does not return the voter's balance, since balance lookups are deferred.
      *      Also does not log a VoteCast event because it cannot be determined yet if this is a valid vote.
      */
-    function castVoteBySig(
-        uint256 proposalId,
-        uint8 support,
-        address voter,
-        bytes memory signature
-    ) public override(Governor, IGovernor) returns (uint256) {
+    function castVoteBySig(uint256 proposalId, uint8 support, address voter, bytes memory signature)
+        public
+        override(Governor, IGovernor)
+        returns (uint256)
+    {
         bytes32 digest = voteHash(proposalId, support, voter);
 
         _commitVoteBySig(proposalId, support, signature, digest);
@@ -153,17 +136,9 @@ contract RiscZeroGovernor is
         bytes memory params,
         bytes memory signature
     ) public returns (uint256) {
-        require(
-            params.length == 0,
-            "RiscZeroGovernor: params are not supported"
-        );
+        require(params.length == 0, "RiscZeroGovernor: params are not supported");
 
-        bytes32 digest = voteHashWithReasonAndParamsBySig(
-            proposalId,
-            support,
-            reason,
-            params
-        );
+        bytes32 digest = voteHashWithReasonAndParamsBySig(proposalId, support, reason, params);
         _commitVoteBySig(proposalId, support, signature, digest);
         return 0;
     }
@@ -171,10 +146,7 @@ contract RiscZeroGovernor is
     /// @notice verify the proof of the `finalize_votes` guest program and finalize the vote count.
     /// `seal`: the seal is a zk-STARK and generated by the prover.
     /// `journal`: the public outputs of the computation.
-    function verifyAndFinalizeVotes(
-        bytes calldata seal,
-        bytes calldata journal
-    ) public {
+    function verifyAndFinalizeVotes(bytes calldata seal, bytes calldata journal) public {
         // verify the proof
         verifier.verify(seal, imageId, sha256(journal));
 
@@ -186,13 +158,7 @@ contract RiscZeroGovernor is
         _finalizeVotes(proposalId, ballotHash, votingData);
     }
 
-    function _castVote(
-        uint256,
-        address,
-        uint8,
-        string memory,
-        bytes memory
-    ) internal pure override returns (uint256) {
+    function _castVote(uint256, address, uint8, string memory, bytes memory) internal pure override returns (uint256) {
         revert("_castVote is not supported");
     }
 
@@ -203,35 +169,19 @@ contract RiscZeroGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    )
-        public
-        override(IGovernor, Governor, RiscZeroGovernorCounting)
-        returns (uint256)
-    {
+    ) public override(IGovernor, Governor, RiscZeroGovernorCounting) returns (uint256) {
         return super.propose(targets, values, calldatas, description);
     }
 
-    function votingDelay()
-        public
-        view
-        override(Governor, IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingDelay() public view override(Governor, IGovernor, GovernorSettings) returns (uint256) {
         return super.votingDelay();
     }
 
-    function votingPeriod()
-        public
-        view
-        override(Governor, IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingPeriod() public view override(Governor, IGovernor, GovernorSettings) returns (uint256) {
         return super.votingPeriod();
     }
 
-    function quorum(
-        uint256 blockNumber
-    )
+    function quorum(uint256 blockNumber)
         public
         view
         override(Governor, IGovernor, GovernorVotesQuorumFraction)
@@ -240,30 +190,15 @@ contract RiscZeroGovernor is
         return super.quorum(blockNumber);
     }
 
-    function proposalThreshold()
-        public
-        view
-        override(Governor, IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function proposalThreshold() public view override(Governor, IGovernor, GovernorSettings) returns (uint256) {
         return super.proposalThreshold();
     }
 
-    function clock()
-        public
-        view
-        override(Governor, GovernorVotes, IERC6372)
-        returns (uint48)
-    {
+    function clock() public view override(Governor, GovernorVotes, IERC6372) returns (uint48) {
         return super.clock();
     }
 
-    function CLOCK_MODE()
-        public
-        view
-        override(Governor, GovernorVotes, IERC6372)
-        returns (string memory)
-    {
+    function CLOCK_MODE() public view override(Governor, GovernorVotes, IERC6372) returns (string memory) {
         return super.CLOCK_MODE();
     }
 }

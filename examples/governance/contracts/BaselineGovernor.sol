@@ -33,9 +33,7 @@ contract BaselineGovernor is
     GovernorVotes,
     GovernorVotesQuorumFraction
 {
-    constructor(
-        IVotes _token
-    )
+    constructor(IVotes _token)
         Governor("BaselineGovernor")
         GovernorSettings(300, /* blocks */ 21000, /* blocks */ 0)
         GovernorVotes(_token)
@@ -43,27 +41,15 @@ contract BaselineGovernor is
     {}
 
     // The following functions are overrides required by Solidity.
-    function votingDelay()
-        public
-        view
-        override(Governor, IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingDelay() public view override(Governor, IGovernor, GovernorSettings) returns (uint256) {
         return super.votingDelay();
     }
 
-    function votingPeriod()
-        public
-        view
-        override(Governor, IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingPeriod() public view override(Governor, IGovernor, GovernorSettings) returns (uint256) {
         return super.votingPeriod();
     }
 
-    function quorum(
-        uint256 blockNumber
-    )
+    function quorum(uint256 blockNumber)
         public
         view
         override(Governor, IGovernor, GovernorVotesQuorumFraction)
@@ -72,30 +58,15 @@ contract BaselineGovernor is
         return super.quorum(blockNumber);
     }
 
-    function proposalThreshold()
-        public
-        view
-        override(Governor, IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function proposalThreshold() public view override(Governor, IGovernor, GovernorSettings) returns (uint256) {
         return super.proposalThreshold();
     }
 
-    function clock()
-        public
-        view
-        override(Governor, GovernorVotes, IERC6372)
-        returns (uint48)
-    {
+    function clock() public view override(Governor, GovernorVotes, IERC6372) returns (uint48) {
         return super.clock();
     }
 
-    function CLOCK_MODE()
-        public
-        view
-        override(Governor, GovernorVotes, IERC6372)
-        returns (string memory)
-    {
+    function CLOCK_MODE() public view override(Governor, GovernorVotes, IERC6372) returns (string memory) {
         return super.CLOCK_MODE();
     }
 }

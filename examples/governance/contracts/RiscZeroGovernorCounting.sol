@@ -49,13 +49,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
      * @dev See {IGovernor-COUNTING_MODE}.
      */
     // solhint-disable-next-line func-name-mixedcase
-    function COUNTING_MODE()
-        public
-        pure
-        virtual
-        override
-        returns (string memory)
-    {
+    function COUNTING_MODE() public pure virtual override returns (string memory) {
         return "support=bravo&quorum=for,abstain";
     }
 
@@ -69,58 +63,41 @@ abstract contract RiscZeroGovernorCounting is Governor {
     /**
      * @dev Accessor to the internal vote counts.
      */
-    function proposalVotes(
-        uint256 proposalId
-    )
+    function proposalVotes(uint256 proposalId)
         public
         view
         virtual
         returns (uint256 againstVotes, uint256 forVotes, uint256 abstainVotes)
     {
         ProposalVote storage proposalVote = _proposalVotes[proposalId];
-        require(
-            proposalVote.finalized,
-            "proposalVotes: votes have not been finalized"
-        );
+        require(proposalVote.finalized, "proposalVotes: votes have not been finalized");
 
-        return (
-            proposalVote.againstVotes,
-            proposalVote.forVotes,
-            proposalVote.abstainVotes
-        );
+        return (proposalVote.againstVotes, proposalVote.forVotes, proposalVote.abstainVotes);
     }
 
     /**
      * @dev Accessor to the internal finalization status of the votes.
      */
-    function _proposalVotesFinalized(
-        uint256 proposalId
-    ) internal view virtual returns (bool) {
+    function _proposalVotesFinalized(uint256 proposalId) internal view virtual returns (bool) {
         return _proposalVotes[proposalId].finalized;
     }
 
     /**
      * @dev See {Governor-_quorumReached}.
      */
-    function _quorumReached(
-        uint256 proposalId
-    ) internal view virtual override returns (bool) {
+    function _quorumReached(uint256 proposalId) internal view virtual override returns (bool) {
         // This function is only used internally, and reverting here would break the current,
         // implementation of the proposal state function, so this function will return for non-final
         // results. If the result is not finalized, it will always be false.
         ProposalVote storage proposalVote = _proposalVotes[proposalId];
 
-        return
-            quorum(proposalSnapshot(proposalId)) <=
-            proposalVote.forVotes + proposalVote.abstainVotes;
+        return quorum(proposalSnapshot(proposalId)) <= proposalVote.forVotes + proposalVote.abstainVotes;
     }
 
     /**
      * @dev See {Governor-_voteSucceeded}. In this module, the forVotes must be strictly over the againstVotes.
      */
-    function _voteSucceeded(
-        uint256 proposalId
-    ) internal view virtual override returns (bool) {
+    function _voteSucceeded(uint256 proposalId) internal view virtual override returns (bool) {
         // This function is only used internally, and reverting here would break the current,
         // implementation of the proposal state function, so this function will return for non-final
         // results. If the result is not finalized, it will always be false.
@@ -132,68 +109,33 @@ abstract contract RiscZeroGovernorCounting is Governor {
     /**
      * @dev See {Governor-_countVote}. In this module, the support follows the `VoteType` enum (from Governor Bravo).
      */
-    function _countVote(
-        uint256,
-        address,
-        uint8,
-        uint256,
-        bytes memory
-    ) internal pure override {
+    function _countVote(uint256, address, uint8, uint256, bytes memory) internal pure override {
         revert("_countVote is not supported");
     }
 
     /// @notice Commits the signed vote to the proposal by hashing it into the accumulator.
-    function _commitVoteBySig(
-        uint256 proposalId,
-        uint8 support,
-        bytes memory signature,
-        bytes32 sigDigest
-    ) internal {
-
+    function _commitVoteBySig(uint256 proposalId, uint8 support, bytes memory signature, bytes32 sigDigest) internal {
         ProposalVote storage proposalVote = _proposalVotes[proposalId];
 
-        (bytes32 r, bytes32 s, uint8 v) = abi.decode(
-            signature,
-            (bytes32, bytes32, uint8)
-        );
+        (bytes32 r, bytes32 s, uint8 v) = abi.decode(signature, (bytes32, bytes32, uint8));
 
         // Hash into the ballot bx the 68-byte encoded ballot with signature.
         // NOTE: Fields are aligned with 4 and 32 bytes boundaries.
-        bytes memory encoded = abi.encodePacked(
-            uint16(1),
-            support,
-            v,
-            r,
-            s,
-            sigDigest
-        );
+        bytes memory encoded = abi.encodePacked(uint16(1), support, v, r, s, sigDigest);
 
         emit CommittedBallot(proposalId, encoded);
-        proposalVote.ballotBoxCommit = sha256(
-            bytes.concat(proposalVote.ballotBoxCommit, encoded)
-        );
+        proposalVote.ballotBoxCommit = sha256(bytes.concat(proposalVote.ballotBoxCommit, encoded));
     }
 
     /// @notice Commits the on-chain vote to the proposal ballot box by hashing it into the accumulator.
-    function _commitVote(
-        uint256 proposalId,
-        uint8 support,
-        address account
-    ) internal {
+    function _commitVote(uint256 proposalId, uint8 support, address account) internal {
         ProposalVote storage proposalVote = _proposalVotes[proposalId];
 
         // Hash into the ballot bx the 24-byte encoded ballot without a signature.
-        bytes memory encoded = abi.encodePacked(
-            uint16(0),
-            support,
-            uint8(0),
-            account
-        );
+        bytes memory encoded = abi.encodePacked(uint16(0), support, uint8(0), account);
 
         emit CommittedBallot(proposalId, encoded);
-        proposalVote.ballotBoxCommit = sha256(
-            bytes.concat(proposalVote.ballotBoxCommit, encoded)
-        );
+        proposalVote.ballotBoxCommit = sha256(bytes.concat(proposalVote.ballotBoxCommit, encoded));
     }
 
     function propose(
@@ -208,23 +150,13 @@ abstract contract RiscZeroGovernorCounting is Governor {
         return id;
     }
 
-    function _finalizeVotes(
-        uint256 proposalId,
-        bytes32 ballotHash,
-        bytes calldata votingData
-    ) internal {
+    function _finalizeVotes(uint256 proposalId, bytes32 ballotHash, bytes calldata votingData) internal {
         require(clock() > proposalDeadline(proposalId), "voting has not ended");
         ProposalVote memory proposalVote = _proposalVotes[proposalId];
         require(!proposalVote.finalized, "votes have already been finalized");
-        require(
-            proposalVote.ballotBoxCommit == ballotHash,
-            "ballot box accumulator mismatch"
-        );
+        require(proposalVote.ballotBoxCommit == ballotHash, "ballot box accumulator mismatch");
 
-        require(
-            votingData.length % 24 == 0,
-            "must encode a whole number of encoded ballots"
-        );
+        require(votingData.length % 24 == 0, "must encode a whole number of encoded ballots");
 
         proposalVote.finalized = true;
 
@@ -232,11 +164,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
         bytes memory params = _defaultParams();
 
         // Iterate through the encoded ballots in chunks of 24 bytes.
-        for (
-            uint256 offset = 0;
-            offset < votingData.length;
-            offset = offset + 24
-        ) {
+        for (uint256 offset = 0; offset < votingData.length; offset = offset + 24) {
             // Decode the packed ballot encoding.
             // { uint16(0), uint8(support), uint8(0), address }
             bytes24 ballot = bytes24(votingData[offset:offset + 24]);
@@ -254,9 +182,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
             } else if (support == uint8(VoteType.Abstain)) {
                 proposalVote.abstainVotes += weight;
             } else {
-                revert(
-                    "RiscZeroGovernorCounting: invalid value for enum VoteType"
-                );
+                revert("RiscZeroGovernorCounting: invalid value for enum VoteType");
             }
         }
 

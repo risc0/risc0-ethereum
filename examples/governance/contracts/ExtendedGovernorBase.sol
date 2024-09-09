@@ -21,24 +21,9 @@ import {Governor, IGovernor} from "openzeppelin/contracts/governance/Governor.so
 abstract contract ExtendedGovernorBase is IGovernor, Governor {
     // Copied from the Governor contract.
     /// @notice Calculate the message digest to sign in order to call castVoteBySig.
-    function voteHash(
-        uint256 proposalId,
-        uint8 support,
-        address voter
-    ) public virtual returns (bytes32) {
+    function voteHash(uint256 proposalId, uint8 support, address voter) public virtual returns (bytes32) {
         uint256 nonce = nonces(voter);
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        BALLOT_TYPEHASH,
-                        proposalId,
-                        support,
-                        voter,
-                        nonce
-                    )
-                )
-            );
+        return _hashTypedDataV4(keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support, voter, nonce)));
     }
 
     /// @notice Calculate the message digest to sign in order to call castVoteBySig.
@@ -48,17 +33,10 @@ abstract contract ExtendedGovernorBase is IGovernor, Governor {
         string calldata reason,
         bytes memory params
     ) public view virtual returns (bytes32) {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        EXTENDED_BALLOT_TYPEHASH,
-                        proposalId,
-                        support,
-                        keccak256(bytes(reason)),
-                        keccak256(params)
-                    )
-                )
-            );
+        return _hashTypedDataV4(
+            keccak256(
+                abi.encode(EXTENDED_BALLOT_TYPEHASH, proposalId, support, keccak256(bytes(reason)), keccak256(params))
+            )
+        );
     }
 }
