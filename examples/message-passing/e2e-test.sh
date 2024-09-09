@@ -16,7 +16,7 @@ CALL_DATA=$(cast cd 'increment()')
 echo "L1CrossDomainMessenger.sendMessage..."
 SEND_MESSAGE_RECEIPT=$(cast send --rpc-url "${L1_RPC_URL:?}" --private-key "${L1_WALLET_PRIVATE_KEY:?}" --json "$L1_CROSS_DOMAIN_MESSENGER_ADDRESS" 'sendMessage(address, bytes)' "$COUNTER_ADDRESS" "$CALL_DATA")
 echo "$SEND_MESSAGE_RECEIPT" | jq
-SEND_MESSAGE_TX_HASH=$(echo "$SEND_MESSAGE_RECEIPT" | jq -re 'transactionHash')
+SEND_MESSAGE_TX_HASH=$(echo "$SEND_MESSAGE_RECEIPT" | jq -re '.transactionHash')
 
 echo "Create proof..."
 RUST_LOG=info,risc0_steel=debug cargo run -- \
