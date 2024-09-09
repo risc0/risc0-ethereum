@@ -18,21 +18,24 @@
 
 use alloy::{
     network::EthereumWallet,
-    providers::ProviderBuilder,
+    providers::{Provider, ProviderBuilder},
     signers::local::PrivateKeySigner,
     sol_types::{SolCall, SolValue},
 };
-use alloy_primitives::Address;
+use alloy_primitives::{Address, U256};
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
 use erc20_counter_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
-    Commitment, Contract,
+    Commitment, Contract, EvmBlockHeader,
 };
 use risc0_zkvm::{default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext};
-use tokio::task;
+use tokio::{
+    task,
+    time::{sleep, Duration},
+};
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
@@ -55,9 +58,9 @@ alloy::sol!(
 );
 
 /// Simple program to create a proof to increment the Counter contract.
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 struct Args {
-    /// Private key
+    /// Ethereum private key
     #[clap(long, env)]
     eth_wallet_private_key: PrivateKeySigner,
 
@@ -72,12 +75,12 @@ struct Args {
     #[clap(long, env)]
     beacon_api_url: Option<Url>,
 
-    /// Address of the Counter verifier
+    /// Address of the Counter verifier contract
     #[clap(long)]
-    counter: Address,
+    counter_address: Address,
 
     /// Address of the ERC20 token contract
-    #[clap(long, env)]
+    #[clap(long)]
     token_contract: Address,
 
     /// Address to query the token balance of
@@ -102,9 +105,15 @@ async fn main() -> Result<()> {
         .on_http(args.eth_rpc_url);
 
     // Create an EVM environment from that provider defaulting to the latest block.
-    let mut env = EthEvmEnv::builder().provider(provider.clone()).build().await?;
+    let mut env = EthEvmEnv::builder()
+        .provider(provider.clone())
+        .build()
+        .await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+
+    // Get the block that the EVM environment is based on.
+    let block_number = env.header().number();
 
     // Prepare the function call
     let call = IERC20::balanceOfCall {
@@ -114,13 +123,8 @@ async fn main() -> Result<()> {
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
     let mut contract = Contract::preflight(args.token_contract, &mut env);
-    let returns = contract.call_builder(&call).call().await?;
-    println!(
-        "Call {} Function on {:#} returns: {}",
-        IERC20::balanceOfCall::SIGNATURE,
-        args.token_contract,
-        returns._0
-    );
+    let returns = contract.call_builder(&call).call().await?._0;
+    assert!(returns >= U256::from(1));
 
     // Finally, construct the input from the environment.
     // There are two options: Use EIP-4788 for verification by providing a Beacon API endpoint,
@@ -131,7 +135,7 @@ async fn main() -> Result<()> {
         env.into_input().await?
     };
 
-    println!("Creating proof for the constructed input...");
+    // Create the steel proof.
     let prove_info = task::spawn_blocking(move || {
         let env = ExecutorEnv::builder()
             .write(&evm_input)?
@@ -154,23 +158,27 @@ async fn main() -> Result<()> {
 
     // Decode and log the commitment
     let journal = Journal::abi_decode(journal, true).context("invalid journal")?;
-    println!(
-        "The guest committed to block {}",
-        journal.commitment.blockDigest
-    );
+    log::debug!("Steel commitment: {:?}", journal.commitment);
 
     // ABI encode the seal.
-    let seal = encode_seal(&receipt)?;
+    let seal = encode_seal(&receipt).context("invalid receipt")?;
 
     // Create an alloy instance of the Counter contract.
-    let contract = ICounter::new(args.counter, provider);
+    let contract = ICounter::new(args.counter_address, &provider);
 
     // Call ICounter::imageID() to check that the contract has been deployed correctly.
     let contract_image_id = Digest::from(contract.imageID().call().await?._0.0);
     ensure!(contract_image_id == Digest::from(BALANCE_OF_ID));
 
+    // Make sure there is at least one child block. (Unless the node is anvil)
+    if !provider.get_client_version().await?.starts_with("anvil") {
+        while provider.get_block_number().await? <= block_number {
+            sleep(Duration::from_secs(3)).await;
+        }
+    }
+
     // Call the increment function of the contract and wait for confirmation.
-    println!(
+    log::info!(
         "Sending Tx calling {} Function of {:#}...",
         ICounter::incrementCall::SIGNATURE,
         contract.address()
@@ -178,11 +186,12 @@ async fn main() -> Result<()> {
     let call_builder = contract.increment(receipt.journal.bytes.into(), seal.into());
     log::debug!("Send {} {}", contract.address(), call_builder.calldata());
     let pending_tx = call_builder.send().await?;
-    let receipt = pending_tx.get_receipt().await?;
-    ensure!(receipt.status(), "transaction failed");
-
-    let value = contract.get().call().await?._0;
-    println!("New value of Counter: {}", value);
+    let tx_hash = *pending_tx.tx_hash();
+    let receipt = pending_tx
+        .get_receipt()
+        .await
+        .with_context(|| format!("transaction did not confirm: {}", tx_hash))?;
+    ensure!(receipt.status(), "transaction failed: {}", tx_hash);
 
     Ok(())
 }
