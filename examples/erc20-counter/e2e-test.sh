@@ -24,7 +24,7 @@ echo "Publishing a new state..."
 RUST_LOG=info,risc0_steel=debug cargo run --bin publisher -- \
     --eth-wallet-private-key=${ETH_WALLET_PRIVATE_KEY:?} \
     --eth-rpc-url=${ETH_RPC_URL:?} \
-    --counter=${COUNTER_ADDRESS:?} \
+    --counter-address=${COUNTER_ADDRESS:?} \
     --token-contract=${TOYKEN_ADDRESS:?} \
     --account=${TOKEN_OWNER:?}
 
