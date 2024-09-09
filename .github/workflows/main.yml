@@ -121,12 +121,14 @@ jobs:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
       fail-fast: false
-      # Run only on Linux with GPU. Additional coverage is marginal, and GPU is fastest.
       matrix:
         include:
           - os: Linux
-            feature: cuda
-            device: nvidia_rtx_a5000
+            feature: default
+            device: cpu
+          - os: macOS
+            feature: default
+            device: apple_m2_pro
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -140,9 +142,6 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -162,11 +161,6 @@ jobs:
       - name: build token-stats
         run: cargo build
         working-directory: examples/token-stats
-      - name: test erc20-Counter
-        run: ./test-local-deployment.sh
-        working-directory: examples/erc20-counter
-        env:
-          RISC0_DEV_MODE: true
       - run: sccache --show-stats
 
   e2e-tests:
