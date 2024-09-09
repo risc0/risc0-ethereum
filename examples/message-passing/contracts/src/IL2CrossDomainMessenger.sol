@@ -16,7 +16,9 @@
 
 pragma solidity ^0.8.20;
 
-interface IL2CrossDomainMessenger {
+import {IBookmark} from "./IBookmark.sol";
+
+interface IL2CrossDomainMessenger is IBookmark {
     /// @notice Emitted whenever a message is successfully relayed on this chain.
     /// @param msgHash Hash of the message that was relayed.
     event RelayedMessage(bytes32 indexed msgHash);

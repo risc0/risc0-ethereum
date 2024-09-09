@@ -132,7 +132,11 @@ pub mod host {
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
 
-            info!("Commitment to block hash {} at {}", env.header.seal(), env.header.number());
+            info!(
+                "Commitment to block hash {} at {}",
+                env.header.seal(),
+                env.header.number()
+            );
 
             let input = BlockInput {
                 header: env.header.into_inner(),

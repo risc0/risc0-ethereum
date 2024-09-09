@@ -20,12 +20,16 @@ import {Script, console2} from "forge-std/Script.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
+import {IL1Block} from "../src/IL1Block.sol";
 import {L1CrossDomainMessenger} from "../src/L1CrossDomainMessenger.sol";
 import {L2CrossDomainMessenger} from "../src/L2CrossDomainMessenger.sol";
 import {ImageID} from "../src/ImageID.sol";
 import {Counter} from "../src/Counter.sol";
 
 contract Deploy is Script, RiscZeroCheats {
+    // Address of the L1Block contract.
+    address private L1_BLOCK_ADDRESS = 0x4200000000000000000000000000000000000015;
+
     function run() external {
         // load ENV variables first
         uint256 key1 = vm.envUint("L1_ADMIN_PRIVATE_KEY");
@@ -50,8 +54,9 @@ contract Deploy is Script, RiscZeroCheats {
 
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
 
-        L2CrossDomainMessenger l2CrossDomainMessenger =
-            new L2CrossDomainMessenger(verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger));
+        L2CrossDomainMessenger l2CrossDomainMessenger = new L2CrossDomainMessenger(
+            verifier, ImageID.CROSS_DOMAIN_MESSENGER_ID, address(l1CrossDomainMessenger), IL1Block(L1_BLOCK_ADDRESS)
+        );
         console2.log("Deployed L2 L2CrossDomainMessenger to", address(l2CrossDomainMessenger));
 
         Counter counter = new Counter(l2CrossDomainMessenger, l1Sender);

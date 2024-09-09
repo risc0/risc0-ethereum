@@ -17,14 +17,18 @@
 pragma solidity ^0.8.20;
 
 import {Address} from "openzeppelin/contracts/utils/Address.sol";
+import {SafeCast} from "openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
 import {IL2CrossDomainMessenger} from "./IL2CrossDomainMessenger.sol";
+import {IL1Block} from "./IL1Block.sol";
+import {Bookmark} from "./Bookmark.sol";
 import {Journal, Message, Digest} from "./Structs.sol";
 
 /// @notice L1Bridging verifier contract for RISC Zero receipts of execution.
-contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
+contract L2CrossDomainMessenger is IL2CrossDomainMessenger, Bookmark {
     using Address for address;
+    using SafeCast for uint256;
     using Digest for Journal;
 
     /// @notice Value used for the L1 sender storage slot before an actual sender is set. This value is non-zero to
@@ -47,7 +51,9 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
     //          it has successfully been relayed, and can therefore not be relayed again.
     mapping(bytes32 => bool) private relayedMessages;
 
-    constructor(IRiscZeroVerifier verifier, bytes32 imageId, address l1CrossDomainMessenger) {
+    constructor(IRiscZeroVerifier verifier, bytes32 imageId, address l1CrossDomainMessenger, IL1Block l1Block)
+        Bookmark(l1Block)
+    {
         VERIFIER = verifier;
         IMAGE_ID = imageId;
         L1_CROSS_DOMAIN_MESSENGER = l1CrossDomainMessenger;
@@ -60,7 +66,7 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
 
         Journal memory journal = abi.decode(journalData, (Journal));
         require(journal.l1CrossDomainMessenger == L1_CROSS_DOMAIN_MESSENGER, "invalid l1CrossDomainMessenger");
-        require(Steel.validateCommitment(journal.commitment), "commitment verification failed");
+        require(validateCommitment(journal.commitment), "commitment verification failed");
 
         relayVerifiedMessage(journal.message, journal.messageDigest);
     }
@@ -69,6 +75,10 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
         require(xDomainMsgSender != DEFAULT_L1_SENDER, "L2CrossDomainMessenger: xDomainMsgSender is not set");
 
         return xDomainMsgSender;
+    }
+
+    function validateCommitment(Steel.Commitment memory commitment) internal view returns (bool) {
+        return commitment.blockDigest == Bookmark.blocks[commitment.blockID.toUint64()];
     }
 
     function relayVerifiedMessage(Message memory message, bytes32 digest) internal {

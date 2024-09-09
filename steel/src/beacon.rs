@@ -82,11 +82,16 @@ impl MerkleProof {
 #[cfg(feature = "host")]
 mod host {
     use super::{BeaconInput, MerkleProof};
-    use crate::{block::BlockInput, ethereum::EthBlockHeader, host::{db::AlloyDb, HostEvmEnv}, EvmBlockHeader};
+    use crate::{
+        block::BlockInput,
+        ethereum::EthBlockHeader,
+        host::{db::AlloyDb, HostEvmEnv},
+        EvmBlockHeader,
+    };
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::Sealable;
     use anyhow::{bail, ensure, Context};
-    use beacon_api_client::{minimal::Client as BeaconClient, BeaconHeaderSummary, BlockId};
+    use beacon_api_client::{mainnet::Client as BeaconClient, BeaconHeaderSummary, BlockId};
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use log::info;
     use proofs::{Proof, ProofAndWitness};
@@ -157,7 +162,10 @@ mod host {
                 "proof derived from API does not verify",
             );
 
-            info!("Commitment to beacon block root {} at {}", beacon_root, block_ts);
+            info!(
+                "Commitment to beacon block root {} at {}",
+                beacon_root, block_ts
+            );
 
             Ok(BeaconInput { input, proof })
         }

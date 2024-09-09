@@ -23,23 +23,26 @@ import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
 import {Journal, Message, Digest} from "../src/Structs.sol";
 import {IL1CrossDomainMessenger} from "../src/IL1CrossDomainMessenger.sol";
 import {L1CrossDomainMessenger} from "../src/L1CrossDomainMessenger.sol";
+import {IL1Block} from "../src/IL1Block.sol";
 import {Journal, L2CrossDomainMessenger} from "../src/L2CrossDomainMessenger.sol";
+import {L1BlockMock} from "./L1BlockMock.sol";
 import {Counter} from "../src/Counter.sol";
-import {Steel, Beacon, Encoding} from "risc0/steel/Steel.sol";
+import {Steel} from "risc0/steel/Steel.sol";
 
 contract E2ETest is Test {
     using Digest for Message;
     using Digest for Journal;
 
-    address internal constant BEACON_ROOTS_ADDRESS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
-    bytes32 internal CROSS_DOMAIN_MESSENGER_IMAGE_ID = bytes32(uint256(0x03));
-    bytes4 MOCK_SELECTOR = bytes4(0);
-
     RiscZeroMockVerifier private verifier;
     L1CrossDomainMessenger private l1CrossDomainMessenger;
     L2CrossDomainMessenger private l2CrossDomainMessenger;
+    IL1Block private l1Block;
     Counter private counter;
     address private sender;
+
+    bytes32 internal CROSS_DOMAIN_MESSENGER_IMAGE_ID = bytes32(uint256(0x03));
+
+    bytes4 MOCK_SELECTOR = bytes4(0);
 
     function setUp() public {
         sender = address(1);
@@ -47,17 +50,11 @@ contract E2ETest is Test {
 
         l1CrossDomainMessenger = new L1CrossDomainMessenger();
         verifier = new RiscZeroMockVerifier(MOCK_SELECTOR);
-        l2CrossDomainMessenger =
-            new L2CrossDomainMessenger(verifier, CROSS_DOMAIN_MESSENGER_IMAGE_ID, address(l1CrossDomainMessenger));
-        counter = new Counter(l2CrossDomainMessenger, sender);
-
-        // mock the beacon roots contract
-        vm.warp(60);
-        vm.mockCall(
-            BEACON_ROOTS_ADDRESS,
-            abi.encode(uint256(block.timestamp)),
-            abi.encode(keccak256(abi.encodePacked(block.timestamp)))
+        l1Block = new L1BlockMock();
+        l2CrossDomainMessenger = new L2CrossDomainMessenger(
+            verifier, CROSS_DOMAIN_MESSENGER_IMAGE_ID, address(l1CrossDomainMessenger), l1Block
         );
+        counter = new Counter(l2CrossDomainMessenger, address(0x0));
     }
 
     function testCounterIncrement() public {
@@ -89,14 +86,15 @@ contract E2ETest is Test {
         emit IL1CrossDomainMessenger.SentMessage(target, sender, data, nonce);
         l1CrossDomainMessenger.sendMessage(target, data);
 
-        // get the root of a previous Beacon block
-        uint240 beaconTimestamp = uint240(block.timestamp - 12);
-        bytes32 beaconRoot = Beacon.blockRoot(beaconTimestamp);
+        // bookmark the next block
+        vm.roll(1);
+        uint256 blockNumber = l2CrossDomainMessenger.bookmarkL1Block();
+        bytes32 blockHash = l1Block.hash();
 
         // mock the Journal
         Message memory message = Message(target, sender, data, nonce);
         Journal memory journal = Journal({
-            commitment: Steel.Commitment(Encoding.encodeVersionedID(beaconTimestamp, 1), beaconRoot),
+            commitment: Steel.Commitment(blockNumber, blockHash),
             l1CrossDomainMessenger: address(l1CrossDomainMessenger),
             message: message,
             messageDigest: message.digest()
