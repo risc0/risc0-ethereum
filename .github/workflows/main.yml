@@ -220,6 +220,14 @@ jobs:
           ETH_WALLET_ADDRESS: "0x802dCbE1B1A97554B4F50DB5119E37E8e7336417"
           ETH_WALLET_PRIVATE_KEY: "0x5d2344259f42259f82d2c140aa66102ba89b57b4883ee441a8b312622bd42491"
         working-directory: examples/erc20-counter
+      - name: Run E2E test (Beacon Commitment)
+        run: ./e2e-test.sh
+        env:
+          ETH_RPC_URL: ${{ env.ETH_TESTNET_EL_URL }}
+          BEACON_API_URL: ${{ env.ETH_TESTNET_CL_URL }}
+          ETH_WALLET_ADDRESS: "0x802dCbE1B1A97554B4F50DB5119E37E8e7336417"
+          ETH_WALLET_PRIVATE_KEY: "0x5d2344259f42259f82d2c140aa66102ba89b57b4883ee441a8b312622bd42491"
+        working-directory: examples/erc20-counter
       - name: Stop local Ethereum testnet
         if: steps.local-eth-testnet.outcome == 'success'
         run: kurtosis enclave rm -f local-eth-testnet
