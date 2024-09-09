@@ -17,15 +17,7 @@ use alloy_sol_types::{sol, SolStruct};
 use risc0_steel::Commitment;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_os = "zkvm"))]
-pub mod contracts;
-
-sol! {
-    interface IL1CrossDomainMessenger {
-        /// Returns whether the digest of the message has been committed to be relayed.
-        function contains(bytes32 digest) external view returns (bool);
-    }
-}
+sol!("../../contracts/src/IL1CrossDomainMessenger.sol");
 
 sol! {
     /// A Message to be relayed.
@@ -49,7 +41,18 @@ sol! {
 impl Message {
     #[inline]
     pub fn digest(&self) -> B256 {
-        return self.eip712_hash_struct();
+        self.eip712_hash_struct()
+    }
+}
+
+impl From<IL1CrossDomainMessenger::SentMessage> for Message {
+    fn from(event: IL1CrossDomainMessenger::SentMessage) -> Self {
+        Self {
+            target: event.target,
+            sender: event.sender,
+            data: event.data,
+            nonce: event.messageNonce,
+        }
     }
 }
 

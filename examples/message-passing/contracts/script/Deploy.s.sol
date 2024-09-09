@@ -55,7 +55,7 @@ contract Deploy is Script, RiscZeroCheats {
         console2.log("Deployed L2 L2CrossDomainMessenger to", address(l2CrossDomainMessenger));
 
         Counter counter = new Counter(l2CrossDomainMessenger, l1Sender);
-        console2.log("Deployed L1 Counter to", address(counter));
+        console2.log("Deployed L2 Counter to", address(counter));
 
         vm.stopBroadcast();
     }
