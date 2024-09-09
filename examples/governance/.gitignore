@@ -1,4 +1,5 @@
 tests/Elf.sol
+contracts/utils/ImageID.sol
 tests/benchmarks/gas_data.csv
 broadcast/*
 script/.env

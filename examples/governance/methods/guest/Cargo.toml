@@ -19,6 +19,8 @@ risc0-zkvm = { workspace = true, default-features = false, features = ["std"] }
 tiny-keccak = { version = "2.0", features = ["keccak"] }
 
 [profile.release]
+# Empirically observed to result in the best performance for this binary (in particular, better than
+# "fat"). It's often a good idea to experiment with different optimization levels and options.
+codegen-units = 1
 lto = "thin"
-opt-level = 3
 debug = true

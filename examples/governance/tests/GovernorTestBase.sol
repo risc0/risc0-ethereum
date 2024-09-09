@@ -67,7 +67,7 @@ contract GovernorTestBase is Test {
     }
 
     function getSignature(uint8 support, uint256 proposalId, address signer, uint256 privateKey)
-        internal
+    internal
         returns (bytes memory signature)
     {
         bytes32 digest = baselineGovernor.voteHash(proposalId, support, signer);
@@ -75,12 +75,14 @@ contract GovernorTestBase is Test {
         signature = abi.encodePacked(r, s, v);
     }
 
-    function hashBallots(uint8 aliceSupport, uint8 bobSupport) internal view returns (bytes32, bytes memory) {
+    // this function replicates the behavior of _commitVote in RiscZeroGovernorCounting.sol
+    function hashBallots(uint8 aliceSupport, uint8 bobSupport, uint256 proposalId) internal view returns (bytes32, bytes memory) {
         bytes memory encodeAliceVote = abi.encodePacked(uint16(0), aliceSupport, uint8(0), alice);
         bytes memory encodeBobVote = abi.encodePacked(uint16(0), bobSupport, uint8(0), bob);
         bytes memory encodedBallots = bytes.concat(encodeAliceVote, encodeBobVote);
 
-        bytes32 ballotBoxAccum = 0x296dc540e823507aa12a2e7be3c9c01672a7d9bb7840214223e8758fdb2986c7;
+        // initial salt for accumulator from `propose` in `GovernorCounting`
+        bytes32 ballotBoxAccum = bytes32(proposalId);
         ballotBoxAccum = sha256(bytes.concat(ballotBoxAccum, encodeAliceVote));
         bytes32 finalBallotBoxAccum = sha256(bytes.concat(ballotBoxAccum, encodeBobVote));
 

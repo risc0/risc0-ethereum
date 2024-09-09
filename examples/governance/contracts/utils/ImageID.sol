@@ -20,5 +20,5 @@ pragma solidity ^0.8.20;
 
 library ImageID {
     bytes32 public constant FINALIZE_VOTES_ID =
-        bytes32(0x66213b598eb5174ed0201322007fd52d73ae16f25db6c45e302b8e840ce3c54c);
+        bytes32(0x8c078ab820245b3ef0a7ec63bcc7a50a5cb88e729e10829356c39a0ae3d06453);
 }

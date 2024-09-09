@@ -86,8 +86,8 @@ contract BenchmarkTestBase is Test {
         internal
         noGasMetering
         returns (bytes memory journal)
-    {
-        (bytes32 finalBallotBoxAccum, bytes memory encodedBallots) = hashBallots(noOfAccounts);
+{
+        (bytes32 finalBallotBoxAccum, bytes memory encodedBallots) = hashBallots(noOfAccounts, proposalId);
 
         journal = abi.encodePacked(proposalId, finalBallotBoxAccum, encodedBallots);
     }
@@ -101,9 +101,9 @@ contract BenchmarkTestBase is Test {
         journalDigest = sha256(journal);
     }
 
-    function hashBallots(uint256 noOfAccounts) internal noGasMetering returns (bytes32, bytes memory) {
+    function hashBallots(uint256 noOfAccounts, uint256 proposalId) internal noGasMetering returns (bytes32, bytes memory) {
         bytes memory encodedBallots;
-        bytes32 ballotHash = 0x296dc540e823507aa12a2e7be3c9c01672a7d9bb7840214223e8758fdb2986c7;
+        bytes32 ballotHash = bytes32(proposalId);
 
         // Prepare the journal and receipt for verifyAndFinalizeVotes
         for (uint256 i = 0; i < noOfAccounts; i++) {
