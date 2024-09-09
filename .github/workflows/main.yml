@@ -168,7 +168,7 @@ jobs:
       - run: cargo build
       - run: forge test -vvv
       - name: Run E2E test
-        run: ./test-local-devnet.sh
+        run: ./e2e-test.sh
       - run: sccache --show-stats
 
   examples:
