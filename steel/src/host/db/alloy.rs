@@ -16,7 +16,7 @@ use std::{collections::HashMap, future::IntoFuture, marker::PhantomData};
 
 use super::provider::{ProviderConfig, ProviderDb};
 use alloy::{
-    network::Network,
+    network::{BlockResponse, HeaderResponse, Network},
     providers::Provider,
     transports::{Transport, TransportError},
 };
@@ -146,7 +146,8 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         let block = self
             .handle
             .block_on(self.provider.get_block_by_number(number.into(), false))?;
-        let header = block.unwrap().header;
-        Ok(header.hash.unwrap())
+        // TODO: return proper error
+        let block = block.unwrap();
+        Ok(block.header().hash())
     }
 }

@@ -1,0 +1,373 @@
+[chains.ethereum-mainnet]
+name = "Ethereum Mainnet"
+id = 1
+etherscan-url = "https://etherscan.io/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
+router = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
+
+# TODO: Add information for 1.0 contracts.
+[[chains.ethereum-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0x5a99469f18a5863D3258E577892589386dFD965E"
+estop = "0xB839eA7bBA8e6bB2893ca5252F3f3C13323D74F7"
+
+[[chains.ethereum-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x94A4684d6F7085C19138Bd4f9F3295fa9943C622"
+estop = "0x08AeD6C108E500540a9544beF7a8B8a05E056e87"
+
+###
+
+[chains.ethereum-sepolia]
+name = "Ethereum Sepolia"
+id = 11155111
+etherscan-url = "https://sepolia.etherscan.io/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0xB4E3306129208cC8e6E75157f75f62eAe0B920a0"
+router = "0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187"
+
+[[chains.ethereum-sepolia.verifiers]]
+version = "1.1.0-rc.2"
+selector = "0x4c630d87"
+verifier = "0xf4D938c73Bcc124e02A2D6c7557e98838B5E91B4"
+estop = "0x1C182869A6bF84DfAc0a70B46e2f9b3aeE9100e1"
+
+[[chains.ethereum-sepolia.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0xd9b0d07CeCd808a8172F21fA7C97992168f045CA"
+estop = "0x7a028d6f0BD603Ad2a47e3a3B1E504C0D6234877"
+
+###
+
+[chains.ethereum-holesky]
+name = "Ethereum Holesky"
+id = 17000
+etherscan-url = "https://holesky.etherscan.io/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
+router = "0xf70aBAb028Eb6F4100A24B203E113D94E87DE93C"
+
+[[chains.ethereum-holesky.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xDC986a09728F76110FF666eE7b20d99086501d15"
+estop = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
+
+[[chains.ethereum-holesky.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x44c220f0598345195cE99AD6A57aDfFcb9Ea33e7"
+estop = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+
+###
+
+[chains.arbitrum-mainnet]
+name = "Arbitrum Mainnet"
+id = 42161
+etherscan-url = "https://arbiscan.io/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.arbitrum-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.arbitrum-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.arbitrum-sepolia]
+name = "Arbitrum Sepolia"
+id = 421614
+etherscan-url = "https://sepolia.arbiscan.io/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.arbitrum-sepolia.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.arbitrum-sepolia.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.avalanche-mainnet]
+name = "Avalanche Mainnet"
+id = 43114
+etherscan-url = "https://snowtrace.io"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
+router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
+
+[[chains.avalanche-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.avalanche-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.avalanche-fuji]
+name = "Avalanche Fuji"
+id = 43113
+etherscan-url = "https://testnet.snowtrace.io"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
+router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
+
+[[chains.avalanche-fuji.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.avalanche-fuji.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.base-mainnet]
+name = "Base Mainnet"
+id = 8453
+etherscan-url = "https://basescan.org/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.base-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.base-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.base-sepolia]
+name = "Base Sepolia"
+id = 84532
+etherscan-url = "https://sepolia.basescan.org/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.base-sepolia.verifiers]]
+selector = "0x4c630d87"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+[[chains.base-sepolia.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x2DEfEA335392bb62d01f74e338697C7B31De254C"
+estop = "0xB369b4dd27FBfb59921d3A4a3D23AC2fc32FB908"
+
+###
+
+[chains.optimism-mainnet]
+name = "Optimism Mainnet"
+id = 10
+etherscan-url = "https://optimistic.etherscan.io/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.optimism-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.optimism-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.optimism-sepolia]
+name = "Optimism Sepolia"
+id = 11110
+etherscan-url = "https://sepolia-optimism.etherscan.io/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0x2DEfEA335392bb62d01f74e338697C7B31De254C"
+router = "0xB369b4dd27FBfb59921d3A4a3D23AC2fc32FB908"
+
+# NOTE: 1.0 was not deployed to OP Sepolia.
+
+[[chains.optimism-sepolia.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.optimism-sepolia.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.linea-mainnet]
+name = "Linea Mainnet"
+id = 59144
+etherscan-url = "https://lineascan.build/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.linea-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.linea-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.linea-sepolia]
+name = "Linea Sepolia"
+id = 59141
+etherscan-url = "https://sepolia.lineascan.build/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+router = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+# NOTE: As of the 1.1.0-rc.2 deployment on August 21, Forge could not verify the contracts.
+# Apperent issue is that because Linea Sepolia is not in the list of chains named in alloy-chains, Forge doesn't know its Etherscan API URL.
+
+# NOTE: As of the 1.1.0-rc.3 Deployment on August 29, Fireblocks does not support sending transactions to Linea Sepolia.
+# As a result, the router is deployed, but it is empty and useless.
+
+[[chains.linea-sepolia.verifiers]]
+selector = "0x4c630d87"
+verifier = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
+estop = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
+
+[[chains.linea-sepolia.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0xf70aBAb028Eb6F4100A24B203E113D94E87DE93C"
+estop = "0x44c220f0598345195cE99AD6A57aDfFcb9Ea33e7"
+
+###
+
+[chains.polygon-zkevm-mainnet]
+name = "Polygon zkEVM Mainnet"
+id = 1101
+etherscan-url = "https://zkevm.polygonscan.com/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
+
+[[chains.polygon-zkevm-mainnet.verifiers]]
+selector = "0x4c630d87"
+verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
+
+[[chains.polygon-zkevm-mainnet.verifiers]]
+version = "1.1.0-rc.3"
+selector = "0x50bd1769"
+verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
+estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
+
+###
+
+[chains.polygon-zkevm-testnet]
+name = "Polygon zkEVM Testnet"
+id = 1442
+etherscan-url = "https://cardona-zkevm.polygonscan.com/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+# TODO: Deploy TimelockController and router here?
+
+# NOTE: As of the 1.1.0-rc.2 deployment on August 21, deploying to polygon zkEVM testnet failed.
+# On Polygon zkEVM Cardona testnet, gave an error of "Failed to get EIP-1559 fees".
