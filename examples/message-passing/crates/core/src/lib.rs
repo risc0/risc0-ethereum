@@ -17,7 +17,10 @@ use alloy_sol_types::{sol, SolStruct};
 use risc0_steel::Commitment;
 use serde::{Deserialize, Serialize};
 
-sol!("../../contracts/src/IL1CrossDomainMessenger.sol");
+sol!(
+    #[sol(all_derives)]
+    "../../contracts/src/IL1CrossDomainMessenger.sol"
+);
 
 sol! {
     /// A Message to be relayed.

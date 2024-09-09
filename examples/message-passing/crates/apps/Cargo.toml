@@ -10,10 +10,12 @@ anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 cross-domain-messenger-core = { workspace = true }
 cross-domain-messenger-methods = { workspace = true }
+dotenvy = { workspace = true }
+log = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 tracing-subscriber = { workspace = true }
 url = { workspace = true }
-dotenvy = { workspace = true }
