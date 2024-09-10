@@ -106,11 +106,12 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - name: build workspace
-        run: cargo test --workspace --timings --no-run
-      - name: test workspace
-        run: cargo test --workspace --timings
-      - uses: actions/upload-artifact@v3
+      - name: test risc0-ethereum
+        run: |
+          cargo build --workspace --all-features
+          cargo test --workspace --all-features --timings
+      - name: upload timings artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
           path: target/cargo-timings/
@@ -142,33 +143,14 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - name: build erc20
-        run: cargo build
-        working-directory: examples/erc20
-      - name: build erc20-Counter
-        run: cargo build
-        working-directory: examples/erc20-counter
-      - name: forge test erc20-Counter
-        run: forge test
-        working-directory: examples/erc20-counter
-        env:
-          ETH_RPC_URL: https://ethereum-sepolia-rpc.publicnode.com
-      - name: build token-stats
-        run: cargo build
-        working-directory: examples/token-stats
-      - name: test erc20-Counter
-        run: ./test-local-deployment.sh
-        working-directory: examples/erc20-counter
-        env:
-          RISC0_DEV_MODE: true
+      - name: check all examples
+        run: ../.github/scripts/cargo-test.sh
+        working-directory: examples
       - run: sccache --show-stats
 
   doc:
