@@ -57,9 +57,12 @@ jobs:
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - run: cargo fmt --all --check
       - run: cargo sort --workspace --check
-      - run: cargo clippy --workspace
+      - run: cargo clippy --workspace --all-targets --all-features
       - run: forge fmt --check
         working-directory: contracts
+      - name: check all examples
+        run: .github/scripts/cargo-check.sh
+        working-directory: examples
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
