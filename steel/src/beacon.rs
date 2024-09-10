@@ -155,7 +155,7 @@ mod host {
                 .try_into()
                 .context("proof derived from API is invalid")?;
             ensure!(
-                proof.process(block_hash) == beacon_root,
+                proof.process(block_hash).0 == beacon_root.0,
                 "proof derived from API does not verify",
             );
 
@@ -297,7 +297,7 @@ mod host {
             ensure!(proof.branch.len() == depth as usize, "index is invalid");
 
             Ok(MerkleProof {
-                path: proof.branch,
+                path: proof.branch.iter().map(|n| n.0.into()).collect(),
                 index: index.try_into().context("index too large")?,
             })
         }

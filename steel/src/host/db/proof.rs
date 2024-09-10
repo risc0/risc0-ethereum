@@ -18,9 +18,9 @@ use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
     eips::eip2930::{AccessList, AccessListItem},
-    network::Network,
+    network::{BlockResponse, Network},
     providers::Provider,
-    rpc::types::{EIP1186AccountProofResponse, Header},
+    rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
 };
 use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256};
@@ -115,7 +115,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 
     /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
-    pub async fn ancestor_proof(&self, block_number: BlockNumber) -> Result<Vec<Header>> {
+    pub async fn ancestor_proof(
+        &self,
+        block_number: BlockNumber,
+    ) -> Result<Vec<<N as Network>::HeaderResponse>> {
         let mut ancestors = Vec::new();
         if let Some(&block_hash_min_number) = self.block_hash_numbers.iter().min() {
             assert!(block_hash_min_number <= block_number);
@@ -127,7 +130,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                     .await
                     .context("eth_getBlockByNumber failed")?
                     .with_context(|| format!("block {} not found", number))?;
-                ancestors.push(rpc_block.header);
+                ancestors.push(rpc_block.header().clone());
             }
         }
 

@@ -22,9 +22,8 @@ use crate::{
     EvmBlockHeader, EvmEnv, EvmInput,
 };
 use alloy::{
-    network::{Ethereum, Network},
+    network::{BlockResponse, Ethereum, Network},
     providers::{Provider, ProviderBuilder, ReqwestProvider, RootProvider},
-    rpc::types::Header as RpcHeader,
     transports::{
         http::{Client, Http},
         Transport,
@@ -59,8 +58,8 @@ where
     T: Transport + Clone,
     N: Network,
     P: Provider<T, N>,
-    H: EvmBlockHeader + TryFrom<RpcHeader>,
-    <H as TryFrom<RpcHeader>>::Error: Display,
+    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
     /// Creates a new provable [EvmEnv] from an alloy [Provider].
     #[deprecated(since = "0.12.0", note = "use `EvmEnv::builder().provider()` instead")]
@@ -78,8 +77,8 @@ where
     T: Transport + Clone,
     N: Network,
     P: Provider<T, N>,
-    H: EvmBlockHeader + TryFrom<RpcHeader>,
-    <H as TryFrom<RpcHeader>>::Error: Display,
+    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
     /// Converts the environment into a [EvmInput] committing to a block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
@@ -138,8 +137,8 @@ impl<H: EvmBlockHeader> EvmEnvBuilder<NoProvider, H> {
         T: Transport + Clone,
         N: Network,
         P: Provider<T, N>,
-        H: EvmBlockHeader + TryFrom<RpcHeader>,
-        <H as TryFrom<RpcHeader>>::Error: Display,
+        H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+        <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
         EvmEnvBuilder {
             provider,
@@ -177,8 +176,8 @@ impl<P, H> EvmEnvBuilder<P, H> {
         T: Transport + Clone,
         N: Network,
         P: Provider<T, N>,
-        H: EvmBlockHeader + TryFrom<RpcHeader>,
-        <H as TryFrom<RpcHeader>>::Error: Display,
+        H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+        <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
         let rpc_block = self
             .provider
@@ -186,8 +185,8 @@ impl<P, H> EvmEnvBuilder<P, H> {
             .await
             .context("eth_getBlockByNumber failed")?
             .with_context(|| format!("block {} not found", self.block))?;
-        let header: H = rpc_block
-            .header
+        let header = rpc_block.header().clone();
+        let header: H = header
             .try_into()
             .map_err(|err| anyhow!("header invalid: {}", err))?;
         let sealed_header = header.seal_slow();

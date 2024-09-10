@@ -79,10 +79,7 @@ pub mod host {
         },
         EvmBlockHeader,
     };
-    use alloy::{
-        network::Network, providers::Provider, rpc::types::Header as RpcHeader,
-        transports::Transport,
-    };
+    use alloy::{network::Network, providers::Provider, transports::Transport};
     use anyhow::{anyhow, ensure};
     use log::debug;
 
@@ -95,8 +92,8 @@ pub mod host {
             T: Transport + Clone,
             N: Network,
             P: Provider<T, N>,
-            H: EvmBlockHeader + TryFrom<RpcHeader>,
-            <H as TryFrom<RpcHeader>>::Error: Display,
+            H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+            <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
             let mut db = env.db.unwrap();
             assert_eq!(
