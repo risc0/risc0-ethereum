@@ -185,10 +185,10 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - name: cargo test all examples
         run: ../.github/scripts/cargo-test.sh
         working-directory: examples
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - name: forge test all examples
         run: ../.github/scripts/forge-test.sh
         working-directory: examples
