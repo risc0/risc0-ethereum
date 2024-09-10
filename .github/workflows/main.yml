@@ -28,7 +28,7 @@ jobs:
       - check
       - doc
       - docs-rs
-      - test
+      - test-risc0-ethereum
     runs-on: ubuntu-latest
     steps:
       - name: Check all job status
@@ -70,7 +70,7 @@ jobs:
         run: |
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
 
-  test:
+  test-risc0-ethereum:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
       fail-fast: false
@@ -106,11 +106,11 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - name: test risc0-ethereum
-        run: |
-          cargo build --workspace --all-features
-          cargo test --workspace --all-features --timings
-      - name: upload timings artifacts
+      - name: cargo build
+        run: cargo build --workspace --all-features
+      - name: cargo test
+        run: cargo test --workspace --all-features --timings
+      - name: Upload timings artifacts
         uses: actions/upload-artifact@v3
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
@@ -124,12 +124,12 @@ jobs:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
       fail-fast: false
-      # Run only on Linux with GPU. Additional coverage is marginal, and GPU is fastest.
+      # Run only on Linux with CPU. Additional coverage is marginal.
       matrix:
         include:
           - os: Linux
-            feature: cuda
-            device: nvidia_rtx_a5000
+            feature: default
+            device: cpu
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -148,7 +148,7 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - name: check all examples
+      - name: Test all examples
         run: ../.github/scripts/cargo-test.sh
         working-directory: examples
       - run: sccache --show-stats
