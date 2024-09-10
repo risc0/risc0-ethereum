@@ -81,9 +81,6 @@ jobs:
           - os: Linux
             feature: default
             device: cpu
-    env:
-      RISC0_SKIP_BUILD: 1
-      RISC0_SKIP_BUILD_KERNELS: 1
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -106,6 +103,8 @@ jobs:
       - name: cargo clippy all examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
+        env:
+          RISC0_SKIP_BUILD: true
       - run: sccache --show-stats
 
   test-risc0-ethereum:
