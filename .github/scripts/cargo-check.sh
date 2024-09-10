@@ -10,4 +10,4 @@ fmt_sort_clippy(){
   done
 }
 
-find . -maxdepth 2 -mindepth 2 -name 'Cargo.toml' | fmt_sort_clippy
+find . -maxdepth 2 -mindepth 2 -name 'Cargo.toml' | sort -u | fmt_sort_clippy
