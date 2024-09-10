@@ -19,7 +19,6 @@ use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
-    host::BlockNumberOrTag,
     Contract,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
