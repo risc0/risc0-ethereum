@@ -160,7 +160,6 @@ jobs:
   examples:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
-      fail-fast: false
       # Run only on Linux with CPU. Additional coverage is marginal.
       matrix:
         include:
