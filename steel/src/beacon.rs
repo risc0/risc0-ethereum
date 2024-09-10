@@ -119,7 +119,7 @@ mod host {
 
             // first get the header of the parent and then the actual block header
             let parent_beacon_header = client
-                .get_beacon_header(BlockId::Root(parent_beacon_block_root))
+                .get_beacon_header(BlockId::Root(parent_beacon_block_root.0.into()))
                 .await
                 .with_context(|| {
                     format!("failed to get block header {}", parent_beacon_block_root)
@@ -155,7 +155,7 @@ mod host {
                 .try_into()
                 .context("proof derived from API is invalid")?;
             ensure!(
-                proof.process(block_hash) == beacon_root,
+                proof.process(block_hash).0 == beacon_root.0,
                 "proof derived from API does not verify",
             );
 
@@ -215,7 +215,7 @@ mod host {
             ensure!(proof.branch.len() == depth as usize, "index is invalid");
 
             Ok(MerkleProof {
-                path: proof.branch,
+                path: proof.branch.iter().map(|n| n.0.into()).collect(),
                 index: index.try_into().context("index too large")?,
             })
         }
