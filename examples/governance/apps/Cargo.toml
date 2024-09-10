@@ -12,7 +12,7 @@ clap = { version = "4.5", features = ["derive", "env"] }
 env_logger = { version = "0.10" }
 hex = { workspace = true }
 log = { workspace = true }
-methods = { workspace = true }
+governance-methods = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-zkvm = { workspace = true, features = ["client"] }
 tokio = { workspace = true, features = ["full"]}

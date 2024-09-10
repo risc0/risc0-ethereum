@@ -29,7 +29,7 @@ use alloy::{
     // sol_types::SolInterface
 };
 
-use methods::FINALIZE_VOTES_ELF;
+use governance_methods::FINALIZE_VOTES_ELF;
 use risc0_ethereum_contracts::encode_seal;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 // use tokio::task;

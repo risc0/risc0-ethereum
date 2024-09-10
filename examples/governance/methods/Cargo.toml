@@ -1,5 +1,5 @@
 [package]
-name = "methods"
+name = "governance-methods"
 version = { workspace = true }
 edition = { workspace = true }
 
