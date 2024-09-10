@@ -88,7 +88,7 @@ mod host {
         host::{db::AlloyDb, HostEvmEnv},
     };
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
-    use alloy_primitives::Sealable;
+    use alloy_primitives::{Sealable, B256};
     use anyhow::{bail, ensure, Context};
     use client::{BeaconClient, GetBlockHeaderResponse};
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
@@ -115,47 +115,11 @@ mod host {
             let input = BlockInput::from_env(env)
                 .await
                 .context("failed to derive block input")?;
-            let client = BeaconClient::new(url);
 
-            // first get the header of the parent and then the actual block header
-            let parent_beacon_header = client
-                .get_block_header(parent_beacon_block_root)
-                .await
-                .with_context(|| {
-                    format!("failed to get block header {}", parent_beacon_block_root)
-                })?;
-            let beacon_header = get_child_beacon_header(&client, parent_beacon_header)
-                .await
-                .with_context(|| {
-                    format!("failed to get child of block {}", parent_beacon_block_root)
-                })?;
-
-            // get the entire block
-            let signed_beacon_block = client
-                .get_block(beacon_header.root)
-                .await
-                .with_context(|| format!("failed to get block {}", beacon_header.root))?;
-            // create the inclusion proof of the execution block hash depending on the fork version
-            let (proof, beacon_root) = match signed_beacon_block {
-                SignedBeaconBlock::Deneb(signed_block) => {
-                    prove_block_hash_inclusion(signed_block.message)?
-                }
-                _ => {
-                    bail!(
-                        "invalid version of block {}: expected {}; got {}",
-                        beacon_header.root,
-                        Fork::Deneb,
-                        signed_beacon_block.version()
-                    );
-                }
-            };
-
-            // convert and verify the proof
-            let proof: MerkleProof = proof
-                .try_into()
-                .context("proof derived from API is invalid")?;
+            let client = BeaconClient::new(url).context("invalid URL")?;
+            let (proof, beacon_root) = create_proof(parent_beacon_block_root, client).await?;
             ensure!(
-                proof.process(block_hash).0 == beacon_root.0,
+                proof.process(block_hash) == beacon_root,
                 "proof derived from API does not verify",
             );
 
@@ -164,12 +128,13 @@ mod host {
     }
 
     mod client {
-        use std::{collections::HashMap, fmt::Display};
-
         use ethereum_consensus::{
             phase0::SignedBeaconBlockHeader, primitives::Root, types::mainnet::SignedBeaconBlock,
+            Fork,
         };
+        use reqwest::IntoUrl;
         use serde::{Deserialize, Serialize};
+        use std::{collections::HashMap, fmt::Display};
         use url::Url;
 
         /// Errors returned by the [BeaconClient].
@@ -179,6 +144,8 @@ mod host {
             Url(#[from] url::ParseError),
             #[error("HTTP request failed: {0}")]
             Http(#[from] reqwest::Error),
+            #[error("version field does not match data version")]
+            VersionMismatch,
         }
 
         /// Response returned by the `get_block_header` API.
@@ -191,10 +158,18 @@ mod host {
 
         /// Wrapper returned by the API calls.
         #[derive(Serialize, Deserialize)]
-        struct Value<T> {
+        struct Response<T> {
             data: T,
             #[serde(flatten)]
             meta: HashMap<String, serde_json::Value>,
+        }
+
+        /// Wrapper returned by the API calls that includes a version.
+        #[derive(Serialize, Deserialize)]
+        struct VersionedResponse<T> {
+            version: Fork,
+            #[serde(flatten)]
+            inner: Response<T>,
         }
 
         /// Simple beacon API client that can be used to query headers and blocks.
@@ -205,12 +180,12 @@ mod host {
 
         impl BeaconClient {
             /// Creates a new beacon endpoint API client.
-            pub fn new<U: Into<Url>>(endpoint: U) -> Self {
+            pub fn new<U: IntoUrl>(endpoint: U) -> Result<Self, Error> {
                 let client = reqwest::Client::new();
-                Self {
+                Ok(Self {
                     http: client,
-                    endpoint: endpoint.into(),
-                }
+                    endpoint: endpoint.into_url()?,
+                })
             }
 
             async fn http_get<T: serde::de::DeserializeOwned>(
@@ -229,7 +204,7 @@ mod host {
                 block_id: impl Display,
             ) -> Result<GetBlockHeaderResponse, Error> {
                 let path = format!("eth/v1/beacon/headers/{block_id}");
-                let result: Value<GetBlockHeaderResponse> = self.http_get(&path).await?;
+                let result: Response<GetBlockHeaderResponse> = self.http_get(&path).await?;
                 Ok(result.data)
             }
 
@@ -239,28 +214,58 @@ mod host {
                 block_id: impl Display,
             ) -> Result<SignedBeaconBlock, Error> {
                 let path = format!("eth/v2/beacon/blocks/{block_id}");
-                let result: Value<SignedBeaconBlock> = self.http_get(&path).await?;
-                Ok(result.data)
+                let result: VersionedResponse<SignedBeaconBlock> = self.http_get(&path).await?;
+                if result.version.to_string() != result.inner.data.version().to_string() {
+                    return Err(Error::VersionMismatch);
+                }
+                Ok(result.inner.data)
             }
         }
     }
 
-    /// Returns the inclusion proof of `block_hash` in the given `BeaconBlock`.
-    fn prove_block_hash_inclusion<T: SimpleSerialize>(
-        beacon_block: T,
-    ) -> Result<ProofAndWitness, MerkleizationError> {
-        // the `block_hash` is in the ExecutionPayload in the BeaconBlockBody in the BeaconBlock
-        beacon_block.prove(&[
-            "body".into(),
-            "execution_payload".into(),
-            "block_hash".into(),
-        ])
+    /// Creates the [MerkleProof] of `block_hash` in the `BeaconBlock` with the given
+    /// `parent_beacon_block_root`.
+    async fn create_proof(
+        parent_root: B256,
+        client: BeaconClient,
+    ) -> anyhow::Result<(MerkleProof, B256)> {
+        // first get the header of the parent and then the actual block header
+        let parent_beacon_header = client
+            .get_block_header(parent_root)
+            .await
+            .with_context(|| format!("failed to get block header {}", parent_root))?;
+        let beacon_header = get_child_beacon_header(&client, parent_beacon_header)
+            .await
+            .with_context(|| format!("failed to get child of block {}", parent_root))?;
+
+        // get the entire block
+        let signed_beacon_block = client
+            .get_block(beacon_header.root)
+            .await
+            .with_context(|| format!("failed to get block {}", beacon_header.root))?;
+        // create the inclusion proof of the execution block hash depending on the fork version
+        let (proof, beacon_root) = match signed_beacon_block {
+            SignedBeaconBlock::Deneb(signed_block) => prove_block_hash(signed_block.message)?,
+            _ => {
+                bail!(
+                    "invalid version of block {}: expected {}; got {}",
+                    beacon_header.root,
+                    Fork::Deneb,
+                    signed_beacon_block.version()
+                );
+            }
+        };
+        let proof: MerkleProof = proof
+            .try_into()
+            .context("proof derived from API is invalid")?;
+
+        Ok((proof, beacon_root.0.into()))
     }
 
     /// Returns the header, with `parent_root` equal to `parent.root`.
     ///
     /// It iteratively tries to fetch headers of successive slots until success.
-    /// TODO: use `parent_root` parameter, once the nodes add support.
+    /// TODO: use `eth/v1/beacon/headers?parent_root`, once all the nodes support it.
     async fn get_child_beacon_header(
         client: &BeaconClient,
         parent: GetBlockHeaderResponse,
@@ -288,6 +293,18 @@ mod host {
         Err(err.context("no valid response received for the 32 consecutive slots"))
     }
 
+    /// Returns the inclusion proof of `block_hash` in the given `BeaconBlock`.
+    fn prove_block_hash<T: SimpleSerialize>(
+        beacon_block: T,
+    ) -> Result<ProofAndWitness, MerkleizationError> {
+        // the `block_hash` is in the ExecutionPayload in the BeaconBlockBody in the BeaconBlock
+        beacon_block.prove(&[
+            "body".into(),
+            "execution_payload".into(),
+            "block_hash".into(),
+        ])
+    }
+
     impl TryFrom<Proof> for MerkleProof {
         type Error = anyhow::Error;
 
@@ -302,10 +319,38 @@ mod host {
             })
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
+
+        #[tokio::test]
+        #[ignore] // This queries actual RPC nodes, running only on demand.
+        async fn eth_mainnet_proof() {
+            const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
+            const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
+
+            let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+            let cl = BeaconClient::new(CL_URL).unwrap();
+
+            let block = el
+                .get_block_by_number(BlockNumberOrTag::Finalized, false)
+                .await
+                .expect("eth_getBlockByNumber failed")
+                .unwrap();
+            let header = block.header();
+
+            let (proof, beacon_root) = create_proof(header.parent_beacon_block_root.unwrap(), cl)
+                .await
+                .expect("proving failed");
+            assert_eq!(proof.process(header.hash), beacon_root);
+        }
+    }
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
     use super::*;
     use alloy_primitives::b256;
 
