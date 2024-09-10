@@ -44,31 +44,67 @@ jobs:
         with:
           # Full history is required by license-check.py
           fetch-depth: 0
-          submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
           crate: cargo-sort
           version: "1.0"
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - name: check risc0-ethereum
+      - name: cargo check risc0-ethereum
         run: |
           cargo fmt --all --check
           cargo sort --workspace --check
-          cargo clippy --workspace --all-targets --all-features
-      - run: forge fmt --check
-        working-directory: contracts
-      - name: check all examples
+      - name: cargo check examples
         run: ../.github/scripts/cargo-check.sh
         working-directory: examples
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - name: forge check risc0-ethereum
+        run: forge fmt --check
+        working-directory: contracts
+      - name: forge check examples
+        run: ../.github/scripts/forge-check.sh
+        working-directory: examples
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
       - run: python license-check.py
       - name: check for "D0 NOT MERGE" comments
         run: |
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
+
+  clippy:
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    strategy:
+      # Run only on Linux with CPU.
+      matrix:
+        include:
+          - os: Linux
+            feature: default
+            device: cpu
+    env:
+      RISC0_SKIP_BUILD: 1
+      RISC0_SKIP_BUILD_KERNELS: 1
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@main
+      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
+      - name: Run clippy risc0-ethereum
+        run: cargo clippy --workspace --all-targets --all-features
+      - name: Run clippy all examples
+        run: ../.github/scripts/cargo-clippy.sh
+        working-directory: examples
+      - run: sccache --show-stats
 
   test-risc0-ethereum:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
