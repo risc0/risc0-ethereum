@@ -34,8 +34,8 @@ use revm::{
 ///
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Contract::preflight]. The environment can be initialized using
-///   [EthEvmEnv::from_rpc] or [EvmEnv::new].
+///   necessary proof, use [Contract::preflight]. The environment can be initialized using the
+///   [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
@@ -60,7 +60,7 @@ use revm::{
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::from_rpc(url, BlockNumberOrTag::Latest).await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call().await?;
 ///
@@ -75,9 +75,9 @@ use revm::{
 /// # }
 /// ```
 ///
+/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv::builder
+/// [EvmEnv::builder]: crate::EvmEnv::builder
 /// [EvmInput::into_env]: crate::EvmInput::into_env
-/// [EvmEnv::new]: crate::EvmEnv::new
-/// [EthEvmEnv::from_rpc]: crate::ethereum::EthEvmEnv::from_rpc
 pub struct Contract<E> {
     address: Address,
     env: E,

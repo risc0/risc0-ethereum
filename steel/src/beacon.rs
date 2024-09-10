@@ -27,7 +27,7 @@ pub struct BeaconInput<H> {
 }
 
 impl<H: EvmBlockHeader> BeaconInput<H> {
-    /// Converts the input into a [EvmEnv] for a verifiable state access in the guest.
+    /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     ///
     /// [EvmEnv]: crate::EvmEnv
     pub fn into_env(self) -> GuestEvmEnv<H> {
