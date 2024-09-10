@@ -198,7 +198,7 @@ jobs:
         shell: bash
       - name: Start local Ethereum testnet
         run: |
-          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package
+          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package@2e9e5a41784f792a206f1a108c2c96830b2c95ef
           echo "ETH_TESTNET_EL_URL=http://$(kurtosis port print local-eth-testnet el-1-geth-lighthouse rpc)" >> $GITHUB_ENV
           echo "ETH_TESTNET_CL_URL=$(kurtosis port print local-eth-testnet cl-1-lighthouse-geth http)" >> $GITHUB_ENV
       - name: Wait for the local Ethereum testnet to come up
