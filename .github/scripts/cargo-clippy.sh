@@ -4,7 +4,7 @@ set -e
 clippy(){
   while read path; do
     printf "Project: %s\n" "$path"
-    cargo cargo clippy --workspace --all-targets --all-features --manifest-path "$path"
+    cargo clippy --workspace --all-targets --all-features --manifest-path "$path"
   done
 }
 
