@@ -7,8 +7,8 @@ edition = "2021"
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
-core = { path = "../core" }
-methods = { workspace = true }
+token-stats-core = { workspace = true }
+token-stats-methods = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
 tokio = { workspace = true }

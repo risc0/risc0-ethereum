@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use alloy_sol_types::SolValue;
-use core::{APRCommitment, CometMainInterface, CONTRACT};
+use token_stats_core::{APRCommitment, CometMainInterface, CONTRACT};
 use risc0_steel::{
     ethereum::{EthEvmInput, ETH_MAINNET_CHAIN_SPEC},
     Contract,
