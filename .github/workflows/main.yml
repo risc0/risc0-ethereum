@@ -101,9 +101,9 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - name: Run clippy risc0-ethereum
+      - name: cargo clippy risc0-ethereum
         run: cargo clippy --workspace --all-targets --all-features
-      - name: Run clippy all examples
+      - name: cargo clippy all examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
       - run: sccache --show-stats
@@ -180,14 +180,17 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - name: Test all examples
+      - name: cargo test all examples
         run: ../.github/scripts/cargo-test.sh
+        working-directory: examples
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - name: forge test all examples
+        run: ../.github/scripts/forge-test.sh
         working-directory: examples
       - run: sccache --show-stats
 
