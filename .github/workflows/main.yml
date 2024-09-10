@@ -63,7 +63,7 @@ jobs:
       - run: forge fmt --check
         working-directory: contracts
       - name: check all examples
-        run: ${{ github.action_path }}/.github/scripts/cargo-check.sh
+        run: ./.github//scripts/cargo-check.sh
         working-directory: examples
       - run: python license-check.py
       - name: check for "D0 NOT MERGE" comments
