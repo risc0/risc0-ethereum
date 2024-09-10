@@ -27,10 +27,6 @@ runs:
           path: 'tmp/risc0'
           ref: ${{ inputs.ref }}
           lfs: true
-      - name: clean
-        run: cargo clean
-        working-directory: tmp/risc0
-        shell: bash
       - name: install cargo-risczero
         run: cargo install --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
         working-directory: tmp/risc0
