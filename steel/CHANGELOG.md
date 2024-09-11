@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+### 🚨 Breaking Changes
+
+## [0.13.0](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.0) - 2024-09-10
+
+### ⚡️ Features
+
 - Add support for creating a commitment to a beacon block root using `EvmEnv::into_beacon_input`, which can be verified using the [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788) beacon roots contract.
 - Add the `EvmEnvBuilder` to simplify the creation of an `EvmEnv` on the host.
 - If an individual `eth_getProof` RPC call contains many storage keys, it will be automatically split. The chunk size can be configured using the `EvmEnvBuilder`.
