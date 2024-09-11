@@ -26,7 +26,7 @@ jobs:
     strategy:
       # Run only on Linux with GPU for the fastest proof generation.
       matrix:
-        bonsai: [true, false]
+        prover: [bonsai, local]
         release:
           - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
         exclude:
@@ -41,7 +41,7 @@ jobs:
         with:
           submodules: recursive
       - name: Enable Bonsai on release
-        if: matrix.bonsai
+        if: matrix.prover == 'bonsai'
         run: |
             echo "BONSAI_API_URL=${{ secrets.BONSAI_API_URL }}" >> $GITHUB_ENV
             echo "BONSAI_API_KEY=${{ secrets.BONSAI_API_KEY }}" >> $GITHUB_ENV
