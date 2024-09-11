@@ -140,7 +140,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
     /// recorded by the [Database].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
-        ensure!(!self.accounts.is_empty(), "no accounts accessed: use Contract::preflight");
+        ensure!(
+            !self.accounts.is_empty(),
+            "no accounts accessed: use Contract::preflight"
+        );
 
         let proofs = &mut self.proofs;
         for (address, storage_keys) in &self.accounts {

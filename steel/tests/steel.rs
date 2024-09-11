@@ -324,6 +324,20 @@ async fn call_eoa() {
         .expect_err("calling an EOA should fail");
 }
 
+#[test(tokio::test)]
+async fn no_preflight() {
+    let env = EthEvmEnv::builder()
+        .provider(test_provider().await)
+        .build()
+        .await
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+    match env.into_input().await {
+        Ok(_) => panic!("calling into_input without a preflight should fail"),
+        Err(err) => assert_eq!(err.to_string(), "no accounts accessed: use Contract::preflight"),
+    }
+}
+
 alloy::sol!(
     // docker run -i ethereum/solc:0.8.26 - --optimize --bin
     #[sol(rpc, bytecode="60a0604052348015600e575f80fd5b5060405161012a38038061012a833981016040819052602b91604b565b60808190525f5b6080518110156045576001808255016032565b50506061565b5f60208284031215605a575f80fd5b5051919050565b60805160b46100765f395f6047015260b45ff3fe6080604052348015600e575f80fd5b50600436106026575f3560e01c8063380eb4e014602a575b5f80fd5b60306042565b60405190815260200160405180910390f35b5f805b7f0000000000000000000000000000000000000000000000000000000000000000811015607a57805491909101906001016045565b509056fea26469706673582212203687b75eefdd9cc7ceedb243aa360bd9e1b4cab1930149a371efef74ce18bdf164736f6c634300081a0033")]
