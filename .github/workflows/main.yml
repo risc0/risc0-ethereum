@@ -28,7 +28,7 @@ jobs:
       - check
       - doc
       - docs-rs
-      - test
+      - test-risc0-ethereum
     runs-on: ubuntu-latest
     steps:
       - name: Check all job status
@@ -44,22 +44,26 @@ jobs:
         with:
           # Full history is required by license-check.py
           fetch-depth: 0
-          submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
           crate: cargo-sort
           version: "1.0"
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
+      - name: cargo check risc0-ethereum
+        run: |
+          cargo fmt --all --check
+          cargo sort --workspace --check
+      - name: cargo check examples
+        run: ../.github/scripts/cargo-check.sh
+        working-directory: examples
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - run: cargo fmt --all --check
-      - run: cargo sort --workspace --check
-      - run: cargo clippy --workspace
-      - run: forge fmt --check
+      - name: forge check risc0-ethereum
+        run: forge fmt --check
         working-directory: contracts
+      - name: forge check examples
+        run: ../.github/scripts/forge-check.sh
+        working-directory: examples
       - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
@@ -68,7 +72,42 @@ jobs:
         run: |
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
 
-  test:
+  clippy:
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    strategy:
+      # Run only on Linux with CPU.
+      matrix:
+        include:
+          - os: Linux
+            feature: default
+            device: cpu
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@main
+      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
+      - name: cargo clippy risc0-ethereum
+        run: cargo clippy --workspace --all-targets --all-features
+      - name: cargo clippy all examples
+        run: ../.github/scripts/cargo-clippy.sh
+        working-directory: examples
+        env:
+          RISC0_SKIP_BUILD: true
+      - run: sccache --show-stats
+
+  test-risc0-ethereum:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
       fail-fast: false
@@ -104,11 +143,12 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - name: build workspace
-        run: cargo test --workspace --timings --no-run
-      - name: test workspace
-        run: cargo test --workspace --timings
-      - uses: actions/upload-artifact@v3
+      - name: cargo build
+        run: cargo build --workspace --all-features
+      - name: cargo test
+        run: cargo test --workspace --all-features --timings
+      - name: Upload timings artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
           path: target/cargo-timings/
@@ -120,7 +160,7 @@ jobs:
   examples:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
-      fail-fast: false
+      # Run only on Linux with CPU. Additional coverage is marginal.
       matrix:
         include:
           - os: Linux
@@ -138,33 +178,24 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - name: build erc20
-        run: cargo build
-        working-directory: examples/erc20
-      - name: build erc20-Counter
-        run: cargo build
-        working-directory: examples/erc20-counter
-      - name: forge test erc20-Counter
-        run: forge test
-        working-directory: examples/erc20-counter
-        env:
-          ETH_RPC_URL: https://ethereum-sepolia-rpc.publicnode.com
-      - name: build token-stats
-        run: cargo build
-        working-directory: examples/token-stats
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - name: cargo test all examples
+        run: ../.github/scripts/cargo-test.sh
+        working-directory: examples
+      - name: forge test all examples
+        run: ../.github/scripts/forge-test.sh
+        working-directory: examples
       - run: sccache --show-stats
 
   e2e-tests:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
-      fail-fast: false
-      # Run only on Linux with GPU. Additional coverage is marginal, and GPU is fastest.
+      # Run only on Linux with GPU for the fastest proofs.
       matrix:
         include:
           - os: Linux

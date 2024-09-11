@@ -13,12 +13,12 @@
 // limitations under the License.
 
 use alloy_sol_types::SolValue;
-use core::{APRCommitment, CometMainInterface, CONTRACT};
 use risc0_steel::{
     ethereum::{EthEvmInput, ETH_MAINNET_CHAIN_SPEC},
     Contract,
 };
 use risc0_zkvm::guest::env;
+use token_stats_core::{APRCommitment, CometMainInterface, CONTRACT};
 
 const SECONDS_PER_YEAR: u64 = 60 * 60 * 24 * 365;
 
