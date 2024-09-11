@@ -102,7 +102,10 @@ async fn main() -> Result<()> {
         .on_http(args.eth_rpc_url);
 
     // Create an EVM environment from that provider defaulting to the latest block.
-    let mut env = EthEvmEnv::builder().provider(provider.clone()).build().await?;
+    let mut env = EthEvmEnv::builder()
+        .provider(provider.clone())
+        .build()
+        .await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
