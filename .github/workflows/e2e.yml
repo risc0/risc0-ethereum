@@ -22,14 +22,18 @@ env:
 
 jobs:
   e2e-tests:
-    # Run only on Linux with GPU for the fastest proof generation.
-    runs-on: [self-hosted, prod, Linux, nvidia_rtx_a5000]
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
       matrix:
         prover: [bonsai, local]
         release:
           - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
-        # exclude Bonsai proving on non-release branches
+        # Run only on Linux with GPU for the fastest proof generation.
+        include:
+          - os: Linux
+            feature: default
+            device: cpu
+        # Exclude Bonsai proving on non-release branches.
         exclude:
           - release: false
             prover: bonsai
@@ -46,17 +50,18 @@ jobs:
         run: |
             echo "BONSAI_API_URL=${{ secrets.BONSAI_API_URL }}" >> $GITHUB_ENV
             echo "BONSAI_API_KEY=${{ secrets.BONSAI_API_KEY }}" >> $GITHUB_ENV
-      - uses: risc0/risc0/.github/actions/cuda@main
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
-          key: Linux-cuda
+          key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: cuda
+          features: ${{ matrix.feature }}
       - name: Setup Kurtosis
         run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
