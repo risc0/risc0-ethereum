@@ -334,7 +334,10 @@ async fn no_preflight() {
         .with_chain_spec(&ANVIL_CHAIN_SPEC);
     match env.into_input().await {
         Ok(_) => panic!("calling into_input without a preflight should fail"),
-        Err(err) => assert_eq!(err.to_string(), "no accounts accessed: use Contract::preflight"),
+        Err(err) => assert_eq!(
+            err.to_string(),
+            "no accounts accessed: use Contract::preflight"
+        ),
     }
 }
 
