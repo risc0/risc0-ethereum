@@ -15,13 +15,13 @@
 use alloy_sol_types::{SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use core::{APRCommitment, CometMainInterface, CONTRACT};
-use methods::TOKEN_STATS_ELF;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
     Contract,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
+use token_stats_core::{APRCommitment, CometMainInterface, CONTRACT};
+use token_stats_methods::TOKEN_STATS_ELF;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
