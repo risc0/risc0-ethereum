@@ -22,13 +22,14 @@ env:
 
 jobs:
   e2e-tests:
+    # Run only on Linux with GPU for the fastest proof generation.
     runs-on: [self-hosted, prod, Linux, nvidia_rtx_a5000]
     strategy:
-      # Run only on Linux with GPU for the fastest proof generation.
       matrix:
         prover: [bonsai, local]
         release:
           - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+        # exclude Bonsai proving on non-release branches
         exclude:
           - release: false
             prover: bonsai
