@@ -195,12 +195,9 @@ jobs:
   e2e-tests:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
-      # Run only on Linux with GPU for the fastest proofs.
+      # Run only on Linux with GPU for the fastest proof generation.
       matrix:
         include:
-          - os: Linux
-            feature: default
-            device: cpu
           - os: Linux
             feature: cuda
             device: nvidia_rtx_a5000
