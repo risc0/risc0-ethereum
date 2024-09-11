@@ -1,4 +1,5 @@
 #!/bin/bash
+# Test the integration of the application contract and publisher, against a running EVM chain.
 set -e -o pipefail
 
 export TOKEN_OWNER=${ETH_WALLET_ADDRESS:?}

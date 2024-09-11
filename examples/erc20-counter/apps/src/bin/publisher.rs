@@ -172,6 +172,7 @@ async fn main() -> Result<()> {
 
     // Make sure there is at least one child block. (Unless the node is anvil)
     if !provider.get_client_version().await?.starts_with("anvil") {
+        log::info!("Waiting for committed block to have one child");
         while provider.get_block_number().await? <= block_number {
             sleep(Duration::from_secs(3)).await;
         }
