@@ -27,7 +27,7 @@ jobs:
       matrix:
         prover: [bonsai, local]
         release:
-          - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+          - ${{ startsWith(github.base_ref, 'main') || startsWith(github.base_ref, 'refs/heads/main') }}
         # Run on Linux with GPU for faster local proving.
         include:
           - os: Linux
