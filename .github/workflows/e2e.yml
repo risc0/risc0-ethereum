@@ -38,12 +38,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Enable Bonsai on release branches
+      - name: Enable Bonsai
+        if: startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')
         run: |
-          if [[ startsWith(${{github.base_ref}}, 'release-') || startsWith(${{github.base_ref}}, 'refs/heads/release-') ]]; then
             echo "BONSAI_API_URL=${{ secrets.BONSAI_API_URL }}" >> $GITHUB_ENV
             echo "BONSAI_API_KEY=${{ secrets.BONSAI_API_KEY }}" >> $GITHUB_ENV
-          fi
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
