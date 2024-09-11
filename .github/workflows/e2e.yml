@@ -39,7 +39,7 @@ jobs:
         with:
           submodules: recursive
       - name: Enable Bonsai
-        if: startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')
+        if: startsWith(github.base_ref, 'main') || startsWith(github.base_ref, 'refs/heads/main')
         run: |
             echo "BONSAI_API_URL=${{ secrets.BONSAI_API_URL }}" >> $GITHUB_ENV
             echo "BONSAI_API_KEY=${{ secrets.BONSAI_API_KEY }}" >> $GITHUB_ENV
