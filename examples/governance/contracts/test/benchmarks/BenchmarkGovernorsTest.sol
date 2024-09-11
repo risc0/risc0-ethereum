@@ -17,13 +17,13 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {BaselineGovernor} from "../../contracts/BaselineGovernor.sol";
-import {RiscZeroGovernor} from "../../contracts/RiscZeroGovernor.sol";
+import {BaselineGovernor} from "../../src/BaselineGovernor.sol";
+import {RiscZeroGovernor} from "../../src/RiscZeroGovernor.sol";
 import {BenchmarkTestBase} from "./BenchmarkTestBase.sol";
-import {VoteToken} from "../../contracts/VoteToken.sol";
+import {VoteToken} from "../../src/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
 import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
-import {ImageID} from "../../contracts/utils/ImageID.sol";
+import {ImageID} from "../../src/ImageID.sol";
 import {RiscZeroMockVerifier, Receipt as VerifierReceipt} from "risc0/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
@@ -76,7 +76,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
 
         gasUsed = gasUsed - gasleft();
         vm.writeLine(
-            "tests/benchmarks/gas_data.csv",
+            "contracts/test/benchmarks/gas_data.csv",
             string(abi.encodePacked("BaselineGovernor,", vm.toString(numAccounts), ",", vm.toString(gasUsed)))
         );
 
@@ -147,7 +147,7 @@ contract BenchmarkGovernorsTest is Test, BenchmarkTestBase {
 
         gasUsed = gasUsed - gasleft();
         vm.writeLine(
-            "tests/benchmarks/gas_data.csv",
+            "contracts/test/benchmarks/gas_data.csv",
             string(abi.encodePacked("RiscZeroGovernor,", vm.toString(numAccounts), ",", vm.toString(gasUsed)))
         );
 

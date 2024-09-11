@@ -1,13 +1,13 @@
 [profile.default]
-src = "contracts"
+src = "contracts/src"
 out = "out"
 libs = ["../../lib", "../../contracts/src"]
-test = "tests"
+test = "contracts/test"
+script = "contracts/script"
 ffi = true
-fs_permissions = [{ access = "read-write", path = "./tests/benchmarks"}]
+fs_permissions = [{ access = "read-write", path = "./contracts/test/benchmarks"}]
 
 [fuzz]
 runs = 10
 seed = '0x1234' 
 
-# See more config options https://github.com/foundry-rs/foundry/tree/master/config

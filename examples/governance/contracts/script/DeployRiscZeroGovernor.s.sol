@@ -19,13 +19,13 @@ pragma solidity ^0.8.17;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
-import {ImageID} from "../contracts/utils/ImageID.sol";
+import {ImageID} from "../src/ImageID.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {IVotes} from "openzeppelin/contracts/governance/utils/IVotes.sol";
 
-import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
-import {VoteToken} from "../contracts/VoteToken.sol";
+import {RiscZeroGovernor} from "../src/RiscZeroGovernor.sol";
+import {VoteToken} from "../src/VoteToken.sol";
 
 /// @notice deployment script for RiscZeroGovernor and it's dependencies.
 /// @dev Use the following environment variables to control the deployment:
@@ -39,7 +39,7 @@ import {VoteToken} from "../contracts/VoteToken.sol";
 ///     * DEPLOY_VOTE_TOKEN_ADDRESS address of a predeployed IVotes contract.
 ///         If not specified, a new VoteToken contract will be deployed.
 ///         Note that the deployer address will be the owner of the VoteToken contract.
-contract Deploy is Script, RiscZeroCheats {
+contract DeployRiscZeroGovernor is Script, RiscZeroCheats {
     /// @notice use vm.startBroadcast to begin recording deploy transactions.
     function startBroadcast() internal {
         address deployerAddr = vm.envOr("DEPLOYER_ADDRESS", address(0));

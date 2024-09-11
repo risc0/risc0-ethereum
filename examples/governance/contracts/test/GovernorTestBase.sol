@@ -17,11 +17,11 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {BaselineGovernor} from "../contracts/BaselineGovernor.sol";
-import {RiscZeroGovernor} from "../contracts/RiscZeroGovernor.sol";
-import {VoteToken} from "../contracts/VoteToken.sol";
+import {BaselineGovernor} from "../src/BaselineGovernor.sol";
+import {RiscZeroGovernor} from "../src/RiscZeroGovernor.sol";
+import {VoteToken} from "../src/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
-import {ImageID} from "../contracts/utils/ImageID.sol";
+import {ImageID} from "../src/ImageID.sol";
 import {RiscZeroMockVerifier, Receipt as VerifierReceipt} from "risc0/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
@@ -67,7 +67,7 @@ contract GovernorTestBase is Test {
     }
 
     function getSignature(uint8 support, uint256 proposalId, address signer, uint256 privateKey)
-    internal
+        internal
         returns (bytes memory signature)
     {
         bytes32 digest = baselineGovernor.voteHash(proposalId, support, signer);
@@ -76,7 +76,11 @@ contract GovernorTestBase is Test {
     }
 
     // this function replicates the behavior of _commitVote in RiscZeroGovernorCounting.sol
-    function hashBallots(uint8 aliceSupport, uint8 bobSupport, uint256 proposalId) internal view returns (bytes32, bytes memory) {
+    function hashBallots(uint8 aliceSupport, uint8 bobSupport, uint256 proposalId)
+        internal
+        view
+        returns (bytes32, bytes memory)
+    {
         bytes memory encodeAliceVote = abi.encodePacked(uint16(0), aliceSupport, uint8(0), alice);
         bytes memory encodeBobVote = abi.encodePacked(uint16(0), bobSupport, uint8(0), bob);
         bytes memory encodedBallots = bytes.concat(encodeAliceVote, encodeBobVote);

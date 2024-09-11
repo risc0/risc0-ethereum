@@ -18,7 +18,7 @@ You can read more at [What does RISC Zero enable].
 
 The more accounts cast a vote, the more signature verifications ([ecrecover]) are moved from the EVM to RISC Zero's zkVM.
 
-![Gas Data Comparison](tests/benchmarks/gas_data_comparison.png)
+![Gas Data Comparison](contracts/test/benchmarks/gas_data_comparison.png)
 
 <p align="center">
   <i>Figure 1: A direct comparison of a test voting workflow in BaselineGovernor (the OpenZeppelin implementation) and RiscZeroGovernor (a modified Governor that utilises offchain compute for signature verification. The relevant test files are located in tests/benchmarks. </i>

@@ -17,12 +17,12 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {BaselineGovernor} from "../../contracts/BaselineGovernor.sol";
-import {RiscZeroGovernor} from "../../contracts/RiscZeroGovernor.sol";
-import {VoteToken} from "../../contracts/VoteToken.sol";
+import {BaselineGovernor} from "../../src/BaselineGovernor.sol";
+import {RiscZeroGovernor} from "../../src/RiscZeroGovernor.sol";
+import {VoteToken} from "../../src/VoteToken.sol";
 import {IGovernor} from "openzeppelin/contracts/governance/IGovernor.sol";
 import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
-import {ImageID} from "../../contracts/utils/ImageID.sol";
+import {ImageID} from "../../src/ImageID.sol";
 import {RiscZeroMockVerifier} from "risc0/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
@@ -86,7 +86,7 @@ contract BenchmarkTestBase is Test {
         internal
         noGasMetering
         returns (bytes memory journal)
-{
+    {
         (bytes32 finalBallotBoxAccum, bytes memory encodedBallots) = hashBallots(noOfAccounts, proposalId);
 
         journal = abi.encodePacked(proposalId, finalBallotBoxAccum, encodedBallots);
@@ -101,7 +101,11 @@ contract BenchmarkTestBase is Test {
         journalDigest = sha256(journal);
     }
 
-    function hashBallots(uint256 noOfAccounts, uint256 proposalId) internal noGasMetering returns (bytes32, bytes memory) {
+    function hashBallots(uint256 noOfAccounts, uint256 proposalId)
+        internal
+        noGasMetering
+        returns (bytes32, bytes memory)
+    {
         bytes memory encodedBallots;
         bytes32 ballotHash = bytes32(proposalId);
 
