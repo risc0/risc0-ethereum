@@ -26,13 +26,11 @@ jobs:
     strategy:
       matrix:
         prover: [bonsai, local]
-        release:
-          - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
-        # Run only on Linux with GPU for the fastest proof generation.
+        release: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
         include:
           - os: Linux
-            feature: default
-            device: cpu
+            feature: cuda
+            device: nvidia_rtx_a5000
         # Exclude Bonsai proving on non-release branches.
         exclude:
           - release: false
@@ -45,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Enable Bonsai on release
+      - name: Use Bonsai for release branches
         if: matrix.prover == 'bonsai'
         run: |
             echo "BONSAI_API_URL=${{ secrets.BONSAI_API_URL }}" >> $GITHUB_ENV
