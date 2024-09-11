@@ -16,6 +16,13 @@ Explore a more advanced interaction between [Steel] and a custom Ethereum smart 
 This example shows how the [Steel] library can be used to call multiple view functions of a contract.
 This example generates a proof of a [Compound] cToken's APR (Annual Percentage Rate), showcasing the potential for on-chain verification of complex financial metrics.
 
+## [Cross-Domain Message Passing](./message-passing/README.md)
+
+In order for Smart contracts on L1 to interact with smart contracts on L2, Optimism is using a process called "bridging".
+This example showcases an alternative using the [Steel] library to do secure and efficient OP-compatible message passing, 
+significantly reducing L1 gas costs. For more information on Optimism's bridging process, refer to their [documentation].
+
 [coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
 [Steel]: ../steel
 [Compound]: https://compound.finance/
+[documentation]: https://docs.optimism.io/builders/app-developers/bridging/messaging

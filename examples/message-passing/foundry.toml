@@ -1,0 +1,7 @@
+[profile.default]
+src = "contracts/src"
+out = "out"
+libs = ["../../lib", "../../contracts/src"]
+test = "contracts/test"
+script = "contracts/script"
+evm_version = 'cancun'
