@@ -21,11 +21,11 @@ use clap::Parser;
 
 use alloy::{
     network::{EthereumWallet, TransactionBuilder},
-    primitives::{Address, Bytes}, 
-    providers::{Provider, ProviderBuilder}, 
-    rpc::types::TransactionRequest, 
-    signers::local::PrivateKeySigner, 
-    sol, 
+    primitives::{Address, Bytes},
+    providers::{Provider, ProviderBuilder},
+    rpc::types::TransactionRequest,
+    signers::local::PrivateKeySigner,
+    sol,
     // sol_types::SolInterface
 };
 
@@ -121,16 +121,21 @@ async fn main() -> Result<()> {
     // Extract the journal from the receipt.
     let journal = receipt.journal.bytes.clone();
 
-   // build calldata 
+    // build calldata
     let calldata = RiscZeroGovernor::verifyAndFinalizeVotesCall {
         seal: seal.into(),
         journal: journal.into(),
     };
-   
+
     // send tx to callback function: verifyAndFinalizeVotes
     let contract = args.contract;
-    let tx = TransactionRequest::default().with_to(contract).with_call(&calldata);
-    let tx_hash = provider.send_transaction(tx).await.context("Failed to send transaction")?;
+    let tx = TransactionRequest::default()
+        .with_to(contract)
+        .with_call(&calldata);
+    let tx_hash = provider
+        .send_transaction(tx)
+        .await
+        .context("Failed to send transaction")?;
     println!("Transaction sent with hash: {:?}", tx_hash);
 
     Ok(())
