@@ -199,6 +199,9 @@ jobs:
       matrix:
         include:
           - os: Linux
+            feature: default
+            device: cpu
+          - os: Linux
             feature: cuda
             device: nvidia_rtx_a5000
     env:
