@@ -28,6 +28,7 @@ jobs:
         prover: [bonsai, local]
         release:
           - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+        # Run on Linux with GPU for faster local proving.
         include:
           - os: Linux
             feature: cuda
