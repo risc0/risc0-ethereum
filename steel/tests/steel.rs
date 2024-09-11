@@ -176,7 +176,7 @@ async fn sha256() {
     );
 }
 
-// The EIP-4844 point evaluation precompile has been disabled due to performance concerns in the zkVM.
+// TODO(#237): EIP-4844 point evaluation precompile is not currently enabled.
 #[test(tokio::test)]
 #[should_panic(expected = "EVM error: c-kzg feature is not enabled")]
 async fn point_evaluation_precompile() {
