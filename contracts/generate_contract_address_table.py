@@ -89,7 +89,7 @@ def main(toml_file, version):
 
         # Generate markdown content for the chain
         md_content = generate_table_for_chain(chain_key, chain_data, version)
-        all_md_content += md_content + "\n\n"
+        all_md_content += md_content + "\n<br/>\n\n"
 
     all_md_content += f"[router-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/RiscZeroVerifierRouter.sol\n"
     all_md_content += f"[verifier-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/groth16/RiscZeroGroth16Verifier.sol\n"
