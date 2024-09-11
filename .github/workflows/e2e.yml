@@ -26,8 +26,9 @@ jobs:
     strategy:
       matrix:
         prover: [bonsai, local]
+        release:
+          - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
         include:
-          - release: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
           - os: Linux
             feature: cuda
             device: nvidia_rtx_a5000
