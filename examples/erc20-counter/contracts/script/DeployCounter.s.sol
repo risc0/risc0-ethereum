@@ -21,27 +21,37 @@ import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {RiscZeroCheats} from "risc0/test/RiscZeroCheats.sol";
 import {Counter} from "../src/Counter.sol";
+import {IERC20Metadata} from "openzeppelin-contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ERC20FixedSupply} from "../test/Counter.t.sol";
 
 /// @notice Deployment script for the Counter contract.
 /// @dev Use the following environment variable to control the deployment:
-///     * ETH_WALLET_PRIVATE_KEY private key of the wallet to be used for deployment.
+///   - ETH_WALLET_PRIVATE_KEY private key of the wallet to be used for deployment.
+///   - TOKEN_OWNER to deploy a new ERC 20 token, funding that address with tokens or _alternatively_
+///   - TOKEN_CONTRACT to link the Counter to an existing ERC20 token.
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract DeployCounter is Script, RiscZeroCheats {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
-        address tokenOwner = vm.envAddress("TOKEN_OWNER");
 
         vm.startBroadcast(deployerKey);
 
-        ERC20FixedSupply toyken = new ERC20FixedSupply("TOYKEN", "TOY", tokenOwner);
-        console2.log("Deployed ERC20 TOYKEN to", address(toyken));
+        IERC20Metadata tokenContract = IERC20Metadata(address(0x0));
+        try vm.envAddress("TOKEN_CONTRACT") returns (address val) {
+            tokenContract = IERC20Metadata(val);
+            console2.log("Using ERC20", tokenContract.name(), "at", address(tokenContract));
+        } catch {
+            // deploy a new ERC20 token if no contract has been specified
+            address owner = vm.envAddress("TOKEN_OWNER");
+            tokenContract = new ERC20FixedSupply("TOYKEN", "TOY", owner);
+            console2.log("Deployed ERC20 TOYKEN to", address(tokenContract));
+        }
 
         IRiscZeroVerifier verifier = deployRiscZeroVerifier();
 
-        Counter counter = new Counter(verifier, address(toyken));
+        Counter counter = new Counter(verifier, address(tokenContract));
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();
