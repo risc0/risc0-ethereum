@@ -85,8 +85,6 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
@@ -166,6 +164,8 @@ jobs:
           - os: Linux
             feature: default
             device: cpu
+    env:
+      RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -201,12 +201,12 @@ jobs:
           - os: Linux
             feature: cuda
             device: nvidia_rtx_a5000
+    env:
+      RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
@@ -255,6 +255,7 @@ jobs:
       - name: Stop local Ethereum testnet
         if: always()
         run: kurtosis enclave rm -f local-eth-testnet
+      - run: sccache --show-stats
 
   doc:
     runs-on: [self-hosted, prod, macOS, cpu]
@@ -262,8 +263,6 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
@@ -275,7 +274,6 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
       - run: cargo doc --no-deps --workspace
       - run: forge doc
-      #- run: sccache --show-stats
 
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
@@ -285,8 +283,6 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
         with:
           # Building with docs.rs config requires the nightly toolchain.
