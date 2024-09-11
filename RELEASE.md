@@ -13,6 +13,7 @@
      * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+     * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
          >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
@@ -25,6 +26,7 @@
      * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+     * Update `steel/CHANGELOG.md` to start a new section for the next release.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
