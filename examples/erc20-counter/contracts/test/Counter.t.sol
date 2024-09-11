@@ -39,8 +39,8 @@ contract CounterTest is Test {
     bytes32 private imageId;
 
     function setUp() public {
-        // fork from the actual chain to get realistic Beacon block roots
-        string memory RPC_URL = vm.envString("ETH_RPC_URL");
+        // fork from the actual Mainnet to get realistic Beacon block roots
+        string memory RPC_URL = vm.rpcUrl("mainnet");
         vm.createSelectFork(RPC_URL);
 
         verifier = new RiscZeroMockVerifier(MOCK_SELECTOR);
