@@ -38,13 +38,17 @@
 
    Crates currently published to `crates.io` are:
 
-   * `risc0-steel`
+   * ~~`risc0-steel`~~
+
+     > NOTE: risc0-steel currently cannot be published to crates.io.
+     > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
+
    * `risc0-build-ethereum`
+   * `risc0-ethereum-contracts`
+
+   > NOTE: When publishing a new crate, make sure to add github:risc0:maintainers as an owner.
 
    <br/>
-
-   > NOTE: We intend to publish more of the crates in the future.
-   > Blocking issue is that the other crates depend on building Solidity smart contracts as part of a `build.rs` script, which makes it incompatible with `crates.io`.
 
    ```sh
    # Log in to crates.io. Create a token that is restricted to what you need to do (e.g. publish update) and set an expiry.
