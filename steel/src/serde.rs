@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Serde related helpers.
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use alloy_primitives::{hex, keccak256, Sealable, Sealed, B256};
 use alloy_rlp::{Decodable, Encodable};
@@ -29,6 +29,14 @@ pub struct RlpHeader<H: Encodable> {
     rlp: Option<Vec<u8>>,
 }
 
+impl<H: Encodable + Debug> Debug for RlpHeader<H> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RlpHeader")
+            .field("inner", &self.inner)
+            .finish()
+    }
+}
+
 impl<H: Encodable> RlpHeader<H> {
     pub fn new(inner: H) -> Self {
         Self { inner, rlp: None }
@@ -36,6 +44,10 @@ impl<H: Encodable> RlpHeader<H> {
     #[inline]
     pub fn inner(&self) -> &H {
         &self.inner
+    }
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut H {
+        &mut self.inner
     }
 }
 

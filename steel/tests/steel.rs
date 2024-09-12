@@ -17,13 +17,7 @@
 use std::fmt::Debug;
 
 use alloy::{
-    network::{Ethereum, EthereumWallet},
-    providers::{
-        ext::AnvilApi,
-        fillers::{FillProvider, JoinFill, RecommendedFiller, WalletFiller},
-        layers::AnvilProvider,
-        Provider, ProviderBuilder, RootProvider,
-    },
+    providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
     transports::http::{Client, Http},
     uint,
@@ -121,15 +115,8 @@ alloy::sol!(
     }
 );
 
-type TestProvider = FillProvider<
-    JoinFill<RecommendedFiller, WalletFiller<EthereumWallet>>,
-    AnvilProvider<RootProvider<Http<Client>>, Http<Client>>,
-    Http<Client>,
-    Ethereum,
->;
-
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
-async fn test_provider() -> TestProvider {
+async fn test_provider() -> impl Provider<Http<Client>> {
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
