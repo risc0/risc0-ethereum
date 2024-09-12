@@ -46,6 +46,8 @@
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
 
+   > NOTE: When publishing a new crate, make sure to add github:risc0:maintainers as an owner.
+
    <br/>
 
    ```sh
