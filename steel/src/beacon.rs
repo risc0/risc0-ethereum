@@ -273,7 +273,7 @@ mod host {
     /// Returns the header, with `parent_root` equal to `parent.root`.
     ///
     /// It iteratively tries to fetch headers of successive slots until success.
-    /// TODO: use `eth/v1/beacon/headers?parent_root`, once all the nodes support it.
+    // TODO(#242): use `eth/v1/beacon/headers?parent_root` when more clients support it.
     async fn get_child_beacon_header(
         client: &BeaconClient,
         parent: GetBlockHeaderResponse,
