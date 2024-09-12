@@ -81,7 +81,7 @@ pub mod host {
     };
     use alloy::{network::Network, providers::Provider, transports::Transport};
     use anyhow::{anyhow, ensure};
-    use log::debug;
+    use log::{debug, info};
 
     impl<H: EvmBlockHeader> BlockInput<H> {
         /// Derives the verifiable input from a [HostEvmEnv].
@@ -128,6 +128,12 @@ pub mod host {
             );
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
+
+            info!(
+                "Commitment to block hash {} at {}",
+                env.header.seal(),
+                env.header.number()
+            );
 
             let input = BlockInput {
                 header: env.header.into_inner(),
