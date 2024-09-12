@@ -26,32 +26,34 @@ Once completed, you should see some output similar to below.
 ```sh
 RISC0_DEV_MODE=true forge test -vvv
 [⠊] Compiling...
-No files changed, compilation skipped
+[⠒] Compiling 87 files with Solc 0.8.23
+[⠢] Solc 0.8.23 finished in 4.17s
+Compiler run successful with warnings:
 
-Ran 6 tests for tests/RiscZeroGovernorTest.sol:RiscZeroGovernorTest
-[PASS] testFailToReachQuorum() (gas: 115528)
-[PASS] testProposalCreation() (gas: 85596)
-[PASS] testQuorumAndExecution() (gas: 251954)
-[PASS] testVerifyAndFinalizeVotes() (gas: 241605)
-[PASS] testVoting() (gas: 131153)
-[PASS] testVotingBySignature() (gas: 222248)
-Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 2.19ms (1.60ms CPU time)
-
-Ran 6 tests for tests/BaselineGovernorTest.sol:BaselineGovernorTest
-[PASS] testFailToReachQuorum() (gas: 143920)
-[PASS] testProposalCreation() (gas: 63293)
-[PASS] testProposalThreshold() (gas: 116790)
-[PASS] testQuorumAndExecution() (gas: 198347)
+Ran 6 tests for contracts/test/BaselineGovernorTest.sol:BaselineGovernorTest
+[PASS] testProposalCreation() (gas: 63271)
+[PASS] testProposalIDs() (gas: 116812)
+[PASS] testQuorumAndExecution() (gas: 198325)
+[PASS] testQuorumNotReached() (gas: 139481)
 [PASS] testVoting() (gas: 186488)
 [PASS] testVotingBySignature() (gas: 271969)
-Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 2.22ms (1.60ms CPU time)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 5.56ms (5.12ms CPU time)
 
-Ran 2 tests for tests/benchmarks/BenchmarkGovernorsTest.sol:BenchmarkGovernorsTest
-[PASS] testFuzz_BaselineWorkflow(uint16) (runs: 10, μ: 121437272, ~: 140488679)
-[PASS] testFuzz_RiscZeroWorkflow(uint16) (runs: 10, μ: 86707673, ~: 100443114)
-Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 1.86s (3.51s CPU time)
+Ran 6 tests for contracts/test/RiscZeroGovernorTest.sol:RiscZeroGovernorTest
+[PASS] testProposalCreation() (gas: 85552)
+[PASS] testQuorumAndExecution() (gas: 252004)
+[PASS] testQuorumNotReached() (gas: 213880)
+[PASS] testVerifyAndFinalizeVotes() (gas: 241588)
+[PASS] testVoting() (gas: 131218)
+[PASS] testVotingBySignature() (gas: 220831)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 5.54ms (6.44ms CPU time)
 
-Ran 3 test suites in 1.86s (1.86s CPU time): 14 tests passed, 0 failed, 0 skipped (14 total tests) 
+Ran 2 tests for contracts/test/benchmarks/BenchmarkGovernorsTest.sol:BenchmarkGovernorsTest
+[PASS] testFuzz_BaselineWorkflow(uint16) (runs: 10, μ: 120564172, ~: 140488694)
+[PASS] testFuzz_RiscZeroWorkflow(uint16) (runs: 10, μ: 86093198, ~: 100443129)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 1.82s (3.46s CPU time)
+
+Ran 3 test suites in 1.83s (1.83s CPU time): 14 tests passed, 0 failed, 0 skipped (14 total tests)
 ```
 
 ## Generating data and gas plots
@@ -131,13 +133,13 @@ python plot_gas_data.py
 
 The plot generated will be saved as [gas_data_comparison.png]:
 
-![gas data comparison graph](tests/benchmarks/gas_data_comparison.png)
+![gas data comparison graph](/contracts/test/benchmarks/gas_data_comparison.png)
 
 [install-foundry]: https://book.getfoundry.sh/getting-started/installation
 [foundry-fuzz-docs]: https://book.getfoundry.sh/reference/config/testing#fuzz
-[gas_data_comparison.png]: ./tests/benchmarks/gas_data_comparison.png
+[gas_data_comparison.png]: ./contracts/test/benchmarks/gas_data_comparison.png
 [install-risc0]: https://dev.risczero.com/api/zkvm/install
-[print_gas_data.py]: ./tests/benchmarks/print_gas_data.py
-[plot_gas_data.py]: ./tests/benchmarks/plot_gas_data.py
+[print_gas_data.py]: ./contracts/test/benchmarks/print_gas_data.py
+[plot_gas_data.py]: ./contracts/test/benchmarks/plot_gas_data.py
 [running tests]: #running-tests
 
