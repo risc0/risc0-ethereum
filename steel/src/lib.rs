@@ -35,6 +35,7 @@ mod state;
 
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
+pub use state::StateAccount;
 
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
