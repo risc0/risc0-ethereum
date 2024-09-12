@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+### 🛠 Fixes
+
+- Return specific error, when no `Contract::preflight` was called.
+
 ### 🚨 Breaking Changes
 
 ## [0.13.0](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.0) - 2024-09-10
