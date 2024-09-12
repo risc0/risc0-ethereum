@@ -7,7 +7,6 @@ edition = { workspace = true }
 methods = ["guest"]
 
 [build-dependencies]
-hex = { workspace = true }
 risc0-build = { workspace = true }
 risc0-build-ethereum = { workspace = true }
 risc0-zkp = { workspace = true }
@@ -15,4 +14,5 @@ risc0-zkp = { workspace = true }
 [dev-dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
+hex = { workspace = true }
 risc0-zkvm = { workspace = true, features = ["client"] }

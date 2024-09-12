@@ -61,12 +61,10 @@ struct Args {
     contract: Address,
 
     /// The proposal ID (32 bytes, hex-encoded)
-    /// perhaps we could use 256 bit type from alloy primitives here
     #[clap(long)]
     proposal_id: Bytes,
 
     /// The votes data (hex-encoded, multiple of 100 bytes)
-    /// could use fixed array of 100 bytes type from alloy fixed bytes?
     #[clap(long)]
     votes_data: Bytes,
 }

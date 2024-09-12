@@ -145,28 +145,6 @@ contract BaselineGovernorTest is Test, GovernorTestBase {
         );
     }
 
-    // function testFailToReachQuorum() public {
-    //     (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
-    //         _createProposalParams();
-    //     uint256 proposalId = baselineGovernor.propose(targets, values, calldatas, description);
-
-    //     // Move to active state
-    //     vm.roll(block.number + baselineGovernor.votingDelay() + 1);
-
-    //     // Only Bob votes, which isn't enough to reach quorum
-    //     vm.prank(bob);
-    //     baselineGovernor.castVote(proposalId, 1);
-
-    //     // Move to end of voting period
-    //     vm.roll(block.number + baselineGovernor.votingPeriod() + 1);
-
-    //     assertEq(
-    //         uint256(baselineGovernor.state(proposalId)),
-    //         uint256(IGovernor.ProposalState.Defeated),
-    //         "Proposal should be defeated due to not reaching quorum"
-    //     );
-    // }
-
     function testQuorumNotReached() public {
         (address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description) =
             _createProposalParams();
