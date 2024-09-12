@@ -90,6 +90,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         self.cfg_env.chain_id = chain_spec.chain_id();
         self.cfg_env.handler_cfg.spec_id = chain_spec
             .active_fork(self.header.number(), self.header.timestamp())
+            // TODO: return an error
             .unwrap();
         self
     }

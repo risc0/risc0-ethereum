@@ -297,6 +297,7 @@ mod host {
             }
         }
         // return the last error, if all calls failed
+        // safe unwrap: there must have been at least one error when we reach this line
         let err = anyhow::Error::from(request_error.unwrap());
         Err(err.context("no valid response received for the 32 consecutive slots"))
     }
