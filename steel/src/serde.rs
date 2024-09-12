@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Serde related helpers.
-use std::fmt;
+use std::fmt::{self, Debug};
 
 use alloy_primitives::{hex, keccak256, Sealable, Sealed, B256};
 use alloy_rlp::{Decodable, Encodable};
@@ -23,7 +23,7 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 ///
 /// It implements deserialization using RLP encoding and does not discard the RLP data after
 /// decoding, instead keeping it for faster hash computation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RlpHeader<H: Encodable> {
     inner: H,
     rlp: Option<Vec<u8>>,
@@ -36,6 +36,10 @@ impl<H: Encodable> RlpHeader<H> {
     #[inline]
     pub fn inner(&self) -> &H {
         &self.inner
+    }
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut H {
+        &mut self.inner
     }
 }
 

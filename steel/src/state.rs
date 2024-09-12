@@ -70,14 +70,14 @@ impl StateDb {
     fn account(&self, address: Address) -> Option<StateAccount> {
         self.state_trie
             .get_rlp(keccak256(address))
-            .expect("invalid state value")
+            .expect("Invalid encoded state trie value")
     }
 
     #[inline]
     fn code_by_hash(&self, hash: B256) -> &Bytes {
         self.contracts
             .get(&hash)
-            .unwrap_or_else(|| panic!("code not found: {}", hash))
+            .unwrap_or_else(|| panic!("No code with hash: {}", hash))
     }
 
     #[inline]
@@ -85,7 +85,7 @@ impl StateDb {
         let hash = self
             .block_hashes
             .get(&number)
-            .unwrap_or_else(|| panic!("block not found: {}", number));
+            .unwrap_or_else(|| panic!("No block with number: {}", number));
         *hash
     }
 
@@ -160,12 +160,12 @@ impl Database for WrapStateDb<'_> {
         let storage = self
             .account_storage
             .get(&address)
-            .unwrap_or_else(|| panic!("storage not found: {:?}", address));
+            .unwrap_or_else(|| panic!("No storage trie with root: {}", address));
         match storage {
             Some(storage) => {
                 let val = storage
                     .get_rlp(keccak256(index.to_be_bytes::<32>()))
-                    .expect("invalid storage value");
+                    .expect("Invalid encoded storage value");
                 Ok(val.unwrap_or_default())
             }
             None => Ok(U256::ZERO),
