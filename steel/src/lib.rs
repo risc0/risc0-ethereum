@@ -22,8 +22,8 @@ use block::BlockInput;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 use state::StateDb;
 
-pub mod beacon;
-pub mod block;
+mod beacon;
+mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
@@ -73,7 +73,7 @@ pub struct EvmEnv<D, H> {
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// Creates a new environment.
     /// It uses the default configuration for the latest specification.
-    pub fn new(db: D, header: Sealed<H>) -> Self {
+    pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
         let commitment = Commitment::from_header(&header);
 

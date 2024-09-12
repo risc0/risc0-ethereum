@@ -55,6 +55,13 @@ pub struct ChainSpec {
 
 impl ChainSpec {
     /// Creates a new configuration consisting of only one specification ID.
+    ///
+    /// For example, this can be used to create a [ChainSpec] for an anvil instance:
+    /// ```rust
+    /// # use revm::primitives::SpecId;
+    /// # use risc0_steel::config::ChainSpec;
+    /// let spec = ChainSpec::new_single(31337, SpecId::CANCUN);
+    /// ```
     pub fn new_single(chain_id: ChainId, spec_id: SpecId) -> Self {
         ChainSpec {
             chain_id,
