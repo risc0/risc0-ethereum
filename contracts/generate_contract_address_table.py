@@ -45,7 +45,7 @@ def generate_table_for_chain(chain_name, chain_data, version):
     router_addr = chain_data['router']
 
     # The router is the contract devs are most likely to interact with, so it is first.
-    md_content += f"| [RiscZeroVerifierRouterRouter][router-src] | [`{router_addr}`][router-{chain_id}-etherscan] |\n"
+    md_content += f"| [RiscZeroVerifierRouter][router-src] | [`{router_addr}`][router-{chain_id}-etherscan] |\n"
     links.append(Link(f"router-{chain_id}-etherscan", urljoin(etherscan_url, f"address/{router_addr}#code")))
 
     # Add verifiers that match the version
