@@ -127,7 +127,7 @@ impl Node {
                     .and_then(|node| node.get(remaining)),
                 None => None, // branch nodes don't have values in our MPT version
             },
-            Node::Digest(_) => panic!("Attempted to access unresolved node"),
+            Node::Digest(_) => panic!("MPT: Unresolved node access"),
         }
     }
 
