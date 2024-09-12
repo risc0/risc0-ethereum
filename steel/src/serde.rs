@@ -23,18 +23,10 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 ///
 /// It implements deserialization using RLP encoding and does not discard the RLP data after
 /// decoding, instead keeping it for faster hash computation.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RlpHeader<H: Encodable> {
     inner: H,
     rlp: Option<Vec<u8>>,
-}
-
-impl<H: Encodable + Debug> Debug for RlpHeader<H> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RlpHeader")
-            .field("inner", &self.inner)
-            .finish()
-    }
 }
 
 impl<H: Encodable> RlpHeader<H> {
