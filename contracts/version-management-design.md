@@ -1,9 +1,9 @@
 # On-Chain Verifier Upgrade and Deprecation
 
 At base, the RISC Zero verifier contracts are designed to be immutable and stateless.
-This meets the highest standards for trust minimized application on Ethereum, as no action can alter the operation of the verifier.
+This meets the highest standards for trust minimized applications on Ethereum, as no action can alter the operation of the verifier.
 
-However, in the event that a security vulnerability is discovered in the verifier contract(s), stateless contracts require the application to respond to maintain security.
+However, in the event that a security vulnerability is discovered in one or more verifier contracts, stateless contracts require the application to respond to maintain security (e.g. by using governance to remove the vulnerable verifier contract address).
 As a countermeasure to this risk, and to allow for upgrades with new features on an opt-in basis, the following version management system is deployed to Ethereum.
 
 ## Overview
@@ -81,9 +81,9 @@ A [RiscZeroVerifierRouter](./src/RiscZeroVerifierRouter.sol) allows for multiple
 Using the verifier selector included in the seal, it will route each `verify` call to the appropriate implementation.
 
 Implementations can be added to the router mapping by an admin of the router, who is assigned as the owner of the contract.
-Implementations can also be removed by the admin, and once removed it can never be replaced. I.e. each identifier can have at most one implementation across time.
+Implementations can also be removed by the admin, and once removed can never be replaced. I.e. each selector can have at most one implementation across time.
 
-RISC Zero deploys and acts as the admin on a router, maintaining a recommended list of trusted verifiers.
+RISC Zero deploys and acts as the admin on a router, maintaining a recommended list of trustworthy verifiers.
 Note in particular this means that RISC Zero may add new verifiers, and so a [TimelockController][TimelockController-docs] is put in place to impose a delay on all additions.
 If an application using the managed router does not trust a new verifier being added, they will have a time-window to respond.
 
