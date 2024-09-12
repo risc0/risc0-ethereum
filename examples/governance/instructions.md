@@ -133,7 +133,7 @@ python plot_gas_data.py
 
 The plot generated will be saved as [gas_data_comparison.png]:
 
-![gas data comparison graph](/contracts/test/benchmarks/gas_data_comparison.png)
+![Gas Data Comparison](contracts/test/benchmarks/gas_data_comparison.png)
 
 [install-foundry]: https://book.getfoundry.sh/getting-started/installation
 [foundry-fuzz-docs]: https://book.getfoundry.sh/reference/config/testing#fuzz
