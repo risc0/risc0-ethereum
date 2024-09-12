@@ -22,8 +22,8 @@ use block::BlockInput;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 use state::StateDb;
 
-pub mod beacon;
-pub mod block;
+mod beacon;
+mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;

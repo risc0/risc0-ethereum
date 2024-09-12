@@ -40,7 +40,7 @@ use revm::{
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
 /// ### Examples
-/// ```rust no_run
+/// ```rust,no_run
 /// # use risc0_steel::{ethereum::EthEvmEnv, Contract, host::BlockNumberOrTag};
 /// # use alloy_primitives::address;
 /// # use alloy_sol_types::sol;
@@ -53,10 +53,8 @@ use revm::{
 ///         function balanceOf(address account) external view returns (uint);
 ///     }
 /// }
-///
-/// let get_balance = IERC20::balanceOfCall {
-///     account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
-/// };
+/// let account = address!("F977814e90dA44bFA03b6295A0616a897441aceC");
+/// let get_balance = IERC20::balanceOfCall { account };
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;

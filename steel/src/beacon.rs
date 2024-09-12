@@ -180,7 +180,7 @@ mod host {
             inner: Response<T>,
         }
 
-        /// Simple beacon API client that can be used to query headers and blocks.
+        /// Simple beacon API client for the `mainnet` preset that can query headers and blocks.
         pub struct BeaconClient {
             http: reqwest::Client,
             endpoint: Url,
