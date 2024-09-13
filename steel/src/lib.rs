@@ -73,6 +73,7 @@ pub struct EvmEnv<D, H> {
 
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// Creates a new environment.
+    ///
     /// It uses the default configuration for the latest specification.
     pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
@@ -87,6 +88,8 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     }
 
     /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
     pub fn with_chain_spec(mut self, chain_spec: &config::ChainSpec) -> Self {
         self.cfg_env.chain_id = chain_spec.chain_id();
         self.cfg_env.handler_cfg.spec_id = chain_spec

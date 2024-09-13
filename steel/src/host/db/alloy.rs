@@ -79,8 +79,17 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> fo
     }
 }
 
+/// Errors returned by the [AlloyDb].
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("RPC error")]
+    RPC(#[from] TransportError),
+    #[error("block not found")]
+    BlockNotFound,
+}
+
 impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T, N, P> {
-    type Error = TransportError;
+    type Error = Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         let f = async {
@@ -143,11 +152,11 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
     }
 
     fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
-        let block = self
+        let block_response = self
             .handle
             .block_on(self.provider.get_block_by_number(number.into(), false))?;
-        // TODO: return proper error
-        let block = block.unwrap();
+        let block = block_response.ok_or(Error::BlockNotFound)?;
+
         Ok(block.header().hash())
     }
 }

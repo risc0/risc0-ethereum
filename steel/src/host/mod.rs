@@ -91,7 +91,7 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
-    /// Converts the environment into a [EvmInput] committing to a Ethereum Beacon block root.
+    /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
     ///
     /// This function assumes that the
     /// [mainnet](https://github.com/ethereum/consensus-specs/blob/v1.4.0/configs/mainnet.yaml)
