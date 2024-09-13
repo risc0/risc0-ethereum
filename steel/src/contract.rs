@@ -67,7 +67,7 @@ use revm::{
 /// // Guest:
 /// let evm_env = evm_input.into_env();
 /// let contract = Contract::new(contract_address, &evm_env);
-/// contract.call_builder(&get_balance).call();
+/// contract.call_builder(&get_balance).call().unwrap();
 ///
 /// # Ok(())
 /// # }
@@ -201,6 +201,7 @@ mod host {
         /// list. This does *not* set the access list as part of the transaction (as specified in
         /// EIP-2930), and thus can only be specified during preflight on the host.
         pub async fn prefetch_access_list(self, access_list: AccessList) -> Result<Self> {
+            // safe unwrap: env is never returned without a DB
             let db = self.env.db.as_mut().unwrap();
             db.add_access_list(access_list).await?;
 
@@ -219,11 +220,11 @@ mod host {
                 self.tx.to
             );
 
-            let cfg = self.env.cfg_env.clone();
-            let header = self.env.header.inner().clone();
-            // we cannot clone the database, so it gets moved in and out of the task
+            // as mutable references are not possible, the DB must be moved in and out of the task
             let db = self.env.db.take().unwrap();
 
+            let cfg = self.env.cfg_env.clone();
+            let header = self.env.header.inner().clone();
             let (result, db) = tokio::task::spawn_blocking(move || {
                 let mut evm = new_evm(db, cfg, header);
                 let result = self.tx.transact(&mut evm);
@@ -232,8 +233,9 @@ mod host {
                 (result, db)
             })
             .await
-            .context("EVM execution panicked")?;
+            .expect("EVM execution panicked");
 
+            // restore the DB before handling errors, so that we never return an env without a DB
             self.env.db = Some(db);
 
             result.map_err(|err| anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
@@ -249,6 +251,7 @@ mod host {
         /// [EvmEnv]: crate::EvmEnv
         pub async fn call_with_prefetch(self) -> Result<C::Return> {
             let access_list = {
+                // safe unwrap: env is never returned without a DB
                 let db = self.env.db.as_mut().unwrap();
 
                 let tx = <N as Network>::TransactionRequest::default()
@@ -285,14 +288,15 @@ where
     /// Executes the call with a [EvmEnv] constructed with [Contract::new].
     ///
     /// [EvmEnv]: crate::EvmEnv
-    pub fn call(self) -> C::Return {
+    pub fn call(self) -> Result<C::Return, String> {
+        // safe unwrap: env is never returned without a DB
         let state_db = self.env.db.as_ref().unwrap();
         let mut evm = new_evm::<_, H>(
             WrapStateDb::new(state_db),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );
-        self.tx.transact(&mut evm).unwrap()
+        self.tx.transact(&mut evm)
     }
 }
 
