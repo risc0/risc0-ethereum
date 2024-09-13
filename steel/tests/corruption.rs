@@ -319,7 +319,7 @@ async fn corrupt_ancestor() {
 #[should_panic(expected = "Invalid commitment")]
 async fn corrupt_header_block_commitment() {
     let input = anvil_input().await.unwrap();
-    let exp_commitment = input.clone().into_env().into_commitment();
+    let exp_commit = input.clone().into_env().into_commitment();
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
@@ -331,8 +331,12 @@ async fn corrupt_header_block_commitment() {
     *header_value = to_value(header).unwrap();
 
     // executing this should lead to an Invalid commitment
-    let commitment = mock_anvil_guest(from_value(input_value).unwrap());
-    assert_eq!(commitment, exp_commitment, "Invalid commitment");
+    let commit = mock_anvil_guest(from_value(input_value).unwrap());
+    assert_eq!(commit.blockID, exp_commit.blockID, "Commitment changed");
+    assert_eq!(
+        commit.blockDigest, exp_commit.blockDigest,
+        "Invalid commitment"
+    );
 }
 
 #[test(tokio::test)]
@@ -343,15 +347,15 @@ async fn corrupt_header_beacon_commitment() {
     })
     .await
     .unwrap();
-    let exp_commitment = input.clone().into_env().into_commitment();
+    let exp_commit = input.clone().into_env().into_commitment();
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
     let header_value = &mut get_block_input_mut(&mut input_value)["header"];
 
-    // corrupt the header by modifying its timestamp
+    // corrupt the header by modifying its number
     let mut header: EthBlockHeader = from_value(header_value.clone()).unwrap();
-    header.inner_mut().timestamp = 0xdeadbeaf;
+    header.inner_mut().number = 0xdeadbeaf;
     *header_value = to_value(header).unwrap();
 
     // executing this should lead to an Invalid commitment
@@ -360,7 +364,12 @@ async fn corrupt_header_beacon_commitment() {
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
         .call();
-    assert_eq!(env.into_commitment(), exp_commitment, "Invalid commitment");
+    let commit = env.into_commitment();
+    assert_eq!(commit.blockID, exp_commit.blockID, "Changed commitment");
+    assert_eq!(
+        commit.blockDigest, exp_commit.blockDigest,
+        "Invalid commitment"
+    );
 }
 
 #[test(tokio::test)]
@@ -371,7 +380,7 @@ async fn corrupt_beacon_proof() {
     })
     .await
     .unwrap();
-    let exp_commitment = input.clone().into_env().into_commitment();
+    let exp_commit = input.clone().into_env().into_commitment();
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
@@ -386,5 +395,10 @@ async fn corrupt_beacon_proof() {
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
         .call();
-    assert_eq!(env.into_commitment(), exp_commitment, "Invalid commitment");
+    let commit = env.into_commitment();
+    assert_eq!(commit.blockID, exp_commit.blockID, "Commitment changed");
+    assert_eq!(
+        commit.blockDigest, exp_commit.blockDigest,
+        "Invalid commitment"
+    );
 }
