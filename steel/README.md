@@ -122,12 +122,24 @@ Validating the block committed by a Steel proof is essential to ensure that the 
 Steel supports two methods for block validation (see the `validateCommitment` function in [Steel.sol](../contracts/src/steel/Steel.sol)).
 
 #### 1. Block hash Commitment
-This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old. With Ethereum's 12-second block time, this provides a window of about 50 minutes to generate the proof and ensure that the validating transaction is contained in a block. This approach is ideal for most scenarios, including complex computations, as it typically provides sufficient time to generate the proof.
-#### 2. Beacon Block Root Commitment
-The second method allows validation using the [EIP-4788] beacon roots contract. This technique extends the time window in which the proof can be validated on-chain to just over a day, making it suitable for scenarios requiring more extensive computation. It requires access to a beacon API endpoint and can be enabled by calling `EvmEnv::into_beacon_input`.
-However, this approach is specific to Ethereum Steel proofs and depends on the implementation of EIP-4788. Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation. This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.
 
-A *bookmarking* validation technique can also be built on top of this. The idea is to store the target block hash in the contract state before generating a Steel proof that targets that specific block. Once the block hash (or beacon root) has been bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state.
+This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old.
+With Ethereum's 12-second block time, this provides a window of about 50 minutes to generate the proof and ensure that the validating transaction is contained in a block.
+This approach is ideal for most scenarios, including complex computations, as it typically provides sufficient time to generate the proof.
+
+#### 2. Beacon Block Root Commitment
+
+The second method allows validation using the [EIP-4788] beacon roots contract.
+This technique extends the time window in which the proof can be validated on-chain to just over a day, making it suitable for scenarios requiring more extensive computation.
+It requires access to a beacon API endpoint and can be enabled by calling `EvmEnv::into_beacon_input`.
+However, this approach is specific to Ethereum Steel proofs and depends on the implementation of EIP-4788.
+
+Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation.
+This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.
+
+A *bookmarking* validation technique can also be built on top of either block commitment approach.
+The idea is to store the target block commitment in the contract state before generating a Steel proof that targets that specific block.
+Once the block hash (or beacon root) has been bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state.
 
 [erc20-counter]: ../examples/erc20-counter/README.md
 [token-stats]: ../examples/token-stats/README.md
