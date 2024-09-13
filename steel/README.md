@@ -137,6 +137,8 @@ However, this approach is specific to Ethereum Steel proofs and depends on the i
 Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation.
 This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.
 
+#### Bookmarking
+
 A *bookmarking* validation technique can also be built on top of either block commitment approach.
 The idea is to store the target block commitment in the contract state before generating a Steel proof that targets that specific block.
 Once the block hash (or beacon root) has been bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state.
