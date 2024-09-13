@@ -67,7 +67,7 @@ use revm::{
 /// // Guest:
 /// let evm_env = evm_input.into_env();
 /// let contract = Contract::new(contract_address, &evm_env);
-/// contract.call_builder(&get_balance).call();
+/// contract.call_builder(&get_balance).call().unwrap();
 ///
 /// # Ok(())
 /// # }
@@ -288,7 +288,7 @@ where
     /// Executes the call with a [EvmEnv] constructed with [Contract::new].
     ///
     /// [EvmEnv]: crate::EvmEnv
-    pub fn call(self) -> C::Return {
+    pub fn call(self) -> Result<C::Return, String> {
         // safe unwrap: env is never returned without a DB
         let state_db = self.env.db.as_ref().unwrap();
         let mut evm = new_evm::<_, H>(
@@ -296,8 +296,7 @@ where
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );
-        // typically, guest functions should panic instead of returning an error
-        self.tx.transact(&mut evm).expect("call failed")
+        self.tx.transact(&mut evm)
     }
 }
 
