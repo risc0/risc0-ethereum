@@ -91,7 +91,33 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
-    /// Converts the environment into a [EvmInput] committing to a Beacon block root.
+    /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
+    ///
+    /// This function assumes that the
+    /// [mainnet](https://github.com/ethereum/consensus-specs/blob/v1.4.0/configs/mainnet.yaml)
+    /// preset of the consensus specs is used.
+    ///
+    /// ```rust,no_run
+    /// # use alloy_primitives::{address, Address};
+    /// # use risc0_steel::{Contract, ethereum::EthEvmEnv};
+    /// # use url::Url;
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// // Create an environment.
+    /// let rpc_url = Url::parse("https://ethereum-rpc.publicnode.com")?;
+    /// let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+    ///
+    /// // Preflight some contract calls...
+    /// # let address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
+    /// # alloy::sol!( function balanceOf(address account) external view returns (uint); );
+    /// # let call = balanceOfCall{ account: Address::ZERO };
+    /// Contract::preflight(address, &mut env).call_builder(&call).call().await?;
+    ///
+    /// // Use EIP-4788 beacon commitments.
+    /// let beacon_api_url = Url::parse("https://ethereum-beacon-api.publicnode.com")?;
+    /// let input = env.into_beacon_input(beacon_api_url).await?;
+    /// # Ok(())
+    /// # }
     pub async fn into_beacon_input(self, url: Url) -> Result<EvmInput<EthBlockHeader>> {
         Ok(EvmInput::Beacon(
             BeaconInput::from_env_and_endpoint(self, url).await?,
@@ -101,6 +127,18 @@ where
 
 impl<H> EvmEnv<(), H> {
     /// Creates a builder for building an environment.
+    ///
+    /// Create an Ethereum environment bast on the latest block:
+    /// ```rust,no_run
+    /// # use risc0_steel::ethereum::EthEvmEnv;
+    /// # use url::Url;
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// # let url = Url::parse("https://ethereum-rpc.publicnode.com")?;
+    /// let env = EthEvmEnv::builder().rpc(url).build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn builder() -> EvmEnvBuilder<NoProvider, H> {
         EvmEnvBuilder {
             provider: NoProvider,
@@ -112,6 +150,8 @@ impl<H> EvmEnv<(), H> {
 }
 
 /// Builder for building an [EvmEnv] on the host.
+///
+/// The builder can be created using [EvmEnv::builder()].
 #[derive(Clone, Debug)]
 pub struct EvmEnvBuilder<P, H> {
     provider: P,

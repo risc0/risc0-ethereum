@@ -46,6 +46,8 @@
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
 
+   > NOTE: When publishing a new crate, make sure to add github:risc0:maintainers as an owner.
+
    <br/>
 
    ```sh
@@ -68,6 +70,8 @@
    2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finsh the operation to add the new verifier to the router.
 
    3. Document the new addresses and version in the `dev.risczero.com` docs.
+
+     Use [contracts/generate_contract_address_table.py] to generate the tables. Python 3.11+ is required.
 
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 

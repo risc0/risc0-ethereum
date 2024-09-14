@@ -22,8 +22,8 @@ use block::BlockInput;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 use state::StateDb;
 
-pub mod beacon;
-pub mod block;
+mod beacon;
+mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
@@ -35,6 +35,7 @@ mod state;
 
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
+pub use state::StateAccount;
 
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
@@ -72,8 +73,9 @@ pub struct EvmEnv<D, H> {
 
 impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// Creates a new environment.
+    ///
     /// It uses the default configuration for the latest specification.
-    pub fn new(db: D, header: Sealed<H>) -> Self {
+    pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
         let commitment = Commitment::from_header(&header);
 
@@ -86,6 +88,8 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     }
 
     /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
     pub fn with_chain_spec(mut self, chain_spec: &config::ChainSpec) -> Self {
         self.cfg_env.chain_id = chain_spec.chain_id();
         self.cfg_env.handler_cfg.spec_id = chain_spec

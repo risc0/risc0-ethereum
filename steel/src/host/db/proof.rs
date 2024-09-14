@@ -140,8 +140,12 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
     /// recorded by the [Database].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
-        let proofs = &mut self.proofs;
+        ensure!(
+            !self.accounts.is_empty(),
+            "no accounts accessed: use Contract::preflight"
+        );
 
+        let proofs = &mut self.proofs;
         for (address, storage_keys) in &self.accounts {
             let account_proof = proofs.get(address);
             let storage_keys: Vec<_> = storage_keys
@@ -157,14 +161,19 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                     .get_eip1186_proof(*address, storage_keys)
                     .await
                     .context("eth_getProof failed")?;
+                ensure!(
+                    &proof.address == address,
+                    "eth_getProof response does not match request"
+                );
                 add_proof(proofs, proof).context("invalid eth_getProof response")?;
             }
         }
 
         let state_nodes = self
             .accounts
-            .iter()
-            .flat_map(|(address, _)| proofs.get(address).unwrap().account_proof.iter());
+            .keys()
+            .filter_map(|address| proofs.get(address))
+            .flat_map(|proof| proof.account_proof.iter());
         let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
 
         let mut storage_tries = HashMap::new();
@@ -174,11 +183,13 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                 continue;
             }
 
+            // safe unwrap: added a proof for each account in the previous loop
             let storage_proofs = &proofs.get(address).unwrap().storage_proofs;
 
             let storage_nodes = storage_keys
                 .iter()
-                .flat_map(|key| storage_proofs.get(key).unwrap().proof.iter());
+                .filter_map(|key| storage_proofs.get(key))
+                .flat_map(|proof| proof.proof.iter());
             let storage_trie =
                 MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
             let storage_root_hash = storage_trie.hash_slow();

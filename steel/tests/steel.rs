@@ -17,13 +17,7 @@
 use std::fmt::Debug;
 
 use alloy::{
-    network::{Ethereum, EthereumWallet},
-    providers::{
-        ext::AnvilApi,
-        fillers::{FillProvider, JoinFill, RecommendedFiller, WalletFiller},
-        layers::AnvilProvider,
-        Provider, ProviderBuilder, RootProvider,
-    },
+    providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
     transports::http::{Client, Http},
     uint,
@@ -121,15 +115,8 @@ alloy::sol!(
     }
 );
 
-type TestProvider = FillProvider<
-    JoinFill<RecommendedFiller, WalletFiller<EthereumWallet>>,
-    AnvilProvider<RootProvider<Http<Client>>, Http<Client>>,
-    Http<Client>,
-    Ethereum,
->;
-
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
-async fn test_provider() -> TestProvider {
+async fn test_provider() -> impl Provider<Http<Client>> {
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
@@ -322,6 +309,23 @@ async fn call_eoa() {
         .call()
         .await
         .expect_err("calling an EOA should fail");
+}
+
+#[test(tokio::test)]
+async fn no_preflight() {
+    let env = EthEvmEnv::builder()
+        .provider(test_provider().await)
+        .build()
+        .await
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+    match env.into_input().await {
+        Ok(_) => panic!("calling into_input without a preflight should fail"),
+        Err(err) => assert_eq!(
+            err.to_string(),
+            "no accounts accessed: use Contract::preflight"
+        ),
+    }
 }
 
 alloy::sol!(

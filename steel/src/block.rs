@@ -28,7 +28,7 @@ pub struct BlockInput<H> {
 }
 
 impl<H: EvmBlockHeader> BlockInput<H> {
-    /// Converts the input into a [EvmEnv] for a verifiable state access in the guest.
+    /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     pub fn into_env(self) -> GuestEvmEnv<H> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
@@ -55,7 +55,6 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             previous_header = ancestor;
         }
 
-        // TODO(victor): When do we check that the storage tries are ok?
         let db = StateDb::new(
             self.state_trie,
             self.storage_tries,
@@ -95,6 +94,7 @@ pub mod host {
             H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
             <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
+            // safe unwrap: env is never returned without a DB
             let mut db = env.db.unwrap();
             assert_eq!(
                 db.inner().block_hash(),

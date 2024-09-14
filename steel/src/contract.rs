@@ -34,13 +34,13 @@ use revm::{
 ///
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Contract::preflight]. The environment can be initialized using
-///   [EthEvmEnv::from_rpc] or [EvmEnv::new].
+///   necessary proof, use [Contract::preflight]. The environment can be initialized using the
+///   [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
 /// ### Examples
-/// ```rust no_run
+/// ```rust,no_run
 /// # use risc0_steel::{ethereum::EthEvmEnv, Contract, host::BlockNumberOrTag};
 /// # use alloy_primitives::address;
 /// # use alloy_sol_types::sol;
@@ -53,14 +53,12 @@ use revm::{
 ///         function balanceOf(address account) external view returns (uint);
 ///     }
 /// }
-///
-/// let get_balance = IERC20::balanceOfCall {
-///     account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
-/// };
+/// let account = address!("F977814e90dA44bFA03b6295A0616a897441aceC");
+/// let get_balance = IERC20::balanceOfCall { account };
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::from_rpc(url, BlockNumberOrTag::Latest).await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call().await?;
 ///
@@ -69,15 +67,15 @@ use revm::{
 /// // Guest:
 /// let evm_env = evm_input.into_env();
 /// let contract = Contract::new(contract_address, &evm_env);
-/// contract.call_builder(&get_balance).call();
+/// contract.call_builder(&get_balance).call().unwrap();
 ///
 /// # Ok(())
 /// # }
 /// ```
 ///
+/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv::builder
+/// [EvmEnv::builder]: crate::EvmEnv::builder
 /// [EvmInput::into_env]: crate::EvmInput::into_env
-/// [EvmEnv::new]: crate::EvmEnv::new
-/// [EthEvmEnv::from_rpc]: crate::ethereum::EthEvmEnv::from_rpc
 pub struct Contract<E> {
     address: Address,
     env: E,
@@ -203,6 +201,7 @@ mod host {
         /// list. This does *not* set the access list as part of the transaction (as specified in
         /// EIP-2930), and thus can only be specified during preflight on the host.
         pub async fn prefetch_access_list(self, access_list: AccessList) -> Result<Self> {
+            // safe unwrap: env is never returned without a DB
             let db = self.env.db.as_mut().unwrap();
             db.add_access_list(access_list).await?;
 
@@ -221,11 +220,11 @@ mod host {
                 self.tx.to
             );
 
-            let cfg = self.env.cfg_env.clone();
-            let header = self.env.header.inner().clone();
-            // we cannot clone the database, so it gets moved in and out of the task
+            // as mutable references are not possible, the DB must be moved in and out of the task
             let db = self.env.db.take().unwrap();
 
+            let cfg = self.env.cfg_env.clone();
+            let header = self.env.header.inner().clone();
             let (result, db) = tokio::task::spawn_blocking(move || {
                 let mut evm = new_evm(db, cfg, header);
                 let result = self.tx.transact(&mut evm);
@@ -234,8 +233,9 @@ mod host {
                 (result, db)
             })
             .await
-            .context("EVM execution panicked")?;
+            .expect("EVM execution panicked");
 
+            // restore the DB before handling errors, so that we never return an env without a DB
             self.env.db = Some(db);
 
             result.map_err(|err| anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
@@ -251,6 +251,7 @@ mod host {
         /// [EvmEnv]: crate::EvmEnv
         pub async fn call_with_prefetch(self) -> Result<C::Return> {
             let access_list = {
+                // safe unwrap: env is never returned without a DB
                 let db = self.env.db.as_mut().unwrap();
 
                 let tx = <N as Network>::TransactionRequest::default()
@@ -287,14 +288,15 @@ where
     /// Executes the call with a [EvmEnv] constructed with [Contract::new].
     ///
     /// [EvmEnv]: crate::EvmEnv
-    pub fn call(self) -> C::Return {
+    pub fn call(self) -> Result<C::Return, String> {
+        // safe unwrap: env is never returned without a DB
         let state_db = self.env.db.as_ref().unwrap();
         let mut evm = new_evm::<_, H>(
             WrapStateDb::new(state_db),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );
-        self.tx.transact(&mut evm).unwrap()
+        self.tx.transact(&mut evm)
     }
 }
 
