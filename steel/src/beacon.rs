@@ -85,6 +85,7 @@ mod host {
     use crate::{
         block::BlockInput,
         ethereum::EthBlockHeader,
+        ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork},
         host::{db::AlloyDb, HostEvmEnv},
         EvmBlockHeader,
     };
@@ -92,9 +93,8 @@ mod host {
     use alloy_primitives::{Sealable, B256};
     use anyhow::{bail, ensure, Context};
     use client::{BeaconClient, GetBlockHeaderResponse};
-    use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use log::info;
-    use proofs::{Proof, ProofAndWitness};
+    use ssz_rs::proofs::{Proof, ProofAndWitness};
     use url::Url;
 
     impl BeaconInput<EthBlockHeader> {
@@ -136,7 +136,7 @@ mod host {
     }
 
     mod client {
-        use ethereum_consensus::{
+        use crate::ethereum_consensus::{
             phase0::SignedBeaconBlockHeader, primitives::Root, types::mainnet::SignedBeaconBlock,
             Fork,
         };
