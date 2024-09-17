@@ -10,8 +10,14 @@ This example implements a counter that increments based on off-chain view call p
 The contract interacts with ERC-20 tokens, using view call proofs to verify that an account holds at least 1 token before incrementing the counter.
 This contract leverages RISC Zero as a [coprocessor] for generating and verifying these proofs.
 
+## [governance]
+
+This example contains a modified version of OpenZeppelin's [Governor] contract, which takes gas intensive signature verification off-chain whilst maintaining the same trust assumptions. This contract leverages RISC Zero as a [coprocessor] for generating and verifying these proofs.
+
 [erc20]: ./erc20/README.md
 [erc20-counter]: ./erc20-counter/README.md
+[governance]: ./governance/README.md
+[governor]: https://docs.openzeppelin.com/contracts/4.x/api/governance#governor
 [Counter]: ./erc20-counter/contracts/Counter.sol
 [coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
 [Steel]: ../steel
