@@ -26,13 +26,11 @@ use alloy::{
     rpc::types::TransactionRequest,
     signers::local::PrivateKeySigner,
     sol,
-    // sol_types::SolInterface
 };
 
 use governance_methods::FINALIZE_VOTES_ELF;
-use risc0_ethereum_contracts::encode_seal;
+use risc0_ethereum_contracts::groth16;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
-// use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
@@ -114,7 +112,7 @@ async fn main() -> Result<()> {
         .receipt;
 
     // Encode the seal with the selector.
-    let seal = encode_seal(&receipt)?;
+    let seal = groth16::encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Extract the journal from the receipt.
     let journal = receipt.journal.bytes.clone();
