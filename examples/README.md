@@ -16,6 +16,11 @@ Explore a more advanced interaction between [Steel] and a custom Ethereum smart 
 This example shows how the [Steel] library can be used to call multiple view functions of a contract.
 This example generates a proof of a [Compound] cToken's APR (Annual Percentage Rate), showcasing the potential for on-chain verification of complex financial metrics.
 
+## [DAO Governance with Off-chain Proofs](./governance/README.md)
+
+This example contains a modified version of OpenZeppelin's [Governor] contract, which takes gas intensive signature verification off-chain whilst maintaining the same trust assumptions. This contract leverages RISC Zero as a [coprocessor] for generating and verifying these proofs.
+
 [coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
+[Governor]: https://docs.openzeppelin.com/contracts/4.x/api/governance#governor
 [Steel]: ../steel
 [Compound]: https://compound.finance/
