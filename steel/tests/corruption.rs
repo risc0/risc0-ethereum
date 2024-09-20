@@ -389,8 +389,8 @@ async fn corrupt_beacon_proof() {
     let mut input_value = to_value(&input).unwrap();
     let proof_value = &mut input_value["Beacon"]["proof"];
 
-    // corrupt the Merkle path to something non-zero
-    proof_value["path"][0] = to_value(B256::with_last_byte(0x01)).unwrap();
+    // corrupt the first element in the Merkle path to something non-zero
+    proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
 
     // executing this should lead to an Invalid commitment
     let input: EthEvmInput = from_value(input_value).unwrap();
