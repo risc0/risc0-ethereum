@@ -15,12 +15,12 @@
 #![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use crate::state::StateDb;
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{ruint::FromUintError, uint, BlockNumber, Sealable, Sealed, B256, U256};
 use beacon::BeaconInput;
 use block::BlockInput;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
+use state::StateDb;
 
 mod beacon;
 mod block;
