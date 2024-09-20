@@ -20,7 +20,6 @@ use alloy_primitives::{ruint::FromUintError, uint, BlockNumber, Sealable, Sealed
 use beacon::BeaconInput;
 use block::BlockInput;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
-use state::StateDb;
 
 mod beacon;
 mod block;
@@ -29,6 +28,7 @@ mod contract;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
+mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
