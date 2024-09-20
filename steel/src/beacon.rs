@@ -39,7 +39,7 @@ impl<H: EvmBlockHeader> BeaconInput<H> {
 
         let beacon_root =
             merkle::process_proof(env.header.seal(), &self.proof, BLOCK_HASH_LEAF_INDEX)
-                .expect("invalid beacon inclusion proof");
+                .expect("Invalid beacon inclusion proof");
         env.commitment = Commitment {
             blockID: Commitment::encode_id(
                 env.header().timestamp(),
