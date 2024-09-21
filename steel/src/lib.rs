@@ -29,6 +29,7 @@ mod contract;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
+mod merkle;
 mod mpt;
 pub mod serde;
 mod state;

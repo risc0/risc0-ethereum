@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{block::BlockInput, Commitment, CommitmentVersion, EvmBlockHeader, GuestEvmEnv};
+use crate::{
+    block::BlockInput, merkle, Commitment, CommitmentVersion, EvmBlockHeader, GuestEvmEnv,
+};
 use alloy_primitives::B256;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
+
+/// The generalized Merkle tree index of the `block_hash` field in the `BeaconBlock`
+pub const BLOCK_HASH_LEAF_INDEX: merkle::GeneralizedIndex = merkle::GeneralizedIndex::new(6444);
 
 /// Input committing to the corresponding Beacon Chain block root.
 #[derive(Clone, Serialize, Deserialize)]
@@ -23,7 +27,7 @@ pub struct BeaconInput<H> {
     /// Input committing to an execution block hash.
     input: BlockInput<H>,
     /// Merkle proof linking the execution block hash to the Beacon block root.
-    proof: MerkleProof,
+    proof: Vec<B256>,
 }
 
 impl<H: EvmBlockHeader> BeaconInput<H> {
@@ -33,7 +37,9 @@ impl<H: EvmBlockHeader> BeaconInput<H> {
     pub fn into_env(self) -> GuestEvmEnv<H> {
         let mut env = self.input.into_env();
 
-        let beacon_root = self.proof.process(env.header.seal());
+        let beacon_root =
+            merkle::process_proof(env.header.seal(), &self.proof, BLOCK_HASH_LEAF_INDEX)
+                .expect("Invalid beacon inclusion proof");
         env.commitment = Commitment {
             blockID: Commitment::encode_id(
                 env.header().timestamp(),
@@ -46,47 +52,12 @@ impl<H: EvmBlockHeader> BeaconInput<H> {
     }
 }
 
-/// Merkle proof-of-inclusion.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MerkleProof {
-    /// Path of Merkle nodes to compute the root.
-    pub path: Vec<B256>,
-    /// Index of the Merkle leaf to prove.
-    /// The left-most leaf has index 0 and the right-most leaf 2^depth - 1.
-    pub index: u32,
-}
-
-impl MerkleProof {
-    /// Returns the rebuilt hash obtained by traversing the Merkle tree up from `leaf`.
-    #[inline]
-    pub fn process(&self, leaf: B256) -> B256 {
-        let mut index = self.index;
-        let mut computed_hash = leaf;
-        let mut hasher = Sha256::new();
-        for node in &self.path {
-            if index % 2 != 0 {
-                hasher.update(node);
-                hasher.update(computed_hash);
-            } else {
-                hasher.update(computed_hash);
-                hasher.update(node);
-            }
-            computed_hash.copy_from_slice(&hasher.finalize_reset());
-            index /= 2;
-        }
-
-        computed_hash
-    }
-}
-
 #[cfg(feature = "host")]
 mod host {
-    use super::{BeaconInput, MerkleProof};
+    use super::*;
     use crate::{
-        block::BlockInput,
         ethereum::EthBlockHeader,
         host::{db::AlloyDb, HostEvmEnv},
-        EvmBlockHeader,
     };
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::{Sealable, B256};
@@ -94,7 +65,7 @@ mod host {
     use client::{BeaconClient, GetBlockHeaderResponse};
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use log::info;
-    use proofs::{Proof, ProofAndWitness};
+    use proofs::ProofAndWitness;
     use url::Url;
 
     impl BeaconInput<EthBlockHeader> {
@@ -121,10 +92,8 @@ mod host {
 
             let client = BeaconClient::new(url).context("invalid URL")?;
             let (proof, beacon_root) = create_proof(parent_beacon_block_root, client).await?;
-            ensure!(
-                proof.process(block_hash) == beacon_root,
-                "proof derived from API does not verify",
-            );
+            merkle::verify(block_hash, &proof, BLOCK_HASH_LEAF_INDEX, beacon_root)
+                .context("proof derived from API does not verify")?;
 
             info!(
                 "Commitment to beacon block root {} at {}",
@@ -236,7 +205,7 @@ mod host {
     async fn create_proof(
         parent_root: B256,
         client: BeaconClient,
-    ) -> anyhow::Result<(MerkleProof, B256)> {
+    ) -> anyhow::Result<(Vec<B256>, B256)> {
         // first get the header of the parent and then the actual block header
         let parent_beacon_header = client
             .get_block_header(parent_root)
@@ -263,11 +232,11 @@ mod host {
                 );
             }
         };
-        let proof: MerkleProof = proof
-            .try_into()
-            .context("proof derived from API is invalid")?;
 
-        Ok((proof, beacon_root.0.into()))
+        Ok((
+            proof.branch.iter().map(|n| n.0.into()).collect(),
+            beacon_root.0.into(),
+        ))
     }
 
     /// Returns the header, with `parent_root` equal to `parent.root`.
@@ -314,21 +283,6 @@ mod host {
         ])
     }
 
-    impl TryFrom<Proof> for MerkleProof {
-        type Error = anyhow::Error;
-
-        fn try_from(proof: Proof) -> Result<Self, Self::Error> {
-            let depth = proof.index.checked_ilog2().context("index is zero")?;
-            let index = proof.index - (1 << depth);
-            ensure!(proof.branch.len() == depth as usize, "index is invalid");
-
-            Ok(MerkleProof {
-                path: proof.branch.iter().map(|n| n.0.into()).collect(),
-                index: index.try_into().context("index too large")?,
-            })
-        }
-    }
-
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -353,30 +307,7 @@ mod host {
             let (proof, beacon_root) = create_proof(header.parent_beacon_block_root.unwrap(), cl)
                 .await
                 .expect("proving failed");
-            assert_eq!(proof.process(header.hash), beacon_root);
+            merkle::verify(header.hash, &proof, BLOCK_HASH_LEAF_INDEX, beacon_root).unwrap();
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use alloy_primitives::b256;
-
-    #[test]
-    fn process_simple_proof() {
-        let leaf = b256!("94159da973dfa9e40ed02535ee57023ba2d06bad1017e451055470967eb71cd5");
-        let proof = MerkleProof {
-            path: vec![
-                b256!("8f594dbb4f4219ad4967f86b9cccdb26e37e44995a291582a431eef36ecba45c"),
-                b256!("f8c2ed25e9c31399d4149dcaa48c51f394043a6a1297e65780a5979e3d7bb77c"),
-                b256!("382ba9638ce263e802593b387538faefbaed106e9f51ce793d405f161b105ee6"),
-            ],
-            index: 2,
-        };
-        assert_eq!(
-            proof.process(leaf),
-            b256!("27097c728aade54ff1376d5954681f6d45c282a81596ef19183148441b754abb")
-        );
     }
 }

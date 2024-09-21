@@ -362,7 +362,7 @@ async fn corrupt_header_beacon_commitment() {
 
     // executing this should lead to an Invalid commitment
     let input: EthEvmInput = from_value(input_value).unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
         .call()
@@ -389,12 +389,12 @@ async fn corrupt_beacon_proof() {
     let mut input_value = to_value(&input).unwrap();
     let proof_value = &mut input_value["Beacon"]["proof"];
 
-    // corrupt the Merkle path to something non-zero
-    proof_value["path"][0] = to_value(B256::with_last_byte(0x01)).unwrap();
+    // corrupt the first element in the Merkle path to something non-zero
+    proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
 
     // executing this should lead to an Invalid commitment
     let input: EthEvmInput = from_value(input_value).unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
         .call()
@@ -405,4 +405,26 @@ async fn corrupt_beacon_proof() {
         commit.blockDigest, exp_commit.blockDigest,
         "Invalid commitment"
     );
+}
+
+#[test(tokio::test)]
+#[should_panic(expected = "Invalid beacon inclusion proof")]
+async fn corrupt_beacon_proof_length() {
+    let input = load_or_create("testdata/corrupt_beacon_proof.json", || {
+        Box::pin(rpc_usdt_input())
+    })
+    .await
+    .unwrap();
+
+    // get the JSON representation of the block header for the state
+    let mut input_value = to_value(&input).unwrap();
+    let proof_value = &mut input_value["Beacon"]["proof"];
+
+    // corrupt the proof by appending a new value
+    let proof = proof_value.as_array_mut().unwrap();
+    proof.push(to_value(B256::ZERO).unwrap());
+
+    // converting this into an environment should panic
+    let input: EthEvmInput = from_value(input_value).unwrap();
+    let _ = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 }
