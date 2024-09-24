@@ -70,21 +70,24 @@ pub trait BlockHeaderCommit<H: EvmBlockHeader> {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ComposeInput<H, C> {
     input: BlockInput<H>,
-    committer: C,
+    commit: C,
 }
 
 impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     /// Creates a new composed input from a [BlockInput] and a [BlockHeaderCommit].
-    pub const fn new(input: BlockInput<H>, committer: C) -> Self {
-        Self { input, committer }
+    pub const fn new(input: BlockInput<H>, commit: C) -> Self {
+        Self { input, commit }
+    }
+
+    /// Disassembles this `ComposeInput`, returning the underlying input and commitment creator.
+    pub fn into_parts(self) -> (BlockInput<H>, C) {
+        (self.input, self.commit)
     }
 
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    ///
-    /// [EvmEnv]: crate::EvmEnv
     pub fn into_env(self) -> GuestEvmEnv<H> {
         let mut env = self.input.into_env();
-        env.commitment = self.committer.commit(&env.header);
+        env.commitment = self.commit.commit(&env.header);
 
         env
     }
