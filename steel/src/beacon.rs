@@ -13,42 +13,32 @@
 // limitations under the License.
 
 use crate::{
-    block::BlockInput, merkle, Commitment, CommitmentVersion, EvmBlockHeader, GuestEvmEnv,
+    merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
 };
-use alloy_primitives::B256;
+use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
 
 /// The generalized Merkle tree index of the `block_hash` field in the `BeaconBlock`
 pub const BLOCK_HASH_LEAF_INDEX: merkle::GeneralizedIndex = merkle::GeneralizedIndex::new(6444);
 
 /// Input committing to the corresponding Beacon Chain block root.
+pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
+
+/// Links the execution block hash to the Beacon block root.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct BeaconInput<H> {
-    /// Input committing to an execution block hash.
-    input: BlockInput<H>,
-    /// Merkle proof linking the execution block hash to the Beacon block root.
+pub struct BeaconCommit {
     proof: Vec<B256>,
 }
 
-impl<H: EvmBlockHeader> BeaconInput<H> {
-    /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    ///
-    /// [EvmEnv]: crate::EvmEnv
-    pub fn into_env(self) -> GuestEvmEnv<H> {
-        let mut env = self.input.into_env();
-
-        let beacon_root =
-            merkle::process_proof(env.header.seal(), &self.proof, BLOCK_HASH_LEAF_INDEX)
-                .expect("Invalid beacon inclusion proof");
-        env.commitment = Commitment {
-            blockID: Commitment::encode_id(
-                env.header().timestamp(),
-                CommitmentVersion::Beacon as u16,
-            ),
-            blockDigest: beacon_root,
-        };
-
-        env
+impl<H: EvmBlockHeader> BlockHeaderCommit<H> for BeaconCommit {
+    fn commit(self, header: &Sealed<H>) -> Commitment {
+        let beacon_root = merkle::process_proof(header.seal(), &self.proof, BLOCK_HASH_LEAF_INDEX)
+            .expect("Invalid beacon inclusion proof");
+        Commitment::new(
+            CommitmentVersion::Beacon as u16,
+            header.timestamp(),
+            beacon_root,
+        )
     }
 }
 
@@ -58,6 +48,7 @@ mod host {
     use crate::{
         ethereum::EthBlockHeader,
         host::{db::AlloyDb, HostEvmEnv},
+        BlockInput,
     };
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::{Sealable, B256};
@@ -100,7 +91,7 @@ mod host {
                 beacon_root, block_ts
             );
 
-            Ok(BeaconInput { input, proof })
+            Ok(BeaconInput::new(input, BeaconCommit { proof }))
         }
     }
 

@@ -27,9 +27,11 @@ use revm::{
 /// It is backed by a single [MerkleTrie] for the accounts and one [MerkleTrie] each for the
 /// accounts' stores. It panics when querying data not contained in the tries. This design allows
 /// storage keys to be queried by storage trie root hash, but not by account, which is required to
-/// implement [revm::DatabaseRef]. Thus, in order to use [StateDb] in revm, [WrapStateDb] must be
+/// implement [DatabaseRef]. Thus, in order to use [StateDb] in revm, a wrapper must be
 /// used, which caches the appropriate storage trie root for each basic account query, thus
 /// requiring mutability.
+///
+/// [DatabaseRef]: revm::DatabaseRef
 pub struct StateDb {
     /// State MPT.
     state_trie: MerkleTrie,
