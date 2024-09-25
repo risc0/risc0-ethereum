@@ -29,7 +29,13 @@ alloy-rlp-derive = { version = "0.3.8" }
 alloy-sol-types = { version = "0.8" }
 
 # Alloy host dependencies
-alloy = { version = "0.3" }
+alloy = { version = "=0.3.3" }
+alloy-contract = { version = "=0.3.3" }
+alloy-network = { version = "=0.3.3" }
+alloy-network-primitives = { version = "=0.3.3" }
+alloy-node-bindings = { version = "=0.3.3" }
+alloy-provider = { version = "=0.3.3" }
+alloy-rpc-types-eth = { version = "=0.3.3" }
 alloy-trie = { version = "0.5" }
 
 # Beacon chain support
