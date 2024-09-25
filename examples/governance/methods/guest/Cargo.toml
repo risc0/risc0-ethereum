@@ -1,0 +1,35 @@
+[package]
+name = "governance-guest"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "finalize_votes"
+path = "src/bin/finalize_votes.rs"
+
+[workspace]
+
+[dependencies]
+k256 = { version = "=0.13.3", features = [
+  "arithmetic",
+  "serde",
+  "expose-field",
+  "std",
+  "ecdsa",
+], default-features = false }
+risc0-zkvm = { git = "https://github.com/risc0/risc0", branch = "main", default-features = false, features = ["std"] }
+tiny-keccak = { version = "2.0", features = ["keccak"] }
+
+[patch.crates-io]
+# Placing these patch statement in the workspace Cargo.toml will add RISC Zero SHA-256 and bigint
+# multiplication accelerator support for all downstream usages of the following crates.
+sha2 = { git = "https://github.com/risc0/RustCrypto-hashes", tag = "sha2-v0.10.8-risczero.0" }
+k256 = { git = "https://github.com/risc0/RustCrypto-elliptic-curves", tag = "k256/v0.13.3-risczero.0" }
+crypto-bigint = { git = "https://github.com/risc0/RustCrypto-crypto-bigint", tag = "v0.5.5-risczero.0" }
+
+[profile.release]
+# Empirically observed to result in the best performance for this binary (in particular, better than
+# "fat"). It's often a good idea to experiment with different optimization levels and options.
+codegen-units = 1
+lto = "thin"
+debug = true
