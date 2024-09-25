@@ -9,7 +9,7 @@ edition = "2021"
 alloy-primitives = { version = "0.8" }
 alloy-sol-types = { version = "0.8" }
 risc0-steel = { path = "../../../../steel" }
-risc0-zkvm = { version = "1.1.0", default-features = false, features = ["std"] }
+risc0-zkvm = { version = "1.1.1", default-features = false, features = ["std"] }
 
 [patch.crates-io]
 # use optimized risc0 circuit
