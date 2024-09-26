@@ -47,7 +47,10 @@ abstract contract RiscZeroCheats is CommonBase {
     ///       Uses the local prover or the Bonsai proving service to run the guest and produce an on-chain verifiable
     ///       SNARK attesting to the correctness of the journal output. URL and API key for Bonsai
     ///       should be specified using the BONSAI_API_URL and BONSAI_API_KEY environment variables.
-    function prove(string memory elf_path, bytes memory input) internal returns (bytes memory journal, bytes memory seal) {
+    function prove(string memory elf_path, bytes memory input)
+        internal
+        returns (bytes memory journal, bytes memory seal)
+    {
         string[] memory imageRunnerInput = new string[](11);
         uint256 i = 0;
         imageRunnerInput[i++] = "cargo";
