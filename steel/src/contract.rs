@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{
-    borrow::Borrow,
-    fmt::{Debug, Display},
-    marker::PhantomData,
-    mem,
-};
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, mem};
 
 use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
+use anyhow::anyhow;
 use revm::{
     primitives::{CfgEnvWithHandlerCfg, ExecutionResult, ResultAndState, SuccessReason},
     Database, Evm,
@@ -323,7 +319,7 @@ impl<C: SolCall> CallTxData<C> {
     fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<C::Return, String>
     where
         DB: Database,
-        <DB as Database>::Error: Display,
+        <DB as Database>::Error: std::error::Error + Send + Sync + 'static,
     {
         #[allow(clippy::let_unit_value)]
         let _ = Self::RETURNS;
@@ -338,7 +334,7 @@ impl<C: SolCall> CallTxData<C> {
 
         let ResultAndState { result, .. } = evm
             .transact_preverified()
-            .map_err(|err| format!("EVM error: {}", err))?;
+            .map_err(|err| format!("EVM error: {:#}", anyhow!(err)))?;
         let output = match result {
             ExecutionResult::Success { reason, output, .. } => {
                 // there must be a return value to decode
