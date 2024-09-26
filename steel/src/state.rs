@@ -111,7 +111,7 @@ impl<'a> WrapStateDb<'a> {
     pub fn new(inner: &'a StateDb) -> Self {
         Self {
             inner,
-            account_storage: HashMap::new(),
+            account_storage: HashMap::default(),
         }
     }
 }

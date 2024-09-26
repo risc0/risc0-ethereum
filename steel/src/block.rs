@@ -38,7 +38,8 @@ impl<H: EvmBlockHeader> BlockInput<H> {
         let header = self.header.seal_slow();
 
         // validate that ancestor headers form a valid chain
-        let mut block_hashes = HashMap::with_capacity(self.ancestors.len() + 1);
+        let mut block_hashes = HashMap::default();
+        block_hashes.reserve(self.ancestors.len() + 1);
         block_hashes.insert(header.number(), header.seal());
 
         let mut previous_header = header.inner();
