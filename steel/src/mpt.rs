@@ -498,7 +498,7 @@ mod tests {
     #[test]
     pub fn mpt_short() {
         // 4 leaves with 1-byte long keys, the resulting root node should be shorter than 32 bytes
-        let leaves: BTreeMap<_, _> = (0..4u8).map(|i| (Nibbles::unpack(&[i]), vec![0])).collect();
+        let leaves: BTreeMap<_, _> = (0..4u8).map(|i| (Nibbles::unpack([i]), vec![0])).collect();
 
         // construct the root hash and inclusion proofs for all leaves
         let proof_keys = leaves.keys().cloned().collect();
