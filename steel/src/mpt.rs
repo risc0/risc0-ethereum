@@ -14,7 +14,7 @@
 
 use std::fmt::Debug;
 
-use alloy_primitives::{b256, keccak256, B256};
+use alloy_primitives::{b256, keccak256, map::B256HashMap, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
 use nybbles::Nibbles;
 use revm::primitives::HashMap;
@@ -77,7 +77,7 @@ impl MerkleTrie {
     pub fn from_rlp_nodes<T: AsRef<[u8]>>(
         nodes: impl IntoIterator<Item = T>,
     ) -> alloy_rlp::Result<Self> {
-        let mut nodes_by_hash = HashMap::new();
+        let mut nodes_by_hash = B256HashMap::default();
         let mut root_node_opt = None;
 
         for rlp in nodes {
@@ -333,7 +333,7 @@ fn parse_node(rlp: impl AsRef<[u8]>) -> alloy_rlp::Result<(Option<B256>, Node)> 
     Ok(((rlp.len() >= 32).then(|| keccak256(rlp)), node))
 }
 
-fn resolve_trie(root: Node, nodes_by_hash: &HashMap<B256, Node>) -> Node {
+fn resolve_trie(root: Node, nodes_by_hash: &B256HashMap<Node>) -> Node {
     match root {
         Node::Null | Node::Leaf(..) => root,
         Node::Extension(prefix, child) => {
