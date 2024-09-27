@@ -84,9 +84,9 @@ fn prove(elf: &[u8], input: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     Ok((journal, seal))
 }
 
-/// "Takes" stdout such, returning a handle and ensuring no other code in this process can write to
-/// it. This is used to ensure that no additional data (e.g. log lines) is written to stdout, as
-/// any extra will cause a decoding failure.
+/// "Takes" stdout, returning a handle and ensuring no other code in this process can write to it.
+/// This is used to ensure that no additional data (e.g. log lines) is written to stdout, as any
+/// extra will cause a decoding failure in the Forge FFI cheatcode.
 fn take_stdout() -> Result<File> {
     let stdout = io::stdout();
     let mut handle = stdout.lock();
