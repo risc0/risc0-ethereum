@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::{state::StateDb, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie};
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::Bytes;
-use revm::primitives::HashMap;
 
 /// Input committing to the corresponding execution block hash.
 #[derive(Clone, Serialize, Deserialize)]

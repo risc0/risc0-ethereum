@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{convert::Infallible, fmt::Debug, rc::Rc};
+use std::{collections::HashMap, convert::Infallible, fmt::Debug, rc::Rc};
 
 use crate::mpt::{MerkleTrie, EMPTY_ROOT_HASH};
 use alloy_primitives::{keccak256, Address, Bytes, TxNumber, B256, U256};
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use revm::{
-    primitives::{AccountInfo, Bytecode, HashMap, KECCAK_EMPTY},
+    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
     Database,
 };
 
