@@ -175,7 +175,7 @@ fn get_leaf_val_mut(trie: &mut Value) -> Option<&mut Value> {
                 "Extension" => get_leaf_val_mut(&mut value[1]),
                 "Branch" => {
                     let children = value.as_array_mut().unwrap();
-                    children.into_iter().find_map(|c| get_leaf_val_mut(c))
+                    children.iter_mut().find_map(|c| get_leaf_val_mut(c))
                 }
                 "Digest" => None,
                 _ => unreachable!(),
@@ -213,7 +213,7 @@ async fn corrupt_storage_trie() {
 
     // corrupt the trie by getting the first child node and deleting it
     let child_array = storage_trie_value["Branch"].as_array_mut().unwrap();
-    let child_value = child_array.into_iter().find(|c| !c.is_null()).unwrap();
+    let child_value = child_array.iter_mut().find(|c| !c.is_null()).unwrap();
     *child_value = Value::Null;
 
     // executing this on the guest should panic
@@ -253,7 +253,7 @@ async fn corrupt_state_trie() {
 
     // corrupt the trie by getting the first child node and deleting it
     let children = state_trie_value["Branch"].as_array_mut().unwrap();
-    let child_value = children.into_iter().find(|c| !c.is_null()).unwrap();
+    let child_value = children.iter_mut().find(|c| !c.is_null()).unwrap();
     *child_value = Value::Null;
 
     // executing this on the guest should panic

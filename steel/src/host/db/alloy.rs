@@ -83,7 +83,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> fo
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("RPC error")]
-    RPC(#[from] TransportError),
+    Rpc(#[from] TransportError),
     #[error("block not found")]
     BlockNotFound,
 }
