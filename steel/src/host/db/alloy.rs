@@ -83,6 +83,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> fo
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("RPC error")]
+    #[allow(clippy::upper_case_acronyms)]
     RPC(#[from] TransportError),
     #[error("block not found")]
     BlockNotFound,
