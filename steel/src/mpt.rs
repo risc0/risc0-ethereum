@@ -507,7 +507,14 @@ mod tests {
         let exp_hash = hasher.root();
 
         // reconstruct the trie from the RLP encoded proofs and verify the root hash
-        let mpt = MerkleTrie::from_rlp_nodes(hasher.take_proofs().into_values()).unwrap();
+        let mpt = MerkleTrie::from_rlp_nodes(
+            hasher
+                .take_proof_nodes()
+                .into_nodes_sorted()
+                .into_iter()
+                .map(|node| node.1),
+        )
+        .unwrap();
         assert!(mpt.0.rlp_encoded().len() < 32);
         assert_eq!(mpt.hash_slow(), exp_hash);
     }
@@ -534,7 +541,14 @@ mod tests {
         let exp_hash = hasher.root();
 
         // reconstruct the trie from the RLP encoded proofs and verify the root hash
-        let mpt = MerkleTrie::from_rlp_nodes(hasher.take_proofs().into_values()).unwrap();
+        let mpt = MerkleTrie::from_rlp_nodes(
+            hasher
+                .take_proof_nodes()
+                .into_nodes_sorted()
+                .into_iter()
+                .map(|node| node.1),
+        )
+        .unwrap();
         assert_eq!(mpt.hash_slow(), exp_hash);
     }
 
