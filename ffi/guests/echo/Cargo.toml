@@ -1,0 +1,13 @@
+[package]
+name = "echo"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+risc0-zkvm = { git = "https://github.com/risc0/risc0", branch = "main", default-features = false, features = ["std"] }
+
+[profile.release]
+debug = 1
+lto = "thin"
