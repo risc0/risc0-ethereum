@@ -14,8 +14,7 @@
 
 use crate::{state::StateDb, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie};
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::Bytes;
-use revm::primitives::HashMap;
+use alloy_primitives::{map::HashMap, Bytes};
 
 /// Input committing to the corresponding execution block hash.
 #[derive(Clone, Serialize, Deserialize)]
@@ -38,8 +37,8 @@ impl<H: EvmBlockHeader> BlockInput<H> {
         let header = self.header.seal_slow();
 
         // validate that ancestor headers form a valid chain
-        let mut block_hashes = HashMap::default();
-        block_hashes.reserve(self.ancestors.len() + 1);
+        let mut block_hashes =
+            HashMap::with_capacity_and_hasher(self.ancestors.len() + 1, Default::default());
         block_hashes.insert(header.number(), header.seal());
 
         let mut previous_header = header.inner();
