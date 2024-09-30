@@ -47,6 +47,7 @@ impl GeneralizedIndex {
 
 /// Returns an error if `leaf` cannot be proven to occupy the `index` in the Merkle tree.
 #[inline]
+#[cfg(feature = "host")]
 pub fn verify(
     leaf: B256,
     branch: &[B256],
