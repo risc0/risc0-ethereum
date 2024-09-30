@@ -15,10 +15,14 @@
 use std::{convert::Infallible, fmt::Debug, rc::Rc};
 
 use crate::mpt::{MerkleTrie, EMPTY_ROOT_HASH};
-use alloy_primitives::{keccak256, Address, Bytes, TxNumber, B256, U256};
+use alloy_primitives::{
+    keccak256,
+    map::{AddressHashMap, B256HashMap, HashMap},
+    Address, Bytes, TxNumber, B256, U256,
+};
 use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use revm::{
-    primitives::{AccountInfo, Bytecode, HashMap, KECCAK_EMPTY},
+    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
     Database,
 };
 
@@ -37,9 +41,9 @@ pub struct StateDb {
     state_trie: MerkleTrie,
     /// Storage MPTs to their root hash.
     /// [Rc] is used fore MPT deduplication.
-    storage_tries: HashMap<B256, Rc<MerkleTrie>>,
+    storage_tries: B256HashMap<Rc<MerkleTrie>>,
     /// Contracts by their hash.
-    contracts: HashMap<B256, Bytes>,
+    contracts: B256HashMap<Bytes>,
     /// Block hashes by their number.
     block_hashes: HashMap<u64, B256>,
 }
@@ -105,7 +109,7 @@ impl StateDb {
 /// account.
 pub struct WrapStateDb<'a> {
     inner: &'a StateDb,
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
+    account_storage: AddressHashMap<Option<Rc<MerkleTrie>>>,
 }
 
 impl<'a> WrapStateDb<'a> {
@@ -113,7 +117,7 @@ impl<'a> WrapStateDb<'a> {
     pub fn new(inner: &'a StateDb) -> Self {
         Self {
             inner,
-            account_storage: HashMap::new(),
+            account_storage: Default::default(),
         }
     }
 }
