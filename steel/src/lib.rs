@@ -16,10 +16,11 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{ruint::FromUintError, uint, BlockNumber, Sealable, Sealed, B256, U256};
+use alloy_primitives::{uint, BlockNumber, Sealable, Sealed, B256, U256};
+use alloy_sol_types::SolValue;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 
-mod beacon;
+pub mod beacon;
 mod block;
 pub mod config;
 mod contract;
@@ -75,11 +76,14 @@ pub struct ComposeInput<H, C> {
 
 impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     /// Creates a new composed input from a [BlockInput] and a [BlockHeaderCommit].
+    #[must_use]
+    #[inline]
     pub const fn new(input: BlockInput<H>, commit: C) -> Self {
         Self { input, commit }
     }
 
     /// Disassembles this `ComposeInput`, returning the underlying input and commitment creator.
+    #[inline]
     pub fn into_parts(self) -> (BlockInput<H>, C) {
         (self.input, self.commit)
     }
@@ -135,10 +139,10 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         self
     }
 
-    /// Returns the header of the environment.
+    /// Returns the sealed header of the environment.
     #[inline]
-    pub fn header(&self) -> &H {
-        self.header.inner()
+    pub fn header(&self) -> &Sealed<H> {
+        &self.header
     }
 
     /// Returns the [Commitment] used to validate the environment.
@@ -151,6 +155,17 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     #[inline]
     pub fn into_commitment(self) -> Commitment {
         self.commitment
+    }
+
+    fn db(&self) -> &D {
+        // safe unwrap: self cannot be borrowed without a DB
+        self.db.as_ref().unwrap()
+    }
+
+    #[allow(dead_code)]
+    fn db_mut(&mut self) -> &mut D {
+        // safe unwrap: self cannot be borrowed without a DB
+        self.db.as_mut().unwrap()
     }
 }
 
@@ -202,10 +217,16 @@ impl Commitment {
         }
     }
 
+    /// ABI-encodes the commitment.
+    #[inline]
+    pub fn abi_encode(&self) -> Vec<u8> {
+        SolValue::abi_encode(self)
+    }
+
     /// Returns the block identifier without the commitment version.
     #[inline]
     pub fn block_id(&self) -> u64 {
-        Self::decode_id(self.blockID).unwrap().0
+        Self::decode_id(self.blockID).0.try_into().unwrap()
     }
 
     /// Encodes an ID and version into a single [U256] value.
@@ -216,10 +237,11 @@ impl Commitment {
 
     /// Decodes an ID and version from a single [U256] value.
     #[inline]
-    pub(crate) fn decode_id(mut id: U256) -> Result<(u64, u16), FromUintError<u64>> {
+    pub(crate) fn decode_id(id: U256) -> (U256, u16) {
+        let decoded =
+            id & uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
         let version = (id.as_limbs()[3] >> 48) as u16;
-        id &= uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
-        Ok((id.try_into()?, version))
+        (decoded, version)
     }
 }
 
@@ -232,7 +254,8 @@ mod tests {
         let tests = vec![(u64::MAX, u16::MAX), (u64::MAX, 0), (0, u16::MAX), (0, 0)];
         for test in tests {
             let id = Commitment::encode_id(test.0, test.1);
-            assert_eq!(Commitment::decode_id(id).unwrap(), test);
+            let (id, version) = Commitment::decode_id(id);
+            assert_eq!((id.to(), version), test);
         }
     }
 }

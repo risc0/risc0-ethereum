@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Types related to commitments to the beacon block root.
 use crate::{
     merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
 };
@@ -28,17 +29,36 @@ pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct BeaconCommit {
     proof: Vec<B256>,
+    timestamp: u64,
+}
+
+impl BeaconCommit {
+    /// Creates a new `BeaconCommit`.
+    #[must_use]
+    #[inline]
+    pub const fn new(proof: Vec<B256>, timestamp: u64) -> Self {
+        Self { proof, timestamp }
+    }
+
+    /// Disassembles this `BeaconCommit`, returning the underlying Merkle proof and block timestamp.
+    #[inline]
+    pub fn into_parts(self) -> (Vec<B256>, u64) {
+        (self.proof, self.timestamp)
+    }
+
+    /// Processes the `BeaconCommit`.
+    fn into_commit(self, leaf: B256) -> (u64, B256) {
+        let beacon_root = merkle::process_proof(leaf, &self.proof, BLOCK_HASH_LEAF_INDEX)
+            .expect("Invalid beacon inclusion proof");
+        (self.timestamp, beacon_root)
+    }
 }
 
 impl<H: EvmBlockHeader> BlockHeaderCommit<H> for BeaconCommit {
+    #[inline]
     fn commit(self, header: &Sealed<H>) -> Commitment {
-        let beacon_root = merkle::process_proof(header.seal(), &self.proof, BLOCK_HASH_LEAF_INDEX)
-            .expect("Invalid beacon inclusion proof");
-        Commitment::new(
-            CommitmentVersion::Beacon as u16,
-            header.timestamp(),
-            beacon_root,
-        )
+        let (timestamp, beacon_root) = self.into_commit(header.seal());
+        Commitment::new(CommitmentVersion::Beacon as u16, timestamp, beacon_root)
     }
 }
 
@@ -73,7 +93,6 @@ mod host {
             let block_ts = env.header().timestamp();
             let parent_beacon_block_root = env
                 .header()
-                .inner()
                 .parent_beacon_block_root
                 .context("parent_beacon_block_root missing in execution header")?;
 
@@ -85,13 +104,14 @@ mod host {
             let (proof, beacon_root) = create_proof(parent_beacon_block_root, client).await?;
             merkle::verify(block_hash, &proof, BLOCK_HASH_LEAF_INDEX, beacon_root)
                 .context("proof derived from API does not verify")?;
+            let commit = BeaconCommit::new(proof, block_ts);
 
             info!(
                 "Commitment to beacon block root {} at {}",
                 beacon_root, block_ts
             );
 
-            Ok(BeaconInput::new(input, BeaconCommit { proof }))
+            Ok(BeaconInput::new(input, commit))
         }
     }
 
