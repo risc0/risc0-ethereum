@@ -26,6 +26,7 @@ mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
+mod history;
 #[cfg(feature = "host")]
 pub mod host;
 mod merkle;
@@ -33,9 +34,10 @@ mod mpt;
 pub mod serde;
 mod state;
 
-pub use beacon::BeaconInput;
+pub use beacon::{BeaconCommit, BeaconInput};
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
+pub use history::HistoryInput;
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
 
@@ -47,6 +49,8 @@ pub enum EvmInput<H> {
     Block(BlockInput<H>),
     /// Input committing to the corresponding Beacon Chain block root.
     Beacon(BeaconInput<H>),
+    /// Input recursively committing to multiple Beacon Chain block root.
+    History(HistoryInput<H>),
 }
 
 impl<H: EvmBlockHeader> EvmInput<H> {
@@ -58,6 +62,7 @@ impl<H: EvmBlockHeader> EvmInput<H> {
         match self {
             EvmInput::Block(input) => input.into_env(),
             EvmInput::Beacon(input) => input.into_env(),
+            EvmInput::History(input) => input.into_env(),
         }
     }
 }

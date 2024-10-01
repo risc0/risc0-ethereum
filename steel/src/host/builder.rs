@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::history::HistoryCommit;
 use crate::{
     beacon::BeaconCommit,
     ethereum::EthBlockHeader,
@@ -147,7 +148,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     }
 
     /// Retrieves the block header based on the current builder configuration.
-    async fn get_header<T, N>(&self) -> Result<H>
+    async fn get_header<T, N>(&self, block: Option<BlockNumberOrTag>) -> Result<H>
     where
         T: Transport + Clone,
         N: Network,
@@ -155,7 +156,8 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
-        let number = self.block.into_rpc_type(&self.provider).await?;
+        let block = block.unwrap_or(self.block);
+        let number = block.into_rpc_type(&self.provider).await?;
         let rpc_block = self
             .provider
             .get_block_by_number(number, false)
@@ -179,7 +181,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
-        let header = self.get_header().await?.seal_slow();
+        let header = self.get_header(None).await?.seal_slow();
         log::info!(
             "Environment initialized with block {} ({})",
             header.number(),
@@ -196,14 +198,35 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
     }
 }
 
+pub struct History {
+    url: Url,
+    block: BlockNumberOrTag,
+}
+
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
+    pub fn commitment_block(
+        self,
+        block: BlockNumberOrTag,
+    ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+        EvmEnvBuilder {
+            provider: self.provider,
+            provider_config: self.provider_config,
+            block: self.block,
+            beacon_config: History {
+                url: self.beacon_config,
+                block,
+            },
+            phantom: Default::default(),
+        }
+    }
+
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a beacon root.
     pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>>
     where
         T: Transport + Clone,
         P: Provider<T, Ethereum>,
     {
-        let header = self.get_header().await?.seal_slow();
+        let header = self.get_header(None).await?.seal_slow();
         log::info!(
             "Environment initialized with block {} ({})",
             header.number(),
@@ -219,6 +242,43 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
         ));
 
         Ok(EvmEnv::new(db, header, commitment))
+    }
+}
+
+impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
+    pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>>
+    where
+        T: Transport + Clone,
+        P: Provider<T, Ethereum>,
+    {
+        let evm_header = self.get_header(None).await?.seal_slow();
+        log::info!(
+            "Environment initialized with block {} ({})",
+            evm_header.number(),
+            evm_header.seal()
+        );
+
+        let evm_commit =
+            BeaconCommit::from_header(&evm_header, &self.provider, self.beacon_config.url.clone())
+                .await?;
+        let header = self
+            .get_header(Some(self.beacon_config.block))
+            .await?
+            .seal_slow();
+        let commitment = HistoryCommit::from_beacon_commit_and_header(
+            evm_commit,
+            &header,
+            &self.provider,
+            self.beacon_config.url,
+        )
+        .await?;
+        let db = ProofDb::new(AlloyDb::new(
+            self.provider,
+            self.provider_config,
+            evm_header.seal(),
+        ));
+
+        Ok(EvmEnv::new(db, evm_header, commitment))
     }
 }
 

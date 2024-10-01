@@ -19,6 +19,9 @@ use crate::{
 use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
 
+/// The generalized Merkle tree index of the `state_root` field in the `BeaconBlock`.
+pub const STATE_ROOT_LEAF_INDEX: usize = 6434;
+
 /// The generalized Merkle tree index of the `block_hash` field in the `BeaconBlock`.
 pub const BLOCK_HASH_LEAF_INDEX: usize = 6444;
 
@@ -71,7 +74,7 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
         merkle::verify(leaf, &self.proof, LEAF_INDEX, root)
     }
 
-    fn into_commit(self, leaf: B256) -> (u64, B256) {
+    pub(crate) fn into_commit(self, leaf: B256) -> (u64, B256) {
         let beacon_root = self
             .process_proof(leaf)
             .expect("Invalid beacon inclusion proof");
@@ -216,7 +219,7 @@ pub(crate) mod host {
         }
     }
 
-    async fn create_beacon_commit<T, P, H>(
+    pub(crate) async fn create_beacon_commit<T, P, H>(
         header: &Sealed<H>,
         field: PathElement,
         rpc_provider: P,
@@ -235,7 +238,7 @@ pub(crate) mod host {
                 .context("eth_getBlockByNumber failed")?;
             let block = block_res.with_context(|| {
                 format!(
-                    "Beacon block commitment cannot be created for the most recent block; \
+                    "beacon block commitment cannot be created for the most recent block; \
                     use `parent` tag instead: block {} does not have a child",
                     header.number()
                 )

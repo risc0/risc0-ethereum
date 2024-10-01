@@ -38,6 +38,7 @@ use url::Url;
 mod builder;
 pub mod db;
 
+use crate::history::HistoryCommit;
 pub use builder::EvmEnvBuilder;
 
 /// A block number (or tag - "latest", "safe", "finalized").
@@ -125,11 +126,22 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
-    /// Converts the environment into a [EvmInput] committing to a block hash.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(input, self.commit)))
+    }
+}
+
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>
+where
+    T: Transport + Clone,
+    P: Provider<T, Ethereum>,
+{
+    pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
+
+        Ok(EvmInput::History(ComposeInput::new(input, self.commit)))
     }
 }
 
