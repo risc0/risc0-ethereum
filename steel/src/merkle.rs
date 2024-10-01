@@ -15,7 +15,6 @@
 //! Helpers for verifying Merkle proofs.
 use alloy_primitives::B256;
 use sha2::{Digest, Sha256};
-use std::num::NonZeroUsize;
 use thiserror::Error as ThisError;
 
 /// Error returned when verifying Merkle proofs.
@@ -23,36 +22,12 @@ use thiserror::Error as ThisError;
 #[error("proof verification failed")]
 pub struct InvalidProofError;
 
-/// Represents a "generalized Merkle tree index" from the SSZ spec, i.e. `2**depth + index`.
-#[derive(Copy, Clone, Debug, Hash, Ord, PartialOrd, Eq, PartialEq)]
-pub struct GeneralizedIndex(NonZeroUsize);
-
-impl GeneralizedIndex {
-    /// Creates a generalized index from the given value. It panics if the value is zero.
-    #[must_use]
-    #[inline]
-    pub const fn new(index: usize) -> Self {
-        match NonZeroUsize::new(index) {
-            None => panic!("invalid generalized index"),
-            Some(index) => GeneralizedIndex(index),
-        }
-    }
-
-    /// Splits the generalized index into `depth` and `index`.
-    #[inline]
-    pub const fn split(self) -> (u32, usize) {
-        let depth = self.0.ilog2();
-        (depth, self.0.get() - (1 << depth))
-    }
-}
-
 /// Returns an error if `leaf` cannot be proven to occupy the `index` in the Merkle tree.
 #[inline]
-#[cfg(feature = "host")]
 pub fn verify(
     leaf: B256,
     branch: &[B256],
-    generalized_index: GeneralizedIndex,
+    generalized_index: usize,
     root: B256,
 ) -> Result<(), InvalidProofError> {
     if process_proof(leaf, branch, generalized_index)? != root {
@@ -68,9 +43,10 @@ pub fn verify(
 pub fn process_proof(
     leaf: B256,
     branch: &[B256],
-    generalized_index: GeneralizedIndex,
+    generalized_index: usize,
 ) -> Result<B256, InvalidProofError> {
-    let (depth, mut index) = generalized_index.split();
+    let depth = generalized_index.ilog2();
+    let mut index = generalized_index - (1 << depth);
     if !usize::try_from(depth)
         .map(|depth| branch.len() == depth)
         .unwrap_or(false)
@@ -106,7 +82,7 @@ mod tests {
         b256!("f8c2ed25e9c31399d4149dcaa48c51f394043a6a1297e65780a5979e3d7bb77c"),
         b256!("382ba9638ce263e802593b387538faefbaed106e9f51ce793d405f161b105ee6"),
     ];
-    const INDEX: GeneralizedIndex = GeneralizedIndex::new((1 << BRANCH.len()) + 2);
+    const INDEX: usize = (1 << BRANCH.len()) + 2;
     const ROOT: B256 = b256!("27097c728aade54ff1376d5954681f6d45c282a81596ef19183148441b754abb");
 
     #[test]
@@ -124,7 +100,7 @@ mod tests {
 
     #[test]
     fn invalid_index() {
-        let index = GeneralizedIndex::new(1 << BRANCH.len());
+        let index: usize = 1 << BRANCH.len();
         assert_ne!(process_proof(LEAF, &BRANCH, index).unwrap(), ROOT);
         verify(LEAF, &BRANCH, index, ROOT).unwrap_err();
     }
