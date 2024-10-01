@@ -32,7 +32,7 @@ mod mpt;
 pub mod serde;
 mod state;
 
-pub use beacon::{BeaconCommit, BeaconInput};
+pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
