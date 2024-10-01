@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["build", "contracts", "ffi", "steel"]
+members = ["build", "contracts", "ffi", "ffi/guests", "steel"]
 
 [workspace.package]
 version = "1.2.0-alpha.1"
@@ -30,7 +30,7 @@ alloy-sol-types = { version = "0.8" }
 
 # Alloy host dependencies
 alloy = { version = "0.3" }
-alloy-trie = { version = "0.5" }
+alloy-trie = { version = "0.6" }
 
 # Beacon chain support
 ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
