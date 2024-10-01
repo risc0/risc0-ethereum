@@ -22,7 +22,7 @@ echo "Counter Address: $COUNTER_ADDRESS"
 
 # Publish a new state
 echo "Publishing a new state..."
-RUST_LOG=info,risc0_steel=debug cargo run --bin publisher -- \
+RUST_LOG=${RUST_LOG:-info,risc0_steel=debug} cargo run --bin publisher -- \
     --eth-wallet-private-key=${ETH_WALLET_PRIVATE_KEY:?} \
     --eth-rpc-url=${ETH_RPC_URL:?} \
     --counter-address=${COUNTER_ADDRESS:?} \

@@ -29,6 +29,7 @@ use alloy_primitives::{address, Address, Bytes, B256, U256};
 use anyhow::Context;
 use risc0_steel::{
     ethereum::{EthBlockHeader, EthEvmEnv, EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
+    host::BlockNumberOrTag,
     Commitment, Contract, StateAccount,
 };
 use serde_json::{from_value, to_value, Value};
@@ -126,7 +127,11 @@ fn mock_anvil_guest(input: EthEvmInput) -> Commitment {
 
 /// Creates an `EthEvmInput` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
 async fn rpc_usdt_input() -> anyhow::Result<EthEvmInput> {
-    let mut env = EthEvmEnv::builder().rpc(RPC_URL.parse()?).build().await?;
+    let mut env = EthEvmEnv::builder()
+        .rpc(RPC_URL.parse()?)
+        .block_number_or_tag(BlockNumberOrTag::Parent)
+        .build()
+        .await?;
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::preflight(USDT_ADDRESS, &mut env)
         .call_builder(&USDT_CALL)
