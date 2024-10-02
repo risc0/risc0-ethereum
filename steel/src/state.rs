@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::{convert::Infallible, rc::Rc};
+
 use crate::mpt::MerkleTrie;
 use alloy_primitives::{
     keccak256,
@@ -22,7 +24,6 @@ use revm::{
     primitives::{AccountInfo, Bytecode},
     Database,
 };
-use std::{convert::Infallible, rc::Rc};
 
 pub use alloy_consensus::Account as StateAccount;
 
