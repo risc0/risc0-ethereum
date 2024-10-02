@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🛠 Fixes
 
 - Return specific error, when no `Contract::preflight` was called.
+- Use `decode_exact` when RLP-decoding the MPT leaves.
 
 ### 🚨 Breaking Changes
 
