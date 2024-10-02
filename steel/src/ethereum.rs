@@ -55,7 +55,7 @@ pub static ETH_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 });
 
 /// [EvmEnv] for Ethereum.
-pub type EthEvmEnv<D> = EvmEnv<D, EthBlockHeader>;
+pub type EthEvmEnv<D, C> = EvmEnv<D, EthBlockHeader, C>;
 
 /// [EvmInput] for Ethereum.
 pub type EthEvmInput = EvmInput<EthBlockHeader>;
