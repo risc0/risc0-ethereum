@@ -25,7 +25,21 @@ pub const BLOCK_HASH_LEAF_INDEX: usize = 6444;
 /// Input committing to the corresponding Beacon Chain block root.
 pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
 
-/// Links the execution block hash to the Beacon block root.
+/// Provides verifiable proof that an execution block hash is included in a specific beacon block on
+/// the Ethereum blockchain.
+///
+/// This type represents a commitment that proves the inclusion of an execution block's hash within
+/// a particular beacon block on the Ethereum beacon chain. It relies on a Merkle proof to establish
+/// this link, ensuring the integrity and verifiability of the connection between the execution
+/// block and the beacon chain.
+///
+/// **Important:** This type currently relies on an underlying implementation that only supports the
+/// Deneb fork of the beacon chain. If the beacon chain undergoes a future upgrade, this type's
+/// functionality may be affected, potentially requiring updates to handle new block structures or
+/// proof generation mechanisms.
+///
+/// Users should monitor for beacon chain upgrades and ensure they are using a compatible version of
+/// this library.
 pub type BeaconCommit = GeneralizedBeaconCommit<BLOCK_HASH_LEAF_INDEX>;
 
 /// A commitment to a field of the Beacon block at a specific index in a Merkle tree, along with a
