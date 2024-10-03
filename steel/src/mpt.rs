@@ -43,7 +43,7 @@ impl MerkleTrie {
     #[inline]
     pub fn get_rlp<T: Decodable>(&self, key: impl AsRef<[u8]>) -> alloy_rlp::Result<Option<T>> {
         match self.get(key) {
-            Some(mut bytes) => Ok(Some(T::decode(&mut bytes)?)),
+            Some(bytes) => Ok(Some(alloy_rlp::decode_exact(bytes)?)),
             None => Ok(None),
         }
     }
