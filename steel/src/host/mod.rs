@@ -53,7 +53,7 @@ impl EthEvmEnv<ProofDb<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>
     }
 }
 
-impl<T, N, P, H> EvmEnv<ProofDb<AlloyDb<T, N, P>>, H>
+impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H>
 where
     T: Transport + Clone,
     N: Network,
@@ -70,16 +70,7 @@ where
             .build()
             .await
     }
-}
 
-impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H>
-where
-    T: Transport + Clone,
-    N: Network,
-    P: Provider<T, N>,
-    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
-{
     /// Converts the environment into a [EvmInput] committing to a block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
         Ok(EvmInput::Block(BlockInput::from_env(self).await?))
@@ -139,9 +130,10 @@ impl<H> EvmEnv<(), H> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn builder() -> EvmEnvBuilder<NoProvider, H> {
+    #[must_use]
+    pub fn builder() -> EvmEnvBuilder<(), H> {
         EvmEnvBuilder {
-            provider: NoProvider,
+            provider: (),
             provider_config: ProviderConfig::default(),
             block: BlockNumberOrTag::Latest,
             phantom: PhantomData,
@@ -160,17 +152,14 @@ pub struct EvmEnvBuilder<P, H> {
     phantom: PhantomData<H>,
 }
 
-/// First stage of the [EvmEnvBuilder] without a specified [Provider].
-pub struct NoProvider;
-
-impl EvmEnvBuilder<NoProvider, EthBlockHeader> {
+impl EvmEnvBuilder<(), EthBlockHeader> {
     /// Sets the Ethereum HTTP RPC endpoint that will be used by the [EvmEnv].
     pub fn rpc(self, url: Url) -> EvmEnvBuilder<ReqwestProvider<Ethereum>, EthBlockHeader> {
         self.provider(ProviderBuilder::new().on_http(url))
     }
 }
 
-impl<H: EvmBlockHeader> EvmEnvBuilder<NoProvider, H> {
+impl<H: EvmBlockHeader> EvmEnvBuilder<(), H> {
     /// Sets the [Provider] that will be used by the [EvmEnv].
     pub fn provider<T, N, P>(self, provider: P) -> EvmEnvBuilder<P, H>
     where

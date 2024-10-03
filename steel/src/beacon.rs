@@ -12,43 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Types related to commitments to the beacon block root.
 use crate::{
-    block::BlockInput, merkle, Commitment, CommitmentVersion, EvmBlockHeader, GuestEvmEnv,
+    merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
 };
-use alloy_primitives::B256;
+use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
 
 /// The generalized Merkle tree index of the `block_hash` field in the `BeaconBlock`
 pub const BLOCK_HASH_LEAF_INDEX: merkle::GeneralizedIndex = merkle::GeneralizedIndex::new(6444);
 
 /// Input committing to the corresponding Beacon Chain block root.
+pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
+
+/// Links the execution block hash to the Beacon block root.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct BeaconInput<H> {
-    /// Input committing to an execution block hash.
-    input: BlockInput<H>,
-    /// Merkle proof linking the execution block hash to the Beacon block root.
+pub struct BeaconCommit {
     proof: Vec<B256>,
+    timestamp: u64,
 }
 
-impl<H: EvmBlockHeader> BeaconInput<H> {
-    /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    ///
-    /// [EvmEnv]: crate::EvmEnv
-    pub fn into_env(self) -> GuestEvmEnv<H> {
-        let mut env = self.input.into_env();
+impl BeaconCommit {
+    /// Creates a new `BeaconCommit`.
+    #[must_use]
+    #[inline]
+    pub const fn new(proof: Vec<B256>, timestamp: u64) -> Self {
+        Self { proof, timestamp }
+    }
 
-        let beacon_root =
-            merkle::process_proof(env.header.seal(), &self.proof, BLOCK_HASH_LEAF_INDEX)
-                .expect("Invalid beacon inclusion proof");
-        env.commitment = Commitment {
-            blockID: Commitment::encode_id(
-                env.header().timestamp(),
-                CommitmentVersion::Beacon as u16,
-            ),
-            blockDigest: beacon_root,
-        };
+    /// Disassembles this `BeaconCommit`, returning the underlying Merkle proof and block timestamp.
+    #[inline]
+    pub fn into_parts(self) -> (Vec<B256>, u64) {
+        (self.proof, self.timestamp)
+    }
 
-        env
+    /// Processes the `BeaconCommit`.
+    fn into_commit(self, leaf: B256) -> (u64, B256) {
+        let beacon_root = merkle::process_proof(leaf, &self.proof, BLOCK_HASH_LEAF_INDEX)
+            .expect("Invalid beacon inclusion proof");
+        (self.timestamp, beacon_root)
+    }
+}
+
+impl<H: EvmBlockHeader> BlockHeaderCommit<H> for BeaconCommit {
+    #[inline]
+    fn commit(self, header: &Sealed<H>) -> Commitment {
+        let (timestamp, beacon_root) = self.into_commit(header.seal());
+        Commitment::new(CommitmentVersion::Beacon as u16, timestamp, beacon_root)
     }
 }
 
@@ -58,6 +68,7 @@ mod host {
     use crate::{
         ethereum::EthBlockHeader,
         host::{db::AlloyDb, HostEvmEnv},
+        BlockInput,
     };
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::{Sealable, B256};
@@ -82,7 +93,6 @@ mod host {
             let block_ts = env.header().timestamp();
             let parent_beacon_block_root = env
                 .header()
-                .inner()
                 .parent_beacon_block_root
                 .context("parent_beacon_block_root missing in execution header")?;
 
@@ -94,13 +104,14 @@ mod host {
             let (proof, beacon_root) = create_proof(parent_beacon_block_root, client).await?;
             merkle::verify(block_hash, &proof, BLOCK_HASH_LEAF_INDEX, beacon_root)
                 .context("proof derived from API does not verify")?;
+            let commit = BeaconCommit::new(proof, block_ts);
 
             info!(
                 "Commitment to beacon block root {} at {}",
                 beacon_root, block_ts
             );
 
-            Ok(BeaconInput { input, proof })
+            Ok(BeaconInput::new(input, commit))
         }
     }
 

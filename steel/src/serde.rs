@@ -29,8 +29,19 @@ pub struct RlpHeader<H: Encodable> {
     rlp: Option<Vec<u8>>,
 }
 
+impl<H: Encodable> std::ops::Deref for RlpHeader<H> {
+    type Target = H;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        self.inner()
+    }
+}
+
 impl<H: Encodable> RlpHeader<H> {
-    pub fn new(inner: H) -> Self {
+    #[must_use]
+    #[inline]
+    pub const fn new(inner: H) -> Self {
         Self { inner, rlp: None }
     }
     #[inline]

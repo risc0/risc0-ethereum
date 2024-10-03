@@ -16,27 +16,27 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{ruint::FromUintError, uint, BlockNumber, Sealable, Sealed, B256, U256};
-use beacon::BeaconInput;
-use block::BlockInput;
+use alloy_primitives::{uint, BlockNumber, Sealable, Sealed, B256, U256};
+use alloy_sol_types::SolValue;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
-use state::StateDb;
 
-mod beacon;
+pub mod beacon;
 mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
-mod merkle;
+pub mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
 
+pub use beacon::BeaconInput;
+pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
-pub use state::StateAccount;
+pub use state::{StateAccount, StateDb};
 
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
@@ -61,6 +61,44 @@ impl<H: EvmBlockHeader> EvmInput<H> {
     }
 }
 
+/// A trait linking the block header to a commitment.
+pub trait BlockHeaderCommit<H: EvmBlockHeader> {
+    /// Creates a verifiable [Commitment] of the `header`.
+    fn commit(self, header: &Sealed<H>) -> Commitment;
+}
+
+/// A generalized input type consisting of a block-based input and a commitment wrapper.
+/// The `commit` field provides a mechanism to generate a commitment to the block header
+/// contained within the `input` field.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ComposeInput<H, C> {
+    input: BlockInput<H>,
+    commit: C,
+}
+
+impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
+    /// Creates a new composed input from a [BlockInput] and a [BlockHeaderCommit].
+    #[must_use]
+    #[inline]
+    pub const fn new(input: BlockInput<H>, commit: C) -> Self {
+        Self { input, commit }
+    }
+
+    /// Disassembles this `ComposeInput`, returning the underlying input and commitment creator.
+    #[inline]
+    pub fn into_parts(self) -> (BlockInput<H>, C) {
+        (self.input, self.commit)
+    }
+
+    /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
+    pub fn into_env(self) -> GuestEvmEnv<H> {
+        let mut env = self.input.into_env();
+        env.commitment = self.commit.commit(&env.header);
+
+        env
+    }
+}
+
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
 
@@ -78,7 +116,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// It uses the default configuration for the latest specification.
     pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-        let commitment = Commitment::from_header(&header);
+        let commitment = Commitment::from_block_header(&header);
 
         Self {
             db: Some(db),
@@ -99,10 +137,10 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         self
     }
 
-    /// Returns the header of the environment.
+    /// Returns the sealed header of the environment.
     #[inline]
-    pub fn header(&self) -> &H {
-        self.header.inner()
+    pub fn header(&self) -> &Sealed<H> {
+        &self.header
     }
 
     /// Returns the [Commitment] used to validate the environment.
@@ -115,6 +153,17 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     #[inline]
     pub fn into_commitment(self) -> Commitment {
         self.commitment
+    }
+
+    fn db(&self) -> &D {
+        // safe unwrap: self cannot be borrowed without a DB
+        self.db.as_ref().unwrap()
+    }
+
+    #[allow(dead_code)]
+    fn db_mut(&mut self) -> &mut D {
+        // safe unwrap: self cannot be borrowed without a DB
+        self.db.as_mut().unwrap()
     }
 }
 
@@ -136,8 +185,8 @@ pub trait EvmBlockHeader: Sealable {
 // Keep everything in the Steel library private except the commitment.
 mod private {
     alloy_sol_types::sol! {
-        #![sol(all_derives)]
-        /// A commitment to a specific block in the blockchain.
+        /// Solidity struct representing the Steel commitment used for validation.
+        #[derive(Default, PartialEq, Eq, Hash)]
         struct Commitment {
             /// Encodes both the block identifier (block number or timestamp) and the version.
             uint256 blockID;
@@ -147,7 +196,6 @@ mod private {
     }
 }
 
-/// Solidity struct representing the committed block used for validation.
 pub use private::Commitment;
 
 /// The different versions of a [Commitment].
@@ -158,46 +206,82 @@ enum CommitmentVersion {
 }
 
 impl Commitment {
-    /// Constructs a commitment from a sealed [EvmBlockHeader].
+    /// The size if bytes of the ABI encoded commitment.
+    pub const ABI_ENCODED_SIZE: usize = 64;
+
+    /// Constructs a new commitment.
     #[inline]
-    fn from_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Self {
-        Commitment {
-            blockID: Self::encode_id(header.number(), CommitmentVersion::Block as u16),
-            blockDigest: header.seal(),
+    pub const fn new(version: u16, id: u64, digest: B256) -> Commitment {
+        Self {
+            blockID: Commitment::encode_id(id, version),
+            blockDigest: digest,
         }
     }
 
-    /// Returns the block identifier without the commitment version.
+    /// Decodes the `blockID` field into the ID and the version.
     #[inline]
-    pub fn block_id(&self) -> u64 {
-        Self::decode_id(self.blockID).unwrap().0
+    pub fn decode_id(&self) -> (U256, u16) {
+        let decoded = self.blockID
+            & uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
+        let version = (self.blockID.as_limbs()[3] >> 48) as u16;
+        (decoded, version)
+    }
+
+    /// ABI-encodes the commitment.
+    #[inline]
+    pub fn abi_encode(&self) -> Vec<u8> {
+        SolValue::abi_encode(self)
+    }
+
+    /// Creates a new block hash commitment from the given `header`.
+    fn from_block_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Commitment {
+        Self::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.seal(),
+        )
     }
 
     /// Encodes an ID and version into a single [U256] value.
-    #[inline]
-    pub(crate) fn encode_id(id: u64, version: u16) -> U256 {
+    const fn encode_id(id: u64, version: u16) -> U256 {
         U256::from_limbs([id, 0, 0, (version as u64) << 48])
     }
+}
 
-    /// Decodes an ID and version from a single [U256] value.
-    #[inline]
-    pub(crate) fn decode_id(mut id: U256) -> Result<(u64, u16), FromUintError<u64>> {
-        let version = (id.as_limbs()[3] >> 48) as u16;
-        id &= uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
-        Ok((id.try_into()?, version))
+impl std::fmt::Debug for Commitment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (id, version) = self.decode_id();
+        f.debug_struct("Commitment")
+            .field("version", &version)
+            .field("id", &id)
+            .field("digest", &self.blockDigest)
+            .finish()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Commitment;
+    use super::*;
+    use alloy_primitives::B256;
+
+    #[test]
+    fn size() {
+        let tests = vec![
+            Commitment::default(),
+            Commitment::new(u16::MAX, u64::MAX, B256::repeat_byte(0xFF)),
+        ];
+        for test in tests {
+            assert_eq!(test.abi_encode().len(), Commitment::ABI_ENCODED_SIZE);
+        }
+    }
 
     #[test]
     fn versioned_id() {
         let tests = vec![(u64::MAX, u16::MAX), (u64::MAX, 0), (0, u16::MAX), (0, 0)];
         for test in tests {
-            let id = Commitment::encode_id(test.0, test.1);
-            assert_eq!(Commitment::decode_id(id).unwrap(), test);
+            let commit = Commitment::new(test.1, test.0, B256::default());
+            let (id, version) = commit.decode_id();
+            assert_eq!((id.to(), version), test);
         }
     }
 }
