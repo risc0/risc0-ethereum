@@ -1,19 +1,40 @@
 ![Steel banner](./steel-banner.png)
 
-# Steel - Hardened off-chain Execution for EVM dapps
+# Steel - Boundless runtime for EVM apps
 
-> ***WARNING***
-> This library is under active development, with breaking changes expected.
-> We do not recommend the Steel library for production use at this time.
+## Introducing Steel, a production-ready EVM execution prover
 
-In the realm of Ethereum and smart contracts, obtaining data directly from the blockchain without altering its state—known as "view calls" — are a fundamental operation.
-Traditionally, these operations, especially when it comes to proving and verifying off-chain computations, involve a degree of complexity: either via proof of storage mechanisms requiring detailed knowledge of slot indexes, or via query-specific circuit development.
+Steel is a production-ready EVM execution prover designed to bring boundless runtime to all EVM apps. Using execution proofs, Steel enables EVM apps to run completely offchain, while preserving onchain security.  With Steel, you can prove correct smart contract execution without re-execution, allowing blockchain developers unbounded computation over on-chain data.. 
 
-In contrast, this library abstracts away these complexities, allowing developers to query Ethereum's state by just defining the Solidity method they wish to call.
-To demonstrate a simple instance of using this library, let's consider possibly the most common view call: querying the balance of an ERC-20 token for a specific address.
-You can find the full example [here](../examples/erc20/README.md).
+Our partners are already developing game-changing applications with Steel.  One application has shown gas savings of 1.2 billion gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 blocks worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify. Steel unlocks boundless application runtime, without rollups, without centralization, without re-writing your smart contracts, and without writing ZK circuits. The brakes are off.
 
-## Guest code
+## Core Concepts
+   - [Reintroducing Steel](https://risczero.com/blog/reintroducing-steel) (blog post)
+   - [What is Steel?](book/what-is-steel.md)
+   - [How does Steel work?](book/how-does-steel-work.md)
+     - [View Calls](book/how-does-steel-work.md#view-calls)
+     - [Executing and Proving a View Call](book/how-does-steel-work.md#executing-and-proving-a-view-call)
+     - [Verifying the View Call Proof On-Chain](book/how-does-steel-work.md#verifying-the-view-call-proof-on-chain)
+   - [Steel Commitments](book/steel-commitments.md)
+     - [Trust Anchor: The Blockhash](book/steel-commitments.md#steels-trust-anchor-the-blockhash)
+     - [What is a Steel Commitment?](book/steel-commitments.md#what-is-a-steel-commitment)
+     - [Validation of Steel Commitments](book/steel-commitments.md#validation-of-steel-commitments)
+
+## Getting Started with Steel
+
+The recommended place is to start is with the [Steel examples](../examples/README.md), specifically the [ERC20 Counter](../examples/erc20-counter/README.md) example. 
+
+The [create-steel-app](book/create-steel-app/) script will allow you to set up the erc20-counter example locally in one command:
+
+`sh -c "$(curl -fsSL PLACEHOLDER_URL)"`
+
+This example will act as your skeleton project structure for your own application. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. 
+
+You can read more about create-steel-app on its [README](book/create-steel-app/README.md), and [Core Concepts of Steel](#core-concepts) covers the ERC20-counter example in more depth using the example as a guide to explain Steel and how it works.
+
+## Relevant Code Snippets
+
+### Guest Code
 
 Here is a snippet of the [relevant code](../examples/erc20/methods/guest/src/main.rs) of the guest:
 
@@ -55,7 +76,7 @@ fn main() {
 }
 ```
 
-## Host code
+### Host Code
 
 Here is a snippet to the [relevant code](../examples/erc20/host/src/main.rs) on the host, it requires the same arguments as the guest:
 
@@ -74,11 +95,11 @@ let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
 let input = env.into_input().await?;
 ```
 
-## Ethereum integration
+### Solidity Code
 
-Steel can be integrated with the [Bonsai Foundry Template]. The Ethereum contract that validates the Groth16 proof must also validate the ViewCallEnv commitment.
+The Ethereum contract that validates the Groth16 proof must also validate the Steel commitment.
 
-Here is an example of implementing the validation using the Solidity [Steel library]. The journal contains the commitment as well as additional data:
+Here is an example of implementing the validation using the Solidity [Steel library](../contracts/src/steel/Steel.sol). The journal contains the [Steel commitment](book/steel-commitments.md) as well as additional data:
 
 ```Solidity
 struct Journal {
@@ -114,37 +135,3 @@ let journal = Journal {
 env::commit_slice(&journal.abi_encode());
 ```
 
-We provide several examples showcasing such integration, including [erc20-counter] and [token-stats].
-
-### Block commitment validation
-
-Validating the block committed by a Steel proof is essential to ensure that the proof accurately reflects the correct blockchain state.
-Steel supports two methods for block validation (see the `validateCommitment` function in [Steel.sol](../contracts/src/steel/Steel.sol)).
-
-#### 1. Block hash Commitment
-
-This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old.
-With Ethereum's 12-second block time, this provides a window of about 50 minutes to generate the proof and ensure that the validating transaction is contained in a block.
-This approach is ideal for most scenarios, including complex computations, as it typically provides sufficient time to generate the proof.
-
-#### 2. Beacon Block Root Commitment
-
-The second method allows validation using the [EIP-4788] beacon roots contract.
-This technique extends the time window in which the proof can be validated on-chain to just over a day, making it suitable for scenarios requiring more extensive computation.
-It requires access to a beacon API endpoint and can be enabled by calling `EvmEnv::into_beacon_input`.
-However, this approach is specific to Ethereum Steel proofs and depends on the implementation of EIP-4788.
-
-Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation.
-This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.
-
-#### Bookmarking
-
-A *bookmarking* validation technique can also be built on top of either block commitment approach.
-The idea is to store the target block commitment in the contract state before generating a Steel proof that targets that specific block.
-Once the block hash (or beacon root) has been bookmarked, it can be used later for validation, ensuring that the proof corresponds to the correct blockchain state.
-
-[erc20-counter]: ../examples/erc20-counter/README.md
-[token-stats]: ../examples/token-stats/README.md
-[Bonsai Foundry Template]: https://github.com/risc0/bonsai-foundry-template
-[Steel library]: ../contracts/src/steel/Steel.sol
-[EIP-4788]: https://eips.ethereum.org/EIPS/eip-4788
