@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+- Make `BeaconInput`, `BlockInput` and `StateDb` public.
+- Implement custom `Debug` formatter for `Commitment`.
+- Implement `Deref` for `RlpHeader`.
+
 ### 🛠 Fixes
 
 - Return specific error, when no `Contract::preflight` was called.
@@ -13,6 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚨 Breaking Changes
 
+- Introduce the `ComposeInput` as a generalized type to represent different commitments. The `BeaconInput` is now a `ComposeInput`. This changes the binary input data, but does not require any code changes.
 - `CallBuilder::call` in the guest now returns an error that needs to be handled, before it just panicked.
 
 ## [0.13.0](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.0) - 2024-09-10
