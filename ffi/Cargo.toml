@@ -12,5 +12,9 @@ alloy = { workspace = true }
 anyhow = { workspace = true }
 clap = { version = "4.5", features = ["derive", "env"] }
 hex = { version = "0.4" }
+libc = "0.2.159"
 risc0-ethereum-contracts = { workspace = true }
 risc0-zkvm = { workspace = true, features = ["client"] }
+
+[dev-dependencies]
+ffi-guests = { path = "./guests" }

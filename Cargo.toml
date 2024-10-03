@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["build", "contracts", "ffi", "steel"]
+members = ["build", "contracts", "ffi", "ffi/guests", "steel"]
 
 [workspace.package]
 version = "1.1.2"

@@ -1957,6 +1957,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffi-guests"
+version = "0.1.0"
+dependencies = [
+ "risc0-build",
+]
+
+[[package]]
 name = "fixed-hash"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3978,7 +3985,9 @@ dependencies = [
  "alloy",
  "anyhow",
  "clap",
+ "ffi-guests",
  "hex",
+ "libc",
  "risc0-ethereum-contracts",
  "risc0-zkvm",
 ]
