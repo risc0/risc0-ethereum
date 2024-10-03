@@ -252,7 +252,7 @@ mod host {
 
                 let tx = <N as Network>::TransactionRequest::default()
                     .with_from(self.tx.caller)
-                    .with_gas_limit(self.tx.gas_limit as u128)
+                    .with_gas_limit(self.tx.gas_limit)
                     .with_gas_price(self.tx.gas_price.to())
                     .with_to(self.tx.to)
                     .with_value(self.tx.value)
