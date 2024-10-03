@@ -14,9 +14,10 @@
 
 use std::process::Command;
 
-use alloy::{primitives::Bytes, sol_types::SolValue};
+use alloy::sol_types::SolValue;
 use ffi_guests::{ECHO_ID, ECHO_PATH};
 use risc0_ethereum_contracts::encode_seal;
+use risc0_forge_ffi::JournalSeal;
 use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt, ReceiptClaim};
 
 #[test]
@@ -36,7 +37,9 @@ fn basic_usage() {
     println!("{:#?}", &output);
 
     let output_bytes = hex::decode(output.stdout).unwrap();
-    let (journal, seal) = <(Bytes, Bytes)>::abi_decode(&output_bytes, true).unwrap();
+    let journal_seal = <JournalSeal>::abi_decode(&output_bytes, true).unwrap();
+    let journal = journal_seal.journal;
+    let seal = journal_seal.seal;
 
     assert_eq!(journal, hex::decode("deadbeef").unwrap());
     let expected_receipt = Receipt::new(
@@ -70,7 +73,9 @@ fn basic_usage_with_rust_log() {
     println!("{:#?}", &output);
 
     let output_bytes = hex::decode(output.stdout).unwrap();
-    let (journal, seal) = <(Bytes, Bytes)>::abi_decode(&output_bytes, true).unwrap();
+    let journal_seal = <JournalSeal>::abi_decode(&output_bytes, true).unwrap();
+    let journal = journal_seal.journal;
+    let seal = journal_seal.seal;
 
     assert_eq!(journal, hex::decode("deadbeef").unwrap());
     let expected_receipt = Receipt::new(
