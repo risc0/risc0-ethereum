@@ -80,7 +80,7 @@ where
 impl<T, P> HostEvmEnv<AlloyDb<T, Ethereum, P>, EthBlockHeader>
 where
     T: Transport + Clone,
-    P: Provider<T, Ethereum> + Clone,
+    P: Provider<T, Ethereum>,
 {
     /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
     ///

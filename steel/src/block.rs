@@ -27,11 +27,6 @@ pub struct BlockInput<H> {
 }
 
 impl<H: EvmBlockHeader> BlockInput<H> {
-    /// Returns the block header this input is based on.
-    pub fn header(&self) -> &H {
-        &self.header
-    }
-
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     pub fn into_env(self) -> GuestEvmEnv<H> {
         // verify that the state root matches the state trie

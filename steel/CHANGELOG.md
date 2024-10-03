@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### ⚡️ Features
 
 - Make `BeaconInput`, `BlockInput` and `StateDb` public.
+- Implement custom `Debug` formatter for `Commitment`.
 - Implement `Deref` for `RlpHeader`.
 
 ### 🛠 Fixes
