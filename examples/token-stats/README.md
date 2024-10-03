@@ -8,7 +8,7 @@ To get started, you need to have Rust installed. If you haven't done so, follow 
 
 Next, you will also need to have the `cargo-risczero` tool installed following the instructions [here][install-risczero].
 
-You'll also need access to an Ethereum Mainnet RPC endpoint. You can for example use [ethereum-rpc.publicnode.com](https://ethereum-rpc.publicnode.com/) or a commercial RPC provider like [Alchemy](www.alchemy.com).
+You'll also need access to an Ethereum Mainnet RPC endpoint. You can for example use [ethereum-rpc.publicnode.com](https://ethereum-rpc.publicnode.com/) or a commercial RPC provider like [Alchemy](https://www.alchemy.com/).
 
 ## Run the example
 
