@@ -36,12 +36,10 @@ fn main() {
     let utilization = contract
         .call_builder(&CometMainInterface::getUtilizationCall {})
         .call()
-        .unwrap()
         ._0;
     let supply_rate = contract
         .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
         .call()
-        .unwrap()
         ._0;
 
     // The formula for APR in percentage is the following:
