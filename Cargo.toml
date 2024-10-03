@@ -23,10 +23,10 @@ risc0-zkvm = { version = "1.1.2", default-features = false }
 
 # Alloy guest dependencies
 alloy-consensus = { version = "0.3" }
-alloy-primitives = { version = "0.8" }
+alloy-primitives = { version = "=0.8.3" }
 alloy-rlp = { version = "0.3.8" }
 alloy-rlp-derive = { version = "0.3.8" }
-alloy-sol-types = { version = "0.8" }
+alloy-sol-types = { version = "=0.8.3" }
 
 # Alloy host dependencies
 alloy = { version = "=0.3.3" }
