@@ -38,22 +38,27 @@ use url::Url;
 pub mod db;
 
 /// A block number (or tag - "latest", "safe", "finalized").
+/// This enum is used to specify which block to query when interacting with the blockchain.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum BlockNumberOrTag {
     /// The most recent block in the canonical chain observed by the client.
     #[default]
     Latest,
-    /// The most recent block with a child.
+    /// The parent of the most recent block in the canonical chain observed by the client.
+    /// This is equivalent to `Latest - 1`.
     Parent,
-    /// The most recent safe block.
+    /// The most recent block considered "safe" by the client. This typically refers to a block
+    /// that is sufficiently deep in the chain to be considered irreversible.
     Safe,
-    /// The most recent finalized block.
+    /// The most recent finalized block in the chain. Finalized blocks are guaranteed to be
+    /// part of the canonical chain.
     Finalized,
-    /// Number of a block in the canon chain.
+    /// A specific block number in the canonical chain.
     Number(u64),
 }
 
 impl BlockNumberOrTag {
+    /// Converts the `BlockNumberOrTag` into the corresponding RPC type.
     async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockNumberOrTag>
     where
         T: Transport + Clone,
