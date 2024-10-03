@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+- Add `try_call()` method to `CallBuilder` when explicit error handling is necessary.
 - Make `BeaconInput`, `BlockInput` and `StateDb` public.
 - Implement custom `Debug` formatter for `Commitment`.
 - Implement `Deref` for `RlpHeader`.
