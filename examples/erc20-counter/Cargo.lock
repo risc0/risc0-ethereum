@@ -71,9 +71,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-chains"
-version = "0.1.34"
+version = "0.1.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8158b4878c67837e5413721cc44298e6a2d88d39203175ea025e51892a16ba4c"
+checksum = "609d6ef5716e94875b19b91faf33ef041baff373d3fff70531424f372d27bbd2"
 dependencies = [
  "num_enum",
  "strum",
@@ -2670,9 +2670,9 @@ dependencies = [
 
 [[package]]
 name = "ipnet"
-version = "2.10.0"
+version = "2.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "187674a687eed5fe42285b40c6291f9a01517d415fad1c3cbc6a9f778af7fcd4"
+checksum = "ddc24109865250148c2e0f3d25d4f0f479571723792d3802153c60922a4fb708"
 
 [[package]]
 name = "is_terminal_polyfill"
@@ -3993,7 +3993,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "1.1.2"
+version = "1.1.3"
 dependencies = [
  "anyhow",
  "hex",
@@ -4044,7 +4044,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "1.1.2"
+version = "1.1.3"
 dependencies = [
  "alloy",
  "anyhow",
@@ -4073,7 +4073,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "0.13.2"
+version = "0.13.3"
 dependencies = [
  "alloy",
  "alloy-consensus",
