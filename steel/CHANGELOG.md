@@ -8,7 +8,13 @@ All notable changes to this project will be documented in this file.
 
 ### 🚨 Breaking Changes
 
-## [0.13.1](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.0) - 2024-09-25
+## [0.13.2](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.2) - 2024-10-03
+
+### 🛠 Fixes
+
+- Bump `risc0-zkvm` dependency version to 1.1.2
+
+## [0.13.1](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.1) - 2024-09-25
 
 ### 🛠 Fixes
 
