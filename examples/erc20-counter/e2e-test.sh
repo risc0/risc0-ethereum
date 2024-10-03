@@ -20,8 +20,9 @@ echo "ERC20 Toyken Address: $TOYKEN_ADDRESS"
 COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/$CHAIN_ID/run-latest.json)
 echo "Counter Address: $COUNTER_ADDRESS"
 
-BLOCK_NUMBER=$(jq --arg ADDRESS "$COUNTER_ADDRESS" -re '.receipts[] | select(.contractAddress == $ADDRESS) | .blockNumber' ./broadcast/DeployCounter.s.sol/$CHAIN_ID/run-latest.json)
-echo "Waiting for block $BLOCK_NUMBER to have one child..."
+# Extract the block in which the Toyken contract has been deployed and wait for the next block
+BLOCK_NUMBER=$(jq --arg ADDRESS "$TOYKEN_ADDRESS" -re '.receipts[] | select(.contractAddress == $ADDRESS) | .blockNumber' ./broadcast/DeployCounter.s.sol/$CHAIN_ID/run-latest.json)
+echo "Waiting for block $BLOCK_NUMBER to have one confirmation..."
 while [ $(cast rpc --rpc-url ${ETH_RPC_URL:?} eth_blockNumber | jq -re) == "$BLOCK_NUMBER" ]; do sleep 3; done
 
 # Publish a new state
