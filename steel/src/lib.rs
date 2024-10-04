@@ -18,6 +18,7 @@
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{uint, BlockNumber, Sealable, Sealed, B256, U256};
 use alloy_sol_types::SolValue;
+use config::ChainSpec;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 
 pub mod beacon;
@@ -64,7 +65,7 @@ impl<H: EvmBlockHeader> EvmInput<H> {
 /// A trait linking the block header to a commitment.
 pub trait BlockHeaderCommit<H: EvmBlockHeader> {
     /// Creates a verifiable [Commitment] of the `header`.
-    fn commit(self, header: &Sealed<H>) -> Commitment;
+    fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment;
 }
 
 /// A generalized input type consisting of a block-based input and a commitment wrapper.
@@ -93,7 +94,7 @@ impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     pub fn into_env(self) -> GuestEvmEnv<H> {
         let mut env = self.input.into_env();
-        env.commitment = self.commit.commit(&env.header);
+        env.commitment = self.commit.commit(&env.header, env.commitment.configID);
 
         env
     }
@@ -116,7 +117,12 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// It uses the default configuration for the latest specification.
     pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-        let commitment = Commitment::from_block_header(&header);
+        let commitment = Commitment::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.seal(),
+            ChainSpec::DEFAULT_DIGEST,
+        );
 
         Self {
             db: Some(db),
@@ -129,11 +135,13 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
     /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &config::ChainSpec) -> Self {
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
         self.cfg_env.chain_id = chain_spec.chain_id();
         self.cfg_env.handler_cfg.spec_id = chain_spec
             .active_fork(self.header.number(), self.header.timestamp())
             .unwrap();
+        self.commitment.configID = chain_spec.digest();
+
         self
     }
 
@@ -185,45 +193,63 @@ pub trait EvmBlockHeader: Sealable {
 // Keep everything in the Steel library private except the commitment.
 mod private {
     alloy_sol_types::sol! {
-        /// Solidity struct representing the Steel commitment used for validation.
+        /// A Solidity struct representing a commitment used for validation.
+        ///
+        /// This struct is used to commit to a specific claim, such as the hash of an execution block
+        /// or a beacon chain state. It includes a version, an identifier, the claim itself, and a
+        /// configuration ID to ensure the commitment is valid for the intended network.
         #[derive(Default, PartialEq, Eq, Hash)]
         struct Commitment {
-            /// Encodes both the block identifier (block number or timestamp) and the version.
-            uint256 blockID;
-            /// The block hash or beacon block root, used for validation.
-            bytes32 blockDigest;
+            /// Commitment ID.
+            ///
+            /// This ID combines the version and the actual identifier of the claim, such as the block number.
+            uint256 id;
+            /// The cryptographic claim.
+            ///
+            /// This is the core of the commitment, representing the data being committed to,
+            /// e.g., the hash of the execution block.
+            bytes32 claim;
+            /// The cryptographic digest of the network configuration.
+            ///
+            /// This ID ensures that the commitment is valid only for the specific network configuration
+            /// it was created for.
+            bytes32 configID;
         }
     }
 }
 
 pub use private::Commitment;
 
-/// The different versions of a [Commitment].
+/// Version of a [`Commitment`].
 #[repr(u16)]
-enum CommitmentVersion {
+#[derive(Debug, PartialEq, Eq)]
+pub enum CommitmentVersion {
+    /// Commitment to an execution block.
     Block,
+    /// Commitment to a beacon chain state.
     Beacon,
 }
 
 impl Commitment {
-    /// The size if bytes of the ABI encoded commitment.
-    pub const ABI_ENCODED_SIZE: usize = 64;
+    /// The size in bytes of the ABI-encoded commitment.
+    pub const ABI_ENCODED_SIZE: usize = 3 * 32;
 
-    /// Constructs a new commitment.
+    /// Creates a new commitment.
     #[inline]
-    pub const fn new(version: u16, id: u64, digest: B256) -> Commitment {
+    pub const fn new(version: u16, id: u64, claim: B256, config_id: B256) -> Commitment {
         Self {
-            blockID: Commitment::encode_id(id, version),
-            blockDigest: digest,
+            id: Commitment::encode_id(id, version),
+            claim,
+            configID: config_id,
         }
     }
 
-    /// Decodes the `blockID` field into the ID and the version.
+    /// Decodes the `id` field into the claim ID and the commitment version.
     #[inline]
     pub fn decode_id(&self) -> (U256, u16) {
-        let decoded = self.blockID
+        let decoded = self.id
             & uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
-        let version = (self.blockID.as_limbs()[3] >> 48) as u16;
+        let version = (self.id.as_limbs()[3] >> 48) as u16;
         (decoded, version)
     }
 
@@ -231,15 +257,6 @@ impl Commitment {
     #[inline]
     pub fn abi_encode(&self) -> Vec<u8> {
         SolValue::abi_encode(self)
-    }
-
-    /// Creates a new block hash commitment from the given `header`.
-    fn from_block_header<H: EvmBlockHeader>(header: &Sealed<H>) -> Commitment {
-        Self::new(
-            CommitmentVersion::Block as u16,
-            header.number(),
-            header.seal(),
-        )
     }
 
     /// Encodes an ID and version into a single [U256] value.
@@ -254,7 +271,8 @@ impl std::fmt::Debug for Commitment {
         f.debug_struct("Commitment")
             .field("version", &version)
             .field("id", &id)
-            .field("digest", &self.blockDigest)
+            .field("claim", &self.claim)
+            .field("configID", &self.configID)
             .finish()
     }
 }
@@ -268,7 +286,12 @@ mod tests {
     fn size() {
         let tests = vec![
             Commitment::default(),
-            Commitment::new(u16::MAX, u64::MAX, B256::repeat_byte(0xFF)),
+            Commitment::new(
+                u16::MAX,
+                u64::MAX,
+                B256::repeat_byte(0xFF),
+                B256::repeat_byte(0xFF),
+            ),
         ];
         for test in tests {
             assert_eq!(test.abi_encode().len(), Commitment::ABI_ENCODED_SIZE);
@@ -279,7 +302,7 @@ mod tests {
     fn versioned_id() {
         let tests = vec![(u64::MAX, u16::MAX), (u64::MAX, 0), (0, u16::MAX), (0, 0)];
         for test in tests {
-            let commit = Commitment::new(test.1, test.0, B256::default());
+            let commit = Commitment::new(test.1, test.0, B256::default(), B256::default());
             let (id, version) = commit.decode_id();
             assert_eq!((id.to(), version), test);
         }

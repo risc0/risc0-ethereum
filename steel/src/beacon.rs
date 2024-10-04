@@ -56,9 +56,14 @@ impl BeaconCommit {
 
 impl<H: EvmBlockHeader> BlockHeaderCommit<H> for BeaconCommit {
     #[inline]
-    fn commit(self, header: &Sealed<H>) -> Commitment {
+    fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
         let (timestamp, beacon_root) = self.into_commit(header.seal());
-        Commitment::new(CommitmentVersion::Beacon as u16, timestamp, beacon_root)
+        Commitment::new(
+            CommitmentVersion::Beacon as u16,
+            timestamp,
+            beacon_root,
+            config_id,
+        )
     }
 }
 
