@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+- Add `try_call()` method to `CallBuilder` when explicit error handling is necessary.
 - Make `BeaconInput`, `BlockInput` and `StateDb` public.
 - Implement custom `Debug` formatter for `Commitment`.
 - Implement `Deref` for `RlpHeader`.
@@ -19,7 +20,6 @@ All notable changes to this project will be documented in this file.
 
 - The Solidity `Commitment` now also contains a hash of the chain specification including chain ID, and fork configuration.
 - Introduce the `ComposeInput` as a generalized type to represent different commitments. The `BeaconInput` is now a `ComposeInput`. This changes the binary input data, but does not require any code changes.
-- `CallBuilder::call` in the guest now returns an error that needs to be handled, before it just panicked.
 
 ## [0.13.0](https://github.com/risc0/risc0-ethereum/releases/tag/steel-v0.13.0) - 2024-09-10
 

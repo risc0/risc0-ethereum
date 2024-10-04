@@ -70,7 +70,7 @@ where
 
     let result = {
         let contract = Contract::new(address, &env);
-        options.apply(contract.call_builder(&call)).call().unwrap()
+        options.apply(contract.call_builder(&call)).call()
     };
     assert_eq!(
         result, preflight_result,

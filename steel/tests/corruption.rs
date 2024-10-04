@@ -114,12 +114,10 @@ fn mock_anvil_guest(input: EthEvmInput) -> Commitment {
     let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
     Contract::new(ANVIL_CONTRACT_ADDRESS, &env)
         .call_builder(&sol::Pair::aCall {})
-        .call()
-        .unwrap();
+        .call();
     Contract::new(ANVIL_CONTRACT_ADDRESS, &env)
         .call_builder(&sol::Pair::bCall {})
-        .call()
-        .unwrap();
+        .call();
 
     env.into_commitment()
 }
@@ -362,8 +360,7 @@ async fn corrupt_header_beacon_commitment() {
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
-        .call()
-        .unwrap();
+        .call();
     let commit = env.into_commitment();
     assert_eq!(commit.id, exp_commit.id, "Changed commitment");
     assert_eq!(commit.claim, exp_commit.claim, "Invalid commitment");
@@ -391,8 +388,7 @@ async fn corrupt_beacon_proof() {
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
-        .call()
-        .unwrap();
+        .call();
     let commit = env.into_commitment();
     assert_eq!(commit.id, exp_commit.id, "Commitment changed");
     assert_eq!(commit.claim, exp_commit.claim, "Invalid commitment");
