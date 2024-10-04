@@ -8,18 +8,6 @@ Steel is a production-ready EVM execution prover designed to bring boundless run
 
 Our partners are already developing game-changing applications with Steel.  One application has shown gas savings of 1.2 billion gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 blocks worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify. Steel unlocks boundless application runtime, without rollups, without centralization, without re-writing your smart contracts, and without writing ZK circuits. The brakes are off.
 
-## Core Concepts
-   - [Reintroducing Steel](https://risczero.com/blog/reintroducing-steel) (blog post)
-   - [What is Steel?](book/what-is-steel.md)
-   - [How does Steel work?](book/how-does-steel-work.md)
-     - [View Calls](book/how-does-steel-work.md#view-calls)
-     - [Executing and Proving a View Call](book/how-does-steel-work.md#executing-and-proving-a-view-call)
-     - [Verifying the View Call Proof On-Chain](book/how-does-steel-work.md#verifying-the-view-call-proof-on-chain)
-   - [Steel Commitments](book/steel-commitments.md)
-     - [Trust Anchor: The Blockhash](book/steel-commitments.md#steels-trust-anchor-the-blockhash)
-     - [What is a Steel Commitment?](book/steel-commitments.md#what-is-a-steel-commitment)
-     - [Validation of Steel Commitments](book/steel-commitments.md#validation-of-steel-commitments)
-
 ## Getting Started with Steel
 
 The recommended place is to start is with the [Steel examples](../examples/README.md), specifically the [ERC20 Counter](../examples/erc20-counter/README.md) example. 
@@ -28,110 +16,25 @@ The [create-steel-app](book/create-steel-app/) script will allow you to set up t
 
 `sh -c "$(curl -fsSL PLACEHOLDER_URL)"`
 
-This example will act as your skeleton project structure for your own application. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. 
+This example act as your skeleton project structure for further development. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. 
 
-You can read more about create-steel-app on its [README](book/create-steel-app/README.md), and [Core Concepts of Steel](#core-concepts) covers the ERC20-counter example in more depth using the example as a guide to explain Steel and how it works.
+You can read more about create-steel-app on its [README](book/create-steel-app/README.md), and the documentation below uses the ERC20-counter example as a guide to explain Steel and how it works.
 
-## Relevant Code Snippets
+## Documentation 
 
-### Guest Code
+This documentation covers the core concepts of Steel. After reading, you will understand how Steel creates verifiable EVM execution proofs allowing you to carry out execution off-chain verfiably. 
 
-Here is a snippet of the [relevant code](../examples/erc20/methods/guest/src/main.rs) of the guest:
+   - [Introducing Steel 1.0](https://risczero.com/blog/introducing-steel-1.0) (blog post)
+   - [What is Steel?](book/what-is-steel.md)
+   - [How does Steel work?](book/how-does-steel-work.md)
+     - [View Calls](book/how-does-steel-work.md#view-calls)
+     - [Proving EVM execution within the zkVM](book/how-does-steel-work.md#proving-evm-execution-within-the-zkvm)
+     - [Verifying the Proof On-Chain](book/how-does-steel-work.md#verifying-the-proof-on-chain)
+   - [Steel Commitments](book/steel-commitments.md)
+     - [Trust Anchor: The Blockhash](book/steel-commitments.md#steels-trust-anchor-the-blockhash)
+     - [What is a Steel Commitment?](book/steel-commitments.md#what-is-a-steel-commitment)
+     - [Validation of Steel Commitments](book/steel-commitments.md#validation-of-steel-commitments)
 
-```rust
-/// Specify the function to call using the [`sol!`] macro.
-/// This parses the Solidity syntax to generate a struct that implements the `SolCall` trait.
-sol! {
-    /// ERC-20 balance function signature.
-    interface IERC20 {
-        function balanceOf(address account) external view returns (uint);
-    }
-}
+## Further Reading & Ask Questions
 
-/// Function to call, implements the `SolCall` trait.
-const CALL: IERC20::balanceOfCall = IERC20::balanceOfCall {
-    account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4"),
-};
-
-/// Address of the deployed contract to call the function on (USDT contract on Sepolia).
-const CONTRACT: Address = address!("aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0");
-/// Address of the caller. If not provided, the caller will be the [CONTRACT].
-const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
-
-fn main() {
-    // Read the input from the guest environment.
-    let input: EthEvmInput = env::read();
-
-    // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
-    // to specify the chain configuration. It checks that the state matches the state root in the
-    // header provided in the input.
-    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-    // Commit the block hash and number used when deriving `EvmEnv` to the journal.
-    env::commit_slice(&env.commitment().abi_encode());
-
-    // Execute the view call; it returns the result in the type generated by the `sol!` macro.
-    let contract = Contract::new(CONTRACT, &env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call();
-    println!("View call result: {}", returns._0);
-}
-```
-
-### Host Code
-
-Here is a snippet to the [relevant code](../examples/erc20/host/src/main.rs) on the host, it requires the same arguments as the guest:
-
-```rust
-// Create an EVM environment from an RPC endpoint defaulting to the latest block.
-let mut env = EthEvmEnv::builder().rpc(args.rpc_url).build().await?;
-//  The `with_chain_spec` method is used to specify the chain configuration.
-env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-
-// Preflight the call to prepare the input that is required to execute the function in
-// the guest without RPC access. It also returns the result of the call.
-let mut contract = Contract::preflight(CONTRACT, &mut env);
-let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
-
-// Finally, construct the input from the environment.
-let input = env.into_input().await?;
-```
-
-### Solidity Code
-
-The Ethereum contract that validates the Groth16 proof must also validate the Steel commitment.
-
-Here is an example of implementing the validation using the Solidity [Steel library](../contracts/src/steel/Steel.sol). The journal contains the [Steel commitment](book/steel-commitments.md) as well as additional data:
-
-```Solidity
-struct Journal {
-    Steel.Commitment commitment;
-    address tokenAddress;
-}
-
-function validate(bytes calldata journalData, bytes calldata seal) external {
-    Journal memory journal = abi.decode(journalData, (Journal));
-    require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
-    verifier.verify(seal, imageId, sha256(journalData));
-}
-```
-
-The guest code to create the journal would look like the following:
-
-```rust
-use risc0_steel::Commitment;
-
-sol! {
-    struct Journal {
-        Commitment commitment;
-        address tokenAddress;
-    }
-}
-
-...
-
-let journal = Journal {
-    commitment: view_call_env.block_commitment(),
-    tokenAddress,
-};
-env::commit_slice(&journal.abi_encode());
-```
-
+The RISC Zero [dev docs](https://dev.risczero.com/api/) are a great place to start to understand the zkVM in detail. If you have any questions, and/or just want to hang out with other builders, please join the [RISC Zero Discord](https://discord.com/invite/risczero).

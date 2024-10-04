@@ -33,7 +33,7 @@ export BONSAI_API_KEY="YOUR_API_KEY"
 export BONSAI_API_URL="BONSAI_URL" # provided with your api key
 ```
 
-Note: To request an API key [complete the form here](https://bonsai.xyz/apply).
+*Note: To request an API key [complete the form here](https://bonsai.xyz/apply)*.
 
 At this point, you will be able to test against a local deployment by running the provided bash script:
 
