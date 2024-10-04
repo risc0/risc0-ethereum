@@ -1,4 +1,4 @@
-# *What is Steel*
+# What is Steel?
 
 ## Steel: Introducing EVM Execution Proofs
 
@@ -61,15 +61,19 @@ contract OffChainERC20Counter() {
 }
 ```
 
-To make sure that Steel's execution proofs can be trusted, we check the output of the zkVM program to make sure that the token contract address is correct, and we validate the [Steel Commitment](./steel-commitments.md). Only if these are valid, the proof is verified. Upon succesful verification, we can be sure that the account balance is larger than 1 and we increment the counter variable. Notice there is no check on-chain of the balance or any EVM execution other than the validations and proof verification. The EVM execution happens within the zkVM guest program. 
+To make sure that Steel's execution proofs can be trusted, we check the output of the zkVM program to make sure that the token contract address is correct, and we validate the [Steel Commitment]. Only if these are valid, the proof is verified. Upon succesful verification, we can be sure that the account balance is larger than 1 and we increment the counter variable. Notice there is no check on-chain of the balance or any EVM execution other than the validations and proof verification. The EVM execution happens within the zkVM guest program. 
 
-In [How does Steel work?](./how-does-steel-work.md), we dive deeper into how exactly the zkVM guest program runs EVM execution, generating an EVM execution proof, and verifying the proof on-chain.
+In [How does Steel work?], we dive deeper into how exactly the zkVM guest program runs EVM execution, generating an EVM execution proof, and verifying the proof on-chain.
 
 ---
 
-<---- [Steel README](../README.md) | [How Does Steel Work](./how-does-steel-work.md) ----> 
+<---- [Steel README] | [How Does Steel Work?] ----> 
 
 
+[Steel Commitment]: ./steel-commitments.md
+[How does Steel work?]: ./how-does-steel-work.md
+[Steel README]: ../README.md
+[How Does Steel Work]: ./how-does-steel-work.md
 
 
 

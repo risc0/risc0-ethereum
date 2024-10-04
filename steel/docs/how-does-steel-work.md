@@ -1,17 +1,17 @@
-# How does Steel work
+# How does Steel work?
 
-A fundamental operation in smart contracts is to look up data from other contracts, such as the ERC20 token balance of a specific address. This operation is known as a “view call”’ \- it “views” state without altering it. Steels allows developers to query EVM state, within the zkVM, by just defining the Solidity method they wish to view call (using alloy’s [sol\! macro](https://alloy.rs/examples/sol-macro/index.html)).
+A fundamental operation in smart contracts is to look up data from other contracts, such as the ERC20 token balance of a specific address. This operation is known as a “view call”’ \- it “views” state without altering it. Steels allows developers to query EVM state, within the zkVM, by just defining the Solidity method they wish to view call (using alloy’s [sol\! macro]).
 
-```javascript
+```rust
 sol! {
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
     }
 ```
 
-*This code is taken from the erc20-counter example, which you can find [here](https://github.com/risc0/risc0-ethereum/blob/main/examples/erc20-counter/README.md).*
+*This code is taken from the erc20-counter example, which you can find [here].*
 
-The sol\! macro parses Solidity syntax to generate Rust types; this is used to call the `balanceOf` function, within the [guest program](https://dev.risczero.com/terminology#guest-program), using `balanceOfCall`:
+The sol\! macro parses Solidity syntax to generate Rust types; this is used to call the `balanceOf` function, within the [guest program], using `balanceOfCall`:
 
 ```rust
 // GUEST PROGRAM
@@ -30,7 +30,9 @@ let returns = Contract::new(contract, &evm_env)
 	.unwrap();
 
 // Check that the given account holds at least 1 token.
-assert!(returns._0 >= U256::from(1));    // Commit the block hash and number used when deriving `view_call_env` to the journal.
+assert!(returns._0 >= U256::from(1));   
+
+// Commit the block hash and number used when deriving `view_call_env` to the journal.
     let journal = Journal {
         commitment: env.into_commitment(),
         tokenAddress: contract,
@@ -43,7 +45,7 @@ assert!(returns._0 >= U256::from(1));    // Commit the block hash and number u
 
 The zkVM guest has no network connection, and there is no way to call an RPC provider to carry out the view call from within the guest; so how does Steel make this possible?
 
-Steel’s key innovation is the use of [revm](https://docs.rs/revm/latest/revm/)  for simulation of an *EVM environment* within the guest program. This EVM environment has the necessary state populated from RPC calls to carry out verifiable execution of view calls.In the [host program](https://dev.risczero.com/terminology#host-program), the [preflight call](https://docs.rs/risc0-steel/latest/risc0_steel/struct.Contract.html) constructs the EVM environment, `evm_env` which is passed through as input to the guest program:
+Steel’s key innovation is the use of [revm]  for simulation of an *EVM environment* within the guest program. This EVM environment has the necessary state populated from RPC calls to carry out verifiable execution of view calls.In the [host program], the [preflight call] constructs the EVM environment, `evm_env` which is passed through as input to the guest program:
 
 ```rust
 // HOST PROGRAM
@@ -64,7 +66,7 @@ let mut contract = Contract::preflight(args.token_contract, &mut env);
 let evm_input = env.into_input().await?
 ```
 
- `preflight` handles calling the RPC provider for the necessary state and for the Merkle storage proofs via `eth_getProof` ([EIP-1186](https://eips.ethereum.org/EIPS/eip-1186)). These Merkle proofs are given to the guest which verifies them to prove that the RPC data is valid, without having to run a full node and without trusting the host or RPC provider.
+ `preflight` handles calling the RPC provider for the necessary state and for the Merkle storage proofs via `eth_getProof` ([EIP-1186]). These Merkle proofs are given to the guest which verifies them to prove that the RPC data is valid, without having to run a full node and without trusting the host or RPC provider.
 
 ## Verifying the proof on-chain
 
@@ -107,10 +109,22 @@ function increment(bytes calldata journalData, bytes calldata seal) external {
     }
 ```
 
-Within a single proof, we’ve seen Steel can handle hundreds of thousands of view calls. Specifically, one partner application has shown gas savings of 1.2 *billion* gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 *blocks* worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify (see [RISC Zero’s verification contracts](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)).
+Within a single proof, we’ve seen Steel can handle hundreds of thousands of view calls. Specifically, one partner application has shown gas savings of 1.2 *billion* gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 *blocks* worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify (see [RISC Zero’s verification contracts]).
 
 With proof aggregation, cost savings are amortized even further, by taking multiple separate applications of Steel, and wrapping them all up into a single SNARK.
 
 ---
 
-<---- [What is Steel?](./what-is-steel.md) | [Steel Commitments](./steel-commitments.md) ----> 
+<---- [What is Steel?] | [Steel Commitments] ----> 
+
+
+[sol! macro]: https://alloy.rs/examples/sol-macro/index.html
+[here]: https://github.com/risc0/risc0-ethereum/blob/main/examples/erc20-counter/README.md
+[guest program]: https://dev.risczero.com/terminology#guest-program
+[revm]: https://docs.rs/revm/latest/revm/
+[host program]: https://dev.risczero.com/terminology#host-program
+[preflight call]: https://docs.rs/risc0-steel/latest/risc0_steel/struct.Contract.html
+[EIP-1186]: https://eips.ethereum.org/EIPS/eip-1186
+[RISC Zero's verification contracts]: https://dev.risczero.com/api/blockchain-integration/contracts/verifier
+[What is Steel?]: ./what-is-steel.md
+[Steel Commitments]: ./steel-commitments.md
