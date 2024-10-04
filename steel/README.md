@@ -18,6 +18,8 @@ The [create-steel-app] script will allow you to set up the erc20-counter example
 
 This example act as your skeleton project structure for further development. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. The documentation below uses the ERC20-counter example as a guide to explain Steel in detail.
 
+You can watch this [video tutorial] for a quick runthrough of using the create-steel-app script to get started.
+
 ## Documentation 
 
 This documentation covers the core concepts of Steel. After reading, you will understand how Steel creates verifiable EVM execution proofs allowing you to carry out execution off-chain verfiably. 
@@ -40,6 +42,7 @@ The RISC Zero [dev docs](https://dev.risczero.com/api/) are a great place to sta
 [Steel examples]: ../examples/README.md
 [ERC20 Counter]: ../examples/erc20-counter/README.md
 [create-steel-app]: docs/create-steel-app/README.md
+[video tutorial]: https://www.loom.com/share/0e2ede7b9d50464fb729819a8bd24e05?sid=3009618b-38ea-449a-90dc-9b39ef569c67
 [Introducing Steel 1.0]: https://risczero.com/blog/introducing-steel-1.0
 [What is Steel?]: docs/what-is-steel.md
 [How does Steel work?]: docs/how-does-steel-work.md
