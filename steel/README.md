@@ -12,28 +12,27 @@ Our partners are already developing game-changing applications with Steel.  One 
 
 The recommended place is to start is with the [Steel examples](../examples/README.md), specifically the [ERC20 Counter](../examples/erc20-counter/README.md) example. 
 
-The [create-steel-app](book/create-steel-app/) script will allow you to set up the erc20-counter example locally in one command:
+The [create-steel-app](docs/create-steel-app/) script will allow you to set up the erc20-counter example locally in one command:
 
-`sh -c "$(curl -fsSL PLACEHOLDER_URL)"`
+`sh -c "$(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/steel/docs/create-steel-app/create-steel-app)"`
 
 This example act as your skeleton project structure for further development. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. 
 
-You can read more about create-steel-app on its [README](book/create-steel-app/README.md), and the documentation below uses the ERC20-counter example as a guide to explain Steel and how it works.
+You can read more about create-steel-app on its [README](docs/create-steel-app/README.md), and the documentation below uses the ERC20-counter example as a guide to explain Steel and how it works.
 
 ## Documentation 
 
 This documentation covers the core concepts of Steel. After reading, you will understand how Steel creates verifiable EVM execution proofs allowing you to carry out execution off-chain verfiably. 
 
    - [Introducing Steel 1.0](https://risczero.com/blog/introducing-steel-1.0) (blog post)
-   - [What is Steel?](book/what-is-steel.md)
-   - [How does Steel work?](book/how-does-steel-work.md)
-     - [View Calls](book/how-does-steel-work.md#view-calls)
-     - [Proving EVM execution within the zkVM](book/how-does-steel-work.md#proving-evm-execution-within-the-zkvm)
-     - [Verifying the Proof On-Chain](book/how-does-steel-work.md#verifying-the-proof-on-chain)
-   - [Steel Commitments](book/steel-commitments.md)
-     - [Trust Anchor: The Blockhash](book/steel-commitments.md#steels-trust-anchor-the-blockhash)
-     - [What is a Steel Commitment?](book/steel-commitments.md#what-is-a-steel-commitment)
-     - [Validation of Steel Commitments](book/steel-commitments.md#validation-of-steel-commitments)
+   - [What is Steel?](docs/what-is-steel.md)
+   - [How does Steel work?](docs/how-does-steel-work.md)
+     - [Proving EVM execution within the zkVM](docs/how-does-steel-work.md#proving-evm-execution-within-the-zkvm)
+     - [Verifying the Proof On-Chain](docs/how-does-steel-work.md#verifying-the-proof-on-chain)
+   - [Steel Commitments](docs/steel-commitments.md)
+     - [Trust Anchor: The Blockhash](docs/steel-commitments.md#steels-trust-anchor-the-blockhash)
+     - [What is a Steel Commitment?](docs/steel-commitments.md#what-is-a-steel-commitment)
+     - [Validation of Steel Commitments](docs/steel-commitments.md#validation-of-steel-commitments)
 
 ## Further Reading & Ask Questions
 

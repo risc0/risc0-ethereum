@@ -1,7 +1,5 @@
 # How does Steel work
 
-## View Calls
-
 A fundamental operation in smart contracts is to look up data from other contracts, such as the ERC20 token balance of a specific address. This operation is known as a “view call”’ \- it “views” state without altering it. Steels allows developers to query EVM state, within the zkVM, by just defining the Solidity method they wish to view call (using alloy’s [sol\! macro](https://alloy.rs/examples/sol-macro/index.html)).
 
 ```javascript
