@@ -12,28 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{convert::Infallible, fmt::Debug, rc::Rc};
+use std::{convert::Infallible, rc::Rc};
 
-use crate::mpt::{MerkleTrie, EMPTY_ROOT_HASH};
+use crate::mpt::MerkleTrie;
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
-    Address, Bytes, TxNumber, B256, U256,
+    Address, Bytes, B256, U256,
 };
-use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
 use revm::{
-    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
+    primitives::{AccountInfo, Bytecode},
     Database,
 };
+
+pub use alloy_consensus::Account as StateAccount;
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
 /// It is backed by a single [MerkleTrie] for the accounts and one [MerkleTrie] each for the
 /// accounts' stores. It panics when querying data not contained in the tries. This design allows
 /// storage keys to be queried by storage trie root hash, but not by account, which is required to
-/// implement [revm::DatabaseRef]. Thus, in order to use [StateDb] in revm, [WrapStateDb] must be
+/// implement [DatabaseRef]. Thus, in order to use [StateDb] in revm, a wrapper must be
 /// used, which caches the appropriate storage trie root for each basic account query, thus
 /// requiring mutability.
+///
+/// [DatabaseRef]: revm::DatabaseRef
 pub struct StateDb {
     /// State MPT.
     state_trie: MerkleTrie,
@@ -183,27 +186,14 @@ impl Database for WrapStateDb<'_> {
     }
 }
 
-/// Represents an account within the state trie.
-#[derive(Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
-pub struct StateAccount {
-    /// The number of transactions sent from this account's address.
-    pub nonce: TxNumber,
-    /// The number of Wei owned by this account's address.
-    pub balance: U256,
-    /// The root of the account's storage trie.
-    pub storage_root: B256,
-    /// The hash of the EVM code of this account.
-    pub code_hash: B256,
-}
-
-impl Default for StateAccount {
-    /// Provides default values for a [StateAccount].
-    fn default() -> Self {
-        Self {
-            nonce: 0,
-            balance: U256::ZERO,
-            storage_root: EMPTY_ROOT_HASH,
-            code_hash: KECCAK_EMPTY,
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy_consensus::constants::{EMPTY_ROOT_HASH, KECCAK_EMPTY};
+    #[test]
+    fn default_account() {
+        let account: StateAccount = Default::default();
+        assert_eq!(account.storage_root, EMPTY_ROOT_HASH);
+        assert_eq!(account.code_hash, KECCAK_EMPTY);
     }
 }

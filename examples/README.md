@@ -16,6 +16,6 @@ Explore a more advanced interaction between [Steel] and a custom Ethereum smart 
 This example shows how the [Steel] library can be used to call multiple view functions of a contract.
 This example generates a proof of a [Compound] cToken's APR (Annual Percentage Rate), showcasing the potential for on-chain verification of complex financial metrics.
 
-[coprocessor]: https://www.risczero.com/news/a-guide-to-zk-coprocessors-for-scalability
+[coprocessor]: https://risczero.com/blog/a-guide-to-zk-coprocessors-for-scalability
 [Steel]: ../steel
 [Compound]: https://compound.finance/

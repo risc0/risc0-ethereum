@@ -387,7 +387,7 @@ async fn corrupt_beacon_proof() {
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
-    let proof_value = &mut input_value["Beacon"]["proof"];
+    let proof_value = &mut input_value["Beacon"]["commit"]["proof"];
 
     // corrupt the first element in the Merkle path to something non-zero
     proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
@@ -418,7 +418,7 @@ async fn corrupt_beacon_proof_length() {
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
-    let proof_value = &mut input_value["Beacon"]["proof"];
+    let proof_value = &mut input_value["Beacon"]["commit"]["proof"];
 
     // corrupt the proof by appending a new value
     let proof = proof_value.as_array_mut().unwrap();

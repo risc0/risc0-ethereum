@@ -197,8 +197,7 @@ mod host {
         /// list. This does *not* set the access list as part of the transaction (as specified in
         /// EIP-2930), and thus can only be specified during preflight on the host.
         pub async fn prefetch_access_list(self, access_list: AccessList) -> Result<Self> {
-            // safe unwrap: env is never returned without a DB
-            let db = self.env.db.as_mut().unwrap();
+            let db = self.env.db_mut();
             db.add_access_list(access_list).await?;
 
             Ok(self)
@@ -247,17 +246,15 @@ mod host {
         /// [EvmEnv]: crate::EvmEnv
         pub async fn call_with_prefetch(self) -> Result<C::Return> {
             let access_list = {
-                // safe unwrap: env is never returned without a DB
-                let db = self.env.db.as_mut().unwrap();
-
                 let tx = <N as Network>::TransactionRequest::default()
                     .with_from(self.tx.caller)
-                    .with_gas_limit(self.tx.gas_limit as u128)
+                    .with_gas_limit(self.tx.gas_limit)
                     .with_gas_price(self.tx.gas_price.to())
                     .with_to(self.tx.to)
                     .with_value(self.tx.value)
                     .with_input(self.tx.data.clone());
 
+                let db = self.env.db_mut();
                 let provider = db.inner().provider();
                 let access_list = provider
                     .create_access_list(&tx)
@@ -285,10 +282,8 @@ where
     ///
     /// [EvmEnv]: crate::EvmEnv
     pub fn call(self) -> Result<C::Return, String> {
-        // safe unwrap: env is never returned without a DB
-        let state_db = self.env.db.as_ref().unwrap();
         let mut evm = new_evm::<_, H>(
-            WrapStateDb::new(state_db),
+            WrapStateDb::new(self.env.db()),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );

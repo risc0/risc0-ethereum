@@ -49,4 +49,4 @@ Options:
 ```
 
 [publisher]: ./src/bin/publisher.rs
-[Counter]: ../contracts/Counter.sol
+[Counter]: ../contracts/src/Counter.sol

@@ -29,6 +29,7 @@ pub struct GeneralizedIndex(NonZeroUsize);
 
 impl GeneralizedIndex {
     /// Creates a generalized index from the given value. It panics if the value is zero.
+    #[must_use]
     #[inline]
     pub const fn new(index: usize) -> Self {
         match NonZeroUsize::new(index) {
