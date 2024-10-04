@@ -20,11 +20,13 @@ pragma solidity ^0.8.9;
 /// @notice This library provides a collection of utilities to work with Steel commitments in Solidity.
 library Steel {
     /// @notice Represents a commitment to a specific block in the blockchain.
-    /// @dev The `blockID` encodes both the block identifier (block number or timestamp) and the version.
-    /// @dev The `blockDigest` is the block hash or beacon block root, used for validation.
+    /// @dev The `id` combines the version and the actual identifier of the claim, such as the block number.
+    /// @dev The `claim` represents the data being committed to, e.g. the hash of the execution block.
+    /// @dev The `configID` is the cryptographic digest of the network configuration.
     struct Commitment {
-        uint256 blockID;
-        bytes32 blockDigest;
+        uint256 id;
+        bytes32 claim;
+        bytes32 configID;
     }
 
     /// @notice The version of the Commitment is incorrect.
@@ -37,11 +39,11 @@ library Steel {
     /// @param commitment The Commitment struct to validate.
     /// @return True if the commitment's block hash matches the block hash of the block number, false otherwise.
     function validateCommitment(Commitment memory commitment) internal view returns (bool) {
-        (uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.blockID);
+        (uint240 claimID, uint16 version) = Encoding.decodeVersionedID(commitment.id);
         if (version == 0) {
-            return validateBlockCommitment(blockID, commitment.blockDigest);
+            return validateBlockCommitment(claimID, commitment.claim);
         } else if (version == 1) {
-            return validateBeaconCommitment(blockID, commitment.blockDigest);
+            return validateBeaconCommitment(claimID, commitment.claim);
         } else {
             revert InvalidCommitmentVersion();
         }
