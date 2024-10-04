@@ -90,36 +90,35 @@ impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     pub fn into_env(self) -> GuestEvmEnv<H> {
         let mut env = self.input.into_env();
-        env.commitment = self.commit.commit(&env.header);
+        env.commit = self.commit.commit(&env.header);
 
         env
     }
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
+pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H, Commitment>;
 
 /// The environment to execute the contract calls in.
-pub struct EvmEnv<D, H> {
+pub struct EvmEnv<D, H, C> {
     db: Option<D>,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
-    commitment: Commitment,
+    commit: C,
 }
 
-impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
+impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
     /// Creates a new environment.
     ///
     /// It uses the default configuration for the latest specification.
-    pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
+    pub(crate) fn new(db: D, header: Sealed<H>, commit: C) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-        let commitment = Commitment::from_block_header(&header);
 
         Self {
             db: Some(db),
             cfg_env,
             header,
-            commitment,
+            commit,
         }
     }
 
@@ -140,18 +139,6 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
         &self.header
     }
 
-    /// Returns the [Commitment] used to validate the environment.
-    #[inline]
-    pub fn commitment(&self) -> &Commitment {
-        &self.commitment
-    }
-
-    /// Consumes and returns the [Commitment] used to validate the environment.
-    #[inline]
-    pub fn into_commitment(self) -> Commitment {
-        self.commitment
-    }
-
     fn db(&self) -> &D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_ref().unwrap()
@@ -161,6 +148,20 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     fn db_mut(&mut self) -> &mut D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_mut().unwrap()
+    }
+}
+
+impl<D, H: EvmBlockHeader> EvmEnv<D, H, Commitment> {
+    /// Returns the [Commitment] used to validate the environment.
+    #[inline]
+    pub fn commitment(&self) -> &Commitment {
+        &self.commit
+    }
+
+    /// Consumes and returns the [Commitment] used to validate the environment.
+    #[inline]
+    pub fn into_commitment(self) -> Commitment {
+        self.commit
     }
 }
 

@@ -105,11 +105,7 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 #[cfg(feature = "host")]
 pub(crate) mod host {
     use super::*;
-    use crate::{
-        ethereum::EthBlockHeader,
-        host::{db::AlloyDb, HostEvmEnv},
-        BlockInput,
-    };
+    use crate::ethereum::EthBlockHeader;
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
@@ -118,33 +114,6 @@ pub(crate) mod host {
     use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use proofs::ProofAndWitness;
     use url::Url;
-
-    impl BeaconInput<EthBlockHeader> {
-        /// Derives the verifiable input from a [HostEvmEnv] and a Beacon API endpoint.
-        pub(crate) async fn from_env_and_endpoint<T, P>(
-            env: HostEvmEnv<AlloyDb<T, Ethereum, P>, EthBlockHeader>,
-            url: Url,
-        ) -> anyhow::Result<Self>
-        where
-            T: Transport + Clone,
-            P: Provider<T, Ethereum>,
-        {
-            let client = BeaconClient::new(url).context("invalid URL")?;
-            let (commit, beacon_root) =
-                create_beacon_commit(env.header(), "block_hash".into(), env.provider(), &client)
-                    .await?;
-            let block_hash = env.header().seal();
-            commit
-                .verify(block_hash, beacon_root)
-                .context("proof derived from API does not verify")?;
-
-            let input = BlockInput::from_env(env)
-                .await
-                .context("failed to derive block input")?;
-
-            Ok(BeaconInput::new(input, commit))
-        }
-    }
 
     pub(crate) mod client {
         use ethereum_consensus::{
@@ -229,6 +198,35 @@ pub(crate) mod host {
                 }
                 Ok(result.inner.data)
             }
+        }
+    }
+
+    impl BeaconCommit {
+        /// Creates a new `BeaconCommit` for the provided header which proofs the inclusion of the
+        /// corresponding block hash in the referenced beacon block.
+        pub(crate) async fn from_header<T, P>(
+            header: &Sealed<EthBlockHeader>,
+            rpc_provider: P,
+            beacon_url: Url,
+        ) -> anyhow::Result<Self>
+        where
+            T: Transport + Clone,
+            P: Provider<T, Ethereum>,
+        {
+            let client = BeaconClient::new(beacon_url).context("invalid URL")?;
+            let (commit, beacon_root) =
+                create_beacon_commit(header, "block_hash".into(), rpc_provider, &client).await?;
+            commit
+                .verify(header.seal(), beacon_root)
+                .context("proof derived from API does not verify")?;
+
+            log::info!(
+                "Committing to parent beacon block: root={},timestamp={}",
+                beacon_root,
+                commit.timestamp
+            );
+
+            Ok(commit)
         }
     }
 
