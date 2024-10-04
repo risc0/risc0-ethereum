@@ -19,10 +19,11 @@ use std::{
     os::unix::io::{AsRawFd, FromRawFd},
 };
 
-use alloy::{primitives::Bytes, sol_types::SolValue};
+use alloy::sol_types::SolValue;
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
 use risc0_ethereum_contracts::encode_seal;
+use risc0_forge_ffi::JournalSeal;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 
 #[derive(Parser, Debug)]
@@ -64,7 +65,10 @@ pub fn main() -> Result<()> {
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<Vec<u8>> {
     let elf = std::fs::read(elf_path).expect("failed to read guest ELF");
     let (journal, seal) = prove(&elf, &input)?;
-    let calldata = (Bytes(journal.into()), Bytes(seal.into()));
+    let calldata = JournalSeal {
+        journal: journal.into(),
+        seal: seal.into(),
+    };
     Ok(calldata.abi_encode())
 }
 
