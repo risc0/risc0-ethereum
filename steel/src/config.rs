@@ -111,15 +111,15 @@ impl StructHash for (&SpecId, &ForkCondition) {
     /// The hash is H(SpecID || ForkCondition::name || ForkCondition::value )
     fn digest<D: Digest>(&self) -> Output<D> {
         let mut hasher = D::new();
-        hasher.update(&[*self.0 as u8]);
+        hasher.update([*self.0 as u8]);
         match self.1 {
             ForkCondition::Block(n) => {
                 hasher.update(b"Block");
-                hasher.update(&n.to_le_bytes());
+                hasher.update(n.to_le_bytes());
             }
             ForkCondition::Timestamp(ts) => {
                 hasher.update(b"Timestamp");
-                hasher.update(&ts.to_le_bytes());
+                hasher.update(ts.to_le_bytes());
             }
         }
         hasher.finalize()
@@ -140,8 +140,8 @@ impl StructHash for ChainSpec {
         self.forks
             .iter()
             .for_each(|f| hasher.update(f.digest::<D>()));
-        hasher.update(&self.chain_id.to_le_bytes());
-        hasher.update(&u16::try_from(self.forks.len()).unwrap().to_le_bytes());
+        hasher.update(self.chain_id.to_le_bytes());
+        hasher.update(u16::try_from(self.forks.len()).unwrap().to_le_bytes());
 
         hasher.finalize()
     }
