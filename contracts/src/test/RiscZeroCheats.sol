@@ -30,6 +30,12 @@ import {Strings2} from "./utils/Strings2.sol";
 abstract contract RiscZeroCheats is CommonBase {
     using Strings2 for bytes;
 
+    /// @dev Journal and Seal struct used to decode the journal and seal from the `risc0-forge-ffi` `prove` command.
+    struct JournalSeal {
+        bytes journal;
+        bytes seal;
+    }
+
     /// @notice Returns whether we are using the prover and verifier in dev-mode, or fully verifying.
     /// @dev This environment variable, along with the respective options in the zkVM, are controlled
     ///      with the `RISC0_DEV_MODE` environment variable.
@@ -64,7 +70,8 @@ abstract contract RiscZeroCheats is CommonBase {
         imageRunnerInput[i++] = "prove";
         imageRunnerInput[i++] = elf_path;
         imageRunnerInput[i++] = input.toHexString();
-        return abi.decode(vm.ffi(imageRunnerInput), (bytes, bytes));
+        JournalSeal memory journalSeal = abi.decode(vm.ffi(imageRunnerInput), (JournalSeal));
+        return (journalSeal.journal, journalSeal.seal);
     }
 
     /// @notice Deploy either a test or fully verifying `RiscZeroGroth16Verifier` depending on `devMode()`.

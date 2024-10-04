@@ -28,5 +28,5 @@ You can install [Steel] with `cargo add risc0-steel`, check out the examples in 
 [template]: https://github.com/risc0/bonsai-foundry-template
 [dev.risczero.com]: https://dev.risczero.com
 [risc0-quickstart]: https://dev.risczero.com/api/zkvm/quickstart
-[bonsai-quickstart]: https://dev.risczero.com/api/bonsai/quickstart
+[bonsai-quickstart]: https://dev.risczero.com/bonsai
 [alloy]: https://github.com/alloy-rs
