@@ -137,10 +137,13 @@ impl StructHash for ChainSpec {
 
         let mut hasher = D::new();
         hasher.update(tag_digest);
+        // down
         self.forks
             .iter()
-            .for_each(|f| hasher.update(f.digest::<D>()));
+            .for_each(|fork| hasher.update(fork.digest::<D>()));
+        // data
         hasher.update(self.chain_id.to_le_bytes());
+        // down.len() as u16
         hasher.update(u16::try_from(self.forks.len()).unwrap().to_le_bytes());
 
         hasher.finalize()

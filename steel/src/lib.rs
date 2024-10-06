@@ -116,6 +116,7 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     ///
     /// It uses the default configuration for the latest specification.
     pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
+        // this matches with_chain_spec(&ChainSpec::default()), thus DEFAULT_DIGEST is correct hash
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
         let commitment = Commitment::new(
             CommitmentVersion::Block as u16,
