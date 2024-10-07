@@ -65,7 +65,7 @@ let mut contract = Contract::preflight(args.token_contract, &mut env);
 let evm_input = env.into_input().await?
 ```
 
- `preflight` handles calling the RPC provider for the necessary state and for the Merkle storage proofs via `eth_getProof` ([EIP-1186]). These Merkle proofs are given to the guest which verifies them to prove that the RPC data is valid, without having to run a full node and without trusting the host or RPC provider.
+The `preflight` step calls the RPC provider for the necessary state and for the Merkle storage proofs via `eth_getProof` ([EIP-1186]). These Merkle proofs are given to the guest which verifies them to prove that the RPC data is valid, without having to run a full node and without trusting the host or RPC provider.
 
 ## Verifying the proof on-chain
 
