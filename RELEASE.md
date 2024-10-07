@@ -13,6 +13,8 @@
      * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+     * Update references to the `main` branch
+       * Search for `risc0/risc0-ethereum/refs/heads/main`
      * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
