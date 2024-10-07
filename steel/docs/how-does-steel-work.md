@@ -110,7 +110,10 @@ function increment(bytes calldata journalData, bytes calldata seal) external {
 
 Within a single proof, we’ve seen Steel can handle view calls orders of magnitude larger than on-chain execution can handle. Specifically, one partner application has shown gas savings of 1.2 *billion* gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 *blocks* worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify (see [RISC Zero’s verification contracts]).
 
-With proof aggregation, cost savings are amortized even further, by taking multiple separate applications of Steel, and wrapping them all up into a single SNARK.
+With proof aggregation, cost savings are amortized even further, by taking multiple separate applications of RISC Zero, and wrapping them all up into a single SNARK.
+Aggregation is a key feature of [Boundless][boundless-website]
+
+[boundless-website]: https://beboundless.xyz/
 
 ---
 

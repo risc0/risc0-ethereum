@@ -64,7 +64,7 @@ struct Commitment {
 }
 ```
 
-In the `increment` function in the `Counter` contract, we saw this require statement: \`\`
+In the `increment` function in the `Counter` contract, we saw this require statement:
 
 ```solidity
 require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
@@ -72,7 +72,7 @@ require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
 
 The [Steel library](https://github.com/risc0/risc0-ethereum/blob/main/contracts/src/steel/Steel.sol) contains the function `validateCommitment` :
 
-```javascript
+```solidity
 function validateCommitment(Commitment memory commitment) internal view returns (bool) {
 	(uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.blockID);
 	if (version == 0) {
@@ -104,7 +104,7 @@ function validateBlockCommitment(uint256 blockNumber, bytes32 blockHash) interna
 }
 ```
 
-This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old. With Ethereum's 12-second block time, this provides a window of about 50 minutes to generate the proof and ensure that the validating transaction is contained in a block. This approach is ideal for most scenarios, including complex computations, as it typically provides sufficient time to generate the proof.
+This method uses the `blockhash` opcode to commit to a block hash that is no more than 256 blocks old. With Ethereum's 12-second block time, this provides a window of about 50 minutes to generate the proof and ensure that the validating transaction is contained in a block. This approach will work for most scenarios, including complex computations, as it typically provides sufficient time to generate the proof.
 
 2. Beacon Block Root Commitment
 
@@ -121,7 +121,7 @@ function validateBeaconCommitment(uint256 blockTimestamp, bytes32 blockRoot) int
 }
 ```
 
-The second method allows validation using the [EIP-4788] beacon roots contract. This technique extends the time window in which the proof can be validated on-chain to just over a day, making it suitable for scenarios requiring more extensive computation. It requires access to a beacon API endpoint and can be enabled by calling `EvmEnv::into_beacon_input`. However, this approach is specific to Ethereum Steel proofs and depends on the implementation of EIP-4788.
+The second method allows validation using the [EIP-4788] beacon roots contract. This technique extends the time window in which the proof can be validated on-chain to just over a day. It requires access to a beacon API endpoint and can be enabled by calling `EvmEnv::into_beacon_input`. However, this approach is specific to Ethereum (L1) Steel proofs and depends on the implementation of EIP-4788.
 
 Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation. This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.  
 
