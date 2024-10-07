@@ -69,7 +69,7 @@ The `preflight` step calls the RPC provider for the necessary state and for the 
 
 ## Verifying the proof on-chain
 
-At this point, we have generated a proof of: a view call of state on-chain and some execution based on that view call state (i.e. checking that the balance is at least 1). 
+At this point, we have generated a proof of: a view call of state on-chain and some execution based on that view call state (e.g. checking that the balance is at least 1). 
 
 When using Steel, the general pattern for onchain functions incorporating Steel follows this pseudo-code:
 
