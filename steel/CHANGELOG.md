@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.4](https://github.com/risc0/risc0-ethereum/releases/tag/v1.1.4)
 
 ### ⚡️ Features
 
