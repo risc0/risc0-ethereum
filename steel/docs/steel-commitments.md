@@ -59,8 +59,9 @@ A commitment consists of two values: the block ID and the block digest. The bloc
 
 ```solidity
 struct Commitment {
-    uint256 blockID;
-    bytes32 blockDigest;
+    uint256 id;
+    bytes32 digest;
+    bytes32 configID
 }
 ```
 
@@ -74,11 +75,11 @@ The [Steel library](https://github.com/risc0/risc0-ethereum/blob/main/contracts/
 
 ```solidity
 function validateCommitment(Commitment memory commitment) internal view returns (bool) {
-    (uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.blockID);
+    (uint240 claimID, uint16 version) = Encoding.decodeVersionedID(commitment.id);
     if (version == 0) {
-        return validateBlockCommitment(blockID, commitment.blockDigest);
+        return validateBlockCommitment(claimID, commitment.digest);
     } else if (version == 1) {
-        return validateBeaconCommitment(blockID, commitment.blockDigest);
+        return validateBeaconCommitment(claimID, commitment.digest);
     } else {
         revert InvalidCommitmentVersion();
     }
@@ -109,15 +110,15 @@ This method uses the `blockhash` opcode to commit to a block hash that is no m
 2. Beacon Block Root Commitment
 
 ```solidity
-/// @notice Validates if the provided beacon commitment matches the block root of the given timestamp.
-/// @param blockTimestamp The timestamp to compare against.
-/// @param blockRoot The block root to validate.
-/// @return True if the block's block root matches the block root, false otherwise.
-function validateBeaconCommitment(uint256 blockTimestamp, bytes32 blockRoot) internal view returns (bool) {
-    if (block.timestamp - blockTimestamp > 12 * 8191) {
+/// @notice Validates if the provided block commitment matches the block hash of the given block number.
+/// @param blockNumber The block number to compare against.
+/// @param blockHash The block hash to validate.
+/// @return True if the block's block hash matches the block hash, false otherwise.
+function validateBlockCommitment(uint256 blockNumber, bytes32 blockHash) internal view returns (bool) {
+    if (block.number - blockNumber > 256) {
         revert CommitmentTooOld();
     }
-    return blockRoot == Beacon.blockRoot(blockTimestamp);
+    return blockHash == blockhash(blockNumber);
 }
 ```
 
