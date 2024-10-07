@@ -16,7 +16,7 @@
 #![no_main]
 
 use alloy_primitives::{address, Address};
-use alloy_sol_types::{sol, SolValue};
+use alloy_sol_types::sol;
 use risc0_steel::{
     ethereum::{EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
     Contract,

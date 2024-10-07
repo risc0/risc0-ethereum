@@ -15,13 +15,13 @@
 use alloy_sol_types::{SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
-use core::{APRCommitment, CometMainInterface, CONTRACT};
-use methods::TOKEN_STATS_ELF;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
     Contract,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
+use token_stats_core::{APRCommitment, CometMainInterface, CONTRACT};
+use token_stats_methods::TOKEN_STATS_ELF;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
@@ -73,8 +73,6 @@ async fn main() -> Result<()> {
         CONTRACT,
         rate
     );
-    // Get the commitment to verify execution later.
-    let commitment = env.commitment().clone();
 
     // Finally, construct the input from the environment.
     let input = env.into_input().await?;
@@ -91,9 +89,10 @@ async fn main() -> Result<()> {
             .context("failed to run executor")?
     };
 
+    // The journal should be the ABI encoded commitment.
     let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes, true)
         .context("failed to decode journal")?;
-    assert_eq!(apr_commit.commitment, commitment);
+    println!("{:?}", apr_commit.commitment);
 
     // Calculation is handling `/ 10^18 * 100` to match precision for a percentage.
     let apr = apr_commit.annualSupplyRate as f64 / 10f64.powi(16);

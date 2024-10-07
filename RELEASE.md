@@ -13,6 +13,9 @@
      * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+     * Update references to the `main` branch
+       * Search for `risc0/risc0-ethereum/refs/heads/main`
+     * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
          >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
@@ -25,6 +28,7 @@
      * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+     * Update `steel/CHANGELOG.md` to start a new section for the next release.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
@@ -36,13 +40,17 @@
 
    Crates currently published to `crates.io` are:
 
-   * `risc0-steel`
+   * ~~`risc0-steel`~~
+
+     > NOTE: risc0-steel currently cannot be published to crates.io.
+     > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
+
    * `risc0-build-ethereum`
+   * `risc0-ethereum-contracts`
+
+   > NOTE: When publishing a new crate, make sure to add github:risc0:maintainers as an owner.
 
    <br/>
-
-   > NOTE: We intend to publish more of the crates in the future.
-   > Blocking issue is that the other crates depend on building Solidity smart contracts as part of a `build.rs` script, which makes it incompatible with `crates.io`.
 
    ```sh
    # Log in to crates.io. Create a token that is restricted to what you need to do (e.g. publish update) and set an expiry.
@@ -64,6 +72,8 @@
    2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finsh the operation to add the new verifier to the router.
 
    3. Document the new addresses and version in the `dev.risczero.com` docs.
+
+     Use [contracts/generate_contract_address_table.py] to generate the tables. Python 3.11+ is required.
 
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 

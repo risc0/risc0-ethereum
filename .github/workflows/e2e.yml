@@ -1,0 +1,101 @@
+name: Testnet
+
+on:
+  merge_group:
+  pull_request:
+    branches: [main, "release-*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# this is needed to gain access via OIDC to the S3 bucket for caching
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  RISC0_TOOLCHAIN_VERSION: r0.1.79.0-2
+  RISC0_MONOREPO_REF: "release-1.1"
+
+jobs:
+  e2e-tests:
+    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    strategy:
+      matrix:
+        prover: [bonsai, local]
+        release:
+          - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+        # Run on Linux with GPU for faster local proving.
+        include:
+          - os: Linux
+            feature: cuda
+            device: nvidia_rtx_a5000
+        # Exclude Bonsai proving on non-release branches.
+        exclude:
+          - release: false
+            prover: bonsai
+    env:
+      RUST_BACKTRACE: full
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Use Bonsai for release branches
+        if: matrix.prover == 'bonsai'
+        run: |
+            echo "BONSAI_API_URL=${{ secrets.BONSAI_API_URL }}" >> $GITHUB_ENV
+            echo "BONSAI_API_KEY=${{ secrets.BONSAI_API_KEY }}" >> $GITHUB_ENV
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@main
+      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/sccache@main
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
+      - name: Setup Kurtosis
+        run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+          kurtosis analytics disable
+          echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
+        shell: bash
+      - name: Start local Ethereum testnet
+        run: |
+          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package@2e9e5a41784f792a206f1a108c2c96830b2c95ef
+          echo "ETH_TESTNET_EL_URL=http://$(kurtosis port print local-eth-testnet el-1-geth-lighthouse rpc)" >> $GITHUB_ENV
+          echo "ETH_TESTNET_CL_URL=$(kurtosis port print local-eth-testnet cl-1-lighthouse-geth http)" >> $GITHUB_ENV
+      - name: Wait for the local Ethereum testnet to come up
+        run: while [ $(cast rpc --rpc-url $ETH_TESTNET_EL_URL eth_blockNumber | jq -re) == "0x0" ]; do sleep 5; done
+        shell: bash
+      - run: cargo build
+        working-directory: examples/erc20-counter
+      - name: Run E2E test (Block Commitment)
+        run: ./e2e-test.sh
+        env:
+          ETH_RPC_URL: ${{ env.ETH_TESTNET_EL_URL }}
+          ETH_WALLET_ADDRESS: "0x802dCbE1B1A97554B4F50DB5119E37E8e7336417"
+          ETH_WALLET_PRIVATE_KEY: "0x5d2344259f42259f82d2c140aa66102ba89b57b4883ee441a8b312622bd42491"
+        working-directory: examples/erc20-counter
+      - name: Run E2E test (Beacon Commitment)
+        run: ./e2e-test.sh
+        env:
+          ETH_RPC_URL: ${{ env.ETH_TESTNET_EL_URL }}
+          BEACON_API_URL: ${{ env.ETH_TESTNET_CL_URL }}
+          ETH_WALLET_ADDRESS: "0x802dCbE1B1A97554B4F50DB5119E37E8e7336417"
+          ETH_WALLET_PRIVATE_KEY: "0x5d2344259f42259f82d2c140aa66102ba89b57b4883ee441a8b312622bd42491"
+        working-directory: examples/erc20-counter
+      - name: Stop local Ethereum testnet
+        if: always()
+        run: kurtosis enclave rm -f local-eth-testnet
+      - run: sccache --show-stats

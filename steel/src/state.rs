@@ -12,32 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{convert::Infallible, fmt::Debug, rc::Rc};
+use std::{convert::Infallible, rc::Rc};
 
-use crate::mpt::{MerkleTrie, EMPTY_ROOT_HASH};
-use alloy_primitives::{keccak256, Address, Bytes, TxNumber, B256, U256};
-use alloy_rlp_derive::{RlpDecodable, RlpEncodable};
+use crate::mpt::MerkleTrie;
+use alloy_primitives::{
+    keccak256,
+    map::{AddressHashMap, B256HashMap, HashMap},
+    Address, Bytes, B256, U256,
+};
 use revm::{
-    primitives::{AccountInfo, Bytecode, HashMap, KECCAK_EMPTY},
+    primitives::{AccountInfo, Bytecode},
     Database,
 };
+
+pub use alloy_consensus::Account as StateAccount;
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
 /// It is backed by a single [MerkleTrie] for the accounts and one [MerkleTrie] each for the
 /// accounts' stores. It panics when querying data not contained in the tries. This design allows
 /// storage keys to be queried by storage trie root hash, but not by account, which is required to
-/// implement [revm::DatabaseRef]. Thus, in order to use [StateDb] in revm, [WrapStateDb] must be
+/// implement [DatabaseRef]. Thus, in order to use [StateDb] in revm, a wrapper must be
 /// used, which caches the appropriate storage trie root for each basic account query, thus
 /// requiring mutability.
+///
+/// [DatabaseRef]: revm::DatabaseRef
 pub struct StateDb {
     /// State MPT.
     state_trie: MerkleTrie,
     /// Storage MPTs to their root hash.
     /// [Rc] is used fore MPT deduplication.
-    storage_tries: HashMap<B256, Rc<MerkleTrie>>,
+    storage_tries: B256HashMap<Rc<MerkleTrie>>,
     /// Contracts by their hash.
-    contracts: HashMap<B256, Bytes>,
+    contracts: B256HashMap<Bytes>,
     /// Block hashes by their number.
     block_hashes: HashMap<u64, B256>,
 }
@@ -70,14 +77,14 @@ impl StateDb {
     fn account(&self, address: Address) -> Option<StateAccount> {
         self.state_trie
             .get_rlp(keccak256(address))
-            .expect("invalid state value")
+            .expect("Invalid encoded state trie value")
     }
 
     #[inline]
     fn code_by_hash(&self, hash: B256) -> &Bytes {
         self.contracts
             .get(&hash)
-            .unwrap_or_else(|| panic!("code not found: {}", hash))
+            .unwrap_or_else(|| panic!("No code with hash: {}", hash))
     }
 
     #[inline]
@@ -85,7 +92,7 @@ impl StateDb {
         let hash = self
             .block_hashes
             .get(&number)
-            .unwrap_or_else(|| panic!("block not found: {}", number));
+            .unwrap_or_else(|| panic!("No block with number: {}", number));
         *hash
     }
 
@@ -103,7 +110,7 @@ impl StateDb {
 /// account.
 pub struct WrapStateDb<'a> {
     inner: &'a StateDb,
-    account_storage: HashMap<Address, Option<Rc<MerkleTrie>>>,
+    account_storage: AddressHashMap<Option<Rc<MerkleTrie>>>,
 }
 
 impl<'a> WrapStateDb<'a> {
@@ -111,7 +118,7 @@ impl<'a> WrapStateDb<'a> {
     pub fn new(inner: &'a StateDb) -> Self {
         Self {
             inner,
-            account_storage: HashMap::new(),
+            account_storage: Default::default(),
         }
     }
 }
@@ -160,12 +167,12 @@ impl Database for WrapStateDb<'_> {
         let storage = self
             .account_storage
             .get(&address)
-            .unwrap_or_else(|| panic!("storage not found: {:?}", address));
+            .unwrap_or_else(|| panic!("No storage trie with root: {}", address));
         match storage {
             Some(storage) => {
                 let val = storage
                     .get_rlp(keccak256(index.to_be_bytes::<32>()))
-                    .expect("invalid storage value");
+                    .expect("Invalid encoded storage value");
                 Ok(val.unwrap_or_default())
             }
             None => Ok(U256::ZERO),
@@ -179,27 +186,14 @@ impl Database for WrapStateDb<'_> {
     }
 }
 
-/// Represents an account within the state trie.
-#[derive(Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
-pub struct StateAccount {
-    /// The number of transactions sent from this account's address.
-    pub nonce: TxNumber,
-    /// The number of Wei owned by this account's address.
-    pub balance: U256,
-    /// The root of the account's storage trie.
-    pub storage_root: B256,
-    /// The hash of the EVM code of this account.
-    pub code_hash: B256,
-}
-
-impl Default for StateAccount {
-    /// Provides default values for a [StateAccount].
-    fn default() -> Self {
-        Self {
-            nonce: 0,
-            balance: U256::ZERO,
-            storage_root: EMPTY_ROOT_HASH,
-            code_hash: KECCAK_EMPTY,
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloy_consensus::constants::{EMPTY_ROOT_HASH, KECCAK_EMPTY};
+    #[test]
+    fn default_account() {
+        let account: StateAccount = Default::default();
+        assert_eq!(account.storage_root, EMPTY_ROOT_HASH);
+        assert_eq!(account.code_hash, KECCAK_EMPTY);
     }
 }

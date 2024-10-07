@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::{hash_map::Entry, HashMap, HashSet};
-
 use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
@@ -23,7 +21,10 @@ use alloy::{
     rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
 };
-use alloy_primitives::{Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256};
+use alloy_primitives::{
+    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashSet},
+    Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256,
+};
 use anyhow::{ensure, Context, Result};
 use revm::{
     primitives::{AccountInfo, Bytecode},
@@ -32,12 +33,10 @@ use revm::{
 
 /// A simple revm [Database] wrapper that records all DB queries.
 pub struct ProofDb<D> {
-    accounts: HashMap<Address, HashSet<StorageKey>>,
-    contracts: HashMap<B256, Bytes>,
+    accounts: AddressHashMap<B256HashSet>,
+    contracts: B256HashMap<Bytes>,
     block_hash_numbers: HashSet<BlockNumber>,
-
-    proofs: HashMap<Address, AccountProof>,
-
+    proofs: AddressHashMap<AccountProof>,
     inner: D,
 }
 
@@ -45,7 +44,7 @@ struct AccountProof {
     /// The inclusion proof for this account.
     account_proof: Vec<Bytes>,
     /// The MPT inclusion proofs for several storage slots.
-    storage_proofs: HashMap<StorageKey, StorageProof>,
+    storage_proofs: B256HashMap<StorageProof>,
 }
 
 struct StorageProof {
@@ -59,11 +58,10 @@ impl<D: Database> ProofDb<D> {
     /// Creates a new ProofDb instance, with a [Database].
     pub fn new(db: D) -> Self {
         Self {
-            accounts: HashMap::new(),
-            contracts: HashMap::new(),
-            block_hash_numbers: HashSet::new(),
-
-            proofs: HashMap::new(),
+            accounts: Default::default(),
+            contracts: Default::default(),
+            block_hash_numbers: Default::default(),
+            proofs: Default::default(),
             inner: db,
         }
     }
@@ -76,7 +74,7 @@ impl<D: Database> ProofDb<D> {
     }
 
     /// Returns the referenced contracts
-    pub fn contracts(&self) -> &HashMap<B256, Bytes> {
+    pub fn contracts(&self) -> &B256HashMap<Bytes> {
         &self.contracts
     }
 
@@ -140,8 +138,12 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
     /// recorded by the [Database].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
-        let proofs = &mut self.proofs;
+        ensure!(
+            !self.accounts.is_empty(),
+            "no accounts accessed: use Contract::preflight"
+        );
 
+        let proofs = &mut self.proofs;
         for (address, storage_keys) in &self.accounts {
             let account_proof = proofs.get(address);
             let storage_keys: Vec<_> = storage_keys
@@ -157,28 +159,35 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                     .get_eip1186_proof(*address, storage_keys)
                     .await
                     .context("eth_getProof failed")?;
+                ensure!(
+                    &proof.address == address,
+                    "eth_getProof response does not match request"
+                );
                 add_proof(proofs, proof).context("invalid eth_getProof response")?;
             }
         }
 
         let state_nodes = self
             .accounts
-            .iter()
-            .flat_map(|(address, _)| proofs.get(address).unwrap().account_proof.iter());
+            .keys()
+            .filter_map(|address| proofs.get(address))
+            .flat_map(|proof| proof.account_proof.iter());
         let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
 
-        let mut storage_tries = HashMap::new();
+        let mut storage_tries = B256HashMap::default();
         for (address, storage_keys) in &self.accounts {
             // if no storage keys have been accessed, we don't need to prove anything
             if storage_keys.is_empty() {
                 continue;
             }
 
+            // safe unwrap: added a proof for each account in the previous loop
             let storage_proofs = &proofs.get(address).unwrap().storage_proofs;
 
             let storage_nodes = storage_keys
                 .iter()
-                .flat_map(|key| storage_proofs.get(key).unwrap().proof.iter());
+                .filter_map(|key| storage_proofs.get(key))
+                .flat_map(|proof| proof.proof.iter());
             let storage_trie =
                 MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
             let storage_root_hash = storage_trie.hash_slow();
@@ -247,7 +256,7 @@ fn filter_existing_keys(account_proof: Option<&AccountProof>) -> impl Fn(&Storag
 }
 
 fn add_proof(
-    proofs: &mut HashMap<Address, AccountProof>,
+    proofs: &mut AddressHashMap<AccountProof>,
     proof_response: EIP1186AccountProofResponse,
 ) -> Result<()> {
     // convert the response into a StorageProof
@@ -266,7 +275,7 @@ fn add_proof(
         .collect();
 
     match proofs.entry(proof_response.address) {
-        Entry::Occupied(mut entry) => {
+        hash_map::Entry::Occupied(mut entry) => {
             let account_proof = entry.get_mut();
             ensure!(
                 account_proof.account_proof == proof_response.account_proof,
@@ -274,7 +283,7 @@ fn add_proof(
             );
             account_proof.storage_proofs.extend(storage_proofs);
         }
-        Entry::Vacant(entry) => {
+        hash_map::Entry::Vacant(entry) => {
             entry.insert(AccountProof {
                 account_proof: proof_response.account_proof,
                 storage_proofs,

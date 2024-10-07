@@ -55,7 +55,7 @@ pub static ETH_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 });
 
 /// [EvmEnv] for Ethereum.
-pub type EthEvmEnv<D> = EvmEnv<D, EthBlockHeader>;
+pub type EthEvmEnv<D, C> = EvmEnv<D, EthBlockHeader, C>;
 
 /// [EvmInput] for Ethereum.
 pub type EthEvmInput = EvmInput<EthBlockHeader>;
@@ -94,7 +94,7 @@ impl EvmBlockHeader for EthBlockHeader {
         // technically, this is only valid after EIP-4399 but revm makes sure it is not used before
         blk_env.prevrandao = Some(header.mix_hash);
         if let Some(excess_blob_gas) = header.excess_blob_gas {
-            blk_env.set_blob_excess_gas_and_price(excess_blob_gas.try_into().unwrap())
+            blk_env.set_blob_excess_gas_and_price(excess_blob_gas)
         };
     }
 }

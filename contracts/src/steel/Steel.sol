@@ -20,11 +20,13 @@ pragma solidity ^0.8.9;
 /// @notice This library provides a collection of utilities to work with Steel commitments in Solidity.
 library Steel {
     /// @notice Represents a commitment to a specific block in the blockchain.
-    /// @dev The `blockID` encodes both the block identifier (block number or timestamp) and the version.
-    /// @dev The `blockDigest` is the block hash or beacon block root, used for validation.
+    /// @dev The `id` combines the version and the actual identifier of the claim, such as the block number.
+    /// @dev The `digest` represents the data being committed to, e.g. the hash of the execution block.
+    /// @dev The `configID` is the cryptographic digest of the network configuration.
     struct Commitment {
-        uint256 blockID;
-        bytes32 blockDigest;
+        uint256 id;
+        bytes32 digest;
+        bytes32 configID;
     }
 
     /// @notice The version of the Commitment is incorrect.
@@ -37,11 +39,11 @@ library Steel {
     /// @param commitment The Commitment struct to validate.
     /// @return True if the commitment's block hash matches the block hash of the block number, false otherwise.
     function validateCommitment(Commitment memory commitment) internal view returns (bool) {
-        (uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.blockID);
+        (uint240 claimID, uint16 version) = Encoding.decodeVersionedID(commitment.id);
         if (version == 0) {
-            return validateBlockCommitment(blockID, commitment.blockDigest);
+            return validateBlockCommitment(claimID, commitment.digest);
         } else if (version == 1) {
-            return validateBeaconCommitment(blockID, commitment.blockDigest);
+            return validateBeaconCommitment(claimID, commitment.digest);
         } else {
             revert InvalidCommitmentVersion();
         }
@@ -59,14 +61,14 @@ library Steel {
     }
 
     /// @notice Validates if the provided beacon commitment matches the block root of the given timestamp.
-    /// @param blockTimestamp The timestamp to compare against.
+    /// @param timestamp The timestamp to compare against.
     /// @param blockRoot The block root to validate.
     /// @return True if the block's block root matches the block root, false otherwise.
-    function validateBeaconCommitment(uint256 blockTimestamp, bytes32 blockRoot) internal view returns (bool) {
-        if (block.timestamp - blockTimestamp > 12 * 8191) {
+    function validateBeaconCommitment(uint256 timestamp, bytes32 blockRoot) internal view returns (bool) {
+        if (block.timestamp - timestamp > 12 * 8191) {
             revert CommitmentTooOld();
         }
-        return blockRoot == Beacon.blockRoot(blockTimestamp);
+        return blockRoot == Beacon.parentBlockRoot(timestamp);
     }
 }
 
@@ -76,22 +78,12 @@ library Beacon {
     /// @dev https://eips.ethereum.org/EIPS/eip-4788
     address internal constant BEACON_ROOTS_ADDRESS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
 
-    /// @notice The Beacon block root could not be found as the next block has not been issued yet.
-    error NoParentBeaconBlock();
-
-    /// @notice Attempts to find the root of the Beacon block with the given timestamp.
-    /// @dev Since the Beacon roots contract only returns the parent Beacon block’s root, we need to find the next
-    ///      Beacon block instead. This is done by adding the block time of 12s until a value is returned.
-    function blockRoot(uint256 timestamp) internal view returns (bytes32 root) {
-        uint256 blockTimestamp = block.timestamp;
-        while (true) {
-            timestamp += 12; // Beacon block time is 12 seconds
-            if (timestamp > blockTimestamp) revert NoParentBeaconBlock();
-
-            (bool success, bytes memory result) = BEACON_ROOTS_ADDRESS.staticcall(abi.encode(timestamp));
-            if (success) {
-                return abi.decode(result, (bytes32));
-            }
+    /// @notice Find the root of the Beacon block corresponding to the parent of the execution block with the given timestamp.
+    /// @return root Returns the corresponding Beacon block root or null, if no such block exists.
+    function parentBlockRoot(uint256 timestamp) internal view returns (bytes32 root) {
+        (bool success, bytes memory result) = BEACON_ROOTS_ADDRESS.staticcall(abi.encode(timestamp));
+        if (success) {
+            return abi.decode(result, (bytes32));
         }
     }
 }

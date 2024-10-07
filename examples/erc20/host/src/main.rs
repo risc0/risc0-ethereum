@@ -13,14 +13,13 @@
 // limitations under the License.
 
 use alloy_primitives::{address, Address};
-use alloy_sol_types::{sol, SolCall, SolValue};
+use alloy_sol_types::{sol, SolCall, SolType};
 use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
-    host::BlockNumberOrTag,
-    Contract,
+    Commitment, Contract,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use tracing_subscriber::EnvFilter;
@@ -78,8 +77,6 @@ async fn main() -> Result<()> {
         CONTRACT,
         returns._0
     );
-    // Get the commitment to verify execution later.
-    let commitment = env.commitment().clone();
 
     // Finally, construct the input from the environment.
     let input = env.into_input().await?;
@@ -96,9 +93,10 @@ async fn main() -> Result<()> {
             .context("failed to run executor")?
     };
 
-    // The commitment in the journal should match.
-    let bytes = session_info.journal.as_ref();
-    assert!(bytes.starts_with(&commitment.abi_encode()));
+    // The journal should be the ABI encoded commitment.
+    let commitment = Commitment::abi_decode(session_info.journal.as_ref(), true)
+        .context("failed to decode journal")?;
+    println!("{:?}", commitment);
 
     Ok(())
 }

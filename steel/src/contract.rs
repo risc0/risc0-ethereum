@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{
-    borrow::Borrow,
-    fmt::{Debug, Display},
-    marker::PhantomData,
-    mem,
-};
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, mem};
 
 use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
+use anyhow::anyhow;
 use revm::{
     primitives::{CfgEnvWithHandlerCfg, ExecutionResult, ResultAndState, SuccessReason},
     Database, Evm,
@@ -34,13 +30,13 @@ use revm::{
 ///
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Contract::preflight]. The environment can be initialized using
-///   [EthEvmEnv::from_rpc] or [EvmEnv::new].
+///   necessary proof, use [Contract::preflight]. The environment can be initialized using the
+///   [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
 /// ### Examples
-/// ```rust no_run
+/// ```rust,no_run
 /// # use risc0_steel::{ethereum::EthEvmEnv, Contract, host::BlockNumberOrTag};
 /// # use alloy_primitives::address;
 /// # use alloy_sol_types::sol;
@@ -53,14 +49,12 @@ use revm::{
 ///         function balanceOf(address account) external view returns (uint);
 ///     }
 /// }
-///
-/// let get_balance = IERC20::balanceOfCall {
-///     account: address!("F977814e90dA44bFA03b6295A0616a897441aceC"),
-/// };
+/// let account = address!("F977814e90dA44bFA03b6295A0616a897441aceC");
+/// let get_balance = IERC20::balanceOfCall { account };
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::from_rpc(url, BlockNumberOrTag::Latest).await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
 /// let mut contract = Contract::preflight(contract_address, &mut env);
 /// contract.call_builder(&get_balance).call().await?;
 ///
@@ -75,9 +69,9 @@ use revm::{
 /// # }
 /// ```
 ///
+/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv::builder
+/// [EvmEnv::builder]: crate::EvmEnv::builder
 /// [EvmInput::into_env]: crate::EvmInput::into_env
-/// [EvmEnv::new]: crate::EvmEnv::new
-/// [EthEvmEnv::from_rpc]: crate::ethereum::EthEvmEnv::from_rpc
 pub struct Contract<E> {
     address: Address,
     env: E,
@@ -90,7 +84,7 @@ impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
     }
 
     /// Initializes a call builder to execute a call on the contract.
-    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<C, &GuestEvmEnv<H>> {
+    pub fn call_builder<S: SolCall>(&self, call: &S) -> CallBuilder<S, &GuestEvmEnv<H>> {
         CallBuilder::new(self.env, self.address, call)
     }
 }
@@ -100,19 +94,19 @@ impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
 /// Once configured, call with [CallBuilder::call].
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct CallBuilder<C, E> {
-    tx: CallTxData<C>,
+pub struct CallBuilder<S, E> {
+    tx: CallTxData<S>,
     env: E,
 }
 
-impl<C, E> CallBuilder<C, E> {
+impl<S, E> CallBuilder<S, E> {
     /// The default gas limit for function calls.
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new builder for the given contract call.
-    fn new(env: E, address: Address, call: &C) -> Self
+    fn new(env: E, address: Address, call: &S) -> Self
     where
-        C: SolCall,
+        S: SolCall,
     {
         let tx = CallTxData {
             caller: address, // by default the contract calls itself
@@ -166,7 +160,7 @@ mod host {
     };
     use anyhow::{anyhow, Context, Result};
 
-    impl<'a, D: Database, H> Contract<&'a mut HostEvmEnv<D, H>> {
+    impl<'a, D: Database, H, C> Contract<&'a mut HostEvmEnv<D, H, C>> {
         /// Constructor for preflighting calls to an Ethereum contract on the host.
         ///
         /// Initializes the environment for calling functions on the Ethereum contract, fetching
@@ -175,26 +169,26 @@ mod host {
         ///
         /// [EvmEnv::into_input]: crate::EvmEnv::into_input
         /// [EvmEnv]: crate::EvmEnv
-        pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H>) -> Self {
+        pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H, C>) -> Self {
             Self { address, env }
         }
 
         /// Initializes a call builder to execute a call on the contract.
-        pub fn call_builder<C: SolCall>(
+        pub fn call_builder<S: SolCall>(
             &mut self,
-            call: &C,
-        ) -> CallBuilder<C, &mut HostEvmEnv<D, H>> {
+            call: &S,
+        ) -> CallBuilder<S, &mut HostEvmEnv<D, H, C>> {
             CallBuilder::new(self.env, self.address, call)
         }
     }
 
-    impl<'a, C, T, N, P, H> CallBuilder<C, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H>>
+    impl<'a, S, T, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H, C>>
     where
         T: Transport + Clone,
         N: Network,
         P: Provider<T, N> + Send + 'static,
-        C: SolCall + Send + 'static,
-        <C as SolCall>::Return: Send,
+        S: SolCall + Send + 'static,
+        <S as SolCall>::Return: Send,
         H: EvmBlockHeader + Clone + Send + 'static,
     {
         /// Fetches all the EIP-1186 storage proofs from the `access_list`. This can help to
@@ -203,7 +197,7 @@ mod host {
         /// list. This does *not* set the access list as part of the transaction (as specified in
         /// EIP-2930), and thus can only be specified during preflight on the host.
         pub async fn prefetch_access_list(self, access_list: AccessList) -> Result<Self> {
-            let db = self.env.db.as_mut().unwrap();
+            let db = self.env.db_mut();
             db.add_access_list(access_list).await?;
 
             Ok(self)
@@ -214,18 +208,18 @@ mod host {
         /// This uses [tokio::task::spawn_blocking] to run the blocking revm execution.
         ///
         /// [EvmEnv]: crate::EvmEnv
-        pub async fn call(self) -> Result<C::Return> {
+        pub async fn call(self) -> Result<S::Return> {
             log::info!(
                 "Executing preflight calling '{}' on {}",
-                C::SIGNATURE,
+                S::SIGNATURE,
                 self.tx.to
             );
 
-            let cfg = self.env.cfg_env.clone();
-            let header = self.env.header.inner().clone();
-            // we cannot clone the database, so it gets moved in and out of the task
+            // as mutable references are not possible, the DB must be moved in and out of the task
             let db = self.env.db.take().unwrap();
 
+            let cfg = self.env.cfg_env.clone();
+            let header = self.env.header.inner().clone();
             let (result, db) = tokio::task::spawn_blocking(move || {
                 let mut evm = new_evm(db, cfg, header);
                 let result = self.tx.transact(&mut evm);
@@ -234,11 +228,12 @@ mod host {
                 (result, db)
             })
             .await
-            .context("EVM execution panicked")?;
+            .expect("EVM execution panicked");
 
+            // restore the DB before handling errors, so that we never return an env without a DB
             self.env.db = Some(db);
 
-            result.map_err(|err| anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
+            result.map_err(|err| anyhow!("call '{}' failed: {}", S::SIGNATURE, err))
         }
 
         /// Automatically prefetches the access list before executing the call using an [EvmEnv]
@@ -249,18 +244,17 @@ mod host {
         /// [CallBuilder::call]. See the corresponding methods for more information.
         ///
         /// [EvmEnv]: crate::EvmEnv
-        pub async fn call_with_prefetch(self) -> Result<C::Return> {
+        pub async fn call_with_prefetch(self) -> Result<S::Return> {
             let access_list = {
-                let db = self.env.db.as_mut().unwrap();
-
                 let tx = <N as Network>::TransactionRequest::default()
                     .with_from(self.tx.caller)
-                    .with_gas_limit(self.tx.gas_limit as u128)
+                    .with_gas_limit(self.tx.gas_limit)
                     .with_gas_price(self.tx.gas_price.to())
                     .with_to(self.tx.to)
                     .with_value(self.tx.value)
                     .with_input(self.tx.data.clone());
 
+                let db = self.env.db_mut();
                 let provider = db.inner().provider();
                 let access_list = provider
                     .create_access_list(&tx)
@@ -279,49 +273,57 @@ mod host {
     }
 }
 
-impl<'a, C, H> CallBuilder<C, &'a GuestEvmEnv<H>>
+impl<'a, S, H> CallBuilder<S, &'a GuestEvmEnv<H>>
 where
-    C: SolCall,
+    S: SolCall,
     H: EvmBlockHeader,
 {
-    /// Executes the call with a [EvmEnv] constructed with [Contract::new].
+    /// Executes the call and returns an error if the call fails.
     ///
-    /// [EvmEnv]: crate::EvmEnv
-    pub fn call(self) -> C::Return {
-        let state_db = self.env.db.as_ref().unwrap();
+    /// In general, it's recommended to use [CallBuilder::call] unless explicit error handling is
+    /// required.
+    pub fn try_call(self) -> Result<S::Return, String> {
         let mut evm = new_evm::<_, H>(
-            WrapStateDb::new(state_db),
+            WrapStateDb::new(self.env.db()),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );
-        self.tx.transact(&mut evm).unwrap()
+        self.tx.transact(&mut evm)
+    }
+
+    /// Executes the call and panics on failure.
+    ///
+    /// A convenience wrapper for [CallBuilder::try_call], panicking if the call fails. Useful when
+    /// success is expected.
+    pub fn call(self) -> S::Return {
+        self.try_call().unwrap()
     }
 }
 
 /// Transaction data to be used with [CallBuilder] for an execution.
 #[derive(Debug, Clone)]
-struct CallTxData<C> {
+struct CallTxData<S> {
     caller: Address,
     gas_limit: u64,
     gas_price: U256,
     to: Address,
     value: U256,
     data: Vec<u8>,
-    phantom: PhantomData<C>,
+    phantom: PhantomData<S>,
 }
 
-impl<C: SolCall> CallTxData<C> {
+impl<S: SolCall> CallTxData<S> {
     /// Compile-time assertion that the call C has a return value.
     const RETURNS: () = assert!(
-        mem::size_of::<C::Return>() > 0,
+        mem::size_of::<S::Return>() > 0,
         "Function call must have a return value"
     );
 
     /// Executes the call in the provided [Evm].
-    fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<C::Return, String>
+    fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<S::Return, String>
     where
         DB: Database,
-        <DB as Database>::Error: Display,
+        <DB as Database>::Error: std::error::Error + Send + Sync + 'static,
     {
         #[allow(clippy::let_unit_value)]
         let _ = Self::RETURNS;
@@ -336,7 +338,7 @@ impl<C: SolCall> CallTxData<C> {
 
         let ResultAndState { result, .. } = evm
             .transact_preverified()
-            .map_err(|err| format!("EVM error: {}", err))?;
+            .map_err(|err| format!("EVM error: {:#}", anyhow!(err)))?;
         let output = match result {
             ExecutionResult::Success { reason, output, .. } => {
                 // there must be a return value to decode
@@ -349,10 +351,10 @@ impl<C: SolCall> CallTxData<C> {
             ExecutionResult::Revert { output, .. } => Err(format!("reverted: {}", output)),
             ExecutionResult::Halt { reason, .. } => Err(format!("halted: {:?}", reason)),
         }?;
-        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+        let returns = S::abi_decode_returns(&output.into_data(), true).map_err(|err| {
             format!(
                 "return type invalid; expected '{}': {}",
-                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
+                <S::ReturnTuple<'_> as SolType>::SOL_NAME,
                 err
             )
         })?;

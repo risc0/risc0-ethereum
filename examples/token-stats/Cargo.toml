@@ -18,7 +18,8 @@ alloy-sol-types = { version = "0.8" }
 anyhow = "1.0"
 clap = { version = "4.4", features = ["derive", "env"] }
 log = "0.4"
-methods = { path = "methods" }
+token-stats-core = { path = "core" }
+token-stats-methods = { path = "methods" }
 once_cell = "1.19"
 rlp = "0.5.2"
 serde = "1.0"

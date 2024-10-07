@@ -1,5 +1,5 @@
 [package]
-name = "core"
+name = "token-stats-core"
 version = "0.1.0"
 edition = "2021"
 
