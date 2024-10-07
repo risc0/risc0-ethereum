@@ -101,6 +101,8 @@ impl ChainSpec {
     }
 }
 
+// NOTE: We do not want to make this public, to avoid having multiple traits with the `digest` function in
+// the RISC Zero ecosystem of crates.
 /// A simple structured hasher.
 trait StructHash {
     fn digest<D: Digest>(&self) -> Output<D>;
