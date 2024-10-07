@@ -19,24 +19,66 @@ use crate::{
     beacon::BeaconInput,
     block::BlockInput,
     ethereum::{EthBlockHeader, EthEvmEnv},
+    host::db::ProviderDb,
     EvmBlockHeader, EvmEnv, EvmInput,
 };
 use alloy::{
     network::{BlockResponse, Ethereum, Network},
     providers::{Provider, ProviderBuilder, ReqwestProvider, RootProvider},
+    rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
     transports::{
         http::{Client, Http},
         Transport,
     },
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, ensure, Context, Result};
 use db::{AlloyDb, ProofDb, ProviderConfig};
 use url::Url;
 
 pub mod db;
 
-/// A block number (or tag - "latest", "earliest", "pending").
-pub type BlockNumberOrTag = alloy::rpc::types::BlockNumberOrTag;
+/// A block number (or tag - "latest", "safe", "finalized").
+/// This enum is used to specify which block to query when interacting with the blockchain.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum BlockNumberOrTag {
+    /// The most recent block in the canonical chain observed by the client.
+    #[default]
+    Latest,
+    /// The parent of the most recent block in the canonical chain observed by the client.
+    /// This is equivalent to `Latest - 1`.
+    Parent,
+    /// The most recent block considered "safe" by the client. This typically refers to a block
+    /// that is sufficiently deep in the chain to be considered irreversible.
+    Safe,
+    /// The most recent finalized block in the chain. Finalized blocks are guaranteed to be
+    /// part of the canonical chain.
+    Finalized,
+    /// A specific block number in the canonical chain.
+    Number(u64),
+}
+
+impl BlockNumberOrTag {
+    /// Converts the `BlockNumberOrTag` into the corresponding RPC type.
+    async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockNumberOrTag>
+    where
+        T: Transport + Clone,
+        N: Network,
+        P: Provider<T, N>,
+    {
+        let number = match self {
+            BlockNumberOrTag::Latest => AlloyBlockNumberOrTag::Latest,
+            BlockNumberOrTag::Parent => {
+                let latest = provider.get_block_number().await?;
+                ensure!(latest > 0, "genesis does not have a parent");
+                AlloyBlockNumberOrTag::Number(latest - 1)
+            }
+            BlockNumberOrTag::Safe => AlloyBlockNumberOrTag::Safe,
+            BlockNumberOrTag::Finalized => AlloyBlockNumberOrTag::Finalized,
+            BlockNumberOrTag::Number(n) => AlloyBlockNumberOrTag::Number(n),
+        };
+        Ok(number)
+    }
+}
 
 /// Alias for readability, do not make public.
 pub(crate) type HostEvmEnv<D, H> = EvmEnv<ProofDb<D>, H>;
@@ -74,6 +116,11 @@ where
     /// Converts the environment into a [EvmInput] committing to a block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
         Ok(EvmInput::Block(BlockInput::from_env(self).await?))
+    }
+
+    /// Returns the provider of the underlying [AlloyDb].
+    pub(crate) fn provider(&self) -> &P {
+        self.db().inner().provider()
     }
 }
 
@@ -130,7 +177,6 @@ impl<H> EvmEnv<(), H> {
     /// # Ok(())
     /// # }
     /// ```
-    #[must_use]
     pub fn builder() -> EvmEnvBuilder<(), H> {
         EvmEnvBuilder {
             provider: (),
@@ -208,12 +254,13 @@ impl<P, H> EvmEnvBuilder<P, H> {
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
-        let rpc_block = self
-            .provider
-            .get_block_by_number(self.block, false)
+        let provider = self.provider;
+        let number = self.block.into_rpc_type(&provider).await?;
+        let rpc_block = provider
+            .get_block_by_number(number, false)
             .await
             .context("eth_getBlockByNumber failed")?
-            .with_context(|| format!("block {} not found", self.block))?;
+            .with_context(|| format!("block {} not found", number))?;
         let header = rpc_block.header().clone();
         let header: H = header
             .try_into()
@@ -222,7 +269,7 @@ impl<P, H> EvmEnvBuilder<P, H> {
         log::info!("Environment initialized for block {}", sealed_header.seal());
 
         let db = ProofDb::new(AlloyDb::new(
-            self.provider,
+            provider,
             self.provider_config,
             sealed_header.seal(),
         ));

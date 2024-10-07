@@ -56,7 +56,7 @@ contract CounterTest is Test {
 
         // mock the Journal
         Counter.Journal memory journal = Counter.Journal({
-            commitment: Steel.Commitment(Encoding.encodeVersionedID(blockNumber, 0), blockHash),
+            commitment: Steel.Commitment(Encoding.encodeVersionedID(blockNumber, 0), blockHash, bytes32(0x0)),
             tokenContract: address(token)
         });
         // create a mock proof
@@ -72,12 +72,12 @@ contract CounterTest is Test {
 
     function testEIP4788Commitment() public {
         // get the root of a previous Beacon block
-        uint240 beaconTimestamp = uint240(block.timestamp - 60);
-        bytes32 beaconRoot = Beacon.blockRoot(beaconTimestamp);
+        uint240 beaconTimestamp = uint240(block.timestamp);
+        bytes32 beaconRoot = Beacon.parentBlockRoot(beaconTimestamp);
 
         // mock the Journal
         Counter.Journal memory journal = Counter.Journal({
-            commitment: Steel.Commitment(Encoding.encodeVersionedID(beaconTimestamp, 1), beaconRoot),
+            commitment: Steel.Commitment(Encoding.encodeVersionedID(beaconTimestamp, 1), beaconRoot, bytes32(0x0)),
             tokenContract: address(token)
         });
         // create a mock proof

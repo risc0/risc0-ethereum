@@ -29,6 +29,7 @@ use alloy_primitives::{address, Address, Bytes, B256, U256};
 use anyhow::Context;
 use risc0_steel::{
     ethereum::{EthBlockHeader, EthEvmEnv, EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
+    host::BlockNumberOrTag,
     Commitment, Contract, StateAccount,
 };
 use serde_json::{from_value, to_value, Value};
@@ -114,19 +115,21 @@ fn mock_anvil_guest(input: EthEvmInput) -> Commitment {
     let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
     Contract::new(ANVIL_CONTRACT_ADDRESS, &env)
         .call_builder(&sol::Pair::aCall {})
-        .call()
-        .unwrap();
+        .call();
     Contract::new(ANVIL_CONTRACT_ADDRESS, &env)
         .call_builder(&sol::Pair::bCall {})
-        .call()
-        .unwrap();
+        .call();
 
     env.into_commitment()
 }
 
 /// Creates an `EthEvmInput` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
 async fn rpc_usdt_input() -> anyhow::Result<EthEvmInput> {
-    let mut env = EthEvmEnv::builder().rpc(RPC_URL.parse()?).build().await?;
+    let mut env = EthEvmEnv::builder()
+        .rpc(RPC_URL.parse()?)
+        .block_number_or_tag(BlockNumberOrTag::Parent)
+        .build()
+        .await?;
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::preflight(USDT_ADDRESS, &mut env)
         .call_builder(&USDT_CALL)
@@ -334,11 +337,8 @@ async fn corrupt_header_block_commitment() {
 
     // executing this should lead to an Invalid commitment
     let commit = mock_anvil_guest(from_value(input_value).unwrap());
-    assert_eq!(commit.blockID, exp_commit.blockID, "Commitment changed");
-    assert_eq!(
-        commit.blockDigest, exp_commit.blockDigest,
-        "Invalid commitment"
-    );
+    assert_eq!(commit.id, exp_commit.id, "Commitment changed");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]
@@ -365,14 +365,10 @@ async fn corrupt_header_beacon_commitment() {
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
-        .call()
-        .unwrap();
+        .call();
     let commit = env.into_commitment();
-    assert_eq!(commit.blockID, exp_commit.blockID, "Changed commitment");
-    assert_eq!(
-        commit.blockDigest, exp_commit.blockDigest,
-        "Invalid commitment"
-    );
+    assert_eq!(commit.id, exp_commit.id, "Changed commitment");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]
@@ -397,14 +393,10 @@ async fn corrupt_beacon_proof() {
     let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
-        .call()
-        .unwrap();
+        .call();
     let commit = env.into_commitment();
-    assert_eq!(commit.blockID, exp_commit.blockID, "Commitment changed");
-    assert_eq!(
-        commit.blockDigest, exp_commit.blockDigest,
-        "Invalid commitment"
-    );
+    assert_eq!(commit.id, exp_commit.id, "Commitment changed");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]

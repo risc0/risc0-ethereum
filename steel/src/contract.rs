@@ -63,7 +63,7 @@ use revm::{
 /// // Guest:
 /// let evm_env = evm_input.into_env();
 /// let contract = Contract::new(contract_address, &evm_env);
-/// contract.call_builder(&get_balance).call().unwrap();
+/// contract.call_builder(&get_balance).call();
 ///
 /// # Ok(())
 /// # }
@@ -278,16 +278,25 @@ where
     C: SolCall,
     H: EvmBlockHeader,
 {
-    /// Executes the call with a [EvmEnv] constructed with [Contract::new].
+    /// Executes the call and returns an error if the call fails.
     ///
-    /// [EvmEnv]: crate::EvmEnv
-    pub fn call(self) -> Result<C::Return, String> {
+    /// In general, it's recommended to use [CallBuilder::call] unless explicit error handling is
+    /// required.
+    pub fn try_call(self) -> Result<C::Return, String> {
         let mut evm = new_evm::<_, H>(
             WrapStateDb::new(self.env.db()),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );
         self.tx.transact(&mut evm)
+    }
+
+    /// Executes the call and panics on failure.
+    ///
+    /// A convenience wrapper for [CallBuilder::try_call], panicking if the call fails. Useful when
+    /// success is expected.
+    pub fn call(self) -> C::Return {
+        self.try_call().unwrap()
     }
 }
 
