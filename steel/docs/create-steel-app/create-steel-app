@@ -76,6 +76,18 @@ get_folder_name() {
     done
 }
 
+if [ "$(uname)" = "Darwin" ]; then
+  # MacOS expects an argument for `-i` (empty string is used for no backup)
+  sed_i() {
+    sed -i '' "$@"
+  }
+else
+  # Linux accepts `-i` without an argument
+  sed_i() {
+    sed -i "$@"
+  }
+fi
+
 check_rust
 check_foundry
 select_branch
@@ -107,13 +119,13 @@ echo "done. erc20-counter contents and steel directory are now in the root of $F
 ## apps requires Steel to have "features = ["host"]"
 find . -name Cargo.toml -type f | while read -r file; do
     if [[ "$file" == *"/apps/"* ]]; then
-        sed -i '' \
+        sed_i \
             -e "s|^risc0-build-ethereum = .*$|risc0-build-ethereum = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
             -e "s|^risc0-ethereum-contracts = .*$|risc0-ethereum-contracts = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
             -e "s|^risc0-steel = .*$|risc0-steel = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\", features = [\"host\"] }|" \
             "$file"
     else
-        sed -i '' \
+        sed_i \
             -e "s|^risc0-build-ethereum = .*$|risc0-build-ethereum = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
             -e "s|^risc0-ethereum-contracts = .*$|risc0-ethereum-contracts = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
             -e "s|^risc0-steel = .*$|risc0-steel = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
@@ -125,7 +137,7 @@ echo "all Cargo.toml files have been updated with git dependencies."
 
 # update the foundry.toml file to use the lib directory and disable auto_detect_remappings to avoid conflicts
 if [ -f "foundry.toml" ]; then
-    sed -i '' \
+    sed_i \
         -e 's|libs = \["../../lib", "../../contracts/src"\]|libs = ["lib"]|' \
         -e '/\[profile\.default\]/a\'$'\n''auto_detect_remappings = false' \
         foundry.toml
@@ -151,7 +163,7 @@ git submodule update --init --recursive --quiet
 
 # update remappings in remappings.txt
 if [ -f "remappings.txt" ]; then
-    sed -i '' \
+    sed_i \
         -e 's|forge-std/=../../lib/forge-std/src/|forge-std/=lib/forge-std/src/|' \
         -e 's|openzeppelin/=../../lib/openzeppelin-contracts/|openzeppelin/=lib/openzeppelin-contracts/|' \
         -e 's|risc0/=../../contracts/src/|risc0/=lib/risc0-ethereum/contracts/src/|' \
