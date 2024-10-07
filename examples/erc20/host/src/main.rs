@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use alloy_primitives::{address, Address};
-use alloy_sol_types::{sol, SolCall};
+use alloy_sol_types::{sol, SolCall, SolType};
 use anyhow::{Context, Result};
 use clap::Parser;
 use erc20_methods::ERC20_GUEST_ELF;
