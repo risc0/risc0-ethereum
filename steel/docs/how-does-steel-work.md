@@ -40,7 +40,7 @@ assert!(returns._0 >= U256::from(1));
 
 ```
 
-## Proving EVM execution within the zkVM
+## Proving smart contract execution within the zkVM
 
 The zkVM guest has no network connection, and there is no way to call an RPC provider to carry out the view call from within the guest; so how does Steel make this possible?
 
