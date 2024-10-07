@@ -49,4 +49,3 @@ At this point, you will be able to test against a local deployment by running th
 [cargo-risczero]: https://dev.risczero.com/api/zkvm/install
 [1.0]: https://github.com/risc0/risc0-ethereum/tree/release-1.0
 [1.1]: https://github.com/risc0/risc0-ethereum/tree/release-1.1
-
