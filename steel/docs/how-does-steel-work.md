@@ -26,8 +26,7 @@ let evm_env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 let call = IERC20::balanceOfCall { account };
 let returns = Contract::new(contract, &evm_env)
 	.call_builder(&call)
-	.call()
-	.unwrap();
+	.call();
 
 // Check that the given account holds at least 1 token.
 assert!(returns._0 >= U256::from(1));   
