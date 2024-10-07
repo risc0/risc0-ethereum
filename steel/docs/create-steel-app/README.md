@@ -15,7 +15,7 @@ Make sure to have the following installed:
 ## Usage
 
 ```sh
-sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/steel/docs/create-steel-app/create-steel-app)
+sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/release-1.1/steel/docs/create-steel-app/create-steel-app)
 ```
 
 The script will automatically detect your current `cargo-risczero` version and use that for the corresponding version of the `erc20-counter` example. You also have the manual choice between between two release versions: [1.0] and [1.1].
@@ -42,7 +42,7 @@ At this point, you will be able to test against a local deployment by running th
 `./test-local-deployment.sh`
 
 [create-steel-app]: create-steel-app
-[erc20-counter]: https://github.com/risc0/risc0-ethereum/tree/main/examples/erc20-counter
+[erc20-counter]: https://github.com/risc0/risc0-ethereum/tree/release-1.1/examples/erc20-counter
 [documentation]: ../../README.md#documentation
 [Rust]: https://www.rust-lang.org/tools/install
 [Foundry]: https://book.getfoundry.sh/getting-started/installation
