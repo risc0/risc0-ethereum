@@ -205,11 +205,11 @@ mod private {
             ///
             /// This ID combines the version and the actual identifier of the claim, such as the block number.
             uint256 id;
-            /// The cryptographic claim.
+            /// The cryptographic digest of the commitment.
             ///
             /// This is the core of the commitment, representing the data being committed to,
             /// e.g., the hash of the execution block.
-            bytes32 claim;
+            bytes32 digest;
             /// The cryptographic digest of the network configuration.
             ///
             /// This ID ensures that the commitment is valid only for the specific network configuration
@@ -240,7 +240,7 @@ impl Commitment {
     pub const fn new(version: u16, id: u64, claim: B256, config_id: B256) -> Commitment {
         Self {
             id: Commitment::encode_id(id, version),
-            claim,
+            claim: digest,
             configID: config_id,
         }
     }
@@ -272,7 +272,7 @@ impl std::fmt::Debug for Commitment {
         f.debug_struct("Commitment")
             .field("version", &version)
             .field("id", &id)
-            .field("claim", &self.claim)
+            .field("claim", &self.digest)
             .field("configID", &self.configID)
             .finish()
     }
