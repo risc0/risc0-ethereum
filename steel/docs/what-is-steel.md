@@ -2,7 +2,7 @@
 
 ## Steel: Introducing Smart Contract Execution Proofs
 
-Steel, together with the zkVM, allows developers to create verifiable EVM execution proofs. Concretely, this means carrying out EVM execution, with verifiable on-chain state, within the zkVM. This will create a proof of the EVM execution, which upon verification can be used in place of smart contract execution, while preserving on-chain security.
+Steel, together with the zkVM, allows developers to leverage off-chain verifiable smart contract execution. Concretely, this means carrying out EVM execution against verifiable on-chain state, within the zkVM. This will create a proof of the smart contract execution, which upon verification can be used in place of smart contract execution, while preserving on-chain security.
 
 ## On-chain vs off-chain execution
 
