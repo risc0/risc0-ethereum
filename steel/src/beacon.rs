@@ -96,9 +96,15 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
 impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
     for GeneralizedBeaconCommit<LEAF_INDEX>
 {
-    fn commit(self, header: &Sealed<H>) -> Commitment {
+    #[inline]
+    fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
         let (timestamp, beacon_root) = self.into_commit(header.seal());
-        Commitment::new(CommitmentVersion::Beacon as u16, timestamp, beacon_root)
+        Commitment::new(
+            CommitmentVersion::Beacon as u16,
+            timestamp,
+            beacon_root,
+            config_id,
+        )
     }
 }
 

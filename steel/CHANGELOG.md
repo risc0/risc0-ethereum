@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚨 Breaking Changes
 
+- The Solidity `Commitment` now also contains a hash of the chain specification including chain ID, and fork configuration.
 - Instead of committing to the root of a beacon block referenced by its timestamp, we commit to the root of a beacon block referenced by its child timestamp, or equivalently, we commit to the root of the parent beacon block referenced by its timestamp. While this may sound counterintuitive, this is exactly how the [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788) beacon root contract stores its data. This makes the verification side in Solidity much easier and less expensive, and gets rid of the weird code that was necessary to query the child of a beacon block during creation.
 - Introduce the `ComposeInput` as a generalized type to represent different commitments. The `BeaconInput` is now a `ComposeInput`. This changes the binary input data, but does not require any code changes.
 

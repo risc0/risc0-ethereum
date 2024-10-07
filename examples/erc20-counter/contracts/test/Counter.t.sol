@@ -56,7 +56,7 @@ contract CounterTest is Test {
 
         // mock the Journal
         Counter.Journal memory journal = Counter.Journal({
-            commitment: Steel.Commitment(Encoding.encodeVersionedID(blockNumber, 0), blockHash),
+            commitment: Steel.Commitment(Encoding.encodeVersionedID(blockNumber, 0), blockHash, bytes32(0x0)),
             tokenContract: address(token)
         });
         // create a mock proof
@@ -77,7 +77,7 @@ contract CounterTest is Test {
 
         // mock the Journal
         Counter.Journal memory journal = Counter.Journal({
-            commitment: Steel.Commitment(Encoding.encodeVersionedID(beaconTimestamp, 1), beaconRoot),
+            commitment: Steel.Commitment(Encoding.encodeVersionedID(beaconTimestamp, 1), beaconRoot, bytes32(0x0)),
             tokenContract: address(token)
         });
         // create a mock proof
