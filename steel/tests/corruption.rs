@@ -363,7 +363,7 @@ async fn corrupt_header_beacon_commitment() {
         .call();
     let commit = env.into_commitment();
     assert_eq!(commit.id, exp_commit.id, "Changed commitment");
-    assert_eq!(commit.digest, exp_commit.claim, "Invalid commitment");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]
@@ -391,7 +391,7 @@ async fn corrupt_beacon_proof() {
         .call();
     let commit = env.into_commitment();
     assert_eq!(commit.id, exp_commit.id, "Commitment changed");
-    assert_eq!(commit.digest, exp_commit.claim, "Invalid commitment");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]

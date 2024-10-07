@@ -237,10 +237,10 @@ impl Commitment {
 
     /// Creates a new commitment.
     #[inline]
-    pub const fn new(version: u16, id: u64, claim: B256, config_id: B256) -> Commitment {
+    pub const fn new(version: u16, id: u64, digest: B256, config_id: B256) -> Commitment {
         Self {
             id: Commitment::encode_id(id, version),
-            claim: digest,
+            digest,
             configID: config_id,
         }
     }
