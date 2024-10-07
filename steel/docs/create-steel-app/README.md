@@ -14,7 +14,9 @@ Make sure to have the following installed:
 
 ## Usage
 
-`sh -c "$(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/steel/docs/create-steel-app/create-steel-app)"`
+```
+sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/steel/docs/create-steel-app/create-steel-app)
+```
 
 The script will automatically detect your current `cargo-risczero` version and use that for the corresponding version of the `erc20-counter` example. You also have the manual choice between between two release versions: [1.0] and [1.1].
 
@@ -26,7 +28,7 @@ cargo build
 forge build
 ``` 
 
-After this, you can export the necessary Bonsai environment variables:
+After this, you can export the necessary Bonsai environment variables if you'd like to use Bonsai. Otherwise, local proving will be used:
 
 ```
 export BONSAI_API_KEY="YOUR_API_KEY" 
