@@ -61,9 +61,9 @@ where
     let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
 
     let commitment = env.commitment();
-    assert_eq!(commitment.blockDigest, block_hash, "invalid commitment");
+    assert_eq!(commitment.digest, block_hash, "invalid commitment");
     assert_eq!(
-        commitment.blockID,
+        commitment.id,
         U256::from(block_number),
         "invalid commitment"
     );

@@ -337,11 +337,8 @@ async fn corrupt_header_block_commitment() {
 
     // executing this should lead to an Invalid commitment
     let commit = mock_anvil_guest(from_value(input_value).unwrap());
-    assert_eq!(commit.blockID, exp_commit.blockID, "Commitment changed");
-    assert_eq!(
-        commit.blockDigest, exp_commit.blockDigest,
-        "Invalid commitment"
-    );
+    assert_eq!(commit.id, exp_commit.id, "Commitment changed");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]
@@ -370,11 +367,8 @@ async fn corrupt_header_beacon_commitment() {
         .call_builder(&USDT_CALL)
         .call();
     let commit = env.into_commitment();
-    assert_eq!(commit.blockID, exp_commit.blockID, "Changed commitment");
-    assert_eq!(
-        commit.blockDigest, exp_commit.blockDigest,
-        "Invalid commitment"
-    );
+    assert_eq!(commit.id, exp_commit.id, "Changed commitment");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]
@@ -401,11 +395,8 @@ async fn corrupt_beacon_proof() {
         .call_builder(&USDT_CALL)
         .call();
     let commit = env.into_commitment();
-    assert_eq!(commit.blockID, exp_commit.blockID, "Commitment changed");
-    assert_eq!(
-        commit.blockDigest, exp_commit.blockDigest,
-        "Invalid commitment"
-    );
+    assert_eq!(commit.id, exp_commit.id, "Commitment changed");
+    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
 }
 
 #[test(tokio::test)]
