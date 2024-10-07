@@ -84,7 +84,7 @@ impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
     }
 
     /// Initializes a call builder to execute a call on the contract.
-    pub fn call_builder<C: SolCall>(&self, call: &C) -> CallBuilder<C, &GuestEvmEnv<H>> {
+    pub fn call_builder<S: SolCall>(&self, call: &S) -> CallBuilder<S, &GuestEvmEnv<H>> {
         CallBuilder::new(self.env, self.address, call)
     }
 }
@@ -94,19 +94,19 @@ impl<'a, H> Contract<&'a GuestEvmEnv<H>> {
 /// Once configured, call with [CallBuilder::call].
 #[derive(Debug, Clone)]
 #[must_use]
-pub struct CallBuilder<C, E> {
-    tx: CallTxData<C>,
+pub struct CallBuilder<S, E> {
+    tx: CallTxData<S>,
     env: E,
 }
 
-impl<C, E> CallBuilder<C, E> {
+impl<S, E> CallBuilder<S, E> {
     /// The default gas limit for function calls.
     const DEFAULT_GAS_LIMIT: u64 = 30_000_000;
 
     /// Creates a new builder for the given contract call.
-    fn new(env: E, address: Address, call: &C) -> Self
+    fn new(env: E, address: Address, call: &S) -> Self
     where
-        C: SolCall,
+        S: SolCall,
     {
         let tx = CallTxData {
             caller: address, // by default the contract calls itself
@@ -160,7 +160,7 @@ mod host {
     };
     use anyhow::{anyhow, Context, Result};
 
-    impl<'a, D: Database, H> Contract<&'a mut HostEvmEnv<D, H>> {
+    impl<'a, D: Database, H, C> Contract<&'a mut HostEvmEnv<D, H, C>> {
         /// Constructor for preflighting calls to an Ethereum contract on the host.
         ///
         /// Initializes the environment for calling functions on the Ethereum contract, fetching
@@ -169,26 +169,26 @@ mod host {
         ///
         /// [EvmEnv::into_input]: crate::EvmEnv::into_input
         /// [EvmEnv]: crate::EvmEnv
-        pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H>) -> Self {
+        pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H, C>) -> Self {
             Self { address, env }
         }
 
         /// Initializes a call builder to execute a call on the contract.
-        pub fn call_builder<C: SolCall>(
+        pub fn call_builder<S: SolCall>(
             &mut self,
-            call: &C,
-        ) -> CallBuilder<C, &mut HostEvmEnv<D, H>> {
+            call: &S,
+        ) -> CallBuilder<S, &mut HostEvmEnv<D, H, C>> {
             CallBuilder::new(self.env, self.address, call)
         }
     }
 
-    impl<'a, C, T, N, P, H> CallBuilder<C, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H>>
+    impl<'a, S, T, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H, C>>
     where
         T: Transport + Clone,
         N: Network,
         P: Provider<T, N> + Send + 'static,
-        C: SolCall + Send + 'static,
-        <C as SolCall>::Return: Send,
+        S: SolCall + Send + 'static,
+        <S as SolCall>::Return: Send,
         H: EvmBlockHeader + Clone + Send + 'static,
     {
         /// Fetches all the EIP-1186 storage proofs from the `access_list`. This can help to
@@ -208,10 +208,10 @@ mod host {
         /// This uses [tokio::task::spawn_blocking] to run the blocking revm execution.
         ///
         /// [EvmEnv]: crate::EvmEnv
-        pub async fn call(self) -> Result<C::Return> {
+        pub async fn call(self) -> Result<S::Return> {
             log::info!(
                 "Executing preflight calling '{}' on {}",
-                C::SIGNATURE,
+                S::SIGNATURE,
                 self.tx.to
             );
 
@@ -233,7 +233,7 @@ mod host {
             // restore the DB before handling errors, so that we never return an env without a DB
             self.env.db = Some(db);
 
-            result.map_err(|err| anyhow!("call '{}' failed: {}", C::SIGNATURE, err))
+            result.map_err(|err| anyhow!("call '{}' failed: {}", S::SIGNATURE, err))
         }
 
         /// Automatically prefetches the access list before executing the call using an [EvmEnv]
@@ -244,7 +244,7 @@ mod host {
         /// [CallBuilder::call]. See the corresponding methods for more information.
         ///
         /// [EvmEnv]: crate::EvmEnv
-        pub async fn call_with_prefetch(self) -> Result<C::Return> {
+        pub async fn call_with_prefetch(self) -> Result<S::Return> {
             let access_list = {
                 let tx = <N as Network>::TransactionRequest::default()
                     .with_from(self.tx.caller)
@@ -273,16 +273,16 @@ mod host {
     }
 }
 
-impl<'a, C, H> CallBuilder<C, &'a GuestEvmEnv<H>>
+impl<'a, S, H> CallBuilder<S, &'a GuestEvmEnv<H>>
 where
-    C: SolCall,
+    S: SolCall,
     H: EvmBlockHeader,
 {
     /// Executes the call and returns an error if the call fails.
     ///
     /// In general, it's recommended to use [CallBuilder::call] unless explicit error handling is
     /// required.
-    pub fn try_call(self) -> Result<C::Return, String> {
+    pub fn try_call(self) -> Result<S::Return, String> {
         let mut evm = new_evm::<_, H>(
             WrapStateDb::new(self.env.db()),
             self.env.cfg_env.clone(),
@@ -295,32 +295,32 @@ where
     ///
     /// A convenience wrapper for [CallBuilder::try_call], panicking if the call fails. Useful when
     /// success is expected.
-    pub fn call(self) -> C::Return {
+    pub fn call(self) -> S::Return {
         self.try_call().unwrap()
     }
 }
 
 /// Transaction data to be used with [CallBuilder] for an execution.
 #[derive(Debug, Clone)]
-struct CallTxData<C> {
+struct CallTxData<S> {
     caller: Address,
     gas_limit: u64,
     gas_price: U256,
     to: Address,
     value: U256,
     data: Vec<u8>,
-    phantom: PhantomData<C>,
+    phantom: PhantomData<S>,
 }
 
-impl<C: SolCall> CallTxData<C> {
+impl<S: SolCall> CallTxData<S> {
     /// Compile-time assertion that the call C has a return value.
     const RETURNS: () = assert!(
-        mem::size_of::<C::Return>() > 0,
+        mem::size_of::<S::Return>() > 0,
         "Function call must have a return value"
     );
 
     /// Executes the call in the provided [Evm].
-    fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<C::Return, String>
+    fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<S::Return, String>
     where
         DB: Database,
         <DB as Database>::Error: std::error::Error + Send + Sync + 'static,
@@ -351,10 +351,10 @@ impl<C: SolCall> CallTxData<C> {
             ExecutionResult::Revert { output, .. } => Err(format!("reverted: {}", output)),
             ExecutionResult::Halt { reason, .. } => Err(format!("halted: {:?}", reason)),
         }?;
-        let returns = C::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+        let returns = S::abi_decode_returns(&output.into_data(), true).map_err(|err| {
             format!(
                 "return type invalid; expected '{}': {}",
-                <C::ReturnTuple<'_> as SolType>::SOL_NAME,
+                <S::ReturnTuple<'_> as SolType>::SOL_NAME,
                 err
             )
         })?;
