@@ -127,6 +127,7 @@ fn mock_anvil_guest(input: EthEvmInput) -> Commitment {
 async fn rpc_usdt_input() -> anyhow::Result<EthEvmInput> {
     let mut env = EthEvmEnv::builder()
         .rpc(RPC_URL.parse()?)
+        .beacon_api(BEACON_API_URL.parse()?)
         .block_number_or_tag(BlockNumberOrTag::Parent)
         .build()
         .await?;
@@ -136,7 +137,7 @@ async fn rpc_usdt_input() -> anyhow::Result<EthEvmInput> {
         .call()
         .await?;
 
-    env.into_beacon_input(BEACON_API_URL.parse()?).await
+    env.into_input().await
 }
 
 /// Loads the data from an existing JSON file, or creates it.

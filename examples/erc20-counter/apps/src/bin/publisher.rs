@@ -126,6 +126,7 @@ async fn main() -> Result<()> {
     // There are two options: Use EIP-4788 for verification by providing a Beacon API endpoint,
     // or use the regular `blockhash' opcode.
     let evm_input = if let Some(beacon_api_url) = args.beacon_api_url {
+        #[allow(deprecated)]
         env.into_beacon_input(beacon_api_url).await?
     } else {
         env.into_input().await?
