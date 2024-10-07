@@ -72,8 +72,8 @@ contract CounterTest is Test {
 
     function testEIP4788Commitment() public {
         // get the root of a previous Beacon block
-        uint240 beaconTimestamp = uint240(block.timestamp - 60);
-        bytes32 beaconRoot = Beacon.blockRoot(beaconTimestamp);
+        uint240 beaconTimestamp = uint240(block.timestamp);
+        bytes32 beaconRoot = Beacon.parentBlockRoot(beaconTimestamp);
 
         // mock the Journal
         Counter.Journal memory journal = Counter.Journal({
