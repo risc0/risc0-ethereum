@@ -22,7 +22,7 @@ The script will automatically detect your current `cargo-risczero` version and u
 
 Once the script is finished running, you should:
 
-```
+```console
 cd PROJECT_NAME
 cargo build
 forge build
@@ -30,7 +30,7 @@ forge build
 
 After this, you can export the necessary Bonsai environment variables if you'd like to use Bonsai. Otherwise, local proving will be used:
 
-```
+```console
 export BONSAI_API_KEY="YOUR_API_KEY" 
 export BONSAI_API_URL="BONSAI_URL" # provided with your api key
 ```
