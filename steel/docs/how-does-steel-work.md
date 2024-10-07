@@ -44,7 +44,7 @@ assert!(returns._0 >= U256::from(1));
 
 The zkVM guest has no network connection, and there is no way to call an RPC provider to carry out the view call from within the guest; so how does Steel make this possible?
 
-Steel’s key innovation is the use of [revm]  for simulation of an *EVM environment* within the guest program. This EVM environment has the necessary state populated from RPC calls to carry out verifiable execution of view calls.In the [host program], the [preflight call] constructs the EVM environment, `evm_env` which is passed through as input to the guest program:
+Steel’s key innovation is the use of [revm] for simulation of an *EVM environment* within the guest program. This EVM environment has the necessary state populated from RPC calls, and verified with Merkle storage proofs, to carry out verifiable execution of view calls. In the [host program], the [preflight call] constructs the EVM environment, `evm_env` which is passed through as input to the guest program:
 
 ```rust
 // HOST PROGRAM
