@@ -9,7 +9,7 @@ sol! {
     }
 ```
 
-*This code is taken from the erc20-counter example, which you can find [here].*
+_This code is taken from the erc20-counter example, which you can find [here]._
 
 The sol\! macro parses Solidity syntax to generate Rust types; this is used to call the `balanceOf` function, within the [guest program], using `balanceOfCall`:
 
@@ -37,14 +37,13 @@ assert!(returns._0 >= U256::from(1));
         tokenAddress: contract,
     };
     env::commit_slice(&journal.abi_encode());
-
 ```
 
 ## Proving smart contract execution within the zkVM
 
 The zkVM guest has no network connection, and there is no way to call an RPC provider to carry out the view call from within the guest; so how does Steel make this possible?
 
-Steel’s key innovation is the use of [revm] for simulation of an *EVM environment* within the guest program. This EVM environment has the necessary state populated from RPC calls, and verified with Merkle storage proofs, to carry out verifiable execution of view calls. In the [host program], the [preflight call] constructs the EVM environment, `evm_env` which is passed through as input to the guest program:
+Steel’s key innovation is the use of [revm] for simulation of an _EVM environment_ within the guest program. This EVM environment has the necessary state populated from RPC calls, and verified with Merkle storage proofs, to carry out verifiable execution of view calls. In the [host program], the [preflight call] constructs the EVM environment, `evm_env` which is passed through as input to the guest program:
 
 ```rust
 // HOST PROGRAM
@@ -69,7 +68,7 @@ The `preflight` step calls the RPC provider for the necessary state and for the 
 
 ## Verifying the proof on-chain
 
-At this point, we have generated a proof of: a view call of state on-chain and some execution based on that view call state (e.g. checking that the balance is at least 1). 
+At this point, we have generated a proof of: a view call of state on-chain and some execution based on that view call state (e.g. checking that the balance is at least 1).
 
 When using Steel, the general pattern for onchain functions incorporating Steel follows this pseudo-code:
 
@@ -86,7 +85,7 @@ contract {
 }
 ```
 
-The interesting on-chain logic, *doSomethingElse()*, is only reached if the journal data, the steel commitment and the proof are all valid. 
+The interesting on-chain logic, _doSomethingElse()_, is only reached if the journal data, the steel commitment and the proof are all valid.
 
 Concretely, in the erc20-counter example, the counter is only updated if the caller has a balance of at least one, and this counter update is gated by Steel and the zkVM.
 
@@ -108,7 +107,7 @@ function increment(bytes calldata journalData, bytes calldata seal) external {
     }
 ```
 
-Within a single proof, we’ve seen Steel can handle view calls orders of magnitude larger than on-chain execution can handle. Specifically, one partner application has shown gas savings of 1.2 *billion* gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 *blocks* worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify (see [RISC Zero’s verification contracts]).
+Within a single proof, we’ve seen Steel can handle view calls orders of magnitude larger than on-chain execution can handle. Specifically, one partner application has shown gas savings of 1.2 _billion_ gas for a contract call using around 400,000 SLOADs. 1.2 billion gas is around 30 _blocks_ worth of execution and this can be verified onchain in one proof, that costs under $10 to generate, and less than 300k gas to verify (see [RISC Zero’s verification contracts]).
 
 With proof aggregation, cost savings are amortized even further, by taking multiple separate applications of RISC Zero, and wrapping them all up into a single SNARK.
 Aggregation is a key feature of [Boundless][boundless-website]
@@ -117,8 +116,7 @@ Aggregation is a key feature of [Boundless][boundless-website]
 
 ---
 
-<---- [What is Steel?] | [Steel Commitments] ----> 
-
+<---- [What is Steel?] | [Steel Commitments] ---->
 
 [sol! macro]: https://alloy.rs/examples/sol-macro/index.html
 [here]: https://github.com/risc0/risc0-ethereum/blob/main/examples/erc20-counter/README.md

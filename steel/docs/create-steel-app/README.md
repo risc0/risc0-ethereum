@@ -2,7 +2,7 @@
 
 ## What does this script do?
 
-The [create-steel-app] script will allow you to set up the [erc20-counter] example locally in one command. This example will act as your skeleton project structure for your own application.  Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. You can also learn more about Steel by reading the [documentation]. 
+The [create-steel-app] script will allow you to set up the [erc20-counter] example locally in one command. This example will act as your skeleton project structure for your own application. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. You can also learn more about Steel by reading the [documentation].
 
 ## Dependencies
 
@@ -14,7 +14,7 @@ Make sure to have the following installed:
 
 ## Usage
 
-```
+```sh
 sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/steel/docs/create-steel-app/create-steel-app)
 ```
 
@@ -26,7 +26,7 @@ Once the script is finished running, you should:
 cd PROJECT_NAME
 cargo build
 forge build
-``` 
+```
 
 After this, you can export the necessary Bonsai environment variables if you'd like to use Bonsai. Otherwise, local proving will be used:
 
@@ -35,7 +35,7 @@ export BONSAI_API_KEY="YOUR_API_KEY"
 export BONSAI_API_URL="BONSAI_URL" # provided with your api key
 ```
 
-*Note: To request an API key [complete the form here]*.
+_Note: To request an API key [complete the form here]_.
 
 At this point, you will be able to test against a local deployment by running the provided bash script:
 

@@ -1,6 +1,6 @@
 # Steel Commitments
 
-Steel retrieves state for a view call at a specific block, therefore it commits the relevant block data to the journal for validation on-chain; this data is known as a Steel commitment. 
+Steel retrieves state for a view call at a specific block, therefore it commits the relevant block data to the journal for validation on-chain; this data is known as a Steel commitment.
 
 Concretely, a Steel commitment consists of a block identifier, and the block hash. To validate this block commitment on-chain, the block hash in the commitment is compared with the block hash available on-chain. If there is a discrepancy, there is no guarantee that the proof accurately reflects the correct blockchain state at the specified block.
 
@@ -29,7 +29,7 @@ Crucially, during the step, Steel will use the RPC call [eth\_getProof] for all 
 
 Within the guest, calling `into_env` checks that all Merkle tries are consistent, have the correct root and **computes the corresponding block hash.**
 
-*This blockhash is Steel's trust anchor; it needs to be recomputed within the guest to validate the integrity of the RPC data.*
+_This blockhash is Steel's trust anchor; it needs to be recomputed within the guest to validate the integrity of the RPC data._
 
 ```rust
 // Read the input from the guest environment.
@@ -55,7 +55,7 @@ This block hash has to be compared on-chain, alongside the verification of the p
 
 ## What is a Steel Commitment?
 
-A commitment consists of two values: the block ID and the block digest.  The block ID encodes two values, the Steel version number and a block identifier (e.g. a block number).
+A commitment consists of two values: the block ID and the block digest. The block ID encodes two values, the Steel version number and a block identifier (e.g. a block number).
 
 ```solidity
 struct Commitment {
@@ -123,7 +123,7 @@ function validateBeaconCommitment(uint256 blockTimestamp, bytes32 blockRoot) int
 
 The second method allows validation using the [EIP-4788] beacon roots contract. This technique extends the time window in which the proof can be validated on-chain to just over a day. It requires access to a beacon API endpoint and can be enabled by calling `EvmEnv::into_beacon_input`. However, this approach is specific to Ethereum (L1) Steel proofs and depends on the implementation of EIP-4788.
 
-Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation. This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.  
+Note that EIP-4788 only provides access to the parent beacon root, requiring iterative queries in Solidity to retrieve the target beacon root for validation. This iterative process can result in slightly higher gas costs compared to using the `blockhash` opcode. Overall, it is suitable for environments where longer proof generation times are required.
 
 ---
 

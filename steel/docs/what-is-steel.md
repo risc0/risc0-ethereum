@@ -8,11 +8,9 @@ Steel, together with the zkVM, allows developers to leverage off-chain verifiabl
 
 On-chain execution is limited by the gas limit per block. This is fine for simple execution, but most real-world applications require significantly more capability than what is currently available, even on layer 2 rollups. With Steel, developers can carry out the same EVM execution they would on-chain, but at a much larger scale. This EVM execution is within a boundless and verifiable environment off-chain within the zkVM, allowing for an unprecented amount of scaling for EVM applications.
 
-
-To describe how Steel replaces on-chain execution with on-chain verification of smart contract execution proofs, we will walk through a simple example: a counter variable is incremented if, and only if, the ERC20 balance of a certain account is larger than 1. 
+To describe how Steel replaces on-chain execution with on-chain verification of smart contract execution proofs, we will walk through a simple example: a counter variable is incremented if, and only if, the ERC20 balance of a certain account is larger than 1.
 
 This example is purely instructive and by simplifying the execution, we can focus on understanding the specifics of Steel.
-
 
 ### Without Steel
 
@@ -35,7 +33,7 @@ contract OnChainERC20Counter {
 }
 ```
 
-The `increment` function uses the `checkBalance` function to return ERC20 the current balance of the account, and the require statement makes sure that the counter is only updated if the balance is larger than 1. 
+The `increment` function uses the `checkBalance` function to return ERC20 the current balance of the account, and the require statement makes sure that the counter is only updated if the balance is larger than 1.
 
 ### With Steel
 
@@ -61,14 +59,13 @@ contract OffChainERC20Counter() {
 }
 ```
 
-To make sure that Steel's execution proofs can be trusted, we check the output of the zkVM program to make sure that the token contract address is correct, and we validate the [Steel Commitment]. Only if these are valid, the proof is verified. Upon succesful verification, we can be sure that the account balance is larger than 1 and we increment the counter variable. Notice there is no check on-chain of the balance or any EVM execution other than the validations and proof verification. The EVM execution happens within the zkVM guest program. 
+To make sure that Steel's execution proofs can be trusted, we check the output of the zkVM program to make sure that the token contract address is correct, and we validate the [Steel Commitment]. Only if these are valid, the proof is verified. Upon succesful verification, we can be sure that the account balance is larger than 1 and we increment the counter variable. Notice there is no check on-chain of the balance or any EVM execution other than the validations and proof verification. The EVM execution happens within the zkVM guest program.
 
 In [How does Steel work?], we dive deeper into how exactly the zkVM guest program verifies state access and runs EVM execution, generating an smart contract execution proof, and verifying the proof on-chain.
 
 ---
 
-<---- [Steel README] | [How Does Steel Work?] ----> 
-
+<---- [Steel README] | [How Does Steel Work?] ---->
 
 [Steel Commitment]: ./steel-commitments.md
 [How does Steel work?]: ./how-does-steel-work.md
