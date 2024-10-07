@@ -55,7 +55,7 @@ This block hash has to be compared on-chain, alongside the verification of the p
 
 ## What is a Steel Commitment?
 
-A commitment consists of two values: the block ID and the block digest.  The block ID encodes two values, the Steel version number and a block identifier in an encoding which is effectively: `abi.encodePacked(uint16 version, uint240 blockIdentifier)`.
+A commitment consists of two values: the block ID and the block digest.  The block ID encodes two values, the Steel version number and a block identifier (e.g. a block number).
 
 ```solidity
 struct Commitment {
