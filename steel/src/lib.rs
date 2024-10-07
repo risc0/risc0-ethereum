@@ -27,7 +27,7 @@ mod contract;
 pub mod ethereum;
 #[cfg(feature = "host")]
 pub mod host;
-pub mod merkle;
+mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
@@ -78,14 +78,11 @@ pub struct ComposeInput<H, C> {
 
 impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     /// Creates a new composed input from a [BlockInput] and a [BlockHeaderCommit].
-    #[must_use]
-    #[inline]
     pub const fn new(input: BlockInput<H>, commit: C) -> Self {
         Self { input, commit }
     }
 
     /// Disassembles this `ComposeInput`, returning the underlying input and commitment creator.
-    #[inline]
     pub fn into_parts(self) -> (BlockInput<H>, C) {
         (self.input, self.commit)
     }
