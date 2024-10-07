@@ -87,7 +87,7 @@ impl BlockNumberOrTag {
 pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, HostCommit<C>>;
 type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
 
-/// Config wrapper on the host.
+/// Wrapper for the commit on the host.
 pub struct HostCommit<C> {
     inner: C,
     config_id: B256,
