@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{state::StateDb, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie};
+use crate::config::ChainSpec;
+use crate::{
+    state::StateDb, Commitment, CommitmentVersion, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
+};
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{map::HashMap, Bytes};
 
@@ -61,8 +64,14 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             self.contracts,
             block_hashes,
         );
+        let commit = Commitment::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.seal(),
+            ChainSpec::DEFAULT_DIGEST,
+        );
 
-        EvmEnv::new(db, header)
+        EvmEnv::new(db, header, commit)
     }
 }
 
@@ -72,20 +81,20 @@ pub mod host {
 
     use super::BlockInput;
     use crate::{
-        host::{
-            db::{AlloyDb, ProviderDb},
-            HostEvmEnv,
-        },
+        host::db::{AlloyDb, ProofDb, ProviderDb},
         EvmBlockHeader,
     };
     use alloy::{network::Network, providers::Provider, transports::Transport};
+    use alloy_primitives::Sealed;
     use anyhow::{anyhow, ensure};
-    use log::{debug, info};
+    use log::debug;
 
     impl<H: EvmBlockHeader> BlockInput<H> {
-        /// Derives the verifiable input from a [HostEvmEnv].
-        pub(crate) async fn from_env<T, N, P>(
-            env: HostEvmEnv<AlloyDb<T, N, P>, H>,
+        /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
+        /// the block hash.
+        pub(crate) async fn from_proof_db<T, N, P>(
+            mut db: ProofDb<AlloyDb<T, N, P>>,
+            header: Sealed<H>,
         ) -> anyhow::Result<Self>
         where
             T: Transport + Clone,
@@ -94,17 +103,11 @@ pub mod host {
             H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
             <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
-            // safe unwrap: env is never returned without a DB
-            let mut db = env.db.unwrap();
-            assert_eq!(
-                db.inner().block_hash(),
-                env.header.seal(),
-                "DB block mismatch"
-            );
+            assert_eq!(db.inner().block_hash(), header.seal(), "DB block mismatch");
 
             let (state_trie, storage_tries) = db.state_proof().await?;
             ensure!(
-                env.header.state_root() == &state_trie.hash_slow(),
+                header.state_root() == &state_trie.hash_slow(),
                 "accountProof root does not match header's stateRoot"
             );
 
@@ -113,7 +116,7 @@ pub mod host {
 
             // retrieve ancestor block headers
             let mut ancestors = Vec::new();
-            for rlp_header in db.ancestor_proof(env.header.number()).await? {
+            for rlp_header in db.ancestor_proof(header.number()).await? {
                 let header: H = rlp_header
                     .try_into()
                     .map_err(|err| anyhow!("header invalid: {}", err))?;
@@ -129,14 +132,8 @@ pub mod host {
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
 
-            info!(
-                "Commitment to block hash {} at {}",
-                env.header.seal(),
-                env.header.number()
-            );
-
             let input = BlockInput {
-                header: env.header.into_inner(),
+                header: header.into_inner(),
                 state_trie,
                 storage_tries,
                 contracts,

@@ -91,74 +91,42 @@ impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     pub fn into_env(self) -> GuestEvmEnv<H> {
         let mut env = self.input.into_env();
-        env.commitment = self.commit.commit(&env.header, env.commitment.configID);
+        env.commit = self.commit.commit(&env.header, env.commit.configID);
 
         env
     }
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H>;
+pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H, Commitment>;
 
 /// The environment to execute the contract calls in.
-pub struct EvmEnv<D, H> {
+pub struct EvmEnv<D, H, C> {
     db: Option<D>,
     cfg_env: CfgEnvWithHandlerCfg,
     header: Sealed<H>,
-    commitment: Commitment,
+    commit: C,
 }
 
-impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
+impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
     /// Creates a new environment.
     ///
     /// It uses the default configuration for the latest specification.
-    pub(crate) fn new(db: D, header: Sealed<H>) -> Self {
-        // this matches with_chain_spec(&ChainSpec::default()), thus DEFAULT_DIGEST is correct hash
+    pub(crate) fn new(db: D, header: Sealed<H>, commit: C) -> Self {
         let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-        let commitment = Commitment::new(
-            CommitmentVersion::Block as u16,
-            header.number(),
-            header.seal(),
-            ChainSpec::DEFAULT_DIGEST,
-        );
 
         Self {
             db: Some(db),
             cfg_env,
             header,
-            commitment,
+            commit,
         }
-    }
-
-    /// Sets the chain ID and specification ID from the given chain spec.
-    ///
-    /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
-        self.cfg_env.chain_id = chain_spec.chain_id();
-        self.cfg_env.handler_cfg.spec_id = chain_spec
-            .active_fork(self.header.number(), self.header.timestamp())
-            .unwrap();
-        self.commitment.configID = chain_spec.digest();
-
-        self
     }
 
     /// Returns the sealed header of the environment.
     #[inline]
     pub fn header(&self) -> &Sealed<H> {
         &self.header
-    }
-
-    /// Returns the [Commitment] used to validate the environment.
-    #[inline]
-    pub fn commitment(&self) -> &Commitment {
-        &self.commitment
-    }
-
-    /// Consumes and returns the [Commitment] used to validate the environment.
-    #[inline]
-    pub fn into_commitment(self) -> Commitment {
-        self.commitment
     }
 
     fn db(&self) -> &D {
@@ -170,6 +138,33 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H> {
     fn db_mut(&mut self) -> &mut D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_mut().unwrap()
+    }
+}
+
+impl<D, H: EvmBlockHeader> EvmEnv<D, H, Commitment> {
+    /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
+        self.cfg_env.chain_id = chain_spec.chain_id();
+        self.cfg_env.handler_cfg.spec_id = chain_spec
+            .active_fork(self.header.number(), self.header.timestamp())
+            .unwrap();
+        self.commit.configID = chain_spec.digest();
+
+        self
+    }
+
+    /// Returns the [Commitment] used to validate the environment.
+    #[inline]
+    pub fn commitment(&self) -> &Commitment {
+        &self.commit
+    }
+
+    /// Consumes and returns the [Commitment] used to validate the environment.
+    #[inline]
+    pub fn into_commitment(self) -> Commitment {
+        self.commit
     }
 }
 
