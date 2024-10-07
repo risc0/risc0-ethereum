@@ -18,6 +18,7 @@ use std::fmt::Display;
 use crate::{
     beacon::BeaconCommit,
     block::BlockInput,
+    config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
@@ -31,6 +32,7 @@ use alloy::{
         Transport,
     },
 };
+use alloy_primitives::B256;
 use anyhow::{ensure, Result};
 use db::{AlloyDb, ProofDb};
 use url::Url;
@@ -85,7 +87,13 @@ impl BlockNumberOrTag {
 pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, C>;
 type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, C>;
 
-impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, ()> {
+/// On the host we need to combine the [BlockHeaderCommit] with the config_id.
+pub struct HostCommit<C> {
+    inner: C,
+    config_id: B256,
+}
+
+impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, HostCommit<()>> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
     #[deprecated(since = "0.12.0", note = "use `EthEvmEnv::builder().rpc()` instead")]
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
@@ -97,7 +105,7 @@ impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, 
     }
 }
 
-impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
+impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, HostCommit<()>>
 where
     T: Transport + Clone,
     N: Network,
@@ -123,7 +131,22 @@ where
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>
+impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, HostCommit<C>> {
+    /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
+        self.cfg_env.chain_id = chain_spec.chain_id();
+        self.cfg_env.handler_cfg.spec_id = chain_spec
+            .active_fork(self.header.number(), self.header.timestamp())
+            .unwrap();
+        self.commit.config_id = chain_spec.digest();
+
+        self
+    }
+}
+
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HostCommit<BeaconCommit>>
 where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
@@ -132,11 +155,14 @@ where
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
-        Ok(EvmInput::Beacon(ComposeInput::new(input, self.commit)))
+        Ok(EvmInput::Beacon(ComposeInput::new(
+            input,
+            self.commit.inner,
+        )))
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, ()>
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HostCommit<()>>
 where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,

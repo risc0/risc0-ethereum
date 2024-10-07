@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{state::StateDb, Commitment, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie};
+use crate::config::ChainSpec;
+use crate::{
+    state::StateDb, Commitment, CommitmentVersion, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
+};
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{map::HashMap, Bytes};
 
@@ -61,7 +64,12 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             self.contracts,
             block_hashes,
         );
-        let commit = Commitment::from_block_header(&header);
+        let commit = Commitment::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.seal(),
+            ChainSpec::DEFAULT_DIGEST,
+        );
 
         EvmEnv::new(db, header, commit)
     }

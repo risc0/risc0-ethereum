@@ -14,7 +14,9 @@
 
 use crate::{
     beacon::BeaconCommit,
+    config::ChainSpec,
     ethereum::EthBlockHeader,
+    host::HostCommit,
     host::{
         db::{AlloyDb, ProofDb, ProviderConfig},
         BlockNumberOrTag, EthHostEvmEnv, HostEvmEnv,
@@ -171,7 +173,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
 impl<P, H> EvmEnvBuilder<P, H, ()> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a block hash.
-    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, ()>>
+    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, HostCommit<()>>>
     where
         T: Transport + Clone,
         N: Network,
@@ -191,14 +193,20 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
             self.provider_config,
             header.seal(),
         ));
+        let commit = HostCommit {
+            inner: (),
+            config_id: ChainSpec::DEFAULT_DIGEST,
+        };
 
-        Ok(EvmEnv::new(db, header, ()))
+        Ok(EvmEnv::new(db, header, commit))
     }
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a beacon root.
-    pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>>
+    pub async fn build<T>(
+        self,
+    ) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HostCommit<BeaconCommit>>>
     where
         T: Transport + Clone,
         P: Provider<T, Ethereum>,
@@ -210,21 +218,24 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
             header.seal()
         );
 
-        let commitment =
-            BeaconCommit::from_header(&header, &self.provider, self.beacon_config).await?;
+        let commit = HostCommit {
+            inner: BeaconCommit::from_header(&header, &self.provider, self.beacon_config).await?,
+            config_id: ChainSpec::DEFAULT_DIGEST,
+        };
         let db = ProofDb::new(AlloyDb::new(
             self.provider,
             self.provider_config,
             header.seal(),
         ));
 
-        Ok(EvmEnv::new(db, header, commitment))
+        Ok(EvmEnv::new(db, header, commit))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::ChainSpec;
     use crate::{ethereum::EthEvmEnv, BlockHeaderCommit, Commitment, CommitmentVersion};
     use test_log::test;
 
@@ -252,7 +263,7 @@ mod tests {
             .build()
             .await
             .unwrap();
-        let commit = env.commit.commit(&env.header);
+        let commit = env.commit.inner.commit(&env.header, env.commit.config_id);
 
         // the commitment should verify against the parent_beacon_block_root of the child
         let child_block = provider
@@ -265,7 +276,8 @@ mod tests {
             Commitment::new(
                 CommitmentVersion::Beacon as u16,
                 header_block.timestamp,
-                header_block.parent_beacon_block_root.unwrap()
+                header_block.parent_beacon_block_root.unwrap(),
+                ChainSpec::DEFAULT_DIGEST,
             )
         );
     }
