@@ -11,10 +11,10 @@ Steel uses [revm] to generate an EVM execution environment, `EvmEnv` within the 
 ```rust
 // Create an EVM environment from that provider 
 let mut env = EthEvmEnv::builder()
-.provider(provider.clone())
-.block_number(20842508)
-.build()
-.await?;
+    .provider(provider.clone())
+    .block_number(20842508)
+    .build()
+    .await?;
 ```
 
 This block is used for RPC queries (i.e. `getStorageAt`) during the `preflight` call. Once the preflighting is done, `into_input` is called:
@@ -45,8 +45,8 @@ For the Steel commitment, it is this block hash, computed within the guest, that
 
 ```rust
 let journal = Journal {
-	commitment: env.into_commitment(),
-	tokenAddress: contract,
+    commitment: env.into_commitment(),
+    tokenAddress: contract,
 };
 env::commit_slice(&journal.abi_encode());
 ```
@@ -59,8 +59,8 @@ A commitment consists of two values: the block ID and the block digest. The bloc
 
 ```solidity
 struct Commitment {
-	uint256 blockID;
-	bytes32 blockDigest;
+    uint256 blockID;
+    bytes32 blockDigest;
 }
 ```
 
@@ -74,14 +74,14 @@ The [Steel library](https://github.com/risc0/risc0-ethereum/blob/main/contracts/
 
 ```solidity
 function validateCommitment(Commitment memory commitment) internal view returns (bool) {
-	(uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.blockID);
-	if (version == 0) {
-		return validateBlockCommitment(blockID, commitment.blockDigest);
-	} else if (version == 1) {
-		return validateBeaconCommitment(blockID, commitment.blockDigest);
-	} else {
-		revert InvalidCommitmentVersion();
-	}
+    (uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.blockID);
+    if (version == 0) {
+        return validateBlockCommitment(blockID, commitment.blockDigest);
+    } else if (version == 1) {
+        return validateBeaconCommitment(blockID, commitment.blockDigest);
+    } else {
+        revert InvalidCommitmentVersion();
+    }
 }
 ```
 
@@ -97,10 +97,10 @@ Steel supports two methods of commitment validation (see `validateCommitment` in
 /// @param blockHash The block hash to validate.
 /// @return True if the block's block hash matches the block hash, false otherwise.
 function validateBlockCommitment(uint256 blockNumber, bytes32 blockHash) internal view returns (bool) {
-	if (block.number - blockNumber > 256) {
-		revert CommitmentTooOld();
-	}
-	return blockHash == blockhash(blockNumber);
+    if (block.number - blockNumber > 256) {
+        revert CommitmentTooOld();
+    }
+    return blockHash == blockhash(blockNumber);
 }
 ```
 
@@ -114,10 +114,10 @@ This method uses the `blockhash` opcode to commit to a block hash that is no m
 /// @param blockRoot The block root to validate.
 /// @return True if the block's block root matches the block root, false otherwise.
 function validateBeaconCommitment(uint256 blockTimestamp, bytes32 blockRoot) internal view returns (bool) {
-	if (block.timestamp - blockTimestamp > 12 * 8191) {
-		revert CommitmentTooOld();
-	}
-	return blockRoot == Beacon.blockRoot(blockTimestamp);
+    if (block.timestamp - blockTimestamp > 12 * 8191) {
+        revert CommitmentTooOld();
+    }
+    return blockRoot == Beacon.blockRoot(blockTimestamp);
 }
 ```
 
