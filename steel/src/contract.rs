@@ -295,7 +295,7 @@ where
     ///
     /// A convenience wrapper for [CallBuilder::try_call], panicking if the call fails. Useful when
     /// success is expected.
-    pub fn call(self) -> C::Return {
+    pub fn call(self) -> S::Return {
         self.try_call().unwrap()
     }
 }
