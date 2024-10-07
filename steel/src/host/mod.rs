@@ -84,16 +84,16 @@ impl BlockNumberOrTag {
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, C>;
-type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, C>;
+pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, HostCommit<C>>;
+type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
 
-/// On the host we need to combine the [BlockHeaderCommit] with the config_id.
+/// Config wrapper on the host.
 pub struct HostCommit<C> {
     inner: C,
     config_id: B256,
 }
 
-impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, HostCommit<()>> {
+impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, ()> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
     #[deprecated(since = "0.12.0", note = "use `EthEvmEnv::builder().rpc()` instead")]
     pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
@@ -105,7 +105,7 @@ impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, 
     }
 }
 
-impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, HostCommit<()>>
+impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
 where
     T: Transport + Clone,
     N: Network,
@@ -131,7 +131,7 @@ where
     }
 }
 
-impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, HostCommit<C>> {
+impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
     /// This will panic when there is no valid specification ID for the current block.
@@ -146,7 +146,7 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, HostCommit<C>> {
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HostCommit<BeaconCommit>>
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>
 where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
@@ -162,7 +162,7 @@ where
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HostCommit<()>>
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, ()>
 where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,

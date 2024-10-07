@@ -173,7 +173,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
 impl<P, H> EvmEnvBuilder<P, H, ()> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a block hash.
-    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, HostCommit<()>>>
+    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, ()>>
     where
         T: Transport + Clone,
         N: Network,
@@ -204,9 +204,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a beacon root.
-    pub async fn build<T>(
-        self,
-    ) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HostCommit<BeaconCommit>>>
+    pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>>
     where
         T: Transport + Clone,
         P: Provider<T, Ethereum>,
