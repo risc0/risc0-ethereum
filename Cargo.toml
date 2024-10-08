@@ -26,7 +26,7 @@ alloy-consensus = { version = "0.4" }
 alloy-rlp = { version = "0.3.8" }
 alloy-rlp-derive = { version = "0.3.8" }
 # Pin alloy-core to 0.8.5 to avoid using foldhash as default hasher
-alloy-primitives = { version = "=0.8.5" }
+alloy-primitives = { version = "=0.8.6" }
 alloy-sol-types = { version = "=0.8.5" }
 
 # Alloy host dependencies
