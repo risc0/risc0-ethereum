@@ -110,15 +110,15 @@ This method uses the `blockhash` opcode to commit to a block hash that is no m
 2. Beacon Block Root Commitment
 
 ```solidity
-/// @notice Validates if the provided block commitment matches the block hash of the given block number.
-/// @param blockNumber The block number to compare against.
-/// @param blockHash The block hash to validate.
-/// @return True if the block's block hash matches the block hash, false otherwise.
-function validateBlockCommitment(uint256 blockNumber, bytes32 blockHash) internal view returns (bool) {
-    if (block.number - blockNumber > 256) {
+/// @notice Validates if the provided beacon commitment matches the block root of the given timestamp.
+/// @param timestamp The timestamp to compare against.
+/// @param blockRoot The block root to validate.
+/// @return True if the block's block root matches the block root, false otherwise.
+function validateBeaconCommitment(uint256 timestamp, bytes32 blockRoot) internal view returns (bool) {
+    if (block.timestamp - timestamp > 12 * 8191) {
         revert CommitmentTooOld();
     }
-    return blockHash == blockhash(blockNumber);
+    return blockRoot == Beacon.parentBlockRoot(timestamp);
 }
 ```
 
