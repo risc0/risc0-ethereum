@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["build", "contracts", "ffi", "ffi/guests", "crates/*"]
+members = ["build", "contracts", "crates/*", "ffi", "ffi/guests"]
 
 [workspace.package]
 version = "1.2.0-alpha.1"
@@ -31,7 +31,7 @@ alloy-primitives = { version = "=0.8.5" }
 alloy-sol-types = { version = "=0.8.5" }
 
 # OP Steel
-op-alloy-network = { version = "0.4"}
+op-alloy-network = { version = "0.4" }
 
 # Alloy host dependencies
 alloy = { version = "0.4" }
