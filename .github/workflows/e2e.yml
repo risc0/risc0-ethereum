@@ -24,6 +24,7 @@ jobs:
   e2e-tests:
     runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
     strategy:
+      fail-fast: false
       matrix:
         prover: [bonsai, local]
         release:
