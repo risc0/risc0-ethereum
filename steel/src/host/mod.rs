@@ -15,9 +15,11 @@
 //! Functionality that is only needed for the host and not the guest.
 use std::fmt::Display;
 
+use crate::history::HistoryCommit;
 use crate::{
     beacon::BeaconCommit,
     block::BlockInput,
+    config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
@@ -31,6 +33,7 @@ use alloy::{
         Transport,
     },
 };
+use alloy_primitives::B256;
 use anyhow::{ensure, Result};
 use db::{AlloyDb, ProofDb};
 use url::Url;
@@ -38,26 +41,28 @@ use url::Url;
 mod builder;
 pub mod db;
 
-use crate::history::HistoryCommit;
-pub use builder::EvmEnvBuilder;
-
 /// A block number (or tag - "latest", "safe", "finalized").
+/// This enum is used to specify which block to query when interacting with the blockchain.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum BlockNumberOrTag {
     /// The most recent block in the canonical chain observed by the client.
     #[default]
     Latest,
-    /// The most recent block with a child.
+    /// The parent of the most recent block in the canonical chain observed by the client.
+    /// This is equivalent to `Latest - 1`.
     Parent,
-    /// The most recent safe block.
+    /// The most recent block considered "safe" by the client. This typically refers to a block
+    /// that is sufficiently deep in the chain to be considered irreversible.
     Safe,
-    /// The most recent finalized block.
+    /// The most recent finalized block in the chain. Finalized blocks are guaranteed to be
+    /// part of the canonical chain.
     Finalized,
-    /// Number of a block in the canon chain.
+    /// A specific block number in the canonical chain.
     Number(u64),
 }
 
 impl BlockNumberOrTag {
+    /// Converts the `BlockNumberOrTag` into the corresponding RPC type.
     async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockNumberOrTag>
     where
         T: Transport + Clone,
@@ -80,8 +85,14 @@ impl BlockNumberOrTag {
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, C>;
-type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, C>;
+pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, HostCommit<C>>;
+type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
+
+/// Wrapper for the commit on the host.
+pub struct HostCommit<C> {
+    inner: C,
+    config_id: B256,
+}
 
 impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, ()> {
     /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
@@ -121,15 +132,34 @@ where
     }
 }
 
+impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
+    /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
+        self.cfg_env.chain_id = chain_spec.chain_id();
+        self.cfg_env.handler_cfg.spec_id = chain_spec
+            .active_fork(self.header.number(), self.header.timestamp())
+            .unwrap();
+        self.commit.config_id = chain_spec.digest();
+
+        self
+    }
+}
+
 impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>
 where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
+    /// Converts the environment into a [EvmInput] committing to a block hash.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
-        Ok(EvmInput::Beacon(ComposeInput::new(input, self.commit)))
+        Ok(EvmInput::Beacon(ComposeInput::new(
+            input,
+            self.commit.inner,
+        )))
     }
 }
 
@@ -141,7 +171,10 @@ where
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
-        Ok(EvmInput::History(ComposeInput::new(input, self.commit)))
+        Ok(EvmInput::History(ComposeInput::new(
+            input,
+            self.commit.inner,
+        )))
     }
 }
 
@@ -152,7 +185,7 @@ where
 {
     /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
     #[deprecated(
-        since = "0.13.0",
+        since = "0.14.0",
         note = "use `EvmEnv::builder().beacon_api()` instead"
     )]
     pub async fn into_beacon_input(self, url: Url) -> Result<EvmInput<EthBlockHeader>> {

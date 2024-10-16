@@ -22,7 +22,7 @@ mod test {
 
     use crate::FINALIZE_VOTES_ELF;
 
-    const TEST_INPUT: &'static [u8] = &hex!(
+    const TEST_INPUT: &[u8] = &hex!(
         "123ef2afce66c417062d3d2c69ca0a612c95de6ae9331e5e9640a361b787c1c8"
         "000001004f81992fce2e1846dd528ec0102e6ee1f61ed3e20000000000000000000000000000000000000000000000000000"
         "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -30,7 +30,7 @@ mod test {
         "eca97fde3756db8dd50882a26dcfa5ea0465615a2bd0468e6a715cf9378e9b28ba4314d567dd731e083c4b3d6f44e8f03bfb"
     );
 
-    const TEST_OUTPUT: &'static [u8] = &hex!(
+    const TEST_OUTPUT: &[u8] = &hex!(
         "123ef2afce66c417062d3d2c69ca0a612c95de6ae9331e5e9640a361b787c1c8"
         "2b45288717bd1179cdda9be4ae9cb416e4e42028537046902c3a173596b4d623"
         "000000014f81992fce2e1846dd528ec0102e6ee1f61ed3e2"
@@ -40,7 +40,7 @@ mod test {
     #[test]
     fn process_basic_finalization_input() {
         let env = ExecutorEnv::builder()
-            .write_slice(&TEST_INPUT)
+            .write_slice(TEST_INPUT)
             .build()
             .unwrap();
         let exec = default_executor();

@@ -68,7 +68,7 @@ This hash accumulator (`ballotHash`) is a commitment that allows offchain voting
 [Governor]: https://docs.openzeppelin.com/contracts/4.x/governance
 [instructions]: ./instructions.md
 [journal]: https://dev.risczero.com/terminology#journal
-[RiscZeroGovernor.sol]: ./contracts/RiscZeroGovernor.sol
+[RiscZeroGovernor.sol]: ./contracts/src/RiscZeroGovernor.sol
 [verifier contract]: https://dev.risczero.com/api/blockchain-integration/contracts/verifier
 [What does Risc Zero enable]: https://dev.risczero.com/api/use-cases
 [zkVM]: https://dev.risczero.com/zkvm

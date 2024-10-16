@@ -98,11 +98,13 @@ jobs:
       - name: cargo clippy risc0-ethereum
         run: cargo clippy --workspace --all-targets --all-features
         env:
+          RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
       - name: cargo clippy all examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
         env:
+          RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
       - run: sccache --show-stats
 

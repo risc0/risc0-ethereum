@@ -18,7 +18,7 @@
 
 use alloy::{
     network::EthereumWallet,
-    providers::{Provider, ProviderBuilder},
+    providers::ProviderBuilder,
     signers::local::PrivateKeySigner,
     sol_types::{SolCall, SolValue},
 };
@@ -29,13 +29,11 @@ use erc20_counter_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
-    Commitment, Contract, EvmBlockHeader,
+    host::BlockNumberOrTag,
+    Commitment, Contract,
 };
 use risc0_zkvm::{default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext};
-use tokio::{
-    task,
-    time::{sleep, Duration},
-};
+use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
@@ -104,16 +102,14 @@ async fn main() -> Result<()> {
         .wallet(wallet)
         .on_http(args.eth_rpc_url);
 
-    // Create an EVM environment from that provider defaulting to the latest block.
+    // Create an EVM environment from that provider for the block latest - 1.
     let mut env = EthEvmEnv::builder()
         .provider(provider.clone())
+        .block_number_or_tag(BlockNumberOrTag::Parent)
         .build()
         .await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-
-    // Get the block that the EVM environment is based on.
-    let block_number = env.header().number();
 
     // Prepare the function call
     let call = IERC20::balanceOfCall {
@@ -130,6 +126,7 @@ async fn main() -> Result<()> {
     // There are two options: Use EIP-4788 for verification by providing a Beacon API endpoint,
     // or use the regular `blockhash' opcode.
     let evm_input = if let Some(beacon_api_url) = args.beacon_api_url {
+        #[allow(deprecated)]
         env.into_beacon_input(beacon_api_url).await?
     } else {
         env.into_input().await?
@@ -169,14 +166,6 @@ async fn main() -> Result<()> {
     // Call ICounter::imageID() to check that the contract has been deployed correctly.
     let contract_image_id = Digest::from(contract.imageID().call().await?._0.0);
     ensure!(contract_image_id == Digest::from(BALANCE_OF_ID));
-
-    // Make sure there is at least one child block. (Unless the node is anvil)
-    if !provider.get_client_version().await?.starts_with("anvil") {
-        log::info!("Waiting for committed block to have one child");
-        while provider.get_block_number().await? <= block_number {
-            sleep(Duration::from_secs(3)).await;
-        }
-    }
 
     // Call the increment function of the contract and wait for confirmation.
     log::info!(

@@ -13,11 +13,11 @@
 // limitations under the License.
 
 use crate::{
-    beacon, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput,
-    EvmBlockHeader, MerkleTrie,
+    beacon, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
+    MerkleTrie,
 };
 use alloy_primitives::{b256, keccak256, Sealed, B256, U256};
-use beacon::{GeneralizedBeaconCommit, STATE_ROOT_LEAF_INDEX, BeaconCommit};
+use beacon::{BeaconCommit, GeneralizedBeaconCommit, STATE_ROOT_LEAF_INDEX};
 use beacon_roots::BeaconRootsContract;
 use serde::{Deserialize, Serialize};
 
@@ -34,10 +34,11 @@ pub struct HistoryCommit {
 }
 
 impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
-    fn commit(self, header: &Sealed<H>) -> Commitment {
+    #[inline]
+    fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
         // first, compute the beacon commit of the EVM execution
-        let commitment = self.evm_commit.commit(header);
-        let (timestamp, version) = Commitment::decode_id(commitment.blockID);
+        let commitment = self.evm_commit.commit(header, config_id);
+        let (timestamp, version) = commitment.decode_id();
         assert_eq!(version, CommitmentVersion::Beacon as u16);
 
         // then verify that commitment wrt the given state
@@ -45,26 +46,26 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
         let commitment_root = BeaconRootsContract::get_from_state(self.state, timestamp)
             .expect("Beacon roots contract failed");
         assert_eq!(
-            commitment_root, commitment.blockDigest,
+            commitment_root, commitment.digest,
             "Beacon root does not match"
         );
 
         // finally return the beacon commitment of the given state
         let (timestamp, beacon_root) = self.state_commit.into_commit(state_root);
-        Commitment::new(CommitmentVersion::Beacon as u16, timestamp, beacon_root)
+        Commitment::new(
+            CommitmentVersion::Beacon as u16,
+            timestamp,
+            beacon_root,
+            commitment.configID,
+        )
     }
 }
 
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::{
-        beacon::{
-            host::{client::BeaconClient, create_beacon_commit},
-            STATE_ROOT_LEAF_INDEX,
-        },
-        ethereum::EthBlockHeader,
-    };
+    use crate::beacon::host::create_beacon_commit;
+    use crate::{beacon::host::client::BeaconClient, ethereum::EthBlockHeader};
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use anyhow::Context;
     use url::Url;
@@ -89,11 +90,9 @@ mod host {
             .await?;
 
             let client = BeaconClient::new(beacon_url).context("invalid URL")?;
-            let (proof, timestamp, beacon_root) =
+            let (state_commit, beacon_root) =
                 create_beacon_commit(commit_header, "state_root".into(), &rpc_provider, &client)
                     .await?;
-            let state_commit =
-                GeneralizedBeaconCommit::<STATE_ROOT_LEAF_INDEX>::new(proof, timestamp);
             state_commit
                 .verify(state.root(), beacon_root)
                 .context("proof derived from API does not verify")?;
@@ -345,13 +344,11 @@ mod tests {
 
         // check commitment against latest
         let commit = dbg!(input.into_env().into_commitment());
-        let (beacon_root, _) = BeaconRootsContract::preflight_get(
-            U256::from(commit.block_id()),
-            &el,
-            BlockId::latest(),
-        )
-        .await
-        .unwrap();
-        assert_eq!(beacon_root, commit.blockDigest);
+        let (timestamp, _) = commit.decode_id();
+        let (beacon_root, _) =
+            BeaconRootsContract::preflight_get(timestamp, &el, BlockId::latest())
+                .await
+                .unwrap();
+        assert_eq!(beacon_root, commit.digest);
     }
 }

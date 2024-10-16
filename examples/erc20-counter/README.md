@@ -62,5 +62,5 @@ When you're ready, follow the [deployment guide] to get your application running
 [Sepolia]: https://www.alchemy.com/overviews/sepolia-testnet
 [deployment guide]: ./deployment-guide.md
 [Rust]: https://doc.rust-lang.org/cargo/getting-started/installation.html
-[Counter]: ./contracts/Counter.sol
+[Counter]: ./contracts/src/Counter.sol
 [Steel]: https://www.risczero.com/blog/introducing-steel

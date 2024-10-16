@@ -61,16 +61,16 @@ where
     let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
 
     let commitment = env.commitment();
-    assert_eq!(commitment.blockDigest, block_hash, "invalid commitment");
+    assert_eq!(commitment.digest, block_hash, "invalid commitment");
     assert_eq!(
-        commitment.blockID,
+        commitment.id,
         U256::from(block_number),
         "invalid commitment"
     );
 
     let result = {
         let contract = Contract::new(address, &env);
-        options.apply(contract.call_builder(&call)).call().unwrap()
+        options.apply(contract.call_builder(&call)).call()
     };
     assert_eq!(
         result, preflight_result,
