@@ -19,8 +19,15 @@ use risc0_steel::{BlockHeaderCommit, Commitment, ComposeInput};
 use serde::{Deserialize, Serialize};
 
 alloy_sol_types::sol! {
+    // https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/libraries/Types.sol
     #![sol(all_derives)]
     #[derive(Serialize, Deserialize)]
+    /// @notice Struct representing the elements that are hashed together to generate an output root
+    ///         which itself represents a snapshot of the L2 state.
+    /// @custom:field version                  Version of the output root.
+    /// @custom:field stateRoot                Root of the state trie at the block of this output.
+    /// @custom:field messagePasserStorageRoot Root of the message passer storage trie.
+    /// @custom:field latestBlockhash          Hash of the block this output was generated from.
     struct OutputRootProof {
         bytes32 version;
         bytes32 stateRoot;
@@ -83,25 +90,23 @@ pub mod host {
     const DISPUTE_GAME_FETCH_COUNT: U256 = uint!(20_U256);
 
     alloy::sol! {
+        // https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/L1/interfaces/IOptimismPortal2.sol
         #[sol(rpc)]
         interface IOptimismPortal2 {
+            function disputeGameBlacklist(address) external view returns (bool);
             function disputeGameFactory() external view returns (address);
+            function proofMaturityDelaySeconds() external view returns (uint256);
             function respectedGameType() external view returns (uint32);
             function respectedGameTypeUpdatedAt() external view returns (uint64);
+            function version() external pure returns (string memory);
         }
 
-        // https://github.com/ethereum-optimism/optimism/blob/v1.9.2/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGameFactory.sol
+        // https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGameFactory.sol
         #[sol(rpc)]
         interface IDisputeGameFactory {
-            function gameCount() external view returns (uint256);
+            function gameCount() external view returns (uint256 gameCount);
             function gameAtIndex(uint256 index) external view returns (uint32 gameType, uint64 createdAt, address gameProxy);
             function findLatestGames(uint32 gameType, uint256 start, uint256 n) external view returns (GameSearchResult[] memory games);
-        }
-
-        // https://github.com/ethereum-optimism/optimism/blob/v1.9.2/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGame.sol
-        interface IDisputeGame {
-            function status() external view returns (uint256);
-            function resolvedAt() external view returns (uint64);
         }
 
         struct GameSearchResult {
@@ -112,13 +117,36 @@ pub mod host {
             bytes extraData;
         }
 
-        uint256 constant DEFENDER_WINS = 2;
+        // https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGame.sol
+        interface IDisputeGame {
+            function status() external view returns (GameStatus);
+            function resolvedAt() external view returns (uint64);
+        }
 
-        // docker run -i ethereum/solc:0.8.27 - --evm-version paris --optimize --bin-runtime
-        #[sol(rpc, deployed_bytecode="608060405234801561001057600080fd5b506004361061002b5760003560e01c8063b0de44ac14610030575b600080fd5b61004361003e366004610419565b610055565b60405190815260200160405180910390f35b6000806100628342610468565b90506000846001600160a01b0316633c9f397c6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100a4573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906100c891906104a1565b90506000856001600160a01b0316634fd0434c6040518163ffffffff1660e01b8152600401602060405180830381865afa15801561010a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061012e91906104c3565b90506000866001600160a01b031663f2b4e6176040518163ffffffff1660e01b8152600401602060405180830381865afa158015610170573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061019491906104e0565b90506000816001600160a01b0316634d1975b46040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101d6573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906101fa91906104fd565b90505b80156103cc57600080806001600160a01b03851663bb8aa1fc61021f86610516565b9550856040518263ffffffff1660e01b815260040161024091815260200190565b606060405180830381865afa15801561025d573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610281919061052d565b9250925092508663ffffffff168363ffffffff16146102a2575050506101fd565b8567ffffffffffffffff168267ffffffffffffffff1610156102c6575050506103cc565b6002816001600160a01b031663200d2ed26040518163ffffffff1660e01b8152600401602060405180830381865afa158015610306573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061032a91906104fd565b14610337575050506101fd565b8767ffffffffffffffff16816001600160a01b03166319effeb46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610380573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103a491906104c3565b67ffffffffffffffff1611156103bc575050506101fd565b83985050505050505050506103e5565b6040516309b3c62760e21b815260040160405180910390fd5b92915050565b6001600160a01b038116811461040057600080fd5b50565b67ffffffffffffffff8116811461040057600080fd5b6000806040838503121561042c57600080fd5b8235610437816103eb565b9150602083013561044781610403565b809150509250929050565b634e487b7160e01b600052601160045260246000fd5b67ffffffffffffffff82811682821603908111156103e5576103e5610452565b805163ffffffff8116811461049c57600080fd5b919050565b6000602082840312156104b357600080fd5b6104bc82610488565b9392505050565b6000602082840312156104d557600080fd5b81516104bc81610403565b6000602082840312156104f257600080fd5b81516104bc816103eb565b60006020828403121561050f57600080fd5b5051919050565b60008161052557610525610452565b506000190190565b60008060006060848603121561054257600080fd5b61054b84610488565b9250602084015161055b81610403565b604085015190925061056c816103eb565b80915050925092509256fea264697066735822122022c3a3c9c1cb46a163fbc2174ceb8ba0dcefeaaf471e8061a82082b2c1b50a4d64736f6c634300081b0033")]
+        // https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/lib/Types.sol
+        enum GameStatus {
+            IN_PROGRESS,
+            CHALLENGER_WINS,
+            DEFENDER_WINS
+        }
+
+        // docker run -i ethereum/solc:0.8.27 - --optimize --bin-runtime
+        #[sol(rpc, deployed_bytecode="608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b0de44ac1461002d575b5f5ffd5b61004061003b366004610486565b610052565b60405190815260200160405180910390f35b5f8061005e83426104d1565b90505f846001600160a01b0316633c9f397c6040518163ffffffff1660e01b8152600401602060405180830381865afa15801561009d573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906100c19190610509565b90505f856001600160a01b0316634fd0434c6040518163ffffffff1660e01b8152600401602060405180830381865afa158015610100573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101249190610529565b90505f866001600160a01b031663f2b4e6176040518163ffffffff1660e01b8152600401602060405180830381865afa158015610163573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101879190610544565b90505f816001600160a01b0316634d1975b46040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101c6573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101ea919061055f565b90505b801561043b575f80806001600160a01b03851663bb8aa1fc61020e86610576565b9550856040518263ffffffff1660e01b815260040161022f91815260200190565b606060405180830381865afa15801561024a573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061026e919061058b565b9250925092508567ffffffffffffffff168267ffffffffffffffff1610156102985750505061043b565b8663ffffffff168363ffffffff16146102b3575050506101ed565b6040516322c4269960e11b81526001600160a01b0382811660048301528c16906345884d3290602401602060405180830381865afa1580156102f7573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061031b91906105d2565b15610328575050506101ed565b6002816001600160a01b031663200d2ed26040518163ffffffff1660e01b8152600401602060405180830381865afa158015610366573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061038a9190610605565b600281111561039b5761039b6105f1565b146103a8575050506101ed565b8767ffffffffffffffff16816001600160a01b03166319effeb46040518163ffffffff1660e01b8152600401602060405180830381865afa1580156103ef573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906104139190610529565b67ffffffffffffffff16111561042b575050506101ed565b8398505050505050505050610454565b6040516309b3c62760e21b815260040160405180910390fd5b92915050565b6001600160a01b038116811461046e575f5ffd5b50565b67ffffffffffffffff8116811461046e575f5ffd5b5f5f60408385031215610497575f5ffd5b82356104a28161045a565b915060208301356104b281610471565b809150509250929050565b634e487b7160e01b5f52601160045260245ffd5b67ffffffffffffffff8281168282160390811115610454576104546104bd565b805163ffffffff81168114610504575f5ffd5b919050565b5f60208284031215610519575f5ffd5b610522826104f1565b9392505050565b5f60208284031215610539575f5ffd5b815161052281610471565b5f60208284031215610554575f5ffd5b81516105228161045a565b5f6020828403121561056f575f5ffd5b5051919050565b5f81610584576105846104bd565b505f190190565b5f5f5f6060848603121561059d575f5ffd5b6105a6846104f1565b925060208401516105b681610471565b60408501519092506105c78161045a565b809150509250925092565b5f602082840312156105e2575f5ffd5b81518015158114610522575f5ffd5b634e487b7160e01b5f52602160045260245ffd5b5f60208284031215610615575f5ffd5b815160038110610522575f5ffdfea264697066735822122089257296e00cbc25ff86fc972511974b0cfb06b0be6abdeec67857f760a9ca4064736f6c634300081b0033")]
         contract OPGameFinder {
             error GameNotFound();
 
+            /// @notice Finds the index of the latest finalized OP  dispute game.
+            ///
+            /// This function iterates through all games created by the DisputeGameFactory and finds one that meets certain criteria:
+            /// - Was created after respectedGameTypeUpdatedAt
+            /// - Has the same respected game type as IOptimismPortal2's current respected game type
+            /// - Is not blacklisted on IOptimismPortal2
+            /// - Resolved in favor of the root claim (the output proposal) and has been resolved for at least `delay` seconds.
+            ///
+            /// @param portal The address of an instance of Optimism Portal 2 contract
+            /// @param delay Time period to wait before considering a game finalized, measured from block timestamp
+            ///
+            /// @return uint256 Finalized index if found; reverts with GameNotFound error otherwise
             function findFinalizedIndex(address portal, uint64 delay) external view returns (uint256) {
                 uint64 ts = uint64(block.timestamp) - delay;
                 uint32 respectedGameType = IOptimismPortal2(portal).respectedGameType();
@@ -126,11 +154,19 @@ pub mod host {
                 IDisputeGameFactory factory = IDisputeGameFactory(IOptimismPortal2(portal).disputeGameFactory());
                 uint256 i = factory.gameCount();
                 while (i > 0) {
+                    // Fetch the dispute game proxy from the `DisputeGameFactory` contract.
                     (uint32 gameType, uint64 createdAt, address game) = factory.gameAtIndex(--i);
-                    if (gameType != respectedGameType) continue; // wrong type
-                    if (createdAt < respectedGameTypeUpdatedAt) break; // old game type
-                    if (IDisputeGame(game).status() != DEFENDER_WINS) continue; // not resolved
-                    if (IDisputeGame(game).resolvedAt() > ts) continue; // not visible
+                    // The game must have been created after `respectedGameTypeUpdatedAt`.
+                    if (createdAt < respectedGameTypeUpdatedAt) break;
+                    // The game type of the dispute game must be the respected game type.
+                    if (gameType != respectedGameType) continue;
+                    // The game must not be blacklisted.
+                    if (IOptimismPortal2(portal).disputeGameBlacklist(game)) continue;
+                    // The game must be resolved in favor of the root claim (the output proposal).
+                    if (IDisputeGame(game).status() != GameStatus.DEFENDER_WINS) continue;
+                    // The game must have been resolved for at least `delay` seconds.
+                    if (IDisputeGame(game).resolvedAt() > ts) continue;
+
                     return i;
                 }
 
@@ -150,7 +186,8 @@ pub mod host {
         {
             let block_response = provider
                 .get_block_by_number(block_number.into(), false)
-                .await?;
+                .await
+                .context("eth_getBlockByNumber failed")?;
             let block =
                 block_response.with_context(|| format!("block not found: {}", block_number))?;
             let header = block.header;
@@ -158,7 +195,8 @@ pub mod host {
             let proof = provider
                 .get_proof(MESSAGE_PASSER_ADDRESS, vec![])
                 .hash(header.hash)
-                .await?;
+                .await
+                .with_context(|| format!("eth_getProof failed for block {}", header.hash))?;
 
             Ok(Self {
                 version: B256::ZERO,
@@ -176,7 +214,7 @@ pub mod host {
         Latest,
         /// The fault dispute game with the given index.
         Number(u64),
-        /// The latest feasible fault dispute game that was finalized with the given delay.
+        /// The latest feasible fault dispute game that has been resolved for this many seconds.
         Finalized(u64),
     }
 
@@ -277,7 +315,7 @@ pub mod host {
         let index = match start_index {
             Some(index) => index,
             None => {
-                let game_count = factory.gameCount().call().await?._0;
+                let game_count = factory.gameCount().call().await?.gameCount;
                 game_count - uint!(1U256)
             }
         };
@@ -296,8 +334,9 @@ pub mod host {
                 continue;
             };
             // verify the claim of the game
-            let output_root_proof =
-                OutputRootProof::from_provider(&l2_provider, l2_block_number).await?;
+            let output_root_proof = OutputRootProof::from_provider(&l2_provider, l2_block_number)
+                .await
+                .context("failed to construct output root")?;
             if game.rootClaim == output_root_proof.hash() {
                 return Ok(DisputeGame {
                     index: game.index,

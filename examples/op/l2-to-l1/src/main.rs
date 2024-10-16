@@ -53,11 +53,9 @@ async fn main() -> Result<()> {
         .init();
     let args = Args::parse();
 
-    // Create an L1 provider.
-    let l1_provider = ProviderBuilder::new().on_http(args.l1_rpc_url.clone());
     // Build an environment based on the state of the latest finalized fault dispute game
     let builder = OpEvmEnv::builder()
-        .dispute_game(OPTIMISM_PORTAL, l1_provider)
+        .dispute_game_from_rpc(OPTIMISM_PORTAL, args.l1_rpc_url.clone())
         .game_index(DisputeGameIndex::Finalized(0));
     let mut env = builder.rpc(args.l2_rpc_url).build().await?;
     env = env.with_chain_spec(&OP_MAINNET_CHAIN_SPEC);

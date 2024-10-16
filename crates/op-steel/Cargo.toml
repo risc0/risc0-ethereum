@@ -22,6 +22,7 @@ op-alloy-network = { workspace = true }
 revm = { workspace = true, features = ["std", "optimism"] }
 risc0-steel = { workspace = true }
 serde = { workspace = true }
+test-log = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
