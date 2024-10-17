@@ -94,6 +94,10 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
             .expect("Invalid beacon inclusion proof");
         (self.timestamp, beacon_root)
     }
+
+    pub(crate) fn timestamp(&self) -> u64 {
+        self.timestamp
+    }
 }
 
 impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
@@ -119,8 +123,11 @@ pub(crate) mod host {
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
     use client::BeaconClient;
-    use ethereum_consensus::ssz::prelude::proofs::Proof;
-    use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
+    use ethereum_consensus::{
+        ssz::prelude::{proofs::Proof, *},
+        types::SignedBeaconBlock,
+        Fork,
+    };
     use proofs::ProofAndWitness;
     use url::Url;
 
@@ -332,7 +339,7 @@ pub(crate) mod host {
 
         #[tokio::test]
         #[ignore] // This queries actual RPC nodes, running only on demand.
-        async fn eth_mainnet_proof() {
+        async fn create_execution_payload_proof() {
             const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
             const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
 
@@ -347,9 +354,10 @@ pub(crate) mod host {
             let beacon_root = block.header().parent_beacon_block_root.unwrap();
 
             let block_hash = block.header().parent_hash;
-            let proof = create_execution_payload_proof("block_hash".into(), beacon_root, &cl)
-                .await
-                .expect("proving 'block_hash' failed");
+            let proof =
+                super::create_execution_payload_proof("block_hash".into(), beacon_root, &cl)
+                    .await
+                    .expect("proving 'block_hash' failed");
             let branch: Vec<B256> = proof.branch.iter().map(|n| n.0.into()).collect();
             merkle::verify(block_hash, &branch, BLOCK_HASH_LEAF_INDEX, beacon_root).unwrap();
         }

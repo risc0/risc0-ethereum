@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::history::HistoryCommit;
 use crate::{
     beacon::BeaconCommit,
     config::ChainSpec,
     ethereum::EthBlockHeader,
-    host::HostCommit,
+    history::HistoryCommit,
     host::{
         db::{AlloyDb, ProofDb, ProviderConfig},
-        BlockNumberOrTag, EthHostEvmEnv, HostEvmEnv,
+        BlockNumberOrTag, EthHostEvmEnv, HostCommit, HostEvmEnv,
     },
     EvmBlockHeader, EvmEnv,
 };
@@ -298,8 +297,9 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::ChainSpec;
-    use crate::{ethereum::EthEvmEnv, BlockHeaderCommit, Commitment, CommitmentVersion};
+    use crate::{
+        config::ChainSpec, ethereum::EthEvmEnv, BlockHeaderCommit, Commitment, CommitmentVersion,
+    };
     use test_log::test;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";

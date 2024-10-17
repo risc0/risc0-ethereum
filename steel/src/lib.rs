@@ -37,6 +37,7 @@ mod state;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
+pub use history::HistoryInput;
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
 
@@ -215,7 +216,6 @@ mod private {
     }
 }
 
-use crate::history::HistoryInput;
 pub use private::Commitment;
 
 /// Version of a [`Commitment`].

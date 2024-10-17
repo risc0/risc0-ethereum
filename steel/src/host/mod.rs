@@ -15,12 +15,12 @@
 //! Functionality that is only needed for the host and not the guest.
 use std::fmt::Display;
 
-use crate::history::HistoryCommit;
 use crate::{
     beacon::BeaconCommit,
     block::BlockInput,
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
+    history::HistoryCommit,
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
