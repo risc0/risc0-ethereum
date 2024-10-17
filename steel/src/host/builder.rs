@@ -29,7 +29,7 @@ use alloy::{
     transports::Transport,
 };
 use alloy_primitives::Sealable;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, ensure, Context, Result};
 use std::{fmt::Display, marker::PhantomData};
 use url::Url;
 
@@ -203,13 +203,15 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
     }
 }
 
+/// Config for separating the execution block from the commitment block.
 #[derive(Clone, Debug)]
 pub struct History {
-    url: Url,
-    block: BlockNumberOrTag,
+    beacon_url: Url,
+    commitment_block: BlockNumberOrTag,
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
+    /// Sets a dedicated block for the commitment that is different from the execution block.
     pub fn commitment_block(
         self,
         block: BlockNumberOrTag,
@@ -219,8 +221,8 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
             provider_config: self.provider_config,
             block: self.block,
             beacon_config: History {
-                url: self.beacon_config,
-                block,
+                beacon_url: self.beacon_config,
+                commitment_block: block,
             },
             phantom: Default::default(),
         }
@@ -260,28 +262,31 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
         P: Provider<T, Ethereum>,
     {
         let evm_header = self.get_header(None).await?.seal_slow();
+        let commitment_header = self
+            .get_header(Some(self.beacon_config.commitment_block))
+            .await?
+            .seal_slow();
+        ensure!(
+            evm_header.number() < commitment_header.number(),
+            "execution header not before commitment header"
+        );
+
         log::info!(
             "Environment initialized with block {} ({})",
             evm_header.number(),
             evm_header.seal()
         );
 
-        let evm_commit =
-            BeaconCommit::from_header(&evm_header, &self.provider, self.beacon_config.url.clone())
-                .await?;
-        let header = self
-            .get_header(Some(self.beacon_config.block))
-            .await?
-            .seal_slow();
-        let commit = HistoryCommit::from_beacon_commit_and_header(
-            evm_commit,
-            &header,
+        let beacon_url = self.beacon_config.beacon_url;
+        let history_commit = HistoryCommit::from_beacon_commit_and_header(
+            BeaconCommit::from_header(&evm_header, &self.provider, beacon_url.clone()).await?,
+            &commitment_header,
             &self.provider,
-            self.beacon_config.url,
+            beacon_url,
         )
         .await?;
         let commit = HostCommit {
-            inner: commit,
+            inner: history_commit,
             config_id: ChainSpec::DEFAULT_DIGEST,
         };
         let db = ProofDb::new(AlloyDb::new(
@@ -308,24 +313,21 @@ mod tests {
     #[test(tokio::test)]
     #[ignore] // This queries actual RPC nodes, running only on demand.
     async fn build_block_env() {
-        EthEvmEnv::builder()
-            .rpc(EL_URL.parse().unwrap())
-            .build()
-            .await
-            .unwrap();
+        let builder = EthEvmEnv::builder().rpc(EL_URL.parse().unwrap());
+        // the builder should be cloneable
+        builder.clone().build().await.unwrap();
     }
 
     #[test(tokio::test)]
     #[ignore] // This queries actual RPC nodes, running only on demand.
     async fn build_beacon_env() {
         let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
-        let env = EthEvmEnv::builder()
+
+        let builder = EthEvmEnv::builder()
             .provider(&provider)
             .beacon_api(CL_URL.parse().unwrap())
-            .block_number_or_tag(BlockNumberOrTag::Parent)
-            .build()
-            .await
-            .unwrap();
+            .block_number_or_tag(BlockNumberOrTag::Parent);
+        let env = builder.clone().build().await.unwrap();
         let commit = env.commit.inner.commit(&env.header, env.commit.config_id);
 
         // the commitment should verify against the parent_beacon_block_root of the child
@@ -333,13 +335,45 @@ mod tests {
             .get_block_by_number((env.header.number() + 1).into(), false)
             .await
             .unwrap();
-        let header_block = child_block.unwrap().header;
+        let header = child_block.unwrap().header;
         assert_eq!(
             commit,
             Commitment::new(
                 CommitmentVersion::Beacon as u16,
-                header_block.timestamp,
-                header_block.parent_beacon_block_root.unwrap(),
+                header.timestamp,
+                header.parent_beacon_block_root.unwrap(),
+                ChainSpec::DEFAULT_DIGEST,
+            )
+        );
+    }
+
+    #[test(tokio::test)]
+    #[ignore] // This queries actual RPC nodes, running only on demand.
+    async fn build_history_env() {
+        let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+
+        // initialize the env at latest - 100 while committing to latest - 1
+        let latest = provider.get_block_number().await.unwrap();
+        let builder = EthEvmEnv::builder()
+            .provider(&provider)
+            .block_number_or_tag(BlockNumberOrTag::Number(latest - 100))
+            .beacon_api(CL_URL.parse().unwrap())
+            .commitment_block(BlockNumberOrTag::Number(latest - 1));
+        let env = builder.clone().build().await.unwrap();
+        let commit = env.commit.inner.commit(&env.header, env.commit.config_id);
+
+        // the commitment should verify against the parent_beacon_block_root of the latest block
+        let child_block = provider
+            .get_block_by_number(latest.into(), false)
+            .await
+            .unwrap();
+        let header = child_block.unwrap().header;
+        assert_eq!(
+            commit,
+            Commitment::new(
+                CommitmentVersion::Beacon as u16,
+                header.timestamp,
+                header.parent_beacon_block_root.unwrap(),
                 ChainSpec::DEFAULT_DIGEST,
             )
         );
