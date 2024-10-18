@@ -8,7 +8,7 @@ All security audit reports are available [here](https://github.com/risc0/rz-secu
 
 ## Security Advisory Monitoring
 
-Security advisories will be published using the GitHub Security Advisory feature on the RISC Zero Ethereum repository [here](https://github.com/risc0/risc0-ethereum/security).
+Security advisories will be published using the GitHub Security Advisory feature on the RISC Zero repository [here](https://github.com/risc0/risc0/security).
 
 ## Vulnerability Reporting
 
@@ -44,6 +44,7 @@ cagv5r4H
 
 ## Change Log
 
-| version  | date       | comment         |
-| -------- | ---------- | --------------- |
-| 20241011 | 2024-10-11 | Initial version |
+| version  | date       | comment                      |
+| -------- | ---------- | ---------------------------- |
+| 20241011 | 2024-10-11 | Initial version              |
+| 20241018 | 2024-10-18 | Changed location for address |
