@@ -88,15 +88,15 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
         merkle::verify(leaf, &self.proof, LEAF_INDEX, root)
     }
 
+    pub(crate) fn timestamp(&self) -> u64 {
+        self.timestamp
+    }
+
     pub(crate) fn into_commit(self, leaf: B256) -> (u64, B256) {
         let beacon_root = self
             .process_proof(leaf)
             .expect("Invalid beacon inclusion proof");
-        (self.timestamp, beacon_root)
-    }
-
-    pub(crate) fn timestamp(&self) -> u64 {
-        self.timestamp
+        (self.timestamp(), beacon_root)
     }
 }
 
@@ -239,7 +239,7 @@ pub(crate) mod host {
             log::info!(
                 "Committing to parent beacon block: root={},timestamp={}",
                 beacon_root,
-                commit.timestamp
+                commit.timestamp()
             );
 
             Ok(commit)

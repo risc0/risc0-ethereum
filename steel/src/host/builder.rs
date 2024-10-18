@@ -278,8 +278,8 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
         );
 
         let beacon_url = self.beacon_config.beacon_url;
-        let history_commit = HistoryCommit::from_beacon_commit_and_header(
-            BeaconCommit::from_header(&evm_header, &self.provider, beacon_url.clone()).await?,
+        let history_commit = HistoryCommit::from_headers(
+            &evm_header,
             &commitment_header,
             &self.provider,
             beacon_url,

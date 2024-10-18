@@ -14,7 +14,6 @@
 
 use crate::{MerkleTrie, StateAccount};
 use alloy_primitives::{address, b256, keccak256, uint, Address, B256, U256};
-use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 /// Enum representing possible errors that can occur within the `BeaconRootsContract`.
@@ -65,6 +64,7 @@ impl BeaconRootsContract {
     /// timestamps and roots.
     pub const HISTORY_BUFFER_LENGTH: U256 = uint!(8191_U256);
     /// Address where the contract is deployed.
+    #[allow(dead_code)]
     pub const ADDRESS: Address = address!("000F3df6D732807Ef1319fB7B8bB8522d0Beac02");
 
     /// Hash of the contract's address, where the contract is deployed.
@@ -146,6 +146,8 @@ impl BeaconRootsContract {
         N: alloy::network::Network,
         P: alloy::providers::Provider<T, N>,
     {
+        use anyhow::{anyhow, Context};
+
         // compute the keys of the two storage slots that will be accessed
         let timestamp_idx = calldata % Self::HISTORY_BUFFER_LENGTH;
         let root_idx = timestamp_idx + Self::HISTORY_BUFFER_LENGTH;
@@ -164,11 +166,15 @@ impl BeaconRootsContract {
             )
             .context("storageProof invalid")?,
         };
-        // validate the returned state and compute the return value
-        let returns =
-            Self::get_from_state(state.clone(), calldata).context("API returned invalid state")?;
 
-        Ok((returns, state))
+        // validate the returned state and compute the return value
+        match Self::get_from_state(state.clone(), calldata) {
+            Ok(returns) => Ok((returns, state)),
+            Err(err) => match err {
+                Error::Reverted => Err(anyhow!("BeaconRootsContract({}) reverted", calldata)),
+                err => Err(err).context("API returned invalid state"),
+            },
+        }
     }
 }
 
