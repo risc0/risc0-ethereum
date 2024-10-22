@@ -1,0 +1,12 @@
+[package]
+name = "examples-common"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy = { workspace = true, features = ["consensus", "node-bindings"] }
+anyhow = "1.0"
+log = "0.4"
+risc0-ethereum-contracts = { workspace = true }
+risc0-zkvm = { workspace = true }
+url = "2.5"
