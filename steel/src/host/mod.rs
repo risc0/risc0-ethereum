@@ -20,6 +20,7 @@ use crate::{
     block::BlockInput,
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
+    history::HistoryCommit,
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
@@ -156,6 +157,21 @@ where
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(
+            input,
+            self.commit.inner,
+        )))
+    }
+}
+
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>
+where
+    T: Transport + Clone,
+    P: Provider<T, Ethereum>,
+{
+    pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
+
+        Ok(EvmInput::History(ComposeInput::new(
             input,
             self.commit.inner,
         )))
