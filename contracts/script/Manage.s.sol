@@ -206,7 +206,7 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
 contract ScheduleAddVerifier is RiscZeroManagementScript {
     function run() external {
         // Schedule the 'addVerifier()' request
-        bytes4 selector = verifier().SELECTOR();
+        bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
 
@@ -233,7 +233,7 @@ contract ScheduleAddVerifier is RiscZeroManagementScript {
 contract FinishAddVerifier is RiscZeroManagementScript {
     function run() external {
         // Execute the 'addVerifier()' request
-        bytes4 selector = verifier().SELECTOR();
+        bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
         console2.log("selector:");
         console2.logBytes4(selector);
 
