@@ -24,11 +24,11 @@ use crate::{
     EvmBlockHeader, EvmEnv,
 };
 use alloy::{
-    network::{BlockResponse, Ethereum, Network},
+    network::{BlockResponse, Ethereum, HeaderResponse, Network},
     providers::{Provider, ProviderBuilder, ReqwestProvider},
     transports::Transport,
 };
-use alloy_primitives::Sealable;
+use alloy_primitives::Sealed;
 use anyhow::{anyhow, ensure, Context, Result};
 use std::{fmt::Display, marker::PhantomData};
 use url::Url;
@@ -148,8 +148,10 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
         self
     }
 
-    /// Retrieves the block header based on the current builder configuration.
-    async fn get_header<T, N>(&self, block: Option<BlockNumberOrTag>) -> Result<H>
+    /// Returns the [EvmBlockHeader] of the specified block.
+    ///
+    /// If `block` is `None`, the block based on the current builder configuration is used instead.
+    async fn get_header<T, N>(&self, block: Option<BlockNumberOrTag>) -> Result<Sealed<H>>
     where
         T: Transport + Clone,
         N: Network,
@@ -159,16 +161,24 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     {
         let block = block.unwrap_or(self.block);
         let number = block.into_rpc_type(&self.provider).await?;
+
         let rpc_block = self
             .provider
             .get_block_by_number(number, false)
             .await
             .context("eth_getBlockByNumber failed")?
             .with_context(|| format!("block {} not found", number))?;
-        let header = rpc_block.header().clone();
-        header
+        let rpc_header = rpc_block.header().clone();
+        let header: H = rpc_header
             .try_into()
-            .map_err(|err| anyhow!("header invalid: {}", err))
+            .map_err(|err| anyhow!("header invalid: {}", err))?;
+        let header = header.seal_slow();
+        ensure!(
+            header.seal() == rpc_block.header().hash(),
+            "computed block hash does not match the hash returned by the API"
+        );
+
+        Ok(header)
     }
 }
 
@@ -182,7 +192,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
-        let header = self.get_header(None).await?.seal_slow();
+        let header = self.get_header(None).await?;
         log::info!(
             "Environment initialized with block {} ({})",
             header.number(),
@@ -213,9 +223,10 @@ pub struct History {
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// Sets a dedicated block for the commitment that is different from the execution block.
     ///
-    /// The commitment block must be later than the execution block (i.e. the execution block must be
-    /// an ancestor of the commitment block). This allows executing smart contracts with historical
-    /// state (e.g. 30 days ago), and verifying the results against a recent block commitment.
+    /// The commitment block must be later than the execution block (i.e. the execution block must
+    /// be an ancestor of the commitment block). This allows executing smart contracts with
+    /// historical state (e.g. 30 days ago) and verifying the results against a more recent
+    /// commitment block.
     ///
     /// Note that this feature requires a Beacon chain RPC provider, as it uses EIP-4788.
     pub fn commitment_block(
@@ -240,7 +251,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
         T: Transport + Clone,
         P: Provider<T, Ethereum>,
     {
-        let header = self.get_header(None).await?.seal_slow();
+        let header = self.get_header(None).await?;
         log::info!(
             "Environment initialized with block {} ({})",
             header.number(),
@@ -262,19 +273,20 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
+    /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
+    /// block that is different from the execution block.
     pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>>
     where
         T: Transport + Clone,
         P: Provider<T, Ethereum>,
     {
-        let evm_header = self.get_header(None).await?.seal_slow();
+        let evm_header = self.get_header(None).await?;
         let commitment_header = self
             .get_header(Some(self.beacon_config.commitment_block))
-            .await?
-            .seal_slow();
+            .await?;
         ensure!(
             evm_header.number() < commitment_header.number(),
-            "execution header not before commitment header"
+            "EVM execution block not before commitment block"
         );
 
         log::info!(

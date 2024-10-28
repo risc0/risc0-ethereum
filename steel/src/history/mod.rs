@@ -24,8 +24,8 @@ mod beacon_roots;
 /// Input committing a previous block hash to the corresponding Beacon Chain block root.
 pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
 
-/// Verifiable commitment that an execution block hash is included as an ancestor of a specific beacon block
-/// on the Ethereum blockchain.
+/// Verifiable commitment that an execution block hash is included as an ancestor of a specific
+/// beacon block on the Ethereum blockchain.
 ///
 /// This struct encapsulates the necessary data to prove that a given execution block is part of the
 /// canonical chain according to the Beacon Chain.
@@ -57,7 +57,7 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
         // just a sanity check, a BeaconCommit will always have this version
         assert_eq!(version, CommitmentVersion::Beacon as u16);
 
-        // starting from evm_commit, "walk forward" along the state_commits to reach a later beacon root.
+        // starting from evm_commit, "walk forward" along state_commits to reach a later beacon root
         let mut beacon_root = initial_commitment.digest;
         for state_commit in self.state_commits {
             // verify that the previous commitment is valid wrt the current state
@@ -97,8 +97,9 @@ mod host {
     impl HistoryCommit {
         /// Creates a `HistoryCommit` from an EVM block header and a commitment header.
         ///
-        /// This method fetches the necessary data from the Ethereum and Beacon chain to construct a `HistoryCommit`.
-        /// It iterates through blocks from the EVM header's number up to the commitment header's number, generating `StateCommit`s for each block in the range.
+        /// This method fetches the necessary data from the Ethereum and Beacon chain to construct a
+        /// `HistoryCommit`. It iterates through blocks from the EVM header's number up to
+        /// the commitment header's number, generating `StateCommit`s for each block in the range.
         pub(crate) async fn from_headers<T, P>(
             evm_header: &Sealed<EthBlockHeader>,
             commitment_header: &Sealed<EthBlockHeader>,
@@ -109,6 +110,10 @@ mod host {
             T: Transport + Clone,
             P: Provider<T, Ethereum>,
         {
+            ensure!(
+                evm_header.number() < commitment_header.number(),
+                "EVM execution block not before commitment block"
+            );
             let client = BeaconClient::new(beacon_url.clone()).context("invalid URL")?;
 
             // create a regular beacon commit to the block header used for EVM execution

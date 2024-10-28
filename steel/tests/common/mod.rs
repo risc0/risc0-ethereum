@@ -17,7 +17,7 @@ use std::fmt::Debug;
 use alloy::{
     eips::eip2930::AccessList, network::Ethereum, providers::Provider, transports::Transport,
 };
-use alloy_primitives::{Address, Sealable, U256};
+use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use once_cell::sync::Lazy;
 use revm::primitives::SpecId;
@@ -45,8 +45,8 @@ where
         .await
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);
-    let block_hash = env.header().hash_slow();
-    let block_number = env.header().inner().number;
+    let block_hash = env.header().seal();
+    let block_number = env.header().number;
 
     let preflight_result = {
         let mut preflight = Contract::preflight(address, &mut env);
