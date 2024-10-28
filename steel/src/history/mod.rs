@@ -121,6 +121,7 @@ mod host {
             let evm_commit =
                 BeaconCommit::from_header(evm_header, &rpc_provider, beacon_url).await?;
             let mut commit_ts = evm_commit.timestamp();
+            // safe unwrap: BeaconCommit::from_header checks that the proof can be processed
             let mut commit_beacon_root = evm_commit.process_proof(evm_header.seal()).unwrap();
 
             let mut state_commits: Vec<StateCommit> = Vec::new();
