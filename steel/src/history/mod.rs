@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Types related to commitments to a historical state.
 use crate::{
     beacon, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
 };
@@ -24,8 +25,8 @@ mod beacon_roots;
 /// Input committing a previous block hash to the corresponding Beacon Chain block root.
 pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
 
-/// Verifiable commitment that an execution block hash is included as an ancestor of a specific
-/// beacon block on the Ethereum blockchain.
+/// A commitment that an execution block is included as an ancestor of a specific beacon block on
+/// the Ethereum blockchain.
 ///
 /// This struct encapsulates the necessary data to prove that a given execution block is part of the
 /// canonical chain according to the Beacon Chain.

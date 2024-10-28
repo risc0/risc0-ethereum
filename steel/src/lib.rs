@@ -74,6 +74,7 @@ pub trait BlockHeaderCommit<H: EvmBlockHeader> {
 }
 
 /// A generalized input type consisting of a block-based input and a commitment wrapper.
+///
 /// The `commit` field provides a mechanism to generate a commitment to the block header
 /// contained within the `input` field.
 #[derive(Clone, Serialize, Deserialize)]

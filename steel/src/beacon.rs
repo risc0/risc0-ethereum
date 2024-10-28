@@ -28,8 +28,8 @@ pub const BLOCK_HASH_LEAF_INDEX: usize = 6444;
 /// Input committing to the corresponding Beacon Chain block root.
 pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
 
-/// Provides verifiable proof that an execution block hash is included in a specific beacon block on
-/// the Ethereum blockchain.
+/// A commitment that an execution block hash is included in a specific beacon block on the Ethereum
+/// blockchain.
 ///
 /// This type represents a commitment that proves the inclusion of an execution block's hash within
 /// a particular beacon block on the Ethereum beacon chain. It relies on a Merkle proof to establish
