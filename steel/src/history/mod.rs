@@ -24,7 +24,7 @@ mod beacon_roots;
 /// Input committing a previous block hash to the corresponding Beacon Chain block root.
 pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
 
-/// Verifiable proof that an execution block hash is included in the past of a specific beacon block
+/// Verifiable commitment that an execution block hash is included as an ancestor of a specific beacon block
 /// on the Ethereum blockchain.
 ///
 /// This struct encapsulates the necessary data to prove that a given execution block is part of the
@@ -33,7 +33,7 @@ pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
 pub struct HistoryCommit {
     /// Commit of the Steel EVM execution block hash to its beacon block hash.
     evm_commit: BeaconCommit,
-    /// Iterative commits for verifying `evm_commit`.
+    /// Iterative commits for verifying `evm_commit` as an ancestor of some valid Beacon block.
     state_commits: Vec<StateCommit>,
 }
 
@@ -48,7 +48,7 @@ struct StateCommit {
 
 impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
     /// Generates a commitment that proves the given block header is included in the Beacon Chain's
-    /// history.
+    /// history. Panics if the provided [HistoryCommit] data is invalid or inconsistent.
     #[inline]
     fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
         // first, compute the beacon commit of the EVM execution
@@ -57,6 +57,7 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
         // just a sanity check, a BeaconCommit will always have this version
         assert_eq!(version, CommitmentVersion::Beacon as u16);
 
+        // starting from evm_commit, "walk forward" along the state_commits to reach a later beacon root.
         let mut beacon_root = initial_commitment.digest;
         for state_commit in self.state_commits {
             // verify that the previous commitment is valid wrt the current state

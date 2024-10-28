@@ -36,7 +36,9 @@ pub enum Error {
 /// The `State` struct represents the state of the contract.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct State {
+    /// EVM (global) state trie with path to the contract account.
     state_trie: MerkleTrie,
+    /// Storage trie containing the state of the beacon root contract.
     storage_trie: MerkleTrie,
 }
 

@@ -212,6 +212,12 @@ pub struct History {
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// Sets a dedicated block for the commitment that is different from the execution block.
+    ///
+    /// The commitment block must be later than the execution block (i.e. the execution block must be
+    /// an ancestor of the commitment block). This allows executing smart contracts with historical
+    /// state (e.g. 30 days ago), and verifying the results against a recent block commitment.
+    ///
+    /// Note that this feature requires a Beacon chain RPC provider, as it uses EIP-4788.
     pub fn commitment_block(
         self,
         block: BlockNumberOrTag,
