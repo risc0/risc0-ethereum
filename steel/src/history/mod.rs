@@ -127,7 +127,7 @@ mod host {
             let mut state_commits: Vec<StateCommit> = Vec::new();
 
             // we assume that not more than 25% of the blocks have been skipped
-            // TODO: find a more sophisticated way
+            // TODO(#309): implement a more sophisticated way to determine the step size
             let step = BeaconRootsContract::HISTORY_BUFFER_LENGTH.to::<BlockNumber>() * 75 / 100;
             let target = commitment_header.number();
 
