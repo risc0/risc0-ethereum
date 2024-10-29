@@ -1,5 +1,5 @@
 [package]
-name = "op-steel"
+name = "risc0-op-steel"
 description = "Optimism abstraction for Steel."
 version = "0.1.0-alpha.1"
 rust-version = "1.81"
@@ -26,10 +26,11 @@ test-log = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
+log = { workspace = true }
 
 [dev-dependencies]
-op-steel = { workspace = true, features = ["host"] }
+risc0-op-steel = { workspace = true, features = ["host"] }
 
 [features]
 default = []
-host = ["dep:alloy", "dep:tokio", "dep:url", "risc0-steel/host"]
+host = ["dep:alloy", "dep:tokio", "dep:url", "risc0-steel/host", "alloy-primitives/rand"]

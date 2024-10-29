@@ -11,7 +11,7 @@ examples-common = { workspace = true, optional = true }
 l2-to-l1-core = { path = "core" }
 l2-to-l1-methods = { path = "methods" }
 log = "0.4"
-op-steel = { workspace = true, features = ["host"] }
+risc0-op-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
 tokio = { version = "1.40", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

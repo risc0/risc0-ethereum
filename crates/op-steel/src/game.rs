@@ -130,25 +130,25 @@ pub mod host {
             DEFENDER_WINS
         }
 
-        // docker run -i ethereum/solc:0.8.27 - --optimize --bin-runtime
-        #[sol(rpc, deployed_bytecode="608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063b0de44ac1461002d575b5f5ffd5b61004061003b366004610486565b610052565b60405190815260200160405180910390f35b5f8061005e83426104d1565b90505f846001600160a01b0316633c9f397c6040518163ffffffff1660e01b8152600401602060405180830381865afa15801561009d573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906100c19190610509565b90505f856001600160a01b0316634fd0434c6040518163ffffffff1660e01b8152600401602060405180830381865afa158015610100573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101249190610529565b90505f866001600160a01b031663f2b4e6176040518163ffffffff1660e01b8152600401602060405180830381865afa158015610163573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101879190610544565b90505f816001600160a01b0316634d1975b46040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101c6573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101ea919061055f565b90505b801561043b575f80806001600160a01b03851663bb8aa1fc61020e86610576565b9550856040518263ffffffff1660e01b815260040161022f91815260200190565b606060405180830381865afa15801561024a573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061026e919061058b565b9250925092508567ffffffffffffffff168267ffffffffffffffff1610156102985750505061043b565b8663ffffffff168363ffffffff16146102b3575050506101ed565b6040516322c4269960e11b81526001600160a01b0382811660048301528c16906345884d3290602401602060405180830381865afa1580156102f7573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061031b91906105d2565b15610328575050506101ed565b6002816001600160a01b031663200d2ed26040518163ffffffff1660e01b8152600401602060405180830381865afa158015610366573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061038a9190610605565b600281111561039b5761039b6105f1565b146103a8575050506101ed565b8767ffffffffffffffff16816001600160a01b03166319effeb46040518163ffffffff1660e01b8152600401602060405180830381865afa1580156103ef573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906104139190610529565b67ffffffffffffffff16111561042b575050506101ed565b8398505050505050505050610454565b6040516309b3c62760e21b815260040160405180910390fd5b92915050565b6001600160a01b038116811461046e575f5ffd5b50565b67ffffffffffffffff8116811461046e575f5ffd5b5f5f60408385031215610497575f5ffd5b82356104a28161045a565b915060208301356104b281610471565b809150509250929050565b634e487b7160e01b5f52601160045260245ffd5b67ffffffffffffffff8281168282160390811115610454576104546104bd565b805163ffffffff81168114610504575f5ffd5b919050565b5f60208284031215610519575f5ffd5b610522826104f1565b9392505050565b5f60208284031215610539575f5ffd5b815161052281610471565b5f60208284031215610554575f5ffd5b81516105228161045a565b5f6020828403121561056f575f5ffd5b5051919050565b5f81610584576105846104bd565b505f190190565b5f5f5f6060848603121561059d575f5ffd5b6105a6846104f1565b925060208401516105b681610471565b60408501519092506105c78161045a565b809150509250925092565b5f602082840312156105e2575f5ffd5b81518015158114610522575f5ffd5b634e487b7160e01b5f52602160045260245ffd5b5f60208284031215610615575f5ffd5b815160038110610522575f5ffdfea264697066735822122089257296e00cbc25ff86fc972511974b0cfb06b0be6abdeec67857f760a9ca4064736f6c634300081b0033")]
+        // docker run -i ethereum/solc:0.8.28 - --optimize --bin-runtime
+        #[sol(rpc, deployed_bytecode="608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063e2ead3881461002d575b5f5ffd5b61004061003b3660046104bf565b610052565b60405190815260200160405180910390f35b5f5f826001600160a01b031663bf653a5c6040518163ffffffff1660e01b8152600401602060405180830381865afa158015610090573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906100b491906104e1565b6100be904261050c565b90505f836001600160a01b0316633c9f397c6040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100fd573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610121919061053d565b90505f846001600160a01b0316634fd0434c6040518163ffffffff1660e01b8152600401602060405180830381865afa158015610160573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610184919061056d565b90505f856001600160a01b031663f2b4e6176040518163ffffffff1660e01b8152600401602060405180830381865afa1580156101c3573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101e79190610586565b90505f816001600160a01b0316634d1975b46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610226573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061024a91906104e1565b90505b801561048f575f80806001600160a01b03851663bb8aa1fc61026e866105a1565b9550856040518263ffffffff1660e01b815260040161028f91815260200190565b606060405180830381865afa1580156102aa573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906102ce91906105b6565b9250925092508567ffffffffffffffff168267ffffffffffffffff1610156102f85750505061048f565b8663ffffffff168363ffffffff16146103135750505061024d565b6002816001600160a01b031663200d2ed26040518163ffffffff1660e01b8152600401602060405180830381865afa158015610351573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610375919061060e565b6002811115610386576103866105fa565b146103935750505061024d565b87816001600160a01b03166319effeb46040518163ffffffff1660e01b8152600401602060405180830381865afa1580156103d0573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906103f4919061056d565b67ffffffffffffffff16111561040c5750505061024d565b6040516322c4269960e11b81526001600160a01b0382811660048301528b16906345884d3290602401602060405180830381865afa158015610450573d5f5f3e3d5ffd5b505050506040513d601f19601f82011682018060405250810190610474919061062c565b156104815750505061024d565b509198975050505050505050565b6040516309b3c62760e21b815260040160405180910390fd5b6001600160a01b03811681146104bc575f5ffd5b50565b5f602082840312156104cf575f5ffd5b81356104da816104a8565b9392505050565b5f602082840312156104f1575f5ffd5b5051919050565b634e487b7160e01b5f52601160045260245ffd5b8181038181111561051f5761051f6104f8565b92915050565b805163ffffffff81168114610538575f5ffd5b919050565b5f6020828403121561054d575f5ffd5b6104da82610525565b805167ffffffffffffffff81168114610538575f5ffd5b5f6020828403121561057d575f5ffd5b6104da82610556565b5f60208284031215610596575f5ffd5b81516104da816104a8565b5f816105af576105af6104f8565b505f190190565b5f5f5f606084860312156105c8575f5ffd5b6105d184610525565b92506105df60208501610556565b915060408401516105ef816104a8565b809150509250925092565b634e487b7160e01b5f52602160045260245ffd5b5f6020828403121561061e575f5ffd5b8151600381106104da575f5ffd5b5f6020828403121561063c575f5ffd5b815180151581146104da575f5ffdfea2646970667358221220caaf151e3bd0c01c54728b1bd0c20b5bc683a713c7d064892cdde24968be9a3e64736f6c634300081c0033")]
         contract OPGameFinder {
             error GameNotFound();
 
-            /// @notice Finds the index of the latest finalized OP  dispute game.
+            /// @notice Finds the index of the latest finalized OP dispute game.
             ///
             /// This function iterates through all games created by the DisputeGameFactory and finds one that meets certain criteria:
             /// - Was created after respectedGameTypeUpdatedAt
             /// - Has the same respected game type as IOptimismPortal2's current respected game type
+            /// - Resolved in favor of the root claim (the output proposal)
+            /// - Has been resolved for at least IOptimismPortal2's proof maturity delay seconds
             /// - Is not blacklisted on IOptimismPortal2
-            /// - Resolved in favor of the root claim (the output proposal) and has been resolved for at least `delay` seconds.
             ///
             /// @param portal The address of an instance of Optimism Portal 2 contract
-            /// @param delay Time period to wait before considering a game finalized, measured from block timestamp
             ///
             /// @return uint256 Finalized index if found; reverts with GameNotFound error otherwise
-            function findFinalizedIndex(address portal, uint64 delay) external view returns (uint256) {
-                uint64 ts = uint64(block.timestamp) - delay;
+            function findFinalizedIndex(address portal) external view returns (uint256) {
+                uint256 ts = block.timestamp - IOptimismPortal2(portal).proofMaturityDelaySeconds();
                 uint32 respectedGameType = IOptimismPortal2(portal).respectedGameType();
                 uint64 respectedGameTypeUpdatedAt = IOptimismPortal2(portal).respectedGameTypeUpdatedAt();
                 IDisputeGameFactory factory = IDisputeGameFactory(IOptimismPortal2(portal).disputeGameFactory());
@@ -160,12 +160,12 @@ pub mod host {
                     if (createdAt < respectedGameTypeUpdatedAt) break;
                     // The game type of the dispute game must be the respected game type.
                     if (gameType != respectedGameType) continue;
-                    // The game must not be blacklisted.
-                    if (IOptimismPortal2(portal).disputeGameBlacklist(game)) continue;
                     // The game must be resolved in favor of the root claim (the output proposal).
                     if (IDisputeGame(game).status() != GameStatus.DEFENDER_WINS) continue;
-                    // The game must have been resolved for at least `delay` seconds.
+                    // The game must have been resolved for at least `proofMaturityDelaySeconds`.
                     if (IDisputeGame(game).resolvedAt() > ts) continue;
+                    // The game must not be blacklisted.
+                    if (IOptimismPortal2(portal).disputeGameBlacklist(game)) continue;
 
                     return i;
                 }
@@ -214,8 +214,8 @@ pub mod host {
         Latest,
         /// The fault dispute game with the given index.
         Number(u64),
-        /// The latest feasible fault dispute game that has been resolved for this many seconds.
-        Finalized(u64),
+        /// The latest finalized fault dispute game.
+        Finalized,
     }
 
     #[derive(Clone, Debug)]
@@ -251,11 +251,11 @@ pub mod host {
                 DisputeGameIndex::Latest => {
                     find_latest_game(l2_provider, game_type, updated_at, factory, None).await
                 }
-                DisputeGameIndex::Finalized(delay) => {
+                DisputeGameIndex::Finalized => {
                     // Finding the latest finalized game is very RPC intensive, instead we use the
                     // OPGameFinder contract to get it in one call. To ensure that this contract is
-                    // always available, we override the state of the null address.
-                    let finder = OPGameFinder::new(Address::ZERO, self.0.provider());
+                    // always available, we override the code of a random address.
+                    let finder = OPGameFinder::new(Address::random(), self.0.provider());
                     let mut overrides = StateOverride::default();
                     overrides.insert(
                         *finder.address(),
@@ -265,7 +265,7 @@ pub mod host {
                         },
                     );
                     let index = finder
-                        .findFinalizedIndex(*self.0.address(), delay)
+                        .findFinalizedIndex(*self.0.address())
                         .call()
                         .overrides(&overrides)
                         .await?
@@ -336,7 +336,9 @@ pub mod host {
             // verify the claim of the game
             let output_root_proof = OutputRootProof::from_provider(&l2_provider, l2_block_number)
                 .await
-                .context("failed to construct output root")?;
+                .with_context(|| {
+                    format!("failed to create OutputRootProof for game {}", game.index)
+                })?;
             if game.rootClaim == output_root_proof.hash() {
                 return Ok(DisputeGame {
                     index: game.index,

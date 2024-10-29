@@ -136,8 +136,10 @@ pub struct OpEvmEnvBuilder<Stage, P2, G> {
 }
 
 /// First stage of a [OpEvmEnvBuilder] before a provider is set.
+#[derive(Clone, Debug)]
 pub struct PreProviderStage;
 /// Second stage of a [OpEvmEnvBuilder] after a provider has been set.
+#[derive(Clone, Debug)]
 pub struct ProviderStage;
 
 /// Configuration to commit to an OP dispute game.
@@ -317,6 +319,12 @@ where
             .await?;
         assert_eq!(proof.latestBlockhash, env.header().hash_slow());
 
+        log::info!(
+            "Committing to dispute game: rootClaim={},index={}",
+            proof.hash(),
+            game.index,
+        );
+
         Ok(OpEvmEnv {
             inner: env,
             commit: DisputeGameCommit::new(game.index.to(), proof),
@@ -327,17 +335,29 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloy_primitives::address;
     use test_log::test;
 
+    const L1_URL: &str = "https://ethereum-rpc.publicnode.com";
     const L2_URL: &str = "https://optimism-rpc.publicnode.com";
+
+    const OP_PORTAL_ADDRESS: Address = address!("bEb5Fc579115071764c7423A4f12eDde41f106Ed");
+
+    #[test(tokio::test)]
+    async fn clone_op_dispute_game_builder() {
+        let builder = OpEvmEnv::builder()
+            .dispute_game_from_rpc(OP_PORTAL_ADDRESS, L1_URL.parse().unwrap())
+            .rpc(L2_URL.parse().unwrap())
+            .game_index(DisputeGameIndex::Latest);
+        // the builder should be cloneable
+        let _ = builder.clone();
+    }
 
     #[test(tokio::test)]
     #[ignore] // This queries actual RPC nodes, running only on demand.
-    async fn build_op_env() {
-        OpEvmEnv::builder()
-            .rpc(L2_URL.parse().unwrap())
-            .build()
-            .await
-            .unwrap();
+    async fn build_op_block_env() {
+        let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
+        // the builder should be cloneable
+        builder.clone().build().await.unwrap();
     }
 }

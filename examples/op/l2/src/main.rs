@@ -17,7 +17,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use l2_core::{CALL, CALLER, CONTRACT, IERC20};
 use l2_methods::{L2_GUEST_ELF, L2_GUEST_ID};
-use op_steel::{
+use risc0_op_steel::{
     optimism::{OpEvmEnv, OP_MAINNET_CHAIN_SPEC},
     Contract,
 };

@@ -52,6 +52,8 @@ pub async fn into_beacon_input(input: EthEvmInput, url: Url) -> Result<EthEvmInp
 }
 
 /// Derives the OP verifiable input from an L1 beacon input and an OP RPC provider.
+///
+/// It panics when `input` is not a [
 pub async fn into_beacon_input_with_provider<T, P>(
     input: EthEvmInput,
     provider: P,
@@ -61,7 +63,7 @@ where
     P: Provider<T, Optimism>,
 {
     let EthEvmInput::Beacon(input) = input else {
-        panic!();
+        panic!("only EthEvmInput::Beacon is supported");
     };
     let (input, commit) = input.into_parts();
     let (proof, timestamp) = commit.into_parts();

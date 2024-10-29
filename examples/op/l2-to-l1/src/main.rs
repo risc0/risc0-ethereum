@@ -13,16 +13,14 @@
 // limitations under the License.
 
 use alloy::primitives::{address, Address};
-use alloy::providers::ProviderBuilder;
 use alloy::sol_types::SolCall;
 use anyhow::{Context, Result};
 use clap::Parser;
 use l2_to_l1_core::{CALL, CALLER, CONTRACT, IERC20};
 use l2_to_l1_methods::{L2_TO_L1_GUEST_ELF, L2_TO_L1_GUEST_ID};
-use op_steel::DisputeGameIndex;
-use op_steel::{
+use risc0_op_steel::{
     optimism::{OpEvmEnv, OP_MAINNET_CHAIN_SPEC},
-    Contract,
+    Contract, DisputeGameIndex,
 };
 use risc0_zkvm::sha::Digest;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
@@ -56,7 +54,7 @@ async fn main() -> Result<()> {
     // Build an environment based on the state of the latest finalized fault dispute game
     let builder = OpEvmEnv::builder()
         .dispute_game_from_rpc(OPTIMISM_PORTAL, args.l1_rpc_url.clone())
-        .game_index(DisputeGameIndex::Finalized(0));
+        .game_index(DisputeGameIndex::Finalized);
     let mut env = builder.rpc(args.l2_rpc_url).build().await?;
     env = env.with_chain_spec(&OP_MAINNET_CHAIN_SPEC);
 

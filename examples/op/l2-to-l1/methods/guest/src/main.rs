@@ -16,7 +16,7 @@
 #![no_main]
 
 use l2_to_l1_core::{CALL, CALLER, CONTRACT};
-use op_steel::{
+use risc0_op_steel::{
     optimism::{OpEvmInput, OP_MAINNET_CHAIN_SPEC},
     Contract,
 };
