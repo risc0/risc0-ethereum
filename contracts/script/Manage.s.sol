@@ -18,6 +18,7 @@ pragma solidity ^0.8.9;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
+import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
@@ -184,20 +185,22 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
         // Deploy new contracts
-        // TODO: Prints here construct a kind of mangled TOML block that can be copy-pasted into
-        // deployment.toml. It should be fixed up to create a proper block.
         vm.broadcast(deployerAddress());
         RiscZeroGroth16Verifier groth16Verifier =
             new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         _verifier = IRiscZeroVerifier(address(groth16Verifier));
-        console2.log("version = \"", groth16Verifier.VERSION(), "\"");
-        console2.log("selector = \"");
-        console2.logBytes4(groth16Verifier.SELECTOR());
-        console2.log("verifier = \"", address(verifier()), "\"");
 
         vm.broadcast(deployerAddress());
         _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
-        console2.log("estop = \"", address(verifierEstop()), "\"");
+
+        // Print in TOML format
+        console2.log("");
+        console2.log(string.concat("version = \"", groth16Verifier.VERSION(), "\""));
+        console2.log(
+            string.concat("selector = \"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4), "\"")
+        );
+        console2.log(string.concat("verifier = \"", Strings.toHexString(uint256(uint160(address(verifier())))), "\""));
+        console2.log(string.concat("estop = \"", Strings.toHexString(uint256(uint160(address(verifierEstop())))), "\""));
     }
 }
 
