@@ -181,6 +181,8 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract DeployEstopVerifier is RiscZeroManagementScript {
     function run() external {
+        string memory chainKey = vm.envString("CHAIN_KEY");
+        console2.log("chainKey:", chainKey);
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
@@ -191,10 +193,11 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         _verifier = IRiscZeroVerifier(address(groth16Verifier));
 
         vm.broadcast(deployerAddress());
-        _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
+        _verifierEstop = new RiscZeroVerifierEmergencyStop(groth16Verifier, verifierEstopOwner);
 
         // Print in TOML format
         console2.log("");
+        console2.log(string.concat("[[chains.", chainKey, ".verifiers]]"));
         console2.log(string.concat("version = \"", groth16Verifier.VERSION(), "\""));
         console2.log(
             string.concat("selector = \"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4), "\"")
