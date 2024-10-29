@@ -112,6 +112,8 @@ contract RiscZeroManagementScript is Script {
         return _verifier;
     }
 
+    /// @notice Determines the contract address of IRiscZeroSelectable from the environment.
+    /// @dev Uses the VERIFIER_ESTOP environment variable, and gets the proxied selectable.
     function selectable() internal returns (IRiscZeroSelectable) {
         return IRiscZeroSelectable(address(verifier()));
     }
