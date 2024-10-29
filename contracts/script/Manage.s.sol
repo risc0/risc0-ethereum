@@ -21,7 +21,8 @@ import {console2} from "forge-std/console2.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
-import {IRiscZeroVerifier} from "../src//IRiscZeroVerifier.sol";
+import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
+import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 
 /// @notice Compare strings for equality.
@@ -47,7 +48,7 @@ contract RiscZeroManagementScript is Script {
     TimelockController internal _timelockController;
     RiscZeroVerifierRouter internal _verifierRouter;
     RiscZeroVerifierEmergencyStop internal _verifierEstop;
-    RiscZeroGroth16Verifier internal _verifier;
+    IRiscZeroVerifier internal _verifier;
 
     /// @notice Returns the address of the deployer, set in the DEPLOYER_PUBLIC_KEY env var.
     function deployerAddress() internal returns (address) {
@@ -100,17 +101,19 @@ contract RiscZeroManagementScript is Script {
         return _verifierEstop;
     }
 
-    /// @notice Determines the contract address of RiscZeroGroth16Verifier from the environment.
+    /// @notice Determines the contract address of IRiscZeroVerifier from the environment.
     /// @dev Uses the VERIFIER_ESTOP environment variable, and gets the proxied verifier.
-    // NOTE: This assumes the verifier is a RiscZeroGroth16Verifier. In the future, this may not
-    // be a valid assumption, once we introduce other verifier types.
-    function verifier() internal returns (RiscZeroGroth16Verifier) {
+    function verifier() internal returns (IRiscZeroVerifier) {
         if (address(_verifier) != address(0)) {
             return _verifier;
         }
-        _verifier = RiscZeroGroth16Verifier(address(verifierEstop().verifier()));
-        console2.log("Using RiscZeroGroth16Verifier at address", address(_verifier));
+        _verifier = IRiscZeroVerifier(address(verifierEstop().verifier()));
+        console2.log("Using IRiscZeroVerifier at address", address(_verifier));
         return _verifier;
+    }
+
+    function selectable() internal returns (IRiscZeroSelectable) {
+        return IRiscZeroSelectable(address(verifier()));
     }
 
     /// @notice Simulates a call to check if it will succeed, given the current EVM state.
@@ -182,10 +185,12 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         // TODO: Prints here construct a kind of mangled TOML block that can be copy-pasted into
         // deployment.toml. It should be fixed up to create a proper block.
         vm.broadcast(deployerAddress());
-        _verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("version = \"", verifier().VERSION(), "\"");
+        RiscZeroGroth16Verifier groth16Verifier =
+            new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+        _verifier = IRiscZeroVerifier(address(groth16Verifier));
+        console2.log("version = \"", groth16Verifier.VERSION(), "\"");
         console2.log("selector = \"");
-        console2.logBytes4(verifier().SELECTOR());
+        console2.logBytes4(groth16Verifier.SELECTOR());
         console2.log("verifier = \"", address(verifier()), "\"");
 
         vm.broadcast(deployerAddress());
@@ -206,7 +211,7 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
 contract ScheduleAddVerifier is RiscZeroManagementScript {
     function run() external {
         // Schedule the 'addVerifier()' request
-        bytes4 selector = verifier().SELECTOR();
+        bytes4 selector = selectable().SELECTOR();
         console2.log("selector:");
         console2.logBytes4(selector);
 
@@ -233,7 +238,7 @@ contract ScheduleAddVerifier is RiscZeroManagementScript {
 contract FinishAddVerifier is RiscZeroManagementScript {
     function run() external {
         // Execute the 'addVerifier()' request
-        bytes4 selector = verifier().SELECTOR();
+        bytes4 selector = selectable().SELECTOR();
         console2.log("selector:");
         console2.logBytes4(selector);
 

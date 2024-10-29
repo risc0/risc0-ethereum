@@ -33,6 +33,7 @@ import {
     SystemStateLib,
     VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
+import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 import {TestReceipt} from "./TestReceipt.sol";
 
@@ -57,7 +58,7 @@ contract RiscZeroGroth16VerifierTest is Test {
         verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
     }
 
-    function testConsistentSystemStateZeroDigest() external view {
+    function testConsistentSystemStateZeroDigest() external pure {
         require(
             ReceiptClaimLib.SYSTEM_STATE_ZERO_DIGEST
                 == sha256(
@@ -138,6 +139,7 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testSelectorIsStable() external view {
-        require(verifier.SELECTOR() == hex"50bd1769");
+        IRiscZeroSelectable selectable = IRiscZeroSelectable(verifier);
+        require(selectable.SELECTOR() == hex"50bd1769");
     }
 }
