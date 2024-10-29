@@ -17,6 +17,7 @@ alloy = { workspace = true, optional = true, features = ["contract", "providers"
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
+log = { workspace = true }
 once_cell = { workspace = true }
 op-alloy-network = { workspace = true }
 revm = { workspace = true, features = ["std", "optimism"] }
@@ -26,7 +27,6 @@ test-log = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
-log = { workspace = true }
 
 [dev-dependencies]
 risc0-op-steel = { workspace = true, features = ["host"] }
