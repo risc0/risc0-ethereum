@@ -53,7 +53,7 @@ pub async fn into_beacon_input(input: EthEvmInput, url: Url) -> Result<EthEvmInp
 
 /// Derives the OP verifiable input from an L1 beacon input and an OP RPC provider.
 ///
-/// It panics when `input` is not a [
+/// It panics when `input` is not [EthEvmInput::Beacon].
 pub async fn into_beacon_input_with_provider<T, P>(
     input: EthEvmInput,
     provider: P,
@@ -82,6 +82,8 @@ where
         .get_block_by_number(block_number.into(), false)
         .await?;
     let timestamp = block_response.unwrap().header.timestamp;
+
+    log::debug!("OP timestamp of beacon commit: {}", timestamp);
 
     Ok(EthEvmInput::Beacon(BeaconInput::new(
         input,
