@@ -55,6 +55,11 @@ fn main() -> Result<()> {
             Regex::new(r"crate\s*::")?,
             "crate::vendor::ethereum_consensus::",
         ),
+        // disable all features, which are not "serde"
+        (
+            Regex::new(r#"feature\s*=\s*"(?:[^s]|s[^e]|se[^r]|ser[^d]|serd[^e]|serde.).*""#)?,
+            "any()",
+        ),
         // always enable the "serde" feature
         // replacing with `all()`, instead would be preferable, however this is blocked by:
         // https://github.com/rust-lang/rust-clippy/issues/13007
