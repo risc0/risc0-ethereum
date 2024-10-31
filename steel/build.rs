@@ -21,8 +21,9 @@ use std::{
 };
 use walkdir::WalkDir;
 
-const SOURCE: &'static str = "src/vendor/git/ethereum-consensus/ethereum-consensus/src";
-const TARGET: &'static str = "src/vendor/ethereum_consensus";
+const SOURCE: &str = "src/vendor/git/ethereum-consensus/ethereum-consensus/src";
+const TARGET: &str = "src/vendor/ethereum_consensus";
+
 fn main() -> Result<()> {
     let manifest_dir =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").context("CARGO_MANIFEST_DIR not set")?);
@@ -54,10 +55,13 @@ fn main() -> Result<()> {
             Regex::new(r"crate\s*::")?,
             "crate::vendor::ethereum_consensus::",
         ),
-        // enable the "serde" feature
-        (Regex::new(r#"feature\s*=\s*"serde""#)?, "all()"),
-        // disable all other features
-        (Regex::new(r#"feature\s*=\s*"[^"]*""#)?, "any()"),
+        // always enable the "serde" feature
+        // replacing with `all()`, instead would be preferable, however this is blocked by:
+        // https://github.com/rust-lang/rust-clippy/issues/13007
+        (
+            Regex::new(r#"feature\s*=\s*"serde""#)?,
+            r#"feature = "ethereum-consensus""#,
+        ),
     ];
     // apply replacements to all .rs files in vendored crate
     modify_files(&vendor_dir, Glob::new("*.rs")?, &replacements)?;
