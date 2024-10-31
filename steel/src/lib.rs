@@ -26,7 +26,7 @@ mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
-#[cfg    ( feature = "host")]
+#[cfg(feature = "host")]
 pub mod host;
 mod merkle;
 mod mpt;
