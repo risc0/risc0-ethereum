@@ -112,17 +112,17 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 pub(crate) mod host {
     use super::*;
     use crate::ethereum::EthBlockHeader;
+    use crate::vendor::ethereum_consensus::ssz::prelude::proofs::Proof;
+    use crate::vendor::ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use alloy::{network::Ethereum, providers::Provider, transports::Transport};
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
     use client::BeaconClient;
-    use ethereum_consensus::ssz::prelude::proofs::Proof;
-    use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
     use proofs::ProofAndWitness;
     use url::Url;
 
     pub(crate) mod client {
-        use ethereum_consensus::{
+        use crate::vendor::ethereum_consensus::{
             phase0::SignedBeaconBlockHeader, primitives::Root, types::mainnet::SignedBeaconBlock,
             Fork,
         };

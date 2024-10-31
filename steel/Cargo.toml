@@ -16,18 +16,23 @@ alloy = { workspace = true, optional = true, features = ["eips", "network", "pro
 alloy-consensus = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
-alloy-rlp-derive = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
-ethereum-consensus = { workspace = true, optional = true }
+blst = { workspace = true, optional = true }
+c-kzg = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
+integer-sqrt = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 nybbles = { workspace = true, features = ["serde"] }
 once_cell = { workspace = true }
+rand = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
+serde_yaml = { workspace = true, optional = true }
 sha2 = { workspace = true }
+ssz_rs = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
@@ -40,14 +45,33 @@ risc0-steel = { path = ".", features = ["host"] }
 serde_json = { workspace = true }
 test-log = { workspace = true }
 
+[build-dependencies]
+anyhow = { workspace = true }
+copy_dir = { workspace = true }
+globset = { workspace = true }
+regex = { workspace = true }
+walkdir = { workspace = true }
+
 [features]
 default = []
 host = [
+    "ethereum-consensus",
     "dep:alloy",
-    "dep:ethereum-consensus",
     "dep:log",
     "dep:reqwest",
     "dep:serde_json",
     "dep:tokio",
     "dep:url",
+]
+
+# dependencies required by ethereum_consensus
+ethereum-consensus = [
+    "dep:blst",
+    "dep:c-kzg",
+    "dep:hex",
+    "dep:integer-sqrt",
+    "dep:rand",
+    "dep:serde_json",
+    "dep:serde_yaml",
+    "dep:ssz_rs"
 ]

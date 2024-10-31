@@ -4,3 +4,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "steel/src/vendor/repos/ethereum-consensus"]
+	path = steel/src/vendor/git/ethereum-consensus
+	url = https://github.com/ralexstokes/ethereum-consensus.git

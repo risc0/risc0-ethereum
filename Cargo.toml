@@ -32,8 +32,20 @@ alloy-sol-types = { version = "0.8.8" }
 alloy = { version = "0.5" }
 alloy-trie = { version = "0.7" }
 
-# Beacon chain support
-ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
+# Imported ethereum-consensus dependencies
+blst = { version = "0.3.11" }
+c-kzg = { version = "1.0" }
+hex = { version = "0.4" }
+integer-sqrt = { version = "0.1.5" }
+rand = { version = "0.8" }
+serde_yaml = { version = "0.9" }
+ssz_rs = { git = "https://github.com/ralexstokes/ssz-rs", rev = "84ef2b71aa004f6767420badb42c902ad56b8b72" }
+
+# Build dependencies
+copy_dir = "0.1.3"
+globset = "0.4"
+regex = "1.11"
+walkdir = "2.5"
 
 anyhow = { version = "1.0" }
 bincode = { version = "1.3" }
