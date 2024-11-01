@@ -66,12 +66,22 @@ struct Args {
     #[clap(long, env)]
     eth_rpc_url: Url,
 
-    /// Optional Beacon API endpoint URL
+    /// Beacon API endpoint URL
     ///
-    /// When provided, Steel uses a beacon block commitment instead of the execution block. This
-    /// allows proofs to be validated using the EIP-4788 beacon roots contract.
+    /// Steel uses a beacon block commitment instead of the execution block.
+    /// This allows proofs to be validated using the EIP-4788 beacon roots contract.
     #[clap(long, env)]
-    beacon_api_url: Option<Url>,
+    #[cfg(any(feature = "beacon", feature = "history"))]
+    beacon_api_url: Url,
+
+    /// Ethereum block to use as the state for the contract call
+    #[clap(long, env, default_value_t = BlockNumberOrTag::Parent)]
+    execution_block: BlockNumberOrTag,
+
+    /// Ethereum block to use for the beacon block commitment.
+    #[clap(long, env)]
+    #[cfg(feature = "history")]
+    commitment_block: BlockNumberOrTag,
 
     /// Address of the Counter verifier contract
     #[clap(long)]
@@ -102,12 +112,20 @@ async fn main() -> Result<()> {
         .wallet(wallet)
         .on_http(args.eth_rpc_url);
 
-    // Create an EVM environment from that provider for the block latest - 1.
-    let mut env = EthEvmEnv::builder()
+    #[cfg(feature = "beacon")]
+    log::info!("Beacon commitment to block {}", args.execution_block);
+    #[cfg(feature = "history")]
+    log::info!("History commitment to block {}", args.commitment_block);
+
+    let builder = EthEvmEnv::builder()
         .provider(provider.clone())
-        .block_number_or_tag(BlockNumberOrTag::Parent)
-        .build()
-        .await?;
+        .block_number_or_tag(args.execution_block);
+    #[cfg(any(feature = "beacon", feature = "history"))]
+    let builder = builder.beacon_api(args.beacon_api_url);
+    #[cfg(feature = "history")]
+    let builder = builder.commitment_block(args.commitment_block);
+
+    let mut env = builder.build().await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
@@ -125,12 +143,7 @@ async fn main() -> Result<()> {
     // Finally, construct the input from the environment.
     // There are two options: Use EIP-4788 for verification by providing a Beacon API endpoint,
     // or use the regular `blockhash' opcode.
-    let evm_input = if let Some(beacon_api_url) = args.beacon_api_url {
-        #[allow(deprecated)]
-        env.into_beacon_input(beacon_api_url).await?
-    } else {
-        env.into_input().await?
-    };
+    let evm_input = env.into_input().await?;
 
     // Create the steel proof.
     let prove_info = task::spawn_blocking(move || {
