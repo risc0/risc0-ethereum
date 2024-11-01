@@ -214,6 +214,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
 }
 
 /// Config for separating the execution block from the commitment block.
+#[stability::unstable(feature = "history")]
 #[derive(Clone, Debug)]
 pub struct History {
     beacon_url: Url,
