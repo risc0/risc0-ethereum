@@ -124,7 +124,7 @@ where
             .await
     }
 
-    /// Converts the environment into a [EvmInput] committing to a block hash.
+    /// Converts the environment into a [EvmInput] committing to an execution block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
@@ -152,7 +152,7 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
-    /// Converts the environment into a [EvmInput] committing to a block hash.
+    /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
@@ -168,6 +168,9 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
+    /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
+    /// block roots.
+    #[stability::unstable(feature = "history")]
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 

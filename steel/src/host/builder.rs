@@ -214,6 +214,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
 }
 
 /// Config for separating the execution block from the commitment block.
+#[stability::unstable(feature = "history")]
 #[derive(Clone, Debug)]
 pub struct History {
     beacon_url: Url,
@@ -229,6 +230,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// commitment block.
     ///
     /// Note that this feature requires a Beacon chain RPC provider, as it uses EIP-4788.
+    #[stability::unstable(feature = "history")]
     pub fn commitment_block(
         self,
         block: BlockNumberOrTag,
@@ -275,6 +277,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
 impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
     /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
     /// block that is different from the execution block.
+    #[stability::unstable(feature = "history")]
     pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>>
     where
         T: Transport + Clone,

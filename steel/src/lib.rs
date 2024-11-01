@@ -26,7 +26,10 @@ mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
+#[cfg(feature = "unstable-history")]
 pub mod history;
+#[cfg(not(feature = "unstable-history"))]
+mod history;
 #[cfg(feature = "host")]
 pub mod host;
 mod merkle;
@@ -37,9 +40,13 @@ mod state;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
-pub use history::HistoryInput;
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
+
+#[cfg(feature = "unstable-history")]
+pub use history::HistoryInput;
+#[cfg(not(feature = "unstable-history"))]
+pub(crate) use history::HistoryInput;
 
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
