@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+- Introduce `HistoryInput`, which decouples the EVM execution block from the commitment block. This allows verification against a commitment that is more recent than the execution, allowing secure interaction with the historical state. This functionality is currently marked "unstable" and must be enabled using the `unstable-history` feature.
+
+## [1.1.4](https://github.com/risc0/risc0-ethereum/releases/tag/v1.1.4) - 2024-10-07
+
+### ⚡️ Features
+
 - Add `try_call()` method to `CallBuilder` when explicit error handling is necessary.
 - Make `BeaconInput`, `BlockInput` and `StateDb` public.
 - Implement custom `Debug` formatter for `Commitment`.

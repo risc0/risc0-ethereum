@@ -26,6 +26,10 @@ mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
+#[cfg(feature = "unstable-history")]
+pub mod history;
+#[cfg(not(feature = "unstable-history"))]
+mod history;
 #[cfg(feature = "host")]
 pub mod host;
 mod merkle;
@@ -39,6 +43,11 @@ pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
 
+#[cfg(feature = "unstable-history")]
+pub use history::HistoryInput;
+#[cfg(not(feature = "unstable-history"))]
+pub(crate) use history::HistoryInput;
+
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
 #[derive(Clone, Serialize, Deserialize)]
@@ -47,6 +56,8 @@ pub enum EvmInput<H> {
     Block(BlockInput<H>),
     /// Input committing to the corresponding Beacon Chain block root.
     Beacon(BeaconInput<H>),
+    /// Input recursively committing to multiple Beacon Chain block root.
+    History(HistoryInput<H>),
 }
 
 impl<H: EvmBlockHeader> EvmInput<H> {
@@ -58,6 +69,7 @@ impl<H: EvmBlockHeader> EvmInput<H> {
         match self {
             EvmInput::Block(input) => input.into_env(),
             EvmInput::Beacon(input) => input.into_env(),
+            EvmInput::History(input) => input.into_env(),
         }
     }
 }
@@ -69,6 +81,7 @@ pub trait BlockHeaderCommit<H: EvmBlockHeader> {
 }
 
 /// A generalized input type consisting of a block-based input and a commitment wrapper.
+///
 /// The `commit` field provides a mechanism to generate a commitment to the block header
 /// contained within the `input` field.
 #[derive(Clone, Serialize, Deserialize)]
