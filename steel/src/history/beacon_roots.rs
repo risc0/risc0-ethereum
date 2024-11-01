@@ -193,7 +193,7 @@ mod tests {
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn beacon_roots_contract() {
         let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 

@@ -332,7 +332,7 @@ mod tests {
     const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn build_block_env() {
         let builder = EthEvmEnv::builder().rpc(EL_URL.parse().unwrap());
         // the builder should be cloneable
@@ -340,7 +340,7 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn build_beacon_env() {
         let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 
@@ -369,7 +369,7 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn build_history_env() {
         let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 
