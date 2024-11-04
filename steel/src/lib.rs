@@ -36,12 +36,14 @@ mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
+mod verifier;
 
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
+pub use verifier::Verifier;
 
 #[cfg(feature = "unstable-history")]
 pub use history::HistoryInput;
@@ -142,13 +144,13 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
         &self.header
     }
 
-    fn db(&self) -> &D {
+    pub(crate) fn db(&self) -> &D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_ref().unwrap()
     }
 
     #[allow(dead_code)]
-    fn db_mut(&mut self) -> &mut D {
+    pub(crate) fn db_mut(&mut self) -> &mut D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_mut().unwrap()
     }

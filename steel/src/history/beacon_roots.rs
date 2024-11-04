@@ -14,7 +14,23 @@
 
 use crate::{MerkleTrie, StateAccount};
 use alloy_primitives::{address, b256, keccak256, uint, Address, B256, U256};
+use revm::primitives::{AccountInfo, Bytecode};
+use revm::Database;
 use serde::{Deserialize, Serialize};
+use std::convert::Infallible;
+use anyhow::anyhow;
+
+/// The length of the buffer that stores historical entries, i.e., the number of stored
+/// timestamps and roots.
+pub const HISTORY_BUFFER_LENGTH: U256 = uint!(8191_U256);
+/// Address where the contract is deployed.
+pub const ADDRESS: Address = address!("000F3df6D732807Ef1319fB7B8bB8522d0Beac02");
+
+/// Hash of the contract's address, where the contract is deployed.
+const ADDRESS_HASH: B256 =
+    b256!("37d65eaa92c6bc4c13a5ec45527f0c18ea8932588728769ec7aecfe6d9f32e42");
+/// Hash of the deployed EVM bytecode.
+const CODE_HASH: B256 = b256!("f57acd40259872606d76197ef052f3d35588dadf919ee1f0e3cb9b62d3f4b02c");
 
 /// Enum representing possible errors that can occur within the `BeaconRootsContract`.
 #[derive(Debug, thiserror::Error)]
@@ -31,103 +47,38 @@ pub enum Error {
     /// Error indicating that the contract execution was reverted.
     #[error("execution reverted")]
     Reverted,
+    /// Unspecified error.
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
+}
+
+#[cfg(feature = "host")]
+impl From<crate::host::db::alloy::Error> for Error {
+    fn from(value: crate::host::db::alloy::Error) -> Self {
+        anyhow::Error::new(value).into()
+    }
+}
+
+impl From<Infallible> for Error {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 
 /// The `State` struct represents the state of the contract.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct State {
+pub struct BeaconRootsState {
     /// EVM (global) state trie with path to the contract account.
     state_trie: MerkleTrie,
     /// Storage trie containing the state of the beacon root contract.
     storage_trie: MerkleTrie,
 }
 
-impl State {
+impl BeaconRootsState {
     /// Computes the state root.
     #[inline]
     pub fn root(&self) -> B256 {
         self.state_trie.hash_slow()
-    }
-}
-
-/// The `BeaconRootsContract` is responsible for storing and retrieving historical beacon roots.
-///
-/// It is an exact reimplementation of the beacon roots contract as defined in [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788).
-/// It is deployed at the address `000F3df6D732807Ef1319fB7B8bB8522d0Beac02` and has the
-/// following storage layout:
-/// - `timestamp_idx = timestamp % HISTORY_BUFFER_LENGTH`: Stores the timestamp at this index.
-/// - `root_idx = timestamp_idx + HISTORY_BUFFER_LENGTH`: Stores the beacon root at this index.
-pub struct BeaconRootsContract {
-    storage: MerkleTrie,
-}
-
-impl BeaconRootsContract {
-    /// The length of the buffer that stores historical entries, i.e., the number of stored
-    /// timestamps and roots.
-    pub const HISTORY_BUFFER_LENGTH: U256 = uint!(8191_U256);
-    /// Address where the contract is deployed.
-    #[allow(dead_code)]
-    pub const ADDRESS: Address = address!("000F3df6D732807Ef1319fB7B8bB8522d0Beac02");
-
-    /// Hash of the contract's address, where the contract is deployed.
-    const ADDRESS_HASH: B256 =
-        b256!("37d65eaa92c6bc4c13a5ec45527f0c18ea8932588728769ec7aecfe6d9f32e42");
-    /// Hash of the deployed EVM bytecode.
-    const CODE_HASH: B256 =
-        b256!("f57acd40259872606d76197ef052f3d35588dadf919ee1f0e3cb9b62d3f4b02c");
-
-    /// Creates a new instance of the `BeaconRootsContract` by verifying the provided state.
-    pub fn new(state: State) -> Result<Self, Error> {
-        // retrieve the account data from the state trie using the contract's address hash
-        let account: StateAccount = state
-            .state_trie
-            .get_rlp(Self::ADDRESS_HASH)?
-            .unwrap_or_default();
-        // validate the account's code hash and storage root
-        if account.code_hash != Self::CODE_HASH {
-            return Err(Error::NoContract);
-        }
-        let storage = state.storage_trie;
-        if storage.hash_slow() != account.storage_root {
-            return Err(Error::InvalidState);
-        }
-
-        Ok(Self { storage })
-    }
-
-    /// Retrieves the root associated with the provided `calldata` (timestamp).
-    ///
-    /// This behaves exactly like the EVM bytecode defined in EIP-4788.
-    pub fn get(&self, calldata: U256) -> Result<B256, Error> {
-        if calldata.is_zero() {
-            return Err(Error::Reverted);
-        }
-
-        let timestamp_idx = calldata % Self::HISTORY_BUFFER_LENGTH;
-        let timestamp = self.storage_get(timestamp_idx)?;
-
-        if timestamp != calldata {
-            return Err(Error::Reverted);
-        }
-
-        let root_idx = timestamp_idx + Self::HISTORY_BUFFER_LENGTH;
-        let root = self.storage_get(root_idx)?;
-
-        Ok(root.into())
-    }
-
-    /// Retrieves the root from a given `State` based on the provided `calldata` (timestamp).
-    #[inline]
-    pub fn get_from_state(state: State, calldata: U256) -> Result<B256, Error> {
-        Self::new(state)?.get(calldata)
-    }
-
-    /// Retrieves a value from the contract's storage at the given index.
-    fn storage_get(&self, index: U256) -> Result<U256, Error> {
-        Ok(self
-            .storage
-            .get_rlp(keccak256(index.to_be_bytes::<32>()))?
-            .unwrap_or_default())
     }
 
     /// Prepares and retrieves the beacon root from an RPC provider by constructing the
@@ -142,7 +93,7 @@ impl BeaconRootsContract {
         calldata: U256,
         provider: P,
         block_id: alloy::eips::BlockId,
-    ) -> anyhow::Result<(B256, State)>
+    ) -> anyhow::Result<(B256, BeaconRootsState)>
     where
         T: alloy::transports::Transport + Clone,
         N: alloy::network::Network,
@@ -151,16 +102,16 @@ impl BeaconRootsContract {
         use anyhow::{anyhow, Context};
 
         // compute the keys of the two storage slots that will be accessed
-        let timestamp_idx = calldata % Self::HISTORY_BUFFER_LENGTH;
-        let root_idx = timestamp_idx + Self::HISTORY_BUFFER_LENGTH;
+        let timestamp_idx = calldata % HISTORY_BUFFER_LENGTH;
+        let root_idx = timestamp_idx + HISTORY_BUFFER_LENGTH;
 
         // derive the minimal state needed to query and validate
         let proof = provider
-            .get_proof(Self::ADDRESS, vec![timestamp_idx.into(), root_idx.into()])
+            .get_proof(ADDRESS, vec![timestamp_idx.into(), root_idx.into()])
             .block_id(block_id)
             .await
             .context("eth_getProof failed")?;
-        let state = State {
+        let mut state = BeaconRootsState {
             state_trie: MerkleTrie::from_rlp_nodes(proof.account_proof)
                 .context("accountProof invalid")?,
             storage_trie: MerkleTrie::from_rlp_nodes(
@@ -170,13 +121,110 @@ impl BeaconRootsContract {
         };
 
         // validate the returned state and compute the return value
-        match Self::get_from_state(state.clone(), calldata) {
+        match BeaconRootsContract::get_from_db(&mut state, calldata) {
             Ok(returns) => Ok((returns, state)),
             Err(err) => match err {
                 Error::Reverted => Err(anyhow!("BeaconRootsContract({}) reverted", calldata)),
                 err => Err(err).context("API returned invalid state"),
             },
         }
+    }
+}
+
+impl Database for BeaconRootsState {
+    type Error = Error;
+
+    #[inline(always)]
+    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        assert_eq!(address, ADDRESS);
+        let account: Option<StateAccount> = self.state_trie.get_rlp(ADDRESS_HASH)?;
+        match account {
+            Some(account) => {
+                if self.storage_trie.hash_slow() != account.storage_root {
+                    return Err(Error::InvalidState);
+                }
+                Ok(Some(AccountInfo {
+                    balance: account.balance,
+                    nonce: account.nonce,
+                    code_hash: account.code_hash,
+                    code: None,
+                }))
+            }
+            None => Ok(None),
+        }
+    }
+
+    fn code_by_hash(&mut self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
+        unreachable!()
+    }
+
+    #[inline(always)]
+    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        assert_eq!(address, ADDRESS);
+        Ok(self
+            .storage_trie
+            .get_rlp(keccak256(index.to_be_bytes::<32>()))?
+            .unwrap_or_default())
+    }
+
+    fn block_hash(&mut self, _number: u64) -> Result<B256, Self::Error> {
+        unreachable!()
+    }
+}
+
+/// The `BeaconRootsContract` is responsible for storing and retrieving historical beacon roots.
+///
+/// It is an exact reimplementation of the beacon roots contract as defined in [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788).
+/// It is deployed at the address `000F3df6D732807Ef1319fB7B8bB8522d0Beac02` and has the
+/// following storage layout:
+/// - `timestamp_idx = timestamp % HISTORY_BUFFER_LENGTH`: Stores the timestamp at this index.
+/// - `root_idx = timestamp_idx + HISTORY_BUFFER_LENGTH`: Stores the beacon root at this index.
+pub struct BeaconRootsContract<D> {
+    db: D,
+}
+
+impl<D> BeaconRootsContract<D>
+where
+    D: Database,
+    Error: From<<D as Database>::Error>,
+{
+    /// Creates a new instance of the `BeaconRootsContract` by verifying the provided state.
+    pub fn new(mut db: D) -> Result<Self, Error> {
+        // retrieve the account data from the state trie using the contract's address hash
+        let account = db.basic(ADDRESS)?.unwrap_or_default();
+        // validate the account's code hash and storage root
+        if account.code_hash != CODE_HASH {
+            return Err(Error::NoContract);
+        }
+
+        Ok(Self { db })
+    }
+
+    /// Retrieves the root associated with the provided `calldata` (timestamp).
+    ///
+    /// This behaves exactly like the EVM bytecode defined in EIP-4788.
+    pub fn get(&mut self, calldata: U256) -> Result<B256, Error> {
+        if calldata.is_zero() {
+            return Err(Error::Reverted);
+        }
+
+        let timestamp_idx = calldata % HISTORY_BUFFER_LENGTH;
+        let timestamp = self.db.storage(ADDRESS, timestamp_idx)?;
+
+        if timestamp != calldata {
+            return Err(Error::Reverted);
+        }
+
+        let root_idx = timestamp_idx + HISTORY_BUFFER_LENGTH;
+        let root = self.db.storage(ADDRESS, root_idx)?;
+
+        Ok(root.into())
+    }
+
+    /// Retrieves the root from a given `State` based on the provided `calldata` (timestamp).
+    #[inline]
+    pub fn get_from_db(db: D, calldata: U256) -> Result<B256, Error> {
+        Self::new(db)?.get(calldata)
     }
 }
 
@@ -207,8 +255,8 @@ mod tests {
 
         // query the contract for the latest timestamp, this should return parent_beacon_block_root
         let calldata = U256::from(header.timestamp);
-        let (preflight, state) =
-            BeaconRootsContract::preflight_get(calldata, el, header.hash.into())
+        let (preflight, mut state) =
+            BeaconRootsState::preflight_get(calldata, el, header.hash.into())
                 .await
                 .expect("preflighting BeaconRootsContract failed");
         assert_eq!(state.root(), header.state_root);
@@ -217,7 +265,7 @@ mod tests {
         // executing the contract from the exact state should return the same value
         assert_eq!(
             preflight,
-            dbg!(BeaconRootsContract::get_from_state(state, calldata)).unwrap()
+            dbg!(BeaconRootsContract::get_from_db(&mut state, calldata)).unwrap()
         );
     }
 }
