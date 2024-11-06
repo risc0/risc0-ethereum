@@ -130,15 +130,16 @@ impl<'de, H: Encodable + Decodable> Deserialize<'de> for RlpHeader<H> {
 }
 
 #[cfg(feature = "host")]
-impl<H> TryFrom<alloy::rpc::types::Header> for RlpHeader<H>
+impl<H, I> TryFrom<alloy::rpc::types::Header<H>> for RlpHeader<I>
 where
-    H: Encodable + Decodable + TryFrom<alloy::rpc::types::Header>,
+    I: Encodable + Decodable + TryFrom<H>,
 {
-    type Error = <H as TryFrom<alloy::rpc::types::Header>>::Error;
+    type Error = <I as TryFrom<H>>::Error;
 
-    fn try_from(value: alloy::rpc::types::Header) -> Result<Self, Self::Error> {
+    #[inline]
+    fn try_from(value: alloy::rpc::types::Header<H>) -> Result<Self, Self::Error> {
         Ok(Self {
-            inner: value.try_into()?,
+            inner: value.inner.try_into()?,
             rlp: None,
         })
     }

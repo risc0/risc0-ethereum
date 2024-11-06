@@ -90,7 +90,11 @@ mod host {
         beacon::host::{client::BeaconClient, create_beacon_commit},
         ethereum::EthBlockHeader,
     };
-    use alloy::{network::Ethereum, providers::Provider, transports::Transport};
+    use alloy::{
+        network::{primitives::BlockTransactionsKind, Ethereum},
+        providers::Provider,
+        transports::Transport,
+    };
     use alloy_primitives::{BlockNumber, Sealable};
     use anyhow::{ensure, Context};
     use url::Url;
@@ -137,7 +141,7 @@ mod host {
 
                 // get the header of the state block
                 let rpc_block = rpc_provider
-                    .get_block_by_number(state_block.into(), false)
+                    .get_block_by_number(state_block.into(), BlockTransactionsKind::Hashes)
                     .await
                     .context("eth_getBlockByNumber failed")?
                     .with_context(|| format!("block {} not found", state_block))?;
