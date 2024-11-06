@@ -202,7 +202,10 @@ mod host {
 mod tests {
     use super::*;
     use crate::ethereum::EthBlockHeader;
-    use alloy::providers::{Provider, ProviderBuilder};
+    use alloy::{
+        network::primitives::BlockTransactionsKind,
+        providers::{Provider, ProviderBuilder},
+    };
     use alloy_primitives::Sealable;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
@@ -257,7 +260,10 @@ mod tests {
 
         let mut headers = Vec::with_capacity(n);
         for number in latest + 1 - (n as u64)..=latest {
-            let block = el.get_block_by_number(number.into(), false).await?.unwrap();
+            let block = el
+                .get_block_by_number(number.into(), BlockTransactionsKind::Hashes)
+                .await?
+                .unwrap();
             let header: EthBlockHeader = block.header.try_into()?;
             headers.push(header.seal_slow());
         }

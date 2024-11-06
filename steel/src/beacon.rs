@@ -351,7 +351,7 @@ pub(crate) mod host {
             let cl = BeaconClient::new(CL_URL).unwrap();
 
             let block = el
-                .get_block_by_number(BlockNumberOrTag::Latest, false)
+                .get_block_by_number(BlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
                 .await
                 .expect("eth_getBlockByNumber failed")
                 .unwrap();

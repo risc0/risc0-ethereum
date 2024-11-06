@@ -24,7 +24,10 @@ use crate::{
     EvmBlockHeader, EvmEnv,
 };
 use alloy::{
-    network::{primitives::BlockTransactionsKind, BlockResponse, Ethereum, Network},
+    network::{
+        primitives::{BlockTransactionsKind, HeaderResponse},
+        BlockResponse, Ethereum, Network,
+    },
     providers::{Provider, ProviderBuilder, ReqwestProvider},
     transports::Transport,
 };

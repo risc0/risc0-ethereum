@@ -16,7 +16,10 @@ use std::{future::IntoFuture, marker::PhantomData};
 
 use super::provider::{ProviderConfig, ProviderDb};
 use alloy::{
-    network::{primitives::BlockTransactionsKind, BlockResponse, Network},
+    network::{
+        primitives::{BlockTransactionsKind, HeaderResponse},
+        BlockResponse, Network,
+    },
     providers::Provider,
     transports::{Transport, TransportError},
 };
