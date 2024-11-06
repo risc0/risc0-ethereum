@@ -18,7 +18,6 @@ use revm::primitives::{AccountInfo, Bytecode};
 use revm::Database;
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
-use anyhow::anyhow;
 
 /// The length of the buffer that stores historical entries, i.e., the number of stored
 /// timestamps and roots.
