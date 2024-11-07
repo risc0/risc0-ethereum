@@ -184,7 +184,7 @@ impl BeaconRootsContract {
 mod tests {
     use super::*;
     use alloy::{
-        network::BlockResponse,
+        network::{primitives::BlockTransactionsKind, BlockResponse},
         providers::{Provider, ProviderBuilder},
         rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
     };
@@ -199,7 +199,7 @@ mod tests {
 
         // get the latest header
         let latest = el
-            .get_block_by_number(AlloyBlockNumberOrTag::Latest, false)
+            .get_block_by_number(AlloyBlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();

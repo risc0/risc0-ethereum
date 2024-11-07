@@ -24,7 +24,10 @@ use crate::{
     EvmBlockHeader, EvmEnv,
 };
 use alloy::{
-    network::{BlockResponse, Ethereum, HeaderResponse, Network},
+    network::{
+        primitives::{BlockTransactionsKind, HeaderResponse},
+        BlockResponse, Ethereum, Network,
+    },
     providers::{Provider, ProviderBuilder, ReqwestProvider},
     transports::Transport,
 };
@@ -164,7 +167,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
         let rpc_block = self
             .provider
-            .get_block_by_number(number, false)
+            .get_block_by_number(number, BlockTransactionsKind::Hashes)
             .await
             .context("eth_getBlockByNumber failed")?
             .with_context(|| format!("block {} not found", number))?;
@@ -353,7 +356,10 @@ mod tests {
 
         // the commitment should verify against the parent_beacon_block_root of the child
         let child_block = provider
-            .get_block_by_number((env.header.number() + 1).into(), false)
+            .get_block_by_number(
+                (env.header.number() + 1).into(),
+                BlockTransactionsKind::Hashes,
+            )
             .await
             .unwrap();
         let header = child_block.unwrap().header;
@@ -385,7 +391,7 @@ mod tests {
 
         // the commitment should verify against the parent_beacon_block_root of the latest block
         let child_block = provider
-            .get_block_by_number(latest.into(), false)
+            .get_block_by_number(latest.into(), BlockTransactionsKind::Hashes)
             .await
             .unwrap();
         let header = child_block.unwrap().header;
