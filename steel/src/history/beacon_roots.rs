@@ -52,7 +52,11 @@ pub enum Error {
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
-
+impl From<Infallible> for Error {
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
+}
 #[cfg(feature = "host")]
 impl From<crate::host::db::alloy::Error> for Error {
     fn from(value: crate::host::db::alloy::Error) -> Self {
@@ -60,18 +64,13 @@ impl From<crate::host::db::alloy::Error> for Error {
     }
 }
 
-impl From<Infallible> for Error {
-    fn from(_: Infallible) -> Self {
-        unreachable!()
-    }
-}
-
-/// The `State` struct represents the state of the contract.
+/// A simplified MPT-based read-only EVM database implementation only containing the state of the
+/// beacon roots contract.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct BeaconRootsState {
-    /// EVM (global) state trie with path to the contract account.
+    /// EVM (global) state trie with path to the beacon roots contract.
     state_trie: MerkleTrie,
-    /// Storage trie containing the state of the beacon root contract.
+    /// Storage trie containing the state of the beacon roots contract.
     storage_trie: MerkleTrie,
 }
 
@@ -82,13 +81,11 @@ impl BeaconRootsState {
         self.state_trie.hash_slow()
     }
 
-    /// Prepares and retrieves the beacon root from an RPC provider by constructing the
-    /// necessary proof.
+    /// Prepares the [BeaconRootsState] by retrieving the beacon root from an RPC provider and
+    /// constructing the necessary proofs.
     ///
-    /// It fetches the minimal set of Merkle proofs (for the contract's state and storage)
-    /// required to verify and retrieve the beacon root associated with the given `calldata`
-    /// (timestamp). It leverages the Ethereum `eth_getProof` RPC to get the account and
-    /// storage proofs needed to validate the contract's state and storage.
+    /// It fetches the minimal set of Merkle proofs (for the contract's state and storage) required
+    /// to verify and retrieve the beacon root associated with the given `calldata` (timestamp).
     #[cfg(feature = "host")]
     pub async fn preflight_get<T, N, P>(
         calldata: U256,
@@ -132,27 +129,26 @@ impl BeaconRootsState {
     }
 }
 
+/// Implements the Database trait, but only for the account of the beacon roots contract.
 impl Database for BeaconRootsState {
     type Error = Error;
 
     #[inline(always)]
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        // only allow accessing the beacon roots contract's address
         assert_eq!(address, ADDRESS);
-        let account: Option<StateAccount> = self.state_trie.get_rlp(ADDRESS_HASH)?;
-        match account {
-            Some(account) => {
-                if self.storage_trie.hash_slow() != account.storage_root {
-                    return Err(Error::InvalidState);
-                }
-                Ok(Some(AccountInfo {
-                    balance: account.balance,
-                    nonce: account.nonce,
-                    code_hash: account.code_hash,
-                    code: None,
-                }))
-            }
-            None => Ok(None),
+        let account: StateAccount = self.state_trie.get_rlp(ADDRESS_HASH)?.unwrap_or_default();
+        // and the account storage must match the storage trie
+        if account.storage_root != self.storage_trie.hash_slow() {
+            return Err(Error::InvalidState);
         }
+
+        Ok(Some(AccountInfo {
+            balance: account.balance,
+            nonce: account.nonce,
+            code_hash: account.code_hash,
+            code: None,
+        }))
     }
 
     fn code_by_hash(&mut self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
@@ -161,6 +157,7 @@ impl Database for BeaconRootsState {
 
     #[inline(always)]
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        // only allow accessing the beacon roots contract's address
         assert_eq!(address, ADDRESS);
         Ok(self
             .storage_trie
@@ -189,11 +186,11 @@ where
     D: Database,
     Error: From<<D as Database>::Error>,
 {
-    /// Creates a new instance of the `BeaconRootsContract` by verifying the provided state.
+    /// Creates a new instance of the `BeaconRootsContract` from the given db.
     pub fn new(mut db: D) -> Result<Self, Error> {
         // retrieve the account data from the state trie using the contract's address hash
         let account = db.basic(ADDRESS)?.unwrap_or_default();
-        // validate the account's code hash and storage root
+        // validate the account's code hash
         if account.code_hash != CODE_HASH {
             return Err(Error::NoContract);
         }
@@ -222,7 +219,7 @@ where
         Ok(root.into())
     }
 
-    /// Retrieves the root from a given `State` based on the provided `calldata` (timestamp).
+    /// Retrieves the root associated with the provided `calldata` (timestamp) from the given `db`.
     #[inline]
     pub fn get_from_db(db: D, calldata: U256) -> Result<B256, Error> {
         Self::new(db)?.get(calldata)
