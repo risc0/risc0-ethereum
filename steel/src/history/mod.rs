@@ -212,7 +212,7 @@ mod tests {
     const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
 
     #[tokio::test]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn from_beacon_commit_and_header() {
         let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 
