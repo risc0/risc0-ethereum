@@ -16,7 +16,10 @@ use std::{future::IntoFuture, marker::PhantomData};
 
 use super::provider::{ProviderConfig, ProviderDb};
 use alloy::{
-    network::{BlockResponse, HeaderResponse, Network},
+    network::{
+        primitives::{BlockTransactionsKind, HeaderResponse},
+        BlockResponse, Network,
+    },
     providers::Provider,
     transports::{Transport, TransportError},
 };
@@ -152,9 +155,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
     }
 
     fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
-        let block_response = self
-            .handle
-            .block_on(self.provider.get_block_by_number(number.into(), false))?;
+        let block_response = self.handle.block_on(
+            self.provider
+                .get_block_by_number(number.into(), BlockTransactionsKind::Hashes),
+        )?;
         let block = block_response.ok_or(Error::BlockNotFound)?;
 
         Ok(block.header().hash())
