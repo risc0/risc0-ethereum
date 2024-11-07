@@ -115,7 +115,10 @@ mod tests {
     use crate::ethereum::EthEvmEnv;
     use crate::host::BlockNumberOrTag;
     use crate::CommitmentVersion;
-    use alloy::network::{BlockResponse, HeaderResponse};
+    use alloy::consensus::BlockHeader;
+    use alloy::network::primitives::BlockTransactionsKind;
+    use alloy::network::primitives::HeaderResponse;
+    use alloy::network::BlockResponse;
     use alloy::providers::Provider;
     use alloy::providers::ProviderBuilder;
     use alloy::rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag;
@@ -129,7 +132,7 @@ mod tests {
 
         let latest = el.get_block_number().await.unwrap();
         let block = el
-            .get_block_by_number((latest - 1).into(), false)
+            .get_block_by_number((latest - 1).into(), BlockTransactionsKind::Hashes)
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();
@@ -159,7 +162,7 @@ mod tests {
 
         // create Beacon commitment from latest block
         let block = el
-            .get_block_by_number(AlloyBlockNumberOrTag::Latest, false)
+            .get_block_by_number(AlloyBlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();

@@ -231,7 +231,7 @@ where
 mod tests {
     use super::*;
     use alloy::{
-        network::BlockResponse,
+        network::{primitives::BlockTransactionsKind, BlockResponse},
         providers::{Provider, ProviderBuilder},
         rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
     };
@@ -240,13 +240,13 @@ mod tests {
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn beacon_roots_contract() {
         let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 
         // get the latest header
         let latest = el
-            .get_block_by_number(AlloyBlockNumberOrTag::Latest, false)
+            .get_block_by_number(AlloyBlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();
