@@ -119,7 +119,11 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 pub(crate) mod host {
     use super::*;
     use crate::ethereum::EthBlockHeader;
-    use alloy::{network::Ethereum, providers::Provider, transports::Transport};
+    use alloy::{
+        network::{primitives::BlockTransactionsKind, Ethereum},
+        providers::Provider,
+        transports::Transport,
+    };
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
     use client::BeaconClient;
@@ -262,7 +266,7 @@ pub(crate) mod host {
         let child = {
             let child_number = header.number() + 1;
             let block_res = rpc_provider
-                .get_block_by_number(child_number.into(), false)
+                .get_block_by_number(child_number.into(), BlockTransactionsKind::Hashes)
                 .await
                 .context("eth_getBlockByNumber failed")?;
             let block = block_res.with_context(|| {
@@ -338,7 +342,7 @@ pub(crate) mod host {
         use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
         #[tokio::test]
-        #[ignore] // This queries actual RPC nodes, running only on demand.
+        #[ignore = "queries actual RPC nodes"]
         async fn create_execution_payload_proof() {
             const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
             const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
@@ -347,7 +351,7 @@ pub(crate) mod host {
             let cl = BeaconClient::new(CL_URL).unwrap();
 
             let block = el
-                .get_block_by_number(BlockNumberOrTag::Latest, false)
+                .get_block_by_number(BlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
                 .await
                 .expect("eth_getBlockByNumber failed")
                 .unwrap();

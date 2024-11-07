@@ -16,7 +16,7 @@ use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
     eips::eip2930::{AccessList, AccessListItem},
-    network::{BlockResponse, Network},
+    network::{primitives::BlockTransactionsKind, BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
@@ -124,7 +124,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
             let provider = self.inner.provider();
             for number in (block_hash_min_number..block_number).rev() {
                 let rpc_block = provider
-                    .get_block_by_number(number.into(), false)
+                    .get_block_by_number(number.into(), BlockTransactionsKind::Hashes)
                     .await
                     .context("eth_getBlockByNumber failed")?
                     .with_context(|| format!("block {} not found", number))?;
@@ -265,7 +265,7 @@ fn add_proof(
         .into_iter()
         .map(|proof| {
             (
-                proof.key.0,
+                proof.key.as_b256(),
                 StorageProof {
                     value: proof.value,
                     proof: proof.proof,
