@@ -19,14 +19,17 @@ use crate::{
 use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
 
+/// The generalized Merkle tree index of the `state_root` field in the `BeaconBlock`.
+pub const STATE_ROOT_LEAF_INDEX: usize = 6434;
+
 /// The generalized Merkle tree index of the `block_hash` field in the `BeaconBlock`.
 pub const BLOCK_HASH_LEAF_INDEX: usize = 6444;
 
 /// Input committing to the corresponding Beacon Chain block root.
 pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
 
-/// Provides verifiable proof that an execution block hash is included in a specific beacon block on
-/// the Ethereum blockchain.
+/// A commitment that an execution block hash is included in a specific beacon block on the Ethereum
+/// blockchain.
 ///
 /// This type represents a commitment that proves the inclusion of an execution block's hash within
 /// a particular beacon block on the Ethereum beacon chain. It relies on a Merkle proof to establish
@@ -85,11 +88,15 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
         merkle::verify(leaf, &self.proof, LEAF_INDEX, root)
     }
 
-    fn into_commit(self, leaf: B256) -> (u64, B256) {
+    pub(crate) fn timestamp(&self) -> u64 {
+        self.timestamp
+    }
+
+    pub(crate) fn into_commit(self, leaf: B256) -> (u64, B256) {
         let beacon_root = self
             .process_proof(leaf)
             .expect("Invalid beacon inclusion proof");
-        (self.timestamp, beacon_root)
+        (self.timestamp(), beacon_root)
     }
 }
 
@@ -112,12 +119,19 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 pub(crate) mod host {
     use super::*;
     use crate::ethereum::EthBlockHeader;
-    use alloy::{network::Ethereum, providers::Provider, transports::Transport};
+    use alloy::{
+        network::{primitives::BlockTransactionsKind, Ethereum},
+        providers::Provider,
+        transports::Transport,
+    };
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
     use client::BeaconClient;
-    use ethereum_consensus::ssz::prelude::proofs::Proof;
-    use ethereum_consensus::{ssz::prelude::*, types::SignedBeaconBlock, Fork};
+    use ethereum_consensus::{
+        ssz::prelude::{proofs::Proof, *},
+        types::SignedBeaconBlock,
+        Fork,
+    };
     use proofs::ProofAndWitness;
     use url::Url;
 
@@ -229,7 +243,7 @@ pub(crate) mod host {
             log::info!(
                 "Committing to parent beacon block: root={},timestamp={}",
                 beacon_root,
-                commit.timestamp
+                commit.timestamp()
             );
 
             Ok(commit)
@@ -238,7 +252,7 @@ pub(crate) mod host {
 
     /// Creates a beacon commitment that `field` is contained in the `ExecutionPayload` of the
     /// beacon block corresponding to `header`.
-    async fn create_beacon_commit<T, P, H, const LEAF_INDEX: usize>(
+    pub(crate) async fn create_beacon_commit<T, P, H, const LEAF_INDEX: usize>(
         header: &Sealed<H>,
         field: PathElement,
         rpc_provider: P,
@@ -252,7 +266,7 @@ pub(crate) mod host {
         let child = {
             let child_number = header.number() + 1;
             let block_res = rpc_provider
-                .get_block_by_number(child_number.into(), false)
+                .get_block_by_number(child_number.into(), BlockTransactionsKind::Hashes)
                 .await
                 .context("eth_getBlockByNumber failed")?;
             let block = block_res.with_context(|| {
@@ -328,8 +342,8 @@ pub(crate) mod host {
         use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
         #[tokio::test]
-        #[ignore] // This queries actual RPC nodes, running only on demand.
-        async fn eth_mainnet_proof() {
+        #[ignore = "queries actual RPC nodes"]
+        async fn create_execution_payload_proof() {
             const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
             const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
 
@@ -337,16 +351,17 @@ pub(crate) mod host {
             let cl = BeaconClient::new(CL_URL).unwrap();
 
             let block = el
-                .get_block_by_number(BlockNumberOrTag::Latest, false)
+                .get_block_by_number(BlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
                 .await
                 .expect("eth_getBlockByNumber failed")
                 .unwrap();
             let beacon_root = block.header().parent_beacon_block_root.unwrap();
 
             let block_hash = block.header().parent_hash;
-            let proof = create_execution_payload_proof("block_hash".into(), beacon_root, &cl)
-                .await
-                .expect("proving 'block_hash' failed");
+            let proof =
+                super::create_execution_payload_proof("block_hash".into(), beacon_root, &cl)
+                    .await
+                    .expect("proving 'block_hash' failed");
             let branch: Vec<B256> = proof.branch.iter().map(|n| n.0.into()).collect();
             merkle::verify(block_hash, &branch, BLOCK_HASH_LEAF_INDEX, beacon_root).unwrap();
         }

@@ -20,6 +20,7 @@ use crate::{
     block::BlockInput,
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
+    history::HistoryCommit,
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
@@ -39,6 +40,8 @@ use url::Url;
 
 mod builder;
 pub mod db;
+
+pub use builder::EvmEnvBuilder;
 
 /// A block number (or tag - "latest", "safe", "finalized").
 /// This enum is used to specify which block to query when interacting with the blockchain.
@@ -123,7 +126,7 @@ where
             .await
     }
 
-    /// Converts the environment into a [EvmInput] committing to a block hash.
+    /// Converts the environment into a [EvmInput] committing to an execution block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
@@ -151,11 +154,29 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
-    /// Converts the environment into a [EvmInput] committing to a block hash.
+    /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(
+            input,
+            self.commit.inner,
+        )))
+    }
+}
+
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>
+where
+    T: Transport + Clone,
+    P: Provider<T, Ethereum>,
+{
+    /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
+    /// block roots.
+    #[stability::unstable(feature = "history")]
+    pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
+
+        Ok(EvmInput::History(ComposeInput::new(
             input,
             self.commit.inner,
         )))

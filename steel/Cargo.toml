@@ -28,6 +28,7 @@ revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true }
+stability = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
@@ -51,3 +52,4 @@ host = [
     "dep:tokio",
     "dep:url",
 ]
+unstable-history = []

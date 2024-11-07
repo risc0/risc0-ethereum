@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::config::ChainSpec;
 use crate::{
-    state::StateDb, Commitment, CommitmentVersion, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
+    config::ChainSpec, state::StateDb, Commitment, CommitmentVersion, EvmBlockHeader, EvmEnv,
+    GuestEvmEnv, MerkleTrie,
 };
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{map::HashMap, Bytes};
