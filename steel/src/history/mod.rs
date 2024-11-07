@@ -86,10 +86,10 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH};
     use crate::{
         beacon::host::{client::BeaconClient, create_beacon_commit},
         ethereum::EthBlockHeader,
+        history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH},
     };
     use alloy::{
         network::{primitives::BlockTransactionsKind, Ethereum},

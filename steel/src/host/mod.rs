@@ -101,10 +101,13 @@ impl<D, H, C> HostEvmEnv<D, H, C>
 where
     D: Database + Send + 'static,
 {
-    /// Runs the provided closure that requires mutable access to the database on a thread where blocking is acceptable.
+    /// Runs the provided closure that requires mutable access to the database on a thread where
+    /// blocking is acceptable.
     ///
     /// It panics if the closure panics.
-    /// This function is necessary because mutable references to the database cannot be passed directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken out of the `HostEvmEnv`, moved into the blocking task, and then restored after the task completes.
+    /// This function is necessary because mutable references to the database cannot be passed
+    /// directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken out of
+    /// the `HostEvmEnv`, moved into the blocking task, and then restored after the task completes.
     pub(crate) async fn spawn_with_db<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut ProofDb<D>) -> R + Send + 'static,

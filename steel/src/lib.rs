@@ -43,7 +43,7 @@ pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
-pub use verifier::Verifier;
+pub use verifier::SteelVerifier;
 
 #[cfg(feature = "unstable-history")]
 pub use history::HistoryInput;

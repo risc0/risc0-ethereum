@@ -12,21 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::history::beacon_roots::BeaconRootsContract;
-use crate::state::WrapStateDb;
-use crate::{Commitment, EvmBlockHeader, GuestEvmEnv};
+use crate::{
+    history::beacon_roots::BeaconRootsContract, state::WrapStateDb, Commitment, EvmBlockHeader,
+    GuestEvmEnv,
+};
 use alloy_primitives::U256;
 use anyhow::ensure;
 
-pub struct Verifier<E> {
+/// Represents a verifier for validating Steel commitments within Steel.
+pub struct SteelVerifier<E> {
     env: E,
 }
 
-impl<'a, H: EvmBlockHeader> Verifier<&'a GuestEvmEnv<H>> {
+impl<'a, H: EvmBlockHeader> SteelVerifier<&'a GuestEvmEnv<H>> {
+    /// Constructor for verifying Steel commitments in the guest.
     pub fn new(env: &'a GuestEvmEnv<H>) -> Self {
         Self { env }
     }
 
+    /// Verifies the commitment in the guest and panics on failure.
     pub fn verify(&self, commitment: &Commitment) {
         let (id, version) = commitment.decode_id();
         match version {
@@ -50,22 +54,29 @@ impl<'a, H: EvmBlockHeader> Verifier<&'a GuestEvmEnv<H>> {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::history::beacon_roots;
-    use crate::host::HostEvmEnv;
+    use crate::{history::beacon_roots, host::HostEvmEnv};
     use anyhow::Context;
     use revm::Database;
 
-    impl<'a, D, H: EvmBlockHeader, C> Verifier<&'a mut HostEvmEnv<D, H, C>>
+    impl<'a, D, H: EvmBlockHeader, C> SteelVerifier<&'a mut HostEvmEnv<D, H, C>>
     where
         D: Database + Send + 'static,
         beacon_roots::Error: From<<D as Database>::Error>,
         anyhow::Error: From<<D as Database>::Error>,
         <D as Database>::Error: Send + 'static,
     {
+        /// Constructor for preflighting Steel commitment verifications on the host.
+        ///
+        /// Initializes the environment for verifying Steel commitments, fetching necessary data via
+        /// RPC, and generating a storage proof for any accessed elements using
+        /// [EvmEnv::into_input].
+        ///
+        /// [EvmEnv::into_input]: crate::EvmEnv::into_input
         pub fn preflight(env: &'a mut HostEvmEnv<D, H, C>) -> Self {
             Self { env }
         }
 
+        /// Preflights the commitment verification on the host.
         pub async fn verify(self, commitment: &Commitment) -> anyhow::Result<()> {
             log::info!("Executing preflight verifying {:?}", commitment);
 
@@ -111,16 +122,16 @@ fn validate_block_number(header: &impl EvmBlockHeader, block_number: U256) -> an
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::ChainSpec;
-    use crate::ethereum::EthEvmEnv;
-    use crate::CommitmentVersion;
-    use alloy::consensus::BlockHeader;
-    use alloy::network::primitives::BlockTransactionsKind;
-    use alloy::network::primitives::HeaderResponse;
-    use alloy::network::BlockResponse;
-    use alloy::providers::Provider;
-    use alloy::providers::ProviderBuilder;
-    use alloy::rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag;
+    use crate::{config::ChainSpec, ethereum::EthEvmEnv, CommitmentVersion};
+    use alloy::{
+        consensus::BlockHeader,
+        network::{
+            primitives::{BlockTransactionsKind, HeaderResponse},
+            BlockResponse,
+        },
+        providers::{Provider, ProviderBuilder},
+        rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
+    };
     use test_log::test;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
@@ -147,11 +158,14 @@ mod tests {
 
         // preflight the verifier
         let mut env = EthEvmEnv::builder().provider(el).build().await.unwrap();
-        Verifier::preflight(&mut env).verify(&commit).await.unwrap();
+        SteelVerifier::preflight(&mut env)
+            .verify(&commit)
+            .await
+            .unwrap();
 
         // mock guest execution, by executing the verifier on the GuestEvmEnv
         let env = env.into_input().await.unwrap().into_env();
-        Verifier::new(&env).verify(&commit);
+        SteelVerifier::new(&env).verify(&commit);
     }
 
     #[test(tokio::test)]
@@ -175,10 +189,13 @@ mod tests {
 
         // preflight the verifier
         let mut env = EthEvmEnv::builder().provider(el).build().await.unwrap();
-        Verifier::preflight(&mut env).verify(&commit).await.unwrap();
+        SteelVerifier::preflight(&mut env)
+            .verify(&commit)
+            .await
+            .unwrap();
 
         // mock guest execution, by executing the verifier on the GuestEvmEnv
         let env = env.into_input().await.unwrap().into_env();
-        Verifier::new(&env).verify(&commit);
+        SteelVerifier::new(&env).verify(&commit);
     }
 }
