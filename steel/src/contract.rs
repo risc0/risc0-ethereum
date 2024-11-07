@@ -233,6 +233,7 @@ mod host {
             // restore the DB before handling errors, so that we never return an env without a DB
             self.env.db = Some(db);
 
+
             result.map_err(|err| anyhow!("call '{}' failed: {}", S::SIGNATURE, err))
         }
 

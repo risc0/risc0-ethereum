@@ -279,7 +279,7 @@ impl std::fmt::Debug for Commitment {
         f.debug_struct("Commitment")
             .field("version", &version)
             .field("id", &id)
-            .field("claim", &self.digest)
+            .field("digest", &self.digest)
             .field("configID", &self.configID)
             .finish()
     }

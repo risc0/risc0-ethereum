@@ -16,50 +16,8 @@ use crate::history::beacon_roots::BeaconRootsContract;
 use crate::state::WrapStateDb;
 use crate::{Commitment, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::U256;
+use anyhow::ensure;
 
-/// ### Examples
-/// ```rust,no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, Contract, host::BlockNumberOrTag};
-/// # use alloy_primitives::address;
-/// # use alloy_sol_types::sol;
-///
-/// # #[tokio::main(flavor = "current_thread")]
-/// # async fn main() -> anyhow::Result<()> {
-/// use url::Url;
-/// use risc0_steel::Verifier;
-/// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
-/// sol! {
-///     interface IERC20 {
-///         function balanceOf(address account) external view returns (uint);
-///     }
-/// }
-/// let account = address!("F977814e90dA44bFA03b6295A0616a897441aceC");
-/// let get_balance = IERC20::balanceOfCall { account };
-///
-/// // Host:
-/// let url: Url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::builder().rpc(url.clone()).block_number_or_tag(BlockNumberOrTag::Parent).build().await?;
-/// let mut contract = Contract::preflight(contract_address, &mut env);
-/// contract.call_builder(&get_balance).call().await?;
-///
-/// let evm_input = env.into_input().await?;
-///
-///
-/// // Guest:
-/// let evm_env = evm_input.into_env();
-/// let contract = Contract::new(contract_address, &evm_env);
-/// contract.call_builder(&get_balance).call();
-///
-/// let mut env2 = EthEvmEnv::builder().rpc(url).build().await?;
-/// Verifier::preflight(&mut env2).verify(evm_env.commitment())?;
-///
-/// # Ok(())
-/// # }
-/// ```
-///
-/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv::builder
-/// [EvmEnv::builder]: crate::EvmEnv::builder
-/// [EvmInput::into_env]: crate::EvmInput::into_env
 pub struct Verifier<E> {
     env: E,
 }
@@ -73,28 +31,20 @@ impl<'a, H: EvmBlockHeader> Verifier<&'a GuestEvmEnv<H>> {
         let (id, version) = commitment.decode_id();
         match version {
             0 => {
-                let Some(block_number) = block_hash(self.env.header().inner(), id) else {
-                    panic!()
-                };
-                let db = self.env.db();
-                assert_eq!(db.block_hash(block_number), commitment.digest);
+                let block_number =
+                    validate_block_number(self.env.header().inner(), id).expect("Invalid id");
+                let block_hash = self.env.db().block_hash(block_number);
+                assert_eq!(block_hash, commitment.digest, "Invalid digest");
             }
             1 => {
                 let db = WrapStateDb::new(self.env.db());
-                let beacon_root = BeaconRootsContract::get_from_db(db, id).unwrap();
-                assert_eq!(beacon_root, commitment.digest);
+                let beacon_root = BeaconRootsContract::get_from_db(db, id)
+                    .expect("calling BeaconRootsContract failed");
+                assert_eq!(beacon_root, commitment.digest, "Invalid digest");
             }
-            _ => {
-                unimplemented!()
-            }
+            v => unimplemented!("Invalid commitment version {}", v),
         }
     }
-}
-
-fn block_hash(header: &impl EvmBlockHeader, calldata: U256) -> Option<u64> {
-    let requested_number: u64 = calldata.saturating_to();
-    let diff = header.number().saturating_sub(requested_number);
-    (diff > 0 && diff <= 256).then_some(requested_number)
 }
 
 #[cfg(feature = "host")]
@@ -102,40 +52,131 @@ mod host {
     use super::*;
     use crate::history::beacon_roots;
     use crate::host::HostEvmEnv;
-    use anyhow::ensure;
+    use anyhow::Context;
     use revm::Database;
 
-    impl<'a, D: Database, H: EvmBlockHeader, C> Verifier<&'a mut HostEvmEnv<D, H, C>>
+    impl<'a, D, H: EvmBlockHeader, C> Verifier<&'a mut HostEvmEnv<D, H, C>>
     where
+        D: Database + Send + 'static,
         beacon_roots::Error: From<<D as Database>::Error>,
         anyhow::Error: From<<D as Database>::Error>,
+        <D as Database>::Error: Send + 'static,
     {
         pub fn preflight(env: &'a mut HostEvmEnv<D, H, C>) -> Self {
             Self { env }
         }
 
-        pub fn verify(&mut self, commitment: &Commitment) -> anyhow::Result<()> {
+        pub async fn verify(self, commitment: &Commitment) -> anyhow::Result<()> {
+            log::info!("Executing preflight verifying {:?}", commitment);
+
             let (id, version) = commitment.decode_id();
             match version {
                 0 => {
-                    let Some(block_number) = block_hash(self.env.header().inner(), id) else {
-                        panic!()
-                    };
-                    let db = self.env.db_mut();
-                    ensure!(db.block_hash(block_number)? == commitment.digest);
+                    let block_number = validate_block_number(self.env.header().inner(), id)
+                        .context("invalid id")?;
+                    let block_hash = self
+                        .env
+                        .spawn_with_db(move |db| db.block_hash(block_number))
+                        .await?;
+                    ensure!(block_hash == commitment.digest, "invalid digest");
 
                     Ok(())
                 }
                 1 => {
-                    let beacon_root = BeaconRootsContract::get_from_db(self.env.db_mut(), id)?;
-                    ensure!(beacon_root == commitment.digest);
+                    let beacon_root = self
+                        .env
+                        .spawn_with_db(move |db| BeaconRootsContract::get_from_db(db, id))
+                        .await
+                        .with_context(|| format!("calling BeaconRootsContract({}) failed", id))?;
+                    ensure!(beacon_root == commitment.digest, "invalid digest");
 
                     Ok(())
                 }
-                _ => {
-                    unimplemented!()
-                }
+                v => unimplemented!("Invalid commitment version {}", v),
             }
         }
+    }
+}
+
+fn validate_block_number(header: &impl EvmBlockHeader, block_number: U256) -> anyhow::Result<u64> {
+    let block_number: u64 = block_number.saturating_to();
+    let diff = header.number().saturating_sub(block_number);
+    ensure!(
+        diff > 0 && diff <= 256,
+        "valid range is the last 256 blocks (not including the current one)"
+    );
+    Ok(block_number)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::ChainSpec;
+    use crate::ethereum::EthEvmEnv;
+    use crate::host::BlockNumberOrTag;
+    use crate::CommitmentVersion;
+    use alloy::network::{BlockResponse, HeaderResponse};
+    use alloy::providers::Provider;
+    use alloy::providers::ProviderBuilder;
+    use alloy::rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag;
+
+    const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
+
+    #[tokio::test]
+    #[ignore] // This queries actual RPC nodes, running only on demand.
+    async fn verify_block_commitment() {
+        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+
+        let latest = el.get_block_number().await.unwrap();
+        let block = el
+            .get_block_by_number((latest - 1).into(), false)
+            .await
+            .expect("eth_getBlockByNumber failed")
+            .unwrap();
+        let header = block.header();
+        let commit = Commitment::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.hash(),
+            ChainSpec::DEFAULT_DIGEST,
+        );
+
+        let mut env = EthEvmEnv::builder()
+            .provider(el)
+            .block_number_or_tag(BlockNumberOrTag::Latest)
+            .build()
+            .await
+            .unwrap();
+
+        Verifier::preflight(&mut env).verify(&commit).await.unwrap();
+        // env.into_input().await.unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore] // This queries actual RPC nodes, running only on demand.
+    async fn verify_beacon_commitment() {
+        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+
+        // create Beacon commitment from latest block
+        let block = el
+            .get_block_by_number(AlloyBlockNumberOrTag::Latest, false)
+            .await
+            .expect("eth_getBlockByNumber failed")
+            .unwrap();
+        let header = block.header();
+        let commit = Commitment::new(
+            CommitmentVersion::Beacon as u16,
+            header.timestamp,
+            header.parent_beacon_block_root.unwrap(),
+            ChainSpec::DEFAULT_DIGEST,
+        );
+
+        // preflight the verifier
+        let mut env = EthEvmEnv::builder().provider(el).build().await.unwrap();
+        Verifier::preflight(&mut env).verify(&commit).await.unwrap();
+
+        // mock guest execution, by executing the verifier on the GuestEvmEnv
+        let env = env.into_input().await.unwrap().into_env();
+        Verifier::new(&env).verify(&commit);
     }
 }

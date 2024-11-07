@@ -124,7 +124,7 @@ impl BeaconRootsState {
             Ok(returns) => Ok((returns, state)),
             Err(err) => match err {
                 Error::Reverted => Err(anyhow!("BeaconRootsContract({}) reverted", calldata)),
-                err => Err(err).context("API returned invalid state"),
+                err => Err(err).context("RPC error"),
             },
         }
     }
