@@ -113,7 +113,6 @@ mod tests {
     use super::*;
     use crate::config::ChainSpec;
     use crate::ethereum::EthEvmEnv;
-    use crate::host::BlockNumberOrTag;
     use crate::CommitmentVersion;
     use alloy::consensus::BlockHeader;
     use alloy::network::primitives::BlockTransactionsKind;
@@ -122,14 +121,16 @@ mod tests {
     use alloy::providers::Provider;
     use alloy::providers::ProviderBuilder;
     use alloy::rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag;
+    use test_log::test;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
 
-    #[tokio::test]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[test(tokio::test)]
+    #[ignore = "queries actual RPC nodes"]
     async fn verify_block_commitment() {
         let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 
+        // create block commitment to the previous block
         let latest = el.get_block_number().await.unwrap();
         let block = el
             .get_block_by_number((latest - 1).into(), BlockTransactionsKind::Hashes)
@@ -144,19 +145,17 @@ mod tests {
             ChainSpec::DEFAULT_DIGEST,
         );
 
-        let mut env = EthEvmEnv::builder()
-            .provider(el)
-            .block_number_or_tag(BlockNumberOrTag::Latest)
-            .build()
-            .await
-            .unwrap();
-
+        // preflight the verifier
+        let mut env = EthEvmEnv::builder().provider(el).build().await.unwrap();
         Verifier::preflight(&mut env).verify(&commit).await.unwrap();
-        // env.into_input().await.unwrap();
+
+        // mock guest execution, by executing the verifier on the GuestEvmEnv
+        let env = env.into_input().await.unwrap().into_env();
+        Verifier::new(&env).verify(&commit);
     }
 
-    #[tokio::test]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[test(tokio::test)]
+    #[ignore = "queries actual RPC nodes"]
     async fn verify_beacon_commitment() {
         let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
 
