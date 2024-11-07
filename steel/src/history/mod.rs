@@ -18,8 +18,9 @@ use crate::{
 };
 use alloy_primitives::{Sealed, B256, U256};
 use beacon::{BeaconCommit, GeneralizedBeaconCommit, STATE_ROOT_LEAF_INDEX};
-use beacon_roots::BeaconRootsContract;
+use beacon_roots::{BeaconRootsContract, BeaconRootsState};
 use serde::{Deserialize, Serialize};
+
 pub(crate) mod beacon_roots;
 
 /// Input committing a previous block hash to the corresponding Beacon Chain block root.
@@ -42,7 +43,7 @@ pub struct HistoryCommit {
 #[derive(Clone, Serialize, Deserialize)]
 struct StateCommit {
     /// State for verifying `evm_commit`.
-    state: beacon_roots::BeaconRootsState,
+    state: BeaconRootsState,
     /// Commitment for `state` to a Beacon Chain block root.
     state_commit: GeneralizedBeaconCommit<STATE_ROOT_LEAF_INDEX>,
 }

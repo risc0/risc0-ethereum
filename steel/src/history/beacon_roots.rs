@@ -52,11 +52,13 @@ pub enum Error {
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
+
 impl From<Infallible> for Error {
     fn from(_: Infallible) -> Self {
         unreachable!()
     }
 }
+
 #[cfg(feature = "host")]
 impl From<crate::host::db::alloy::Error> for Error {
     fn from(value: crate::host::db::alloy::Error) -> Self {
