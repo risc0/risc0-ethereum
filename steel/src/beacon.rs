@@ -342,7 +342,7 @@ pub(crate) mod host {
         use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
         #[tokio::test]
-        #[ignore] // This queries actual RPC nodes, running only on demand.
+        #[ignore = "queries actual RPC nodes"]
         async fn create_execution_payload_proof() {
             const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
             const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
