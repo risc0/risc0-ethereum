@@ -85,8 +85,8 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> fo
 /// Errors returned by the [AlloyDb].
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("RPC error")]
-    Rpc(#[from] TransportError),
+    #[error("{0} failed")]
+    Rpc(&'static str, #[source] TransportError),
     #[error("block not found")]
     BlockNotFound,
 }
@@ -111,9 +111,10 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         };
         let (nonce, balance, code) = self.handle.block_on(f);
 
-        let nonce = nonce?;
-        let balance = balance?;
-        let bytecode = Bytecode::new_raw(code?.0.into());
+        let nonce = nonce.map_err(|err| Error::Rpc("eth_getTransactionCount", err))?;
+        let balance = balance.map_err(|err| Error::Rpc("eth_getBalance", err))?;
+        let code = code.map_err(|err| Error::Rpc("eth_getCode", err))?;
+        let bytecode = Bytecode::new_raw(code.0.into());
 
         // if the account is empty return None
         // in the EVM, emptiness is treated as equivalent to nonexistence
@@ -144,21 +145,27 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let storage = self.handle.block_on(
-            self.provider
-                .get_storage_at(address, index)
-                .hash(self.block_hash)
-                .into_future(),
-        )?;
+        let storage = self
+            .handle
+            .block_on(
+                self.provider
+                    .get_storage_at(address, index)
+                    .hash(self.block_hash)
+                    .into_future(),
+            )
+            .map_err(|err| Error::Rpc("eth_getStorageAt", err))?;
 
         Ok(storage)
     }
 
     fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
-        let block_response = self.handle.block_on(
-            self.provider
-                .get_block_by_number(number.into(), BlockTransactionsKind::Hashes),
-        )?;
+        let block_response = self
+            .handle
+            .block_on(
+                self.provider
+                    .get_block_by_number(number.into(), BlockTransactionsKind::Hashes),
+            )
+            .map_err(|err| Error::Rpc("eth_getBlockByNumber", err))?;
         let block = block_response.ok_or(Error::BlockNotFound)?;
 
         Ok(block.header().hash())
