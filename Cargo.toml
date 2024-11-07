@@ -22,14 +22,14 @@ risc0-zkp = { git = "https://github.com/risc0/risc0", branch = "main", default-f
 risc0-zkvm = { git = "https://github.com/risc0/risc0", branch = "main", default-features = false }
 
 # Alloy guest dependencies
-alloy-consensus = { version = "0.5" }
+alloy-consensus = { version = "0.6.1" }
 alloy-rlp = { version = "0.3.8" }
 alloy-rlp-derive = { version = "0.3.8" }
 alloy-primitives = { version = "0.8.8" }
 alloy-sol-types = { version = "0.8.8" }
 
 # Alloy host dependencies
-alloy = { version = "0.5" }
+alloy = { version = "0.6.1" }
 alloy-trie = { version = "0.7" }
 
 # Beacon chain support
@@ -48,7 +48,7 @@ serde_json = "1.0"
 sha2 = { version = "0.10" }
 stability = "0.2"
 test-log = "0.2.15"
-thiserror = "1.0"
+thiserror = "2.0"
 tokio = { version = "1.35" }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5" }

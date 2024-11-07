@@ -90,7 +90,11 @@ mod host {
         beacon::host::{client::BeaconClient, create_beacon_commit},
         ethereum::EthBlockHeader,
     };
-    use alloy::{network::Ethereum, providers::Provider, transports::Transport};
+    use alloy::{
+        network::{primitives::BlockTransactionsKind, Ethereum},
+        providers::Provider,
+        transports::Transport,
+    };
     use alloy_primitives::{BlockNumber, Sealable};
     use anyhow::{ensure, Context};
     use url::Url;
@@ -137,7 +141,7 @@ mod host {
 
                 // get the header of the state block
                 let rpc_block = rpc_provider
-                    .get_block_by_number(state_block.into(), false)
+                    .get_block_by_number(state_block.into(), BlockTransactionsKind::Hashes)
                     .await
                     .context("eth_getBlockByNumber failed")?
                     .with_context(|| format!("block {} not found", state_block))?;
@@ -198,7 +202,10 @@ mod host {
 mod tests {
     use super::*;
     use crate::ethereum::EthBlockHeader;
-    use alloy::providers::{Provider, ProviderBuilder};
+    use alloy::{
+        network::primitives::BlockTransactionsKind,
+        providers::{Provider, ProviderBuilder},
+    };
     use alloy_primitives::Sealable;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
@@ -253,7 +260,10 @@ mod tests {
 
         let mut headers = Vec::with_capacity(n);
         for number in latest + 1 - (n as u64)..=latest {
-            let block = el.get_block_by_number(number.into(), false).await?.unwrap();
+            let block = el
+                .get_block_by_number(number.into(), BlockTransactionsKind::Hashes)
+                .await?
+                .unwrap();
             let header: EthBlockHeader = block.header.try_into()?;
             headers.push(header.seal_slow());
         }
