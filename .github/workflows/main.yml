@@ -219,10 +219,10 @@ jobs:
       - uses: risc0/risc0/.github/actions/rustup@main
         with:
           # Building with docs.rs config requires the nightly toolchain.
-          toolchain: nightly
-      - run: cargo +nightly doc -p risc0-steel --all-features --no-deps
+          toolchain: nightly-2024-09-04
+      - run: cargo +nightly-2024-09-04 doc -p risc0-steel --all-features --no-deps
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
-      - run: cargo +nightly doc -p risc0-build-ethereum --all-features --no-deps
+      - run: cargo +nightly-2024-09-04 doc -p risc0-build-ethereum --all-features --no-deps
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
