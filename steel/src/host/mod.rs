@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
-use std::fmt::Display;
 
 use crate::{
     beacon::BeaconCommit,
@@ -24,6 +23,7 @@ use crate::{
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
+use alloy::eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError};
 use alloy::{
     network::{Ethereum, Network},
     providers::{Provider, RootProvider},
@@ -35,7 +35,10 @@ use alloy::{
 };
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
+use core::fmt;
 use db::{AlloyDb, ProofDb};
+use std::fmt::Display;
+use std::str::FromStr;
 use url::Url;
 
 mod builder;
@@ -83,6 +86,40 @@ impl BlockNumberOrTag {
             BlockNumberOrTag::Number(n) => AlloyBlockNumberOrTag::Number(n),
         };
         Ok(number)
+    }
+}
+
+impl FromStr for BlockNumberOrTag {
+    type Err = ParseBlockNumberError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let block = match s {
+            "latest" => Self::Latest,
+            "parent" => Self::Parent,
+            "safe" => Self::Safe,
+            "finalized" => Self::Finalized,
+            _number => {
+                if let Some(hex_val) = s.strip_prefix("0x") {
+                    let number = u64::from_str_radix(hex_val, 16);
+                    Self::Number(number?)
+                } else {
+                    return Err(HexStringMissingPrefixError::default().into());
+                }
+            }
+        };
+        Ok(block)
+    }
+}
+
+impl Display for BlockNumberOrTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Number(x) => write!(f, "0x{x:x}"),
+            Self::Latest => f.write_str("latest"),
+            Self::Parent => f.write_str("parent"),
+            Self::Safe => f.write_str("safe"),
+            Self::Finalized => f.write_str("finalized"),
+        }
     }
 }
 
