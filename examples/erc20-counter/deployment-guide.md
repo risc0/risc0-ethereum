@@ -37,7 +37,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     cargo build
     ```
     
-4. Deploy the Counter contract. During creation, the Counter gets linked with an ERC20 token. To also deploy such a new token, you need to specify any `TOKEN_OWNER` address which will get funded with Token ERC20 tokens, for example the address of the private key:
+4. Deploy the Counter contract. During creation, the Counter gets linked with an ERC20 token. To also deploy such a new token, you need to specify any `TOKEN_OWNER` address which will get funded with Toyken ERC20 tokens, for example the address of the private key:
     ```bash
     export TOKEN_OWNER=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
     ```
@@ -50,20 +50,20 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     ```bash
     ...
     == Logs ==
-    Deployed ERC20 TOKEN to 0x5FbDB2315678afecb367f032d93F642f64180aa3
+    Deployed ERC20 TOYKEN to 0x5FbDB2315678afecb367f032d93F642f64180aa3
     Deployed RiscZeroGroth16Verifier to 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
     Deployed Counter to 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
     ...
     ```
-    Save the `ERC20 Token` contract address to an env variable:
+    Save the `ERC20 Toyken` contract address to an env variable:
     ```bash
-    export TOKEN_ADDRESS=#COPY ERC20 TOKEN ADDRESS FROM DEPLOY LOGS
+    export TOYKEN_ADDRESS=#COPY ERC20 TOYKEN ADDRESS FROM DEPLOY LOGS
     ```
 
     > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
     >
     > ```bash
-    > export TOKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20FixedSupply") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
+    > export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20FixedSupply") | .contractAddress' ./broadcast/DeployCounter.s.sol/31337/run-latest.json)
     > ```
 
     Save the `Counter` contract address to an env variable:
@@ -92,7 +92,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
         --eth-wallet-private-key=$ETH_WALLET_PRIVATE_KEY \
         --eth-rpc-url=http://localhost:8545 \
         --counter-address=$COUNTER_ADDRESS \
-        --token-contract=$TOKEN_ADDRESS \
+        --token-contract=$TOYKEN_ADDRESS \
         --account=$TOKEN_OWNER
     ```
 
