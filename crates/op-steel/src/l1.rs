@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use alloy::network::primitives::BlockTransactionsKind;
 use alloy::{
     eips::BlockId,
     providers::{Provider, ProviderBuilder},
@@ -79,7 +80,7 @@ where
         .ok_or(Error::NoBlockForTimestamp(timestamp))?;
 
     let block_response = provider
-        .get_block_by_number(block_number.into(), false)
+        .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
         .await?;
     let timestamp = block_response.unwrap().header.timestamp;
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::game::DisputeGameInput;
-use once_cell::sync::Lazy;
 use op_alloy_network::{Network, Optimism};
 use revm::{
     precompile::B256,
@@ -28,7 +27,7 @@ use risc0_steel::{
     BlockInput, Commitment, EvmBlockHeader, EvmEnv, StateDb,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::LazyLock};
 
 #[cfg(feature = "host")]
 mod host;
@@ -37,7 +36,7 @@ mod host;
 pub use host::*;
 
 /// The OP Mainnet [ChainSpec].
-pub static OP_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+pub static OP_MAINNET_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 10,
     forks: BTreeMap::from([
         (SpecId::BEDROCK, ForkCondition::Timestamp(1679079600)),
@@ -50,7 +49,7 @@ pub static OP_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 });
 
 /// The OP Sepolia [ChainSpec].
-pub static OP_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+pub static OP_SEPOLIA_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 11155420,
     forks: BTreeMap::from([
         (SpecId::BEDROCK, ForkCondition::Block(0)),
@@ -119,12 +118,15 @@ impl EvmBlockHeader for OpBlockHeader {
 }
 
 #[cfg(feature = "host")]
-impl TryFrom<alloy::rpc::types::Header> for OpBlockHeader {
-    type Error = alloy::rpc::types::ConversionError;
+impl<H> TryFrom<alloy::rpc::types::Header<H>> for OpBlockHeader
+where
+    OpHeader: TryFrom<H>,
+{
+    type Error = <OpHeader as TryFrom<H>>::Error;
 
     #[inline]
-    fn try_from(value: alloy::rpc::types::Header) -> Result<Self, Self::Error> {
-        Ok(Self(RlpHeader::new(value.try_into()?)))
+    fn try_from(value: alloy::rpc::types::Header<H>) -> Result<Self, Self::Error> {
+        Ok(Self(RlpHeader::new(value.inner.try_into()?)))
     }
 }
 

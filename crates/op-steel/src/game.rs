@@ -73,6 +73,7 @@ impl BlockHeaderCommit<OpBlockHeader> for DisputeGameCommit {
 #[cfg(feature = "host")]
 pub mod host {
     use super::*;
+    use alloy::network::primitives::BlockTransactionsKind;
     use alloy::{
         network::Ethereum,
         providers::Provider,
@@ -185,7 +186,7 @@ pub mod host {
             P2: Provider<T, Optimism>,
         {
             let block_response = provider
-                .get_block_by_number(block_number.into(), false)
+                .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
                 .await
                 .context("eth_getBlockByNumber failed")?;
             let block =

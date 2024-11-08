@@ -13,16 +13,17 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
-use std::fmt::Display;
 
 use crate::{
     beacon::BeaconCommit,
     block::BlockInput,
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
+    history::HistoryCommit,
     host::db::ProviderDb,
     ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
+use alloy::eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError};
 use alloy::{
     network::{Ethereum, Network},
     providers::{Provider, RootProvider},
@@ -34,7 +35,10 @@ use alloy::{
 };
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
+use core::fmt;
 use db::{AlloyDb, ProofDb};
+use std::fmt::Display;
+use std::str::FromStr;
 use url::Url;
 
 mod builder;
@@ -85,6 +89,40 @@ impl BlockNumberOrTag {
     }
 }
 
+impl FromStr for BlockNumberOrTag {
+    type Err = ParseBlockNumberError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let block = match s {
+            "latest" => Self::Latest,
+            "parent" => Self::Parent,
+            "safe" => Self::Safe,
+            "finalized" => Self::Finalized,
+            _number => {
+                if let Some(hex_val) = s.strip_prefix("0x") {
+                    let number = u64::from_str_radix(hex_val, 16);
+                    Self::Number(number?)
+                } else {
+                    return Err(HexStringMissingPrefixError::default().into());
+                }
+            }
+        };
+        Ok(block)
+    }
+}
+
+impl Display for BlockNumberOrTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Number(x) => write!(f, "0x{x:x}"),
+            Self::Latest => f.write_str("latest"),
+            Self::Parent => f.write_str("parent"),
+            Self::Safe => f.write_str("safe"),
+            Self::Finalized => f.write_str("finalized"),
+        }
+    }
+}
+
 /// Alias for readability, do not make public.
 pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, HostCommit<C>>;
 type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
@@ -125,7 +163,7 @@ where
             .await
     }
 
-    /// Converts the environment into a [EvmInput] committing to a block hash.
+    /// Converts the environment into a [EvmInput] committing to an execution block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
@@ -153,11 +191,29 @@ where
     T: Transport + Clone,
     P: Provider<T, Ethereum>,
 {
-    /// Converts the environment into a [EvmInput] committing to a block hash.
+    /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(
+            input,
+            self.commit.inner,
+        )))
+    }
+}
+
+impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>
+where
+    T: Transport + Clone,
+    P: Provider<T, Ethereum>,
+{
+    /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
+    /// block roots.
+    #[stability::unstable(feature = "history")]
+    pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
+
+        Ok(EvmInput::History(ComposeInput::new(
             input,
             self.commit.inner,
         )))

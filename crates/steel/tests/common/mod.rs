@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::LazyLock};
 
 use alloy::{
     eips::eip2930::AccessList, network::Ethereum, providers::Provider, transports::Transport,
 };
-use alloy_primitives::{Address, Sealable, U256};
+use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
-use once_cell::sync::Lazy;
 use revm::primitives::SpecId;
 use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract};
 
-pub static ANVIL_CHAIN_SPEC: Lazy<ChainSpec> =
-    Lazy::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
+pub static ANVIL_CHAIN_SPEC: LazyLock<ChainSpec> =
+    LazyLock::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
 
 /// Executes a new [SolCall] using steel.
 pub async fn eth_call<T, P, C>(
@@ -45,8 +44,8 @@ where
         .await
         .unwrap()
         .with_chain_spec(&ANVIL_CHAIN_SPEC);
-    let block_hash = env.header().hash_slow();
-    let block_number = env.header().inner().number;
+    let block_hash = env.header().seal();
+    let block_number = env.header().number;
 
     let preflight_result = {
         let mut preflight = Contract::preflight(address, &mut env);
