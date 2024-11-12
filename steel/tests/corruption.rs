@@ -140,24 +140,6 @@ async fn rpc_usdt_beacon_input() -> anyhow::Result<EthEvmInput> {
     env.into_input().await
 }
 
-/// Creates `EthEvmInput::History` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
-async fn rpc_usdt_history_input() -> anyhow::Result<EthEvmInput> {
-    let mut env = EthEvmEnv::builder()
-        .rpc(RPC_URL.parse()?)
-        .beacon_api(BEACON_API_URL.parse()?)
-        .block_number_or_tag(BlockNumberOrTag::Safe)
-        .commitment_block(BlockNumberOrTag::Parent)
-        .build()
-        .await?;
-    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
-    Contract::preflight(USDT_ADDRESS, &mut env)
-        .call_builder(&USDT_CALL)
-        .call()
-        .await?;
-
-    env.into_input().await
-}
-
 /// Loads the data from an existing JSON file, or creates it.
 async fn load_or_create<'a, T: serde::ser::Serialize + serde::de::DeserializeOwned>(
     path: impl AsRef<Path>,
@@ -437,117 +419,140 @@ async fn corrupt_beacon_proof_length() {
     mock_usdt_guest(from_value(input_value).unwrap());
 }
 
-#[test(tokio::test)]
-#[should_panic(expected = "Invalid commitment")]
-async fn corrupt_history_proof() {
-    let input = load_or_create("testdata/history_input.json", || {
-        Box::pin(rpc_usdt_history_input())
-    })
-    .await
-    .unwrap();
-    let exp_commit = input.clone().into_env().into_commitment();
+#[cfg(feature = "unstable-history")]
+mod history {
+    use super::*;
 
-    // get the JSON representation of the block header for the state
-    let mut input_value = to_value(&input).unwrap();
-    let state_commit = &mut input_value["History"]["commit"]["state_commits"][0];
-    let proof_value = &mut state_commit["state_commit"]["proof"];
+    /// Creates `EthEvmInput::History` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
+    async fn rpc_usdt_history_input() -> anyhow::Result<EthEvmInput> {
+        let mut env = EthEvmEnv::builder()
+            .rpc(RPC_URL.parse()?)
+            .beacon_api(BEACON_API_URL.parse()?)
+            .block_number_or_tag(BlockNumberOrTag::Safe)
+            .commitment_block(BlockNumberOrTag::Parent)
+            .build()
+            .await?;
+        env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+        Contract::preflight(USDT_ADDRESS, &mut env)
+            .call_builder(&USDT_CALL)
+            .call()
+            .await?;
 
-    // corrupt the first element in the Merkle path to something non-zero
-    proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
+        env.into_input().await
+    }
 
-    // executing this should lead to an Invalid commitment
-    let commit = mock_usdt_guest(from_value(input_value).unwrap());
-    assert_eq!(commit.id, exp_commit.id, "Changed commitment");
-    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
-}
+    #[test(tokio::test)]
+    #[should_panic(expected = "Invalid commitment")]
+    async fn corrupt_history_proof() {
+        let input = load_or_create("testdata/history_input.json", || {
+            Box::pin(rpc_usdt_history_input())
+        })
+        .await
+        .unwrap();
+        let exp_commit = input.clone().into_env().into_commitment();
 
-#[test(tokio::test)]
-#[should_panic(expected = "Invalid commitment")]
-async fn corrupt_history_state_trie() {
-    let input = load_or_create("testdata/history_input.json", || {
-        Box::pin(rpc_usdt_history_input())
-    })
-    .await
-    .unwrap();
-    let exp_commit = input.clone().into_env().into_commitment();
+        // get the JSON representation of the block header for the state
+        let mut input_value = to_value(&input).unwrap();
+        let state_commit = &mut input_value["History"]["commit"]["state_commits"][0];
+        let proof_value = &mut state_commit["state_commit"]["proof"];
 
-    // get the JSON representation of the block header for the state
-    let mut input_value = to_value(&input).unwrap();
-    let state_commit = &mut input_value["History"]["commit"]["state_commits"][0];
-    let state_trie_value = &mut state_commit["state"]["state_trie"];
+        // corrupt the first element in the Merkle path to something non-zero
+        proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
 
-    // corrupt the trie by getting the first child node and deleting it
-    let children = state_trie_value["Branch"].as_array_mut().unwrap();
-    let child_value = children.iter_mut().find(|c| !c.is_null()).unwrap();
-    *child_value = Value::Null;
+        // executing this should lead to an Invalid commitment
+        let commit = mock_usdt_guest(from_value(input_value).unwrap());
+        assert_eq!(commit.id, exp_commit.id, "Changed commitment");
+        assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
+    }
 
-    // executing this should lead to an Invalid commitment
-    let commit = mock_usdt_guest(from_value(input_value).unwrap());
-    assert_eq!(commit.id, exp_commit.id, "Changed commitment");
-    assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
-}
+    #[test(tokio::test)]
+    #[should_panic(expected = "Invalid commitment")]
+    async fn corrupt_history_state_trie() {
+        let input = load_or_create("testdata/history_input.json", || {
+            Box::pin(rpc_usdt_history_input())
+        })
+        .await
+        .unwrap();
+        let exp_commit = input.clone().into_env().into_commitment();
 
-#[test(tokio::test)]
-#[should_panic(expected = "Beacon roots contract failed: InvalidState")]
-async fn corrupt_history_storage_trie() {
-    let input = load_or_create("testdata/history_input.json", || {
-        Box::pin(rpc_usdt_history_input())
-    })
-    .await
-    .unwrap();
+        // get the JSON representation of the block header for the state
+        let mut input_value = to_value(&input).unwrap();
+        let state_commit = &mut input_value["History"]["commit"]["state_commits"][0];
+        let state_trie_value = &mut state_commit["state"]["state_trie"];
 
-    // get the JSON representation of the block header for the state
-    let mut input_value = to_value(&input).unwrap();
-    let state_commit = &mut input_value["History"]["commit"]["state_commits"][0];
-    let storage_trie_value = &mut state_commit["state"]["storage_trie"];
+        // corrupt the trie by getting the first child node and deleting it
+        let children = state_trie_value["Branch"].as_array_mut().unwrap();
+        let child_value = children.iter_mut().find(|c| !c.is_null()).unwrap();
+        *child_value = Value::Null;
 
-    // corrupt the trie by getting the first child node and deleting it
-    let children = storage_trie_value["Branch"].as_array_mut().unwrap();
-    let child_value = children.iter_mut().find(|c| !c.is_null()).unwrap();
-    *child_value = Value::Null;
+        // executing this should lead to an Invalid commitment
+        let commit = mock_usdt_guest(from_value(input_value).unwrap());
+        assert_eq!(commit.id, exp_commit.id, "Changed commitment");
+        assert_eq!(commit.digest, exp_commit.digest, "Invalid commitment");
+    }
 
-    // executing this on the guest should panic
-    mock_usdt_guest(from_value(input_value).unwrap());
-}
+    #[test(tokio::test)]
+    #[should_panic(expected = "Beacon roots contract failed: InvalidState")]
+    async fn corrupt_history_storage_trie() {
+        let input = load_or_create("testdata/history_input.json", || {
+            Box::pin(rpc_usdt_history_input())
+        })
+        .await
+        .unwrap();
 
-#[test(tokio::test)]
-#[should_panic(expected = "Beacon root does not match")]
-async fn corrupt_history_evm_commit_proof() {
-    let input = load_or_create("testdata/history_input.json", || {
-        Box::pin(rpc_usdt_history_input())
-    })
-    .await
-    .unwrap();
+        // get the JSON representation of the block header for the state
+        let mut input_value = to_value(&input).unwrap();
+        let state_commit = &mut input_value["History"]["commit"]["state_commits"][0];
+        let storage_trie_value = &mut state_commit["state"]["storage_trie"];
 
-    // get the JSON representation of the block header for the state
-    let mut input_value = to_value(&input).unwrap();
-    let evm_commit = &mut input_value["History"]["commit"]["evm_commit"];
+        // corrupt the trie by getting the first child node and deleting it
+        let children = storage_trie_value["Branch"].as_array_mut().unwrap();
+        let child_value = children.iter_mut().find(|c| !c.is_null()).unwrap();
+        *child_value = Value::Null;
 
-    // corrupt the EVM commit by changing the first element in the proof to something non-zero
-    let proof_value = &mut evm_commit["proof"];
-    proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
+        // executing this on the guest should panic
+        mock_usdt_guest(from_value(input_value).unwrap());
+    }
 
-    // executing this on the guest should panic
-    mock_usdt_guest(from_value(input_value).unwrap());
-}
+    #[test(tokio::test)]
+    #[should_panic(expected = "Beacon root does not match")]
+    async fn corrupt_history_evm_commit_proof() {
+        let input = load_or_create("testdata/history_input.json", || {
+            Box::pin(rpc_usdt_history_input())
+        })
+        .await
+        .unwrap();
 
-#[test(tokio::test)]
-#[should_panic(expected = "Unresolved node access")]
-async fn corrupt_history_evm_commit_timestamp() {
-    let input = load_or_create("testdata/history_input.json", || {
-        Box::pin(rpc_usdt_history_input())
-    })
-    .await
-    .unwrap();
+        // get the JSON representation of the block header for the state
+        let mut input_value = to_value(&input).unwrap();
+        let evm_commit = &mut input_value["History"]["commit"]["evm_commit"];
 
-    // get the JSON representation of the block header for the state
-    let mut input_value = to_value(&input).unwrap();
-    let evm_commit = &mut input_value["History"]["commit"]["evm_commit"];
+        // corrupt the EVM commit by changing the first element in the proof to something non-zero
+        let proof_value = &mut evm_commit["proof"];
+        proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
 
-    // corrupt the EVM commit by changing its timestamp
-    let timestamp_value = &mut evm_commit["timestamp"];
-    *timestamp_value = to_value(u64::MAX).unwrap();
+        // executing this on the guest should panic
+        mock_usdt_guest(from_value(input_value).unwrap());
+    }
 
-    // converting this into an environment should panic
-    mock_usdt_guest(from_value(input_value).unwrap());
+    #[test(tokio::test)]
+    #[should_panic(expected = "Unresolved node access")]
+    async fn corrupt_history_evm_commit_timestamp() {
+        let input = load_or_create("testdata/history_input.json", || {
+            Box::pin(rpc_usdt_history_input())
+        })
+        .await
+        .unwrap();
+
+        // get the JSON representation of the block header for the state
+        let mut input_value = to_value(&input).unwrap();
+        let evm_commit = &mut input_value["History"]["commit"]["evm_commit"];
+
+        // corrupt the EVM commit by changing its timestamp
+        let timestamp_value = &mut evm_commit["timestamp"];
+        *timestamp_value = to_value(u64::MAX).unwrap();
+
+        // converting this into an environment should panic
+        mock_usdt_guest(from_value(input_value).unwrap());
+    }
 }
