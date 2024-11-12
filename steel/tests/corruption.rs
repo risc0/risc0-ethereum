@@ -422,6 +422,7 @@ async fn corrupt_beacon_proof_length() {
 #[cfg(feature = "unstable-history")]
 mod history {
     use super::*;
+    use test_log::test;
 
     /// Creates `EthEvmInput::History` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
     async fn rpc_usdt_history_input() -> anyhow::Result<EthEvmInput> {
