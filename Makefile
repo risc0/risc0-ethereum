@@ -9,7 +9,7 @@ ANVIL_BLOCK_TIME = 1
 RPC_URL := http://localhost:$(ANVIL_PORT)
 DEPLOYER_PUBLIC_KEY := 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 DEPLOYER_PRIVATE_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-ADMIN_PUBLIC_KEY := 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+ADMIN_ADDRESS := 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 CHAIN_KEY := anvil
 
 LOGS_DIR = logs
@@ -42,12 +42,12 @@ devnet-up: check-deps
 		unset TIMELOCK_CONTROLLER; \
 		unset VERIFIER; \
 		unset VERIFIER_SELECTOR; \
-		MIN_DELAY=1 PROPOSER=$(ADMIN_PUBLIC_KEY) EXECUTOR=$(ADMIN_PUBLIC_KEY) bash contracts/script/manage DeployTimelockRouter --broadcast && \
+		MIN_DELAY=1 PROPOSER=$(ADMIN_ADDRESS) EXECUTOR=$(ADMIN_ADDRESS) bash contracts/script/manage DeployTimelockRouter --broadcast && \
 		TIMELOCK_CONTROLLER=$$(jq -re '.transactions[] | select(.contractName == "TimelockController") | .contractAddress' ./broadcast/Manage.s.sol/31337/run-latest.json) && \
 		VERIFIER_ROUTER=$$(jq -re '.transactions[] | select(.contractName == "RiscZeroVerifierRouter") | .contractAddress' ./broadcast/Manage.s.sol/31337/run-latest.json) && \
 		export TIMELOCK_CONTROLLER=$$TIMELOCK_CONTROLLER && \
 		export VERIFIER_ROUTER=$$VERIFIER_ROUTER && \
-		CHAIN_KEY=$(CHAIN_KEY) VERIFIER_ESTOP_OWNER=$(ADMIN_PUBLIC_KEY) bash contracts/script/manage DeployEstopVerifier --broadcast && \
+		CHAIN_KEY=$(CHAIN_KEY) VERIFIER_ESTOP_OWNER=$(ADMIN_ADDRESS) bash contracts/script/manage DeployEstopVerifier --broadcast && \
 		VERIFIER_ESTOP=$$(jq -re '.transactions[] | select(.contractName == "RiscZeroVerifierEmergencyStop") | .contractAddress' ./broadcast/Manage.s.sol/31337/run-latest.json) && \
 		VERIFIER=$$(jq -re '.transactions[] | select(.contractName == "RiscZeroGroth16Verifier") | .contractAddress' ./broadcast/Manage.s.sol/31337/run-latest.json) && \
 		VERIFIER_SELECTOR=$$(cast call --rpc-url $(RPC_URL) $$VERIFIER 'SELECTOR()' | cut -c 1-10) && \

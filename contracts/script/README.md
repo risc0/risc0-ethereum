@@ -74,7 +74,7 @@ Set your RPC URL, public and private key, and Etherscan API key:
 export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" contracts/deployment_secrets.toml | tee /dev/stderr)
 export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" contracts/deployment.toml | tee /dev/stderr)
 export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" contracts/deployment_secrets.toml | tee /dev/stderr)
-export ADMIN_PUBLIC_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" contracts/deployment.toml | tee /dev/stderr)
+export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" contracts/deployment.toml | tee /dev/stderr)
 ```
 
 > [!TIP]
@@ -146,8 +146,8 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
 
     ```bash
     MIN_DELAY=1 \
-    PROPOSER="${ADMIN_PUBLIC_KEY:?}" \
-    EXECUTOR="${ADMIN_PUBLIC_KEY:?}" \
+    PROPOSER="${ADMIN_ADDRESS:?}" \
+    EXECUTOR="${ADMIN_ADDRESS:?}" \
     bash contracts/script/manage DeployTimelockRouter
 
     ...
@@ -207,7 +207,7 @@ This is a two-step process, guarded by the `TimelockController`.
 2. Dry run deployment of verifier and estop:
 
     ```zsh
-    VERIFIER_ESTOP_OWNER=${ADMIN_PUBLIC_KEY:?} \
+    VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
     bash contracts/script/manage DeployEstopVerifier
     ```
 
@@ -255,7 +255,7 @@ This is a two-step process, guarded by the `TimelockController`.
 7. Dry run the operation to schedule the operation to add the verifier to the router.
 
     Fill in the addresses for the relevant chain below.
-    `ADMIN_PUBLIC_KEY` should be set to the Fireblocks admin address.
+    `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
 
     ```zsh
     bash contracts/script/manage ScheduleAddVerifier

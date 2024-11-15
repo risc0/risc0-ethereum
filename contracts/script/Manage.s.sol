@@ -62,11 +62,11 @@ contract RiscZeroManagementScript is Script {
         return deployer;
     }
 
-    /// @notice Returns the address of the contract admin, set in the ADMIN_PUBLIC_KEY env var.
+    /// @notice Returns the address of the contract admin, set in the ADMIN_ADDRESS env var.
     /// @dev This admin address will be set as the owner of the estop contracts, and the proposer
     ///      of for the timelock controller. Note that it is not the "admin" on the timelock.
     function adminAddress() internal view returns (address) {
-        return vm.envAddress("ADMIN_PUBLIC_KEY");
+        return vm.envAddress("ADMIN_ADDRESS");
     }
 
     /// @notice Determines the contract address of TimelockController from the environment.
