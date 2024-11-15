@@ -18,6 +18,16 @@ pragma solidity ^0.8.9;
 
 /// @notice Selectable interface for RISC Zero verifier.
 interface IRiscZeroSelectable {
-    /// @notice The selector for the verifier.
+    /// @notice A short key attached to the seal to select the correct verifier implementation.
+    /// @dev The selector is taken from the hash of the verifier parameters If two
+    ///      receipts have different selectors (i.e. different verifier parameters), then it can
+    ///      generally be assumed that they need distinct verifier implementations. This is used as
+    ///      part of the RISC Zero versioning mechanism.
+    ///
+    ///      A selector is not intended to be collision resistant, in that it is possible to find
+    ///      two preimages that result in the same selector. This is acceptable since it's purpose
+    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
+    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
+    ///      function selectors.
     function SELECTOR() external view returns (bytes4);
 }
