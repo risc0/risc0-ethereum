@@ -33,7 +33,6 @@ import {
     SystemStateLib,
     VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
-import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 import {TestReceipt} from "./TestReceipt.sol";
 
