@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Type aliases and specifications for Ethereum.
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::LazyLock};
 
 use crate::{
     config::{ChainSpec, ForkCondition},
@@ -21,11 +21,10 @@ use crate::{
     EvmBlockHeader, EvmEnv, EvmInput,
 };
 use alloy_primitives::{BlockNumber, B256, U256};
-use once_cell::sync::Lazy;
 use revm::primitives::{BlockEnv, SpecId};
 
 /// The Ethereum Sepolia [ChainSpec].
-pub static ETH_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+pub static ETH_SEPOLIA_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 11155111,
     forks: BTreeMap::from([
         (SpecId::MERGE, ForkCondition::Block(1735371)),
@@ -35,7 +34,7 @@ pub static ETH_SEPOLIA_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 });
 
 /// The Ethereum Holešky [ChainSpec].
-pub static ETH_HOLESKY_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+pub static ETH_HOLESKY_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 17000,
     forks: BTreeMap::from([
         (SpecId::MERGE, ForkCondition::Block(0)),
@@ -45,7 +44,7 @@ pub static ETH_HOLESKY_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
 });
 
 /// The Ethereum Mainnet [ChainSpec].
-pub static ETH_MAINNET_CHAIN_SPEC: Lazy<ChainSpec> = Lazy::new(|| ChainSpec {
+pub static ETH_MAINNET_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 1,
     forks: BTreeMap::from([
         (SpecId::MERGE, ForkCondition::Block(15537394)),
