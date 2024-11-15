@@ -139,7 +139,6 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testSelectorIsStable() external view {
-        IRiscZeroSelectable selectable = IRiscZeroSelectable(verifier);
-        require(selectable.SELECTOR() == hex"50bd1769");
+        require(verifier.SELECTOR() == hex"50bd1769");
     }
 }
