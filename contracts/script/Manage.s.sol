@@ -51,12 +51,12 @@ contract RiscZeroManagementScript is Script {
     RiscZeroVerifierEmergencyStop internal _verifierEstop;
     IRiscZeroVerifier internal _verifier;
 
-    /// @notice Returns the address of the deployer, set in the DEPLOYER_PUBLIC_KEY env var.
+    /// @notice Returns the address of the deployer, set in the DEPLOYER_ADDRESS env var.
     function deployerAddress() internal returns (address) {
-        address deployer = vm.envAddress("DEPLOYER_PUBLIC_KEY");
+        address deployer = vm.envAddress("DEPLOYER_ADDRESS");
         uint256 deployerKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
         if (deployerKey != 0) {
-            require(vm.addr(deployerKey) == deployer, "DEPLOYER_PUBLIC_KEY and DEPLOYER_PRIVATE_KEY are inconsistent");
+            require(vm.addr(deployerKey) == deployer, "DEPLOYER_ADDRESS and DEPLOYER_PRIVATE_KEY are inconsistent");
             vm.rememberKey(deployerKey);
         }
         return deployer;
