@@ -24,7 +24,7 @@ You can watch this [video tutorial] for a quick runthrough of using the create-s
 
 ## Documentation
 
-This documentation covers the core concepts of Steel. After reading, you will understand how Steel creates verifiable EVM execution proofs allowing you to carry out execution off-chain verfiably.
+This documentation covers the core concepts of Steel. After reading, you will understand how Steel creates verifiable EVM execution proofs allowing you to carry out execution off-chain verifiably.
 
 - [Introducing Steel 1.0] (blog post)
 - [What is Steel?]
