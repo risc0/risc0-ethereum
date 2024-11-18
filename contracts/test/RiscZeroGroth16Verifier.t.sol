@@ -57,7 +57,7 @@ contract RiscZeroGroth16VerifierTest is Test {
         verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
     }
 
-    function testConsistentSystemStateZeroDigest() external view {
+    function testConsistentSystemStateZeroDigest() external pure {
         require(
             ReceiptClaimLib.SYSTEM_STATE_ZERO_DIGEST
                 == sha256(
@@ -138,6 +138,6 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testSelectorIsStable() external view {
-        require(verifier.SELECTOR() == hex"50bd1769");
+        require(verifier.SELECTOR() == hex"c101b42b");
     }
 }
