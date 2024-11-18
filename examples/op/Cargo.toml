@@ -2,10 +2,6 @@
 resolver = "2"
 members = ["common", "l1-to-l2", "l2", "l2-to-l1"]
 
-# Always optimize; otherwise tests take excessively long.
-[profile.dev]
-opt-level = 3
-
 [profile.release]
 debug = 1
 lto = true
