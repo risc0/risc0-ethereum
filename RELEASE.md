@@ -69,7 +69,7 @@
 
    1. Deploy the verifier contract and schedule the update.
 
-   2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finsh the operation to add the new verifier to the router.
+   2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finish the operation to add the new verifier to the router.
 
    3. Document the new addresses and version in the `dev.risczero.com` docs.
 
