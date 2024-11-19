@@ -271,7 +271,7 @@ estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
 
 [chains.optimism-sepolia]
 name = "Optimism Sepolia"
-id = 11110
+id = 11155420
 etherscan-url = "https://sepolia-optimism.etherscan.io/"
 
 # Accounts
@@ -386,9 +386,10 @@ estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
 
 ###
 
+# NOTE: This is the Cardona testnet, which uses Sepolia ETH as it's native currency.
 [chains.polygon-zkevm-testnet]
 name = "Polygon zkEVM Testnet"
-id = 1442
+id = 2442
 etherscan-url = "https://cardona-zkevm.polygonscan.com/"
 
 # Accounts

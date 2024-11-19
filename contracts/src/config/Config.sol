@@ -89,6 +89,7 @@ library ConfigLoader {
             console2.log("Using chain key %s set via environment variable", chainKey);
         } else {
             // Since no chain key is set, select the default one based on the chainId
+            console2.log("Determining chain key from chain ID %d", block.chainid);
             string[] memory chainKeys = VM.parseTomlKeys(configToml, ".chains");
             for (uint256 i = 0; i < chainKeys.length; i++) {
                 if (stdToml.readUint(configToml, string.concat(".chains.", chainKeys[i], ".id")) == block.chainid) {

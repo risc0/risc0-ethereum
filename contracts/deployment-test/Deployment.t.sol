@@ -113,8 +113,4 @@ contract DeploymentTest is Test {
             // TODO: When SELECTOR is added to the public verifier interface, also check the verifier has the expected selector.
         }
     }
-
-    function testNothing() external view {
-        console2.log("deployment.verifiers.length %d", deployment.verifiers.length);
-    }
 }
