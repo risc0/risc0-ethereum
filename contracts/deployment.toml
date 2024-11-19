@@ -41,6 +41,7 @@ version = "1.1.0-rc.2"
 selector = "0x4c630d87"
 verifier = "0xf4D938c73Bcc124e02A2D6c7557e98838B5E91B4"
 estop = "0x1C182869A6bF84DfAc0a70B46e2f9b3aeE9100e1"
+unroutable = true
 
 [[chains.ethereum-sepolia.verifiers]]
 version = "1.1.0-rc.3"
