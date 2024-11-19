@@ -51,6 +51,8 @@ struct Deployment {
     address router;
     /// Address of the timelock control in this deployment, which is set as the admin of the router.
     address timelockController;
+    /// Min delay configured on the timelock controller.
+    uint256 timelockDelay;
     /// Deployed verifier implementations.
     VerifierDeployment[] verifiers;
 }
@@ -64,6 +66,7 @@ library DeploymentLib {
         stor.admin = mem.admin;
         stor.router = mem.router;
         stor.timelockController = mem.timelockController;
+        stor.timelockDelay = mem.timelockDelay;
         delete stor.verifiers;
         for (uint256 i = 0; i < mem.verifiers.length; i++) {
             stor.verifiers.push(mem.verifiers[i]);
@@ -135,6 +138,9 @@ library ConfigParser {
         deploymentConfig.router = stdToml.readAddressOr(config, string.concat(chain, ".router"), address(0));
         deploymentConfig.timelockController =
             stdToml.readAddressOr(config, string.concat(chain, ".timelock-controller"), address(0));
+        if (deploymentConfig.timelockController != address(0)) {
+            deploymentConfig.timelockDelay = stdToml.readUint(config, string.concat(chain, ".timelock-delay"));
+        }
 
         // Iterate over the verifier struct entries to get the length;
         // NOTE: We do this because Solidity doesn't support dynamic arrays in memory :|

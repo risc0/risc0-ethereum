@@ -8,6 +8,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
+timelock-delay = 604800
 router = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 
 # TODO: Add information for 1.0 contracts.
@@ -36,6 +37,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0xB4E3306129208cC8e6E75157f75f62eAe0B920a0"
+timelock-delay = 1
 router = "0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187"
 
 [[chains.ethereum-sepolia.verifiers]]
@@ -63,6 +65,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
+timelock-delay = 1
 router = "0xf70aBAb028Eb6F4100A24B203E113D94E87DE93C"
 
 [[chains.ethereum-holesky.verifiers]]
@@ -90,6 +93,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 604800
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.arbitrum-mainnet.verifiers]]
@@ -117,6 +121,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 1
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.arbitrum-sepolia.verifiers]]
@@ -144,6 +149,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
+timelock-delay = 604800
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
 [[chains.avalanche-mainnet.verifiers]]
@@ -171,6 +177,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
+timelock-delay = 1
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
 [[chains.avalanche-fuji.verifiers]]
@@ -198,6 +205,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 604800
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.base-mainnet.verifiers]]
@@ -225,6 +233,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 1
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.base-sepolia.verifiers]]
@@ -252,6 +261,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 604800
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.optimism-mainnet.verifiers]]
@@ -279,6 +289,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0x2DEfEA335392bb62d01f74e338697C7B31De254C"
+timelock-delay = 1
 router = "0xB369b4dd27FBfb59921d3A4a3D23AC2fc32FB908"
 
 # NOTE: 1.0 was not deployed to OP Sepolia.
@@ -308,6 +319,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 604800
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.linea-mainnet.verifiers]]
@@ -335,6 +347,7 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # Contracts
 timelock-controller = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
+timelock-delay = 1
 router = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 # NOTE: As of the 1.1.0-rc.2 deployment on August 21, Forge could not verify the contracts.
@@ -369,6 +382,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
+timelock-delay = 604800
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.polygon-zkevm-mainnet.verifiers]]

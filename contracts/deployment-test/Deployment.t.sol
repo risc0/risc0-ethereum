@@ -73,6 +73,14 @@ contract DeploymentTest is Test {
             timelockController.hasRole(timelockController.CANCELLER_ROLE(), deployment.admin),
             "admin does not have canceller role"
         );
+        uint256 deployedDelay = timelockController.getMinDelay();
+        console2.log(
+            "Min delay on timelock controller is %d; expected value is %d", deployedDelay, deployment.timelockDelay
+        );
+        require(
+            timelockController.getMinDelay() == deployment.timelockDelay,
+            "timelock controller min delay is not as expected"
+        );
     }
 
     function testVerifierRouterIsConfiguredProperly() external view {
