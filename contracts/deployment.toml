@@ -12,6 +12,8 @@ router = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 
 # TODO: Add information for 1.0 contracts.
 [[chains.ethereum-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0x5a99469f18a5863D3258E577892589386dFD965E"
 estop = "0xB839eA7bBA8e6bB2893ca5252F3f3C13323D74F7"
@@ -38,10 +40,10 @@ router = "0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187"
 
 [[chains.ethereum-sepolia.verifiers]]
 version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xf4D938c73Bcc124e02A2D6c7557e98838B5E91B4"
 estop = "0x1C182869A6bF84DfAc0a70B46e2f9b3aeE9100e1"
-unroutable = true
 
 [[chains.ethereum-sepolia.verifiers]]
 version = "1.1.0-rc.3"
@@ -64,6 +66,8 @@ timelock-controller = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 router = "0xf70aBAb028Eb6F4100A24B203E113D94E87DE93C"
 
 [[chains.ethereum-holesky.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 estop = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
@@ -89,6 +93,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.arbitrum-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -114,6 +120,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.arbitrum-sepolia.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -139,6 +147,8 @@ timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
 [[chains.avalanche-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -164,6 +174,8 @@ timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
 [[chains.avalanche-fuji.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -189,6 +201,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.base-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -214,6 +228,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.base-sepolia.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
 estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
@@ -239,6 +255,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.optimism-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -266,6 +284,8 @@ router = "0xB369b4dd27FBfb59921d3A4a3D23AC2fc32FB908"
 # NOTE: 1.0 was not deployed to OP Sepolia.
 
 [[chains.optimism-sepolia.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -291,6 +311,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.linea-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
@@ -322,6 +344,8 @@ router = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 # As a result, the router is deployed, but it is empty and useless.
 
 [[chains.linea-sepolia.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 estop = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
@@ -347,6 +371,8 @@ timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.polygon-zkevm-mainnet.verifiers]]
+version = "1.1.0-rc.2"
+unroutable = true
 selector = "0x4c630d87"
 verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"

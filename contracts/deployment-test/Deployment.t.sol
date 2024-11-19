@@ -100,7 +100,7 @@ contract DeploymentTest is Test {
                             )
                     );
                     console2.log(
-                        "Verifier with selector %s is unroutable, as configured",
+                        "Verifier with selector %x is unroutable, as configured",
                         uint256(uint32(verifierConfig.selector))
                     );
                 }
