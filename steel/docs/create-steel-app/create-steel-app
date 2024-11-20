@@ -95,7 +95,7 @@ check_foundry
 select_branch
 get_folder_name
 
-set -ex  # exit on any error
+set -e  # exit on any error
 
 # clone the repo without checking out files
 git clone -b ${BRANCH:?} https://github.com/risc0/risc0-ethereum.git "${FOLDER_NAME:?}" --single-branch --depth 1
