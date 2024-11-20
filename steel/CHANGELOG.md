@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - Introduce `HistoryInput`, which decouples the EVM execution block from the commitment block. This allows verification against a commitment that is more recent than the execution, allowing secure interaction with the historical state. This functionality is currently marked "unstable" and must be enabled using the `unstable-history` feature.
 - Make `EvmEnvBuilder` public.
 
+### 🚨 Breaking Changes
+
+- Remove `EvmEnv::from_rpc` and `EvmEnv::from_provider` which have been deprecated since `0.12.0`.
+
 ## [1.1.4](https://github.com/risc0/risc0-ethereum/releases/tag/v1.1.4) - 2024-10-07
 
 ### ⚡️ Features
