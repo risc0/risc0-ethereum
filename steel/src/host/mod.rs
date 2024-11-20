@@ -26,12 +26,9 @@ use crate::{
 use alloy::eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError};
 use alloy::{
     network::{Ethereum, Network},
-    providers::{Provider, RootProvider},
+    providers::Provider,
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
-    transports::{
-        http::{Client, Http},
-        Transport,
-    },
+    transports::Transport,
 };
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
