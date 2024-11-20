@@ -30,12 +30,9 @@ use crate::{
 use alloy::eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError};
 use alloy::{
     network::{Ethereum, Network},
-    providers::{Provider, RootProvider},
+    providers::Provider,
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
-    transports::{
-        http::{Client, Http},
-        Transport,
-    },
+    transports::Transport,
 };
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
@@ -165,18 +162,6 @@ where
     }
 }
 
-impl EthHostEvmEnv<AlloyDb<Http<Client>, Ethereum, RootProvider<Http<Client>>>, ()> {
-    /// Creates a new provable [EvmEnv] for Ethereum from an HTTP RPC endpoint.
-    #[deprecated(since = "0.12.0", note = "use `EthEvmEnv::builder().rpc()` instead")]
-    pub async fn from_rpc(url: Url, number: BlockNumberOrTag) -> Result<Self> {
-        EthEvmEnv::builder()
-            .rpc(url)
-            .block_number_or_tag(number)
-            .build()
-            .await
-    }
-}
-
 impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
 where
     T: Transport + Clone,
@@ -185,16 +170,6 @@ where
     H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
     <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
-    /// Creates a new provable [EvmEnv] from an alloy [Provider].
-    #[deprecated(since = "0.12.0", note = "use `EvmEnv::builder().provider()` instead")]
-    pub async fn from_provider(provider: P, number: BlockNumberOrTag) -> Result<Self> {
-        EvmEnv::builder()
-            .provider(provider)
-            .block_number_or_tag(number)
-            .build()
-            .await
-    }
-
     /// Converts the environment into a [EvmInput] committing to an execution block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
