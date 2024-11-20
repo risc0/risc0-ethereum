@@ -71,7 +71,23 @@
 
    2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finish the operation to add the new verifier to the router.
 
-   3. Document the new addresses and version in the `dev.risczero.com` docs.
+   3. Run the deployment tests to confirm that the state recorded in `deployment.toml` matches the state of the contracts deployed on-chain.
+
+      You can run the tests against a single chain with the following command:
+
+      ```sh
+      # In the contracts directory.
+      FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url="$RPC_URL"
+      ```
+
+      You can run the tests against all supported chains with the following oneliner:
+
+      ```sh
+      # In the contracts directory.
+      for rpcurl in $(yq eval -e ".chains[].rpc-url" deployment_secrets.toml); do FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url="$rpcurl"; done
+      ```
+
+   4. Document the new addresses and version in the `dev.risczero.com` docs.
 
      Use [contracts/generate_contract_address_table.py] to generate the tables. Python 3.11+ is required.
 
