@@ -9,4 +9,4 @@ build_test(){
   done
 }
 
-find . -maxdepth 2 -mindepth 2 -name 'Cargo.toml' | sort -u | build_test
+grep -rl --include "Cargo.toml" '\[workspace\]' | sort -u | build_test
