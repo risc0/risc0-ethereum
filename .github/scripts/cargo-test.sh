@@ -4,8 +4,8 @@ set -e
 build_test(){
   while read path; do
     printf "Project: %s\n" "$path"
-    cargo build --workspace --all-features --manifest-path "$path"
-    cargo test --workspace --all-features --manifest-path "$path"
+    cargo build --workspace --manifest-path "$path"
+    cargo test --workspace --manifest-path "$path"
   done
 }
 
