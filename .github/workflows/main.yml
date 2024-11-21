@@ -193,6 +193,14 @@ jobs:
       - name: cargo test all examples
         run: ../.github/scripts/cargo-test.sh
         working-directory: examples
+      - name: cargo run -F verify all examples
+        run: ../.github/scripts/run-verify.sh
+        working-directory: examples
+        env:
+          RISC0_DEV_MODE: true
+          L1_RPC_URL: https://ethereum-rpc.publicnode.com
+          L2_RPC_URL: https://optimism-rpc.publicnode.com
+          BEACON_API_URL: https://ethereum-beacon-api
       - run: sccache --show-stats
 
   doc:
