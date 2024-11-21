@@ -56,7 +56,7 @@ At a high level, `finalize_votes.rs`:
     }
 ```
 
-This function calls a RISC Zero [verifier contract] to verify the RISC Zero `Groth16Receipt` produced by the prover. If this proof is invalid, the execution will revert within this call, otherwise the [journal] is decoded and the `_finalizeVotes` function within `RiscZeroGovernorCounting.sol` is called. `_finalizeVotes` handles the votes commited to the journal in 100 byte chunks in `votingData`.
+This function calls a RISC Zero [verifier contract] to verify the RISC Zero `Groth16Receipt` produced by the prover. If this proof is invalid, the execution will revert within this call, otherwise the [journal] is decoded and the `_finalizeVotes` function within `RiscZeroGovernorCounting.sol` is called. `_finalizeVotes` handles the votes committed to the journal in 100 byte chunks in `votingData`.
 
 When a user votes, this has both an onchain and an offchain aspect. The vote is processed offchain as seen in [finalize_votes.rs], and onchain `castVote` is called ([RiscZeroGovernor.sol]), which commits the vote by hashing its vote support (a `uint8` representing the vote state, i.e. 1 represents a `for` vote) and the account's address with a hash accumulator of all previous votes.
 
