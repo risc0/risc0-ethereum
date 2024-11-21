@@ -17,7 +17,8 @@ use std::{env, path::PathBuf, process::Command};
 fn main() {
     let manifest_dir =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
-    let foundry_root = manifest_dir.join("../contracts");
+    let foundry_root = manifest_dir.join("../contracts/");
+    println!("foundry root: {}", foundry_root.display());
 
     // Make sure the Verifier.sol file is always compiled.
     let status = Command::new("forge")
