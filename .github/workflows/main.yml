@@ -203,7 +203,7 @@ jobs:
           RISC0_DEV_MODE: true
           L1_RPC_URL: https://ethereum-rpc.publicnode.com
           L2_RPC_URL: https://optimism-rpc.publicnode.com
-          BEACON_API_URL: https://ethereum-beacon-api
+          BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
       - run: sccache --show-stats
 
   doc:
