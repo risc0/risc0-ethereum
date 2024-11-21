@@ -29,7 +29,7 @@ abstract contract OpCommitmentValidator {
     /// @notice Validates a Steel commitment.
     /// @param commitment The commitment to validate.
     /// @return True if the commitment is valid, false otherwise.
-    function validateCommitment(Steel.Commitment calldata commitment) internal view returns (bool) {
+    function validateCommitment(Steel.Commitment memory commitment) internal view returns (bool) {
         (uint240 blockID, uint16 version) = Encoding.decodeVersionedID(commitment.id);
         if (version == 0x100) {
             return validateDisputeGameCommitment(blockID, commitment.digest);
