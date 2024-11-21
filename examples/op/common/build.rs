@@ -26,7 +26,7 @@ fn main() {
     // Make sure the Verifier.sol file is always compiled.
     let status = Command::new("forge")
         .arg("build")
-        .arg("Verifier.sol")
+        .arg("src/Verifier.sol")
         .arg("--root")
         .arg(foundry_root)
         .status()
