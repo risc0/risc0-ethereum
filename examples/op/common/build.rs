@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::process::Command;
+use std::{env, path::PathBuf, process::Command};
 
 fn main() {
+    let manifest_dir =
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
+    let foundry_root = manifest_dir.join("../contracts");
+
     // Make sure the Verifier.sol file is always compiled.
     let status = Command::new("forge")
         .arg("build")
         .arg("Verifier.sol")
-        .current_dir("../contracts")
+        .current_dir(foundry_root)
         .status()
         .expect("failed to execute process");
-    assert!(status.success());
+    assert!(status.success(), "forge build failed");
 
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=../contracts/Verifier.sol");
