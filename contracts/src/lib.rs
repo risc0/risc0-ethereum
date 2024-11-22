@@ -12,15 +12,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod groth16;
+// DO NOT MERGE: Mark as unstable
+pub mod set_verifier;
+
+use core::str::FromStr;
+
+use anyhow::{bail, Result};
+use risc0_zkvm::{sha::Digestible, InnerReceipt};
+
+#[cfg(not(target_os = "zkvm"))]
+use alloy::{primitives::Bytes, sol_types::SolInterface, transports::TransportError};
+
 alloy::sol!(
     #![sol(rpc, all_derives)]
     "src/IRiscZeroVerifier.sol"
 );
 
-pub mod groth16;
+alloy::sol!(
+    #![sol(rpc, all_derives)]
+    "src/IRiscZeroSetVerifier.sol"
+);
 
-use anyhow::{bail, Result};
-use risc0_zkvm::{sha::Digestible, InnerReceipt};
+#[cfg(not(target_os = "zkvm"))]
+pub use IRiscZeroSetVerifier::IRiscZeroSetVerifierErrors;
+
+#[cfg(not(target_os = "zkvm"))]
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("SetVerifier error: {0:?}")]
+    SetVerifierError(IRiscZeroSetVerifierErrors),
+
+    #[error("contract error: {0}")]
+    ContractError(alloy::contract::Error),
+
+    #[error("decoding error: {0}")]
+    DecodingError(#[from] DecodingError),
+}
+
+#[cfg(not(target_os = "zkvm"))]
+#[derive(thiserror::Error, Debug)]
+pub enum DecodingError {
+    #[error("missing data, code: {0} msg: {1}")]
+    MissingData(i64, String),
+
+    #[error("error creating bytes from string")]
+    BytesFromStrError,
+
+    #[error("abi decoder error: {0} - {1}")]
+    Abi(alloy::sol_types::Error, Bytes),
+}
 
 /// Encode the seal of the given receipt for use with EVM smart contract verifiers.
 ///
@@ -47,6 +88,46 @@ pub fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>> {
             selector_seal
         }
         _ => bail!("Unsupported receipt type"),
+        // TODO(victor): Add set verifier seal here.
     };
     Ok(seal)
+}
+
+#[cfg(not(target_os = "zkvm"))]
+fn decode_contract_err<T: SolInterface>(err: alloy::contract::Error) -> Result<T, Error> {
+    match err {
+        alloy::contract::Error::TransportError(TransportError::ErrorResp(ts_err)) => {
+            let Some(data) = ts_err.data else {
+                return Err(
+                    DecodingError::MissingData(ts_err.code, ts_err.message.to_string()).into(),
+                );
+            };
+
+            let data = data.get().trim_matches('"');
+
+            let Ok(data) = Bytes::from_str(data) else {
+                return Err(DecodingError::BytesFromStrError.into());
+            };
+
+            let decoded_error = match T::abi_decode(&data, true) {
+                Ok(res) => res,
+                Err(err) => {
+                    return Err(DecodingError::Abi(err, data).into());
+                }
+            };
+
+            Ok(decoded_error)
+        }
+        _ => Err(Error::ContractError(err)),
+    }
+}
+
+#[cfg(not(target_os = "zkvm"))]
+impl IRiscZeroSetVerifierErrors {
+    pub fn decode_error(err: alloy::contract::Error) -> Error {
+        match decode_contract_err(err) {
+            Ok(res) => Error::SetVerifierError(res),
+            Err(decode_err) => decode_err,
+        }
+    }
 }

@@ -14,6 +14,8 @@ anyhow = "1.0"
 alloy = { workspace = true, features = ["sol-types", "contract"] }
 anyhow = { workspace = true }
 risc0-zkvm = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4"
