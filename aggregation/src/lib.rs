@@ -360,13 +360,11 @@ pub fn merkle_root(leaves: &[Digest]) -> Digest {
 ///
 /// Panics if the given index is out of bounds.
 pub fn merkle_path(leaves: &[Digest], index: usize) -> Vec<Digest> {
-    // Ensure that the index is valid.
-    leaves.get(index).unwrap_or_else(|| {
-        panic!(
-            "no leaf with index {index} in tree of size {}",
-            leaves.len()
-        )
-    });
+    assert!(
+        index < leaves.len(),
+        "no leaf with index {index} in tree of size {}",
+        leaves.len()
+    );
 
     match leaves {
         [] => unreachable!(),
