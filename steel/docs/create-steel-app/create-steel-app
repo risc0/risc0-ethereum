@@ -23,10 +23,10 @@ get_risc0_version() {
         echo "cargo risczero not found. Please see installation instructions by visiting: https://dev.risczero.com/api/zkvm/install"
         exit 1
     fi
-    echo "detected risc0 version: $RISC0_VERSION"
+    echo "detected risc0 version: ${RISC0_VERSION:?}"
 
     # map version to branch
-    if [[ "$RISC0_VERSION" =~ ^1\.1\. ]]; then
+    if [[ "${RISC0_VERSION:?}" =~ ^1\.1\. ]]; then
         BRANCH="release-1.1"
     else
         echo "unsupported risc0 version. version 1.1 is supported"
@@ -44,12 +44,12 @@ select_branch() {
 
     # Logic below can be used when more than one version is supported.
     #if [[ -n "$BRANCH" ]]; then
-    #    echo "using branch: $BRANCH based on installed risc0 version"
+    #    echo "using branch: ${BRANCH:?} based on installed risc0 version"
     #    read -p "do you want to use a different release? (y/N): " change_branch
     #    if [[ "$change_branch" =~ ^[Yy]$ ]]; then
     #        BRANCH=""
     #    else
-    #        echo "selected branch: $BRANCH"
+    #        echo "selected branch: ${BRANCH:?}"
     #        return
     #    fi
     #fi
@@ -64,7 +64,7 @@ select_branch() {
     #    esac
     #done
     #
-    #echo "selected branch: $BRANCH"
+    #echo "selected branch: ${BRANCH:?}"
 }
 
 get_folder_name() {
@@ -98,8 +98,11 @@ get_folder_name
 set -e  # exit on any error
 
 # clone the repo without checking out files
-git clone -b $BRANCH https://github.com/risc0/risc0-ethereum.git "$FOLDER_NAME"
-cd "$FOLDER_NAME"
+git clone -b ${BRANCH:?} https://github.com/risc0/risc0-ethereum.git "${FOLDER_NAME:?}" --single-branch --depth 1
+cd "${FOLDER_NAME:?}"
+
+LIB_FORGE_STD_COMMIT="$(git submodule status | sed -n 's/.\{0,1\}\([0-9a-f]*\) lib\/forge-std \{0,1\}.*/\1/p')"
+LIB_OZ_COMMIT="$(git submodule status | sed -n 's/.\{0,1\}\([0-9a-f]*\) lib\/openzeppelin-contracts \{0,1\}.*/\1/p')"
 
 # set up sparse checkout for 'examples/erc20-counter' 
 git sparse-checkout set examples/erc20-counter 
@@ -115,25 +118,25 @@ mv erc20-counter/{.,}* ./ 2>/dev/null || true
 
 # remove the erc20-counter directory
 rm -r erc20-counter
-echo "done. erc20-counter contents and steel directory are now in the root of $FOLDER_NAME."
+echo "done. erc20-counter contents and steel directory are now in the root of ${FOLDER_NAME:?}."
 
 # update Cargo.toml files with git dependencies
 ## apps requires Steel to have "features = ["host"]"
 find . -name Cargo.toml -type f | while read -r file; do
-    if [[ "$file" == *"/apps/"* ]]; then
+    if [[ "${file:?}" == *"/apps/"* ]]; then
         sed_i \
-            -e "s|^risc0-build-ethereum = .*$|risc0-build-ethereum = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
-            -e "s|^risc0-ethereum-contracts = .*$|risc0-ethereum-contracts = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
-            -e "s|^risc0-steel = .*$|risc0-steel = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\", features = [\"host\"] }|" \
-            "$file"
+            -e "s|^risc0-build-ethereum = .*$|risc0-build-ethereum = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"${BRANCH:?}\" }|" \
+            -e "s|^risc0-ethereum-contracts = .*$|risc0-ethereum-contracts = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"${BRANCH:?}\" }|" \
+            -e "s|^risc0-steel = .*$|risc0-steel = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"${BRANCH:?}\", features = [\"host\"] }|" \
+            "${file:?}"
     else
         sed_i \
-            -e "s|^risc0-build-ethereum = .*$|risc0-build-ethereum = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
-            -e "s|^risc0-ethereum-contracts = .*$|risc0-ethereum-contracts = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
-            -e "s|^risc0-steel = .*$|risc0-steel = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"$BRANCH\" }|" \
-            "$file"
+            -e "s|^risc0-build-ethereum = .*$|risc0-build-ethereum = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"${BRANCH:?}\" }|" \
+            -e "s|^risc0-ethereum-contracts = .*$|risc0-ethereum-contracts = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"${BRANCH:?}\" }|" \
+            -e "s|^risc0-steel = .*$|risc0-steel = { git = \"https://github.com/risc0/risc0-ethereum\", branch = \"${BRANCH:?}\" }|" \
+            "${file:?}"
     fi
-    echo "updated $file"
+    echo "updated ${file:?}"
 done
 echo "all Cargo.toml files have been updated with git dependencies."
 
@@ -157,11 +160,16 @@ git init
 mkdir -p lib
 
 ## initialize submodules for forge remappings
+# NOTE: -b option does not work for commits
 git submodule init
 git submodule add https://github.com/foundry-rs/forge-std lib/forge-std
+(cd lib/forge-std && git checkout "${LIB_FORGE_STD_COMMIT:?}")
 git submodule add https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
-git submodule add https://github.com/risc0/risc0-ethereum lib/risc0-ethereum
+(cd lib/openzeppelin-contracts && git checkout "${LIB_OZ_COMMIT:?}")
+git submodule add -b "${BRANCH:?}" https://github.com/risc0/risc0-ethereum lib/risc0-ethereum
 git submodule update --init --recursive --quiet
+# Clear the staged index
+git reset
 
 # update remappings in remappings.txt
 if [ -f "remappings.txt" ]; then
@@ -176,4 +184,4 @@ else
     echo "remappings.txt not found"
 fi
 
-echo "done. $FOLDER_NAME is ready for development."
+echo "done. ${FOLDER_NAME:?} is ready for development."
