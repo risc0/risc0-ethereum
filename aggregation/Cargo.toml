@@ -9,12 +9,13 @@ repository = { workspace = true }
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
-anyhow = { workspace = true }
 guest-set-builder = { path = "./guest", optional = true }
 hex = { workspace = true }
 risc0-binfmt = { workspace = true }
+risc0-zkp = { workspace = true }
 risc0-zkvm = { workspace = true }
 serde = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 rand = { workspace = true }
