@@ -132,7 +132,8 @@ where
         &self,
         ctx: &VerifierContext,
         set_verifier_params: SetInclusionReceiptVerifierParameters,
-        recursion_verifier_params: Option<RecursionVerifierParamters>,
+        // used when target_os = zkvm
+        _recursion_verifier_params: Option<RecursionVerifierParamters>,
     ) -> Result<(), VerificationError> {
         let path_root = merkle_path_root(&self.claim.digest::<sha::Impl>(), &self.merkle_path);
 
@@ -157,12 +158,11 @@ where
             return Ok(());
         }
 
-        if cfg!(target_os = "zkvm") && recursion_verifier_params.is_some() {
+        #[cfg(target_os = "zkvm")]
+        if let Some(params) = _recursion_verifier_params {
             risc0_zkvm::guest::env::verify_assumption(
                 expected_root_claim.digest::<sha::Impl>(),
-                recursion_verifier_params
-                    .and_then(|params| params.control_root)
-                    .unwrap_or(Digest::ZERO),
+                params.control_root.unwrap_or(Digest::ZERO),
             )?;
             return Ok(());
         }
