@@ -17,6 +17,12 @@
 
 pub mod groth16;
 
+/// Re-export of [alloy], provided to ensure that the correct version of the types used in the
+/// public API are available in case multiple versions of [alloy] are in use.
+///
+/// Because [alloy] is a v0.x crate, it is not covered under the semver policy of this crate.
+pub use alloy;
+
 // NOTE: Placing the cfg directly on the `pub mod` statement doesn't work when tried with Rust 1.81
 cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {
