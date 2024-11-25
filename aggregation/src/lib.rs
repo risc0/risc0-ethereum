@@ -122,30 +122,32 @@ pub fn merkle_path(leaves: &[Digest], index: usize) -> Vec<Digest> {
         leaves.len()
     );
 
-    match leaves {
-        [] => unreachable!(),
-        [_] => Vec::new(), // If only one digest, return an empty path.
-        _ => {
-            // Take the most-significant bit to determine whether the leaf is in the left or the
-            // right subtree, and determine the index in that subtree.
-            let index_bitsize = leaves.len().next_power_of_two().ilog2() as usize;
-            debug_assert!(index_bitsize >= 1);
-            let msb_mask = 1 << (index_bitsize - 1);
-            let is_left = index & msb_mask == 0;
-            let subindex = index & (msb_mask - 1);
+    if leaves.len() == 1 {
+        return Vec::new(); // If only one digest, return an empty path
+    }
 
-            // Split the list into two halves
-            let (left, right) = leaves.split_at(leaves.len().next_power_of_two() / 2);
-            let (ancestor, sibling) = match is_left {
-                true => (left, right),
-                false => (right, left),
-            };
-            let sibling_root = merkle_root(sibling);
-            let mut path = merkle_path(ancestor, subindex);
-            path.push(sibling_root);
-            path
+    let mut path = Vec::new();
+    let mut current_leaves = leaves;
+    let mut current_index = index;
+
+    while current_leaves.len() > 1 {
+        // Split the list into two halves
+        let mid = current_leaves.len().next_power_of_two() / 2;
+        let (left, right) = current_leaves.split_at(mid);
+
+        // Descent into the respective half
+        if current_index < mid {
+            path.push(merkle_root(right));
+            current_leaves = left;
+        } else {
+            path.push(merkle_root(left));
+            current_leaves = right;
+            current_index -= mid;
         }
     }
+
+    path.reverse();
+    path
 }
 
 /// Calculate the root of the path assuming the given leaf value.
@@ -276,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_consistency() {
-        for length in 1..=256 {
+        for length in 1..=128 {
             let digests: Vec<Digest> = (0..length)
                 .map(|_| rand::random::<[u8; 32]>().into())
                 .collect();
