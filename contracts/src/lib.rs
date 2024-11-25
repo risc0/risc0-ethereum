@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod groth16;
+
+/// Re-export of [alloy], provided to ensure that the correct version of the types used in the
+/// public API are available in case multiple versions of [alloy] are in use.
+///
+/// Because [alloy] is a v0.x crate, it is not covered under the semver policy of this crate.
+pub use alloy;
+
 alloy::sol!(
     #![sol(rpc, all_derives)]
     "src/IRiscZeroVerifier.sol"
 );
-
-pub mod groth16;
 
 use anyhow::{bail, Result};
 use risc0_zkvm::{sha::Digestible, InnerReceipt};
