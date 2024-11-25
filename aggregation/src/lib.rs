@@ -15,7 +15,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::{borrow::Borrow, fmt::Debug};
+use core::borrow::Borrow;
 
 use alloy_primitives::{Keccak256, B256};
 use alloy_sol_types::SolValue;
@@ -43,7 +43,7 @@ alloy_sol_types::sol! {
 #[non_exhaustive]
 pub struct SetInclusionReceipt<Claim>
 where
-    Claim: Digestible + Debug + Clone + Serialize,
+    Claim: Digestible + Clone + Serialize,
 {
     /// Claim containing information about the computation that this receipt proves.
     ///
@@ -105,7 +105,7 @@ pub enum EncodingError {
 
 impl<Claim> SetInclusionReceipt<Claim>
 where
-    Claim: Digestible + Debug + Clone + Serialize,
+    Claim: Digestible + Clone + Serialize,
 {
     /// Construct a [SetInclusionReceipt] with the given Merkle inclusion path and claim.
     ///
