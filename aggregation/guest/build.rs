@@ -12,10 +12,6 @@ const SOLIDITY_IMAGE_ID_PATH: &str = "../../contracts/src/SetBuilderImageID.sol"
 const SOLIDITY_ELF_PATH: &str = "../../contracts/test/SetBuilderElf.sol";
 
 fn main() {
-    if env::var("RISC0_SKIP_BUILD").is_ok() {
-        return;
-    }
-
     // Builds can be made deterministic, and thereby reproducible, by using Docker to build the
     // guest. Check the RISC0_USE_DOCKER variable and use Docker to build the guest if set.
     println!("cargo:rerun-if-env-changed=RISC0_USE_DOCKER");
