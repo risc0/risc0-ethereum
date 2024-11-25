@@ -19,6 +19,7 @@ fn main() {
     // Builds can be made deterministic, and thereby reproducible, by using Docker to build the
     // guest. Check the RISC0_USE_DOCKER variable and use Docker to build the guest if set.
     println!("cargo:rerun-if-env-changed=RISC0_USE_DOCKER");
+    println!("cargo:rerun-if-changed=build.rs");
     let use_docker = env::var("RISC0_USE_DOCKER").ok().map(|_| DockerOptions {
         root_dir: Some("../../".into()),
     });
