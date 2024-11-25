@@ -21,3 +21,4 @@ target/
 
 # Ignore generated image ID file
 /src/SetBuilderImageID.sol
+/test/SetBuilderElf.sol
