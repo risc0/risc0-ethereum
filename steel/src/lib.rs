@@ -19,6 +19,7 @@
 /// public API are available in case multiple versions of [alloy] are in use.
 ///
 /// Because [alloy] is a v0.x crate, it is not covered under the semver policy of this crate.
+#[cfg(feature = "host")]
 pub use alloy;
 
 use ::serde::{Deserialize, Serialize};
