@@ -2,7 +2,7 @@
 //
 // All rights reserved.
 
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, path::PathBuf};
 
 use risc0_build::{embed_methods_with_options, DockerOptions, GuestOptions};
 use risc0_build_ethereum::generate_solidity_files;
@@ -20,8 +20,9 @@ fn main() {
     // guest. Check the RISC0_USE_DOCKER variable and use Docker to build the guest if set.
     println!("cargo:rerun-if-env-changed=RISC0_USE_DOCKER");
     println!("cargo:rerun-if-changed=build.rs");
+    let manifest_dir = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
     let use_docker = env::var("RISC0_USE_DOCKER").ok().map(|_| DockerOptions {
-        root_dir: Some("../../".into()),
+        root_dir: Some(manifest_dir.join("../..")),
     });
 
     // Generate Rust source files for the methods crate.
