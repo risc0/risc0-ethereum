@@ -177,8 +177,7 @@ where
             risc0_zkvm::guest::env::verify_assumption(
                 expected_root_claim.digest::<sha::Impl>(),
                 recursion_verifier_params
-                    .map(|params| params.control_root)
-                    .flatten()
+                    .and_then(|params| params.control_root)
                     .unwrap_or(Digest::ZERO),
             )?;
             return Ok(());
