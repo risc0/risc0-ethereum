@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![deny(rustdoc::broken_intra_doc_links)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
 pub mod groth16;
+
 // NOTE: Placing the cfg directly on the `pub mod` statement doesn't work when tried with Rust 1.81
 cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {

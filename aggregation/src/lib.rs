@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![deny(rustdoc::broken_intra_doc_links)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
 extern crate alloc;
 
 use alloc::vec::Vec;
