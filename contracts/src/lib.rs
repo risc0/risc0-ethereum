@@ -13,8 +13,12 @@
 // limitations under the License.
 
 pub mod groth16;
-// DO NOT MERGE: Mark as unstable
-pub mod set_verifier;
+// NOTE: Placing the cfg directly on the `pub mod` statement doesn't work when tried with Rust 1.81
+cfg_if::cfg_if! {
+    if #[cfg(feature = "unstable")] {
+        pub mod set_verifier;
+    }
+}
 
 use core::str::FromStr;
 

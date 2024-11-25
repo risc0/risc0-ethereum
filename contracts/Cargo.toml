@@ -13,6 +13,7 @@ anyhow = "1.0"
 [dependencies]
 alloy = { workspace = true, features = ["sol-types", "contract"] }
 anyhow = { workspace = true }
+cfg-if = { workspace = true }
 risc0-zkvm = { workspace = true }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
@@ -27,3 +28,4 @@ doctest = false
 
 [features]
 default = []
+unstable = []

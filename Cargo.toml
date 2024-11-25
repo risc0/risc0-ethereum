@@ -54,3 +54,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5" }
 rand = "0.8"
+cfg-if = "1.0"
