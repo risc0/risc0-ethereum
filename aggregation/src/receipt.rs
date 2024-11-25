@@ -87,7 +87,7 @@ where
     ///
     /// Path should contain all sibling nodes in the tree from the leaf to the root. Note that the
     /// path does not include the leaf or the root itself. Resulting receipt will have default
-    /// verifier paramaters and no root receipt.
+    /// verifier parameters and no root receipt.
     pub fn from_path(claim: impl Into<MaybePruned<Claim>>, merkle_path: Vec<Digest>) -> Self {
         Self {
             claim: claim.into(),
