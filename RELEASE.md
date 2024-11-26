@@ -11,8 +11,16 @@
 
      <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
      * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
+
+       > Here is a command to help find all the Cargo.toml files that need to be updated
+       >
+       > ```
+       > grep -r '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./aggregation/guest/set-builder' -l .
+       > ```
+
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+       * `contracts/src/RiscZeroSetVerifier.sol`
      * Update references to the `main` branch
        * Search for `risc0/risc0-ethereum/refs/heads/main`
      * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
@@ -28,6 +36,7 @@
      * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+       * `contracts/src/RiscZeroSetVerifier.sol`
      * Update `steel/CHANGELOG.md` to start a new section for the next release.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
