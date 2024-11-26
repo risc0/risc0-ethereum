@@ -205,7 +205,7 @@ jobs:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - run: cargo doc --no-deps --workspace
+      - run: cargo doc --all-features --no-deps --workspace
       - run: forge doc
 
   # Run as a separate job because we need to install a different set of tools.
