@@ -13,5 +13,7 @@ test = "./deployment-test"
 fs_permissions = [{ access = "read", path = "deployment.toml" }]
 
 [dependencies]
+forge-std = "1.9.4"
+"@openzeppelin-contracts" = "5.1.0"
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
