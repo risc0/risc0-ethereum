@@ -18,6 +18,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: r0.1.81.0
   RISC0_MONOREPO_REF: "main"
+  IS_RELEASE_BRANCH: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+  CARGO_LOCKED: ${{ env.IS_RELEASE_BRANCH && '--locked' || '' }}
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -96,11 +98,11 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - name: cargo clippy risc0-ethereum
-        run: cargo clippy --workspace --all-targets --all-features
+        run: cargo clippy $CARGO_LOCKED --workspace --all-targets --all-features
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
-      - name: cargo clippy all examples
+      - name: cargo clippy $CARGO_LOCKED all examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
         env:
@@ -145,9 +147,9 @@ jobs:
           features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - name: cargo build
-        run: cargo build --workspace --all-features
+        run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test
-        run: cargo test --workspace --all-features --timings
+        run: cargo test $CARGO_LOCKED --workspace --all-features --timings
       - name: Upload timings artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -205,7 +207,7 @@ jobs:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - run: cargo doc --all-features --no-deps --workspace
+      - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
       - run: forge doc
 
   # Run as a separate job because we need to install a different set of tools.
