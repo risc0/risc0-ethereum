@@ -16,7 +16,7 @@
 
 pragma solidity ^0.8.9;
 
-import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable, Ownable2Step} from "openzeppelin-contracts/access/Ownable2Step.sol";
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 

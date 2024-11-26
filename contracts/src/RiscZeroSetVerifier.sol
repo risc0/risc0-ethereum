@@ -16,7 +16,7 @@
 
 pragma solidity ^0.8.20;
 
-import {MerkleProof} from "openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {MerkleProof} from "openzeppelin-contracts/utils/cryptography/MerkleProof.sol";
 import {IRiscZeroVerifier, Receipt, ReceiptClaim, ReceiptClaimLib, VerificationFailed} from "./IRiscZeroVerifier.sol";
 import {IRiscZeroSetVerifier, Seal} from "./IRiscZeroSetVerifier.sol";
 

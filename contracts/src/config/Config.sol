@@ -19,7 +19,7 @@ pragma solidity ^0.8.20;
 import {Vm} from "forge-std/Vm.sol";
 import {console2} from "forge-std/console2.sol";
 import {stdToml} from "forge-std/StdToml.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {SafeCast} from "openzeppelin-contracts/utils/math/SafeCast.sol";
 
 /// Deployment a single verifier.
 ///
