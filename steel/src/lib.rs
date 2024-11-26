@@ -15,6 +15,13 @@
 #![cfg_attr(not(doctest), doc = include_str!("../README.md"))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
+/// Re-export of [alloy], provided to ensure that the correct version of the types used in the
+/// public API are available in case multiple versions of [alloy] are in use.
+///
+/// Because [alloy] is a v0.x crate, it is not covered under the semver policy of this crate.
+#[cfg(feature = "host")]
+pub use alloy;
+
 use ::serde::{Deserialize, Serialize};
 use alloy_primitives::{uint, BlockNumber, Sealable, Sealed, B256, U256};
 use alloy_sol_types::SolValue;
