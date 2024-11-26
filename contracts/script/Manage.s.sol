@@ -18,10 +18,12 @@ pragma solidity ^0.8.9;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
+import {Strings} from "openzeppelin/contracts/utils/Strings.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
-import {IRiscZeroVerifier} from "../src//IRiscZeroVerifier.sol";
+import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
+import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 
 /// @notice Compare strings for equality.
@@ -47,24 +49,24 @@ contract RiscZeroManagementScript is Script {
     TimelockController internal _timelockController;
     RiscZeroVerifierRouter internal _verifierRouter;
     RiscZeroVerifierEmergencyStop internal _verifierEstop;
-    RiscZeroGroth16Verifier internal _verifier;
+    IRiscZeroVerifier internal _verifier;
 
-    /// @notice Returns the address of the deployer, set in the DEPLOYER_PUBLIC_KEY env var.
+    /// @notice Returns the address of the deployer, set in the DEPLOYER_ADDRESS env var.
     function deployerAddress() internal returns (address) {
-        address deployer = vm.envAddress("DEPLOYER_PUBLIC_KEY");
+        address deployer = vm.envAddress("DEPLOYER_ADDRESS");
         uint256 deployerKey = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
         if (deployerKey != 0) {
-            require(vm.addr(deployerKey) == deployer, "DEPLOYER_PUBLIC_KEY and DEPLOYER_PRIVATE_KEY are inconsistent");
+            require(vm.addr(deployerKey) == deployer, "DEPLOYER_ADDRESS and DEPLOYER_PRIVATE_KEY are inconsistent");
             vm.rememberKey(deployerKey);
         }
         return deployer;
     }
 
-    /// @notice Returns the address of the contract admin, set in the ADMIN_PUBLIC_KEY env var.
+    /// @notice Returns the address of the contract admin, set in the ADMIN_ADDRESS env var.
     /// @dev This admin address will be set as the owner of the estop contracts, and the proposer
     ///      of for the timelock controller. Note that it is not the "admin" on the timelock.
     function adminAddress() internal view returns (address) {
-        return vm.envAddress("ADMIN_PUBLIC_KEY");
+        return vm.envAddress("ADMIN_ADDRESS");
     }
 
     /// @notice Determines the contract address of TimelockController from the environment.
@@ -100,17 +102,21 @@ contract RiscZeroManagementScript is Script {
         return _verifierEstop;
     }
 
-    /// @notice Determines the contract address of RiscZeroGroth16Verifier from the environment.
+    /// @notice Determines the contract address of IRiscZeroVerifier from the environment.
     /// @dev Uses the VERIFIER_ESTOP environment variable, and gets the proxied verifier.
-    // NOTE: This assumes the verifier is a RiscZeroGroth16Verifier. In the future, this may not
-    // be a valid assumption, once we introduce other verifier types.
-    function verifier() internal returns (RiscZeroGroth16Verifier) {
+    function verifier() internal returns (IRiscZeroVerifier) {
         if (address(_verifier) != address(0)) {
             return _verifier;
         }
-        _verifier = RiscZeroGroth16Verifier(address(verifierEstop().verifier()));
-        console2.log("Using RiscZeroGroth16Verifier at address", address(_verifier));
+        _verifier = IRiscZeroVerifier(address(verifierEstop().verifier()));
+        console2.log("Using IRiscZeroVerifier at address", address(_verifier));
         return _verifier;
+    }
+
+    /// @notice Determines the contract address of IRiscZeroSelectable from the environment.
+    /// @dev Uses the VERIFIER_ESTOP environment variable, and gets the proxied selectable.
+    function selectable() internal returns (IRiscZeroSelectable) {
+        return IRiscZeroSelectable(address(verifier()));
     }
 
     /// @notice Simulates a call to check if it will succeed, given the current EVM state.
@@ -175,22 +181,29 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract DeployEstopVerifier is RiscZeroManagementScript {
     function run() external {
+        string memory chainKey = vm.envString("CHAIN_KEY");
+        console2.log("chainKey:", chainKey);
         address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
         // Deploy new contracts
-        // TODO: Prints here construct a kind of mangled TOML block that can be copy-pasted into
-        // deployment.toml. It should be fixed up to create a proper block.
         vm.broadcast(deployerAddress());
-        _verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        console2.log("version = \"", verifier().VERSION(), "\"");
-        console2.log("selector = \"");
-        console2.logBytes4(verifier().SELECTOR());
-        console2.log("verifier = \"", address(verifier()), "\"");
+        RiscZeroGroth16Verifier groth16Verifier =
+            new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+        _verifier = IRiscZeroVerifier(address(groth16Verifier));
 
         vm.broadcast(deployerAddress());
-        _verifierEstop = new RiscZeroVerifierEmergencyStop(verifier(), verifierEstopOwner);
-        console2.log("estop = \"", address(verifierEstop()), "\"");
+        _verifierEstop = new RiscZeroVerifierEmergencyStop(groth16Verifier, verifierEstopOwner);
+
+        // Print in TOML format
+        console2.log("");
+        console2.log(string.concat("[[chains.", chainKey, ".verifiers]]"));
+        console2.log(string.concat("version = \"", groth16Verifier.VERSION(), "\""));
+        console2.log(
+            string.concat("selector = \"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4), "\"")
+        );
+        console2.log(string.concat("verifier = \"", Strings.toHexString(uint256(uint160(address(verifier())))), "\""));
+        console2.log(string.concat("estop = \"", Strings.toHexString(uint256(uint160(address(verifierEstop())))), "\""));
     }
 }
 
@@ -206,7 +219,7 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
 contract ScheduleAddVerifier is RiscZeroManagementScript {
     function run() external {
         // Schedule the 'addVerifier()' request
-        bytes4 selector = verifier().SELECTOR();
+        bytes4 selector = selectable().SELECTOR();
         console2.log("selector:");
         console2.logBytes4(selector);
 
@@ -233,7 +246,7 @@ contract ScheduleAddVerifier is RiscZeroManagementScript {
 contract FinishAddVerifier is RiscZeroManagementScript {
     function run() external {
         // Execute the 'addVerifier()' request
-        bytes4 selector = verifier().SELECTOR();
+        bytes4 selector = selectable().SELECTOR();
         console2.log("selector:");
         console2.logBytes4(selector);
 
