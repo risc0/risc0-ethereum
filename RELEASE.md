@@ -29,7 +29,7 @@
          >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
          * Change the reference for `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
          <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarantees the checked in lock files are complete and consistent -->
-         * Run `cargo update`.
+         * Run `cargo update`. You can use `.github/scripts/cargo-update.sh` to do this.
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
    * The other PR should:
