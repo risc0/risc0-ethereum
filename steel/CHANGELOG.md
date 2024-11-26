@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0]https://github.com/risc0/risc0-ethereum/releases/tag/v1.2.0
+
 ### ⚡️ Features
 
 - Introduce `HistoryInput`, which decouples the EVM execution block from the commitment block. This allows verification against a commitment that is more recent than the execution, allowing secure interaction with the historical state. This functionality is currently marked "unstable" and must be enabled using the `unstable-history` feature.
