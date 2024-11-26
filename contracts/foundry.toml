@@ -2,7 +2,7 @@
 src = "src"
 out = "out"
 test = "test"
-libs = ["../lib"]
+libs = ["./dependencies"]
 ffi = true
 
 # Profile used to run deployment tests, which check the correctness of contracts as deployed.
@@ -12,4 +12,6 @@ test = "./deployment-test"
 #match_path = "contracts/deployment-test/*"
 fs_permissions = [{ access = "read", path = "deployment.toml" }]
 
-# See more config options https://book.getfoundry.sh/static/config.default.toml
+[dependencies]
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
