@@ -26,8 +26,3 @@ out/
 
 # Ignore the file with RPC and Etherscan API keys for deployment.
 deployment_secrets.toml
-
-# We ignore lock files in this repository on main because we want to
-# continually track and develop against risc0 main. When lock files are
-# tracked, CI will pin to a commit and only rarely update.
-Cargo.lock
