@@ -149,7 +149,7 @@ jobs:
       - name: cargo test
         run: cargo test --workspace --all-features --timings
       - name: Upload timings artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
           path: target/cargo-timings/
