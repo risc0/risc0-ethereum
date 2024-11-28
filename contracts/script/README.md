@@ -308,15 +308,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Deploy the set verifier
 
-1. Set the verifier selector for the `RiscZeroSetVerifier` contract you will be deploying:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroSetVerifier.t.sol`
-
-    ```zsh
-    export VERIFIER_SELECTOR="0x..."
-    ```
-
-2. Make available for download the `set-builder` elf and export its image ID and url in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables respectively.
+1. Make available for download the `set-builder` elf and export its image ID and url in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables respectively.
 
    To generate a deterministic image ID run (from the repo root folder):
 
@@ -330,11 +322,17 @@ This is a two-step process, guarded by the `TimelockController`.
    > to some HTTP server (such as Pinata) and get back a download URL.
    > Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
 
+2. Set the verifier selector for the `RiscZeroSetVerifier` contract you will be deploying:
+
+   ```zsh
+   export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
+   ```
+
 3. Dry run deployment of the set verifier and estop:
 
    ```zsh
    VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
-   bash contracts/scripts/manage DeployEstopSetVerifier
+   bash contracts/script/manage DeployEstopSetVerifier
    ```
 
    > [!IMPORTANT]
@@ -396,16 +394,14 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Finish the update
 
-After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
+After the delay on the timelock controller has pass, the operation to add the new set verifier to the router can be executed.
 
 Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
 
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroSetVerifier.t.sol`
+1. Set the verifier selector and estop address for the set verifier:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
+    export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
     export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
@@ -436,7 +432,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 1. Set the verifier selector and estop address for the verifier:
 
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier`and in `./contracts/test/RiscZeroSetVerifier.t.sol` for the `RiscZeroSetVerifier`.
+    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier` or you can run `bash contracts/script/manage SetVerifierSelector` for the `RiscZeroSetVerifier`.
 
     ```zsh
     export VERIFIER_SELECTOR="0x..."
@@ -456,7 +452,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 1. Set the verifier selector and estop address for the verifier:
 
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier`and in `./contracts/test/RiscZeroSetVerifier.t.sol` for the `RiscZeroSetVerifier`.
+    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier` or you can run `bash contracts/script/manage SetVerifierSelector` for the `RiscZeroSetVerifier`.
 
     ```zsh
     export VERIFIER_SELECTOR="0x..."

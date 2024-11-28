@@ -156,9 +156,4 @@ contract RiscZeroSetVerifierTest is Test {
         vm.expectRevert();
         setVerifier.verifyIntegrity(RiscZeroReceipt({seal: seal, claimDigest: claimDigests[1]}));
     }
-
-    // This test is meant to provide visibility of the selector, useful during deployment.
-    function testSelectorIsStable() external view {
-        require(setVerifier.SELECTOR() == hex"9427f58d");
-    }
 }

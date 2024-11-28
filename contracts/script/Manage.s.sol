@@ -174,6 +174,19 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
     }
 }
 
+/// @notice Script for printing the selector of the RiscZeroSetVerifier.
+/// @dev Use the following environment variable to control the script:
+///     * SET_BUILDER_IMAGE_ID image ID of the SetBuilder guest
+contract SetVerifierSelector is RiscZeroManagementScript {
+    function run() external {
+        bytes32 SET_BUILDER_IMAGE_ID = vm.envBytes32("SET_BUILDER_IMAGE_ID");
+        console2.log("SET_BUILDER_IMAGE_ID:", Strings.toHexString(uint256(SET_BUILDER_IMAGE_ID)));
+        RiscZeroSetVerifier setVerifier =
+            new RiscZeroSetVerifier(IRiscZeroVerifier(address(0)), SET_BUILDER_IMAGE_ID, "");
+        console2.log("selector:", Strings.toHexString(uint256(uint32(setVerifier.SELECTOR()))));
+    }
+}
+
 /// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
 /// @dev Use the following environment variable to control the deployment:
 ///     * CHAIN_KEY key of the target chain
@@ -200,7 +213,7 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         // Print in TOML format
         console2.log("");
         console2.log(string.concat("[[chains.", chainKey, ".verifiers]]"));
-        console2.log("name = RiscZeroGroth16Verifier");
+        console2.log("name = \"RiscZeroGroth16Verifier\"");
         console2.log(string.concat("version = \"", groth16Verifier.VERSION(), "\""));
         console2.log(
             string.concat("selector = \"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4), "\"")
@@ -243,7 +256,7 @@ contract DeployEstopSetVerifier is RiscZeroManagementScript {
         // Print in TOML format
         console2.log("");
         console2.log(string.concat("[[chains.", chainKey, ".verifiers]]"));
-        console2.log("name = RiscZeroSetVerifier");
+        console2.log("name = \"RiscZeroSetVerifier\"");
         console2.log(string.concat("version = \"", setVerifier.VERSION(), "\""));
         console2.log(
             string.concat("selector = \"", Strings.toHexString(uint256(uint32(setVerifier.SELECTOR())), 4), "\"")
