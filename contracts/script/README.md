@@ -302,6 +302,132 @@ Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
     0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
     ```
 
+## Deploy a set verifier with emergency stop mechanism
+
+This is a two-step process, guarded by the `TimelockController`.
+
+### Deploy the set verifier
+
+1. Set the verifier selector for the `RiscZeroSetVerifier` contract you will be deploying:
+
+    > TIP: One place to find this information is in `./contracts/test/RiscZeroSetVerifier.t.sol`
+
+    ```zsh
+    export VERIFIER_SELECTOR="0x..."
+    ```
+
+2. Make available for download the `set-builder` elf and export its image ID and url in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables respectively.
+
+   To generate a deterministic image ID run (from the repo root folder):
+
+   ```zsh
+   RISC0_USE_DOCKER=true cargo build
+   ```
+
+   > [!NOTE]
+   > This will populate the image ID in the `contracts/src/SetBuilderImageID.sol`.
+   > You can then upload the file located in `target/riscv-guest/riscv32im-risc0-zkvm-elf/docker/set_builder/set-builder`
+   > to some HTTP server (such as Pinata) and get back a download URL.
+   > Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
+
+3. Dry run deployment of the set verifier and estop:
+
+   ```zsh
+   VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
+   bash contracts/scripts/manage DeployEstopSetVerifier
+   ```
+
+   > [!IMPORTANT]
+   > Check the logs from this dry run to verify the estop owner is the expected address.
+   > It should be equal to the RISC Zero admin address on the given chain.
+   > Note that it should not be the `TimelockController`.
+   > Also check the chain ID to ensure you are deploying to the chain you expect.
+   > And check the selector to make sure it matches what you expect.
+
+4. Send deployment transactions for the set verifier by running the command again with `--broadcast`.
+
+    This will result in two transactions sent from the deployer address.
+
+    > [!NOTE]
+    > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
+    > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
+
+5. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+
+6. Add the addresses for the newly deployed contract to the `deployment.toml` file.
+
+    Load the deployed addresses into the environment:
+
+    ```zsh
+    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
+    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
+    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
+    ```
+
+6. Test the deployment.
+
+    ```console
+    cast call --rpc-url ${RPC_URL:?} \
+        ${VERIFIER_ESTOP:?} \
+        'paused()(bool)'
+    false
+
+    cast call --rpc-url ${RPC_URL:?} \
+        ${VERIFIER_ESTOP:?} \
+        'owner()(address)'
+    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    ```
+
+7. Dry run the operation to schedule the operation to add the verifier to the router.
+
+   Fill in the addresses for the relevant chain below.
+   `ADMIN_PUBLIC_KEY` should be set to the Fireblocks admin address.
+
+   ```zsh
+   bash contracts/script/manage ScheduleAddVerifier
+   ```
+
+8. Send the transaction for the scheduled update by running the command again with `--broadcast`.
+
+   This will send one transaction from the admin address.
+
+   > [!IMPORTANT]
+   > If the admin address is in Fireblocks, this will prompt the admins for approval.
+
+### Finish the update
+
+After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
+
+Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
+
+1. Set the verifier selector and estop address for the verifier:
+
+    > TIP: One place to find this information is in `./contracts/test/RiscZeroSetVerifier.t.sol`
+
+    ```zsh
+    export VERIFIER_SELECTOR="0x..."
+    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
+    ```
+
+2. Dry the transaction to execute the add verifier operation:
+
+    ```zsh
+    bash contracts/script/manage FinishAddVerifier
+    ```
+
+3. Run the command again with `--broadcast`
+
+    This will send one transaction from the admin address.
+
+4. Test the deployment.
+
+    ```bash
+    cast call --rpc-url ${RPC_URL:?} \
+        ${VERIFIER_ROUTER:?} \
+        'getVerifier(bytes4)(address)' ${VERIFIER_SELECTOR:?}
+    0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+    ```
+
 ## Remove a verifier
 
 This is a two-step process, guarded by the `TimelockController`.
@@ -310,7 +436,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 1. Set the verifier selector and estop address for the verifier:
 
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier`and in `./contracts/test/RiscZeroSetVerifier.t.sol` for the `RiscZeroSetVerifier`.
 
     ```zsh
     export VERIFIER_SELECTOR="0x..."
@@ -330,7 +456,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 1. Set the verifier selector and estop address for the verifier:
 
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier`and in `./contracts/test/RiscZeroSetVerifier.t.sol` for the `RiscZeroSetVerifier`.
 
     ```zsh
     export VERIFIER_SELECTOR="0x..."
