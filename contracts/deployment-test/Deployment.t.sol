@@ -22,6 +22,8 @@ import {TimelockController} from "openzeppelin/contracts/governance/TimelockCont
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
+import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
+import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 
 /// Test designed to be run against a chain with an active deployment of the RISC Zero contracts.
 /// Checks that the deployment matches what is recorded in the deployment.toml file.
@@ -118,7 +120,9 @@ contract DeploymentTest is Test {
             IRiscZeroVerifier verifierImpl = router.getVerifier(verifierConfig.selector);
             require(address(verifierImpl) != address(0), "verifier impl returned the zero address");
             require(keccak256(address(verifierImpl).code) != keccak256(bytes("")), "verifier impl has no deployed code");
-            // TODO: When SELECTOR is added to the public verifier interface, also check the verifier has the expected selector.
+            address verifierImplAddress = address(RiscZeroVerifierEmergencyStop(address(verifierImpl)).verifier());
+            IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(verifierImplAddress);
+            require(verifierConfig.selector == verifierSelectable.SELECTOR(), "selector mismatch");
         }
     }
 }
