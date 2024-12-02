@@ -26,6 +26,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 /// Many verifiers may be part of a deployment, with the router serving the purpose of making them
 /// all accessible at a single address.
 struct VerifierDeployment {
+    string name;
     string version;
     bytes4 selector;
     address verifier;
@@ -157,6 +158,7 @@ library ConfigParser {
         verifierKey = string.concat(chain, ".verifiers[", VM.toString(verifierIndex), "]");
         while (stdToml.keyExists(config, verifierKey)) {
             VerifierDeployment memory verifier;
+            verifier.name = stdToml.readStringOr(config, string.concat(verifierKey, ".name"), "");
             verifier.version = stdToml.readStringOr(config, string.concat(verifierKey, ".version"), "");
             verifier.selector = bytes4(stdToml.readUint(config, string.concat(verifierKey, ".selector")).toUint32());
             verifier.verifier = stdToml.readAddress(config, string.concat(verifierKey, ".verifier"));
