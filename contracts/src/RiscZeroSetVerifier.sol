@@ -25,6 +25,23 @@ import {IRiscZeroSetVerifier, Seal} from "./IRiscZeroSetVerifier.sol";
 ///         usually indicates a mismatch between the version of the prover and this verifier.
 error SelectorMismatch(bytes4 received, bytes4 expected);
 
+library RiscZeroSetVerifierLib {
+    function selector(bytes32 imageId) internal pure returns (bytes4) {
+        return bytes4(
+            sha256(
+                abi.encodePacked(
+                    // tag
+                    sha256("risc0.SetInclusionReceiptVerifierParameters"),
+                    // down
+                    imageId,
+                    // down length
+                    uint16(1) << 8
+                )
+            )
+        );
+    }
+}
+
 /// @notice RiscZeroSetVerifier verifier contract for RISC Zero receipts of execution.
 contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     using ReceiptClaimLib for ReceiptClaim;
@@ -58,18 +75,7 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
         IMAGE_ID = imageId;
         imageUrl = _imageUrl;
 
-        SELECTOR = bytes4(
-            sha256(
-                abi.encodePacked(
-                    // tag
-                    sha256("risc0.SetInclusionReceiptVerifierParameters"),
-                    // down
-                    imageId,
-                    // down length
-                    uint16(1) << 8
-                )
-            )
-        );
+        SELECTOR = RiscZeroSetVerifierLib.selector(imageId);
     }
 
     /// @inheritdoc IRiscZeroVerifier

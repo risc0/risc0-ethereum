@@ -25,7 +25,7 @@ import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencySto
 import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
-import {RiscZeroSetVerifier} from "../src/RiscZeroSetVerifier.sol";
+import {RiscZeroSetVerifier, RiscZeroSetVerifierLib} from "../src/RiscZeroSetVerifier.sol";
 
 /// @notice Compare strings for equality.
 function stringEq(string memory a, string memory b) pure returns (bool) {
@@ -178,12 +178,11 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
 /// @dev Use the following environment variable to control the script:
 ///     * SET_BUILDER_IMAGE_ID image ID of the SetBuilder guest
 contract SetVerifierSelector is RiscZeroManagementScript {
-    function run() external {
+    function run() external view {
         bytes32 SET_BUILDER_IMAGE_ID = vm.envBytes32("SET_BUILDER_IMAGE_ID");
         console2.log("SET_BUILDER_IMAGE_ID:", Strings.toHexString(uint256(SET_BUILDER_IMAGE_ID)));
-        RiscZeroSetVerifier setVerifier =
-            new RiscZeroSetVerifier(IRiscZeroVerifier(address(0)), SET_BUILDER_IMAGE_ID, "");
-        console2.log("selector:", Strings.toHexString(uint256(uint32(setVerifier.SELECTOR()))));
+        bytes4 selector = RiscZeroSetVerifierLib.selector(SET_BUILDER_IMAGE_ID);
+        console2.log("selector:", Strings.toHexString(uint256(uint32(selector))));
     }
 }
 
