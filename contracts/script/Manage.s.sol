@@ -109,7 +109,7 @@ contract RiscZeroManagementScript is Script {
         if (address(_verifier) != address(0)) {
             return _verifier;
         }
-        _verifier = IRiscZeroVerifier(address(verifierEstop().verifier()));
+        _verifier = verifierEstop().verifier();
         console2.log("Using IRiscZeroVerifier at address", address(_verifier));
         return _verifier;
     }
@@ -205,7 +205,7 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         vm.broadcast(deployerAddress());
         RiscZeroGroth16Verifier groth16Verifier =
             new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
-        _verifier = IRiscZeroVerifier(address(groth16Verifier));
+        _verifier = groth16Verifier;
 
         vm.broadcast(deployerAddress());
         _verifierEstop = new RiscZeroVerifierEmergencyStop(groth16Verifier, verifierEstopOwner);
@@ -245,10 +245,9 @@ contract DeployEstopSetVerifier is RiscZeroManagementScript {
 
         // Deploy new contracts
         vm.broadcast(deployerAddress());
-        RiscZeroSetVerifier setVerifier = new RiscZeroSetVerifier(
-            IRiscZeroVerifier(address(verifierRouter())), SET_BUILDER_IMAGE_ID, SET_BUILDER_GUEST_URL
-        );
-        _verifier = IRiscZeroVerifier(address(setVerifier));
+        RiscZeroSetVerifier setVerifier =
+            new RiscZeroSetVerifier(verifierRouter(), SET_BUILDER_IMAGE_ID, SET_BUILDER_GUEST_URL);
+        _verifier = setVerifier;
 
         vm.broadcast(deployerAddress());
         _verifierEstop = new RiscZeroVerifierEmergencyStop(_verifier, verifierEstopOwner);
