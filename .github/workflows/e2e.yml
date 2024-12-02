@@ -66,7 +66,7 @@ jobs:
       - uses: risc0/risc0/.github/actions/sccache@main
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -82,7 +82,7 @@ jobs:
         shell: bash
       - name: Start local Ethereum testnet
         run: |
-          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package@2e9e5a41784f792a206f1a108c2c96830b2c95ef
+          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package@4.4.0
           echo "ETH_TESTNET_EL_URL=http://$(kurtosis port print local-eth-testnet el-1-geth-lighthouse rpc)" >> $GITHUB_ENV
           echo "ETH_TESTNET_CL_URL=$(kurtosis port print local-eth-testnet cl-1-lighthouse-geth http)" >> $GITHUB_ENV
       - name: Wait for the local Ethereum testnet to come up
