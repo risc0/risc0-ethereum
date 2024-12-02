@@ -102,12 +102,14 @@ jobs:
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
+          RISC0_SKIP_BUILD_KERNEL: true,
       - name: cargo clippy $CARGO_LOCKED all examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
+          RISC0_SKIP_BUILD_KERNEL: true,
       - run: sccache --show-stats
 
   test-risc0-ethereum:
@@ -208,6 +210,9 @@ jobs:
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: foundry-rs/foundry-toolchain@v1
       - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
+        env:
+          RISC0_SKIP_BUILD: true,
+          RISC0_SKIP_BUILD_KERNEL: true,
       - run: forge doc
 
   # Run as a separate job because we need to install a different set of tools.
