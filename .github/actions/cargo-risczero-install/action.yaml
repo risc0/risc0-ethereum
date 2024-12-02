@@ -28,11 +28,11 @@ runs:
           ref: ${{ inputs.ref }}
           lfs: true
       - name: install cargo-risczero
-        run: cargo install --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
+        run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
         working-directory: tmp/risc0
         shell: bash
       - name: install r0vm
-        run: cargo install --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
+        run: cargo install --locked --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
         shell: bash
         working-directory: tmp/risc0
       - name: install toolchains
