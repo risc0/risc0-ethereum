@@ -58,7 +58,7 @@ jobs:
       - name: cargo check examples
         run: ../.github/scripts/cargo-check.sh
         working-directory: examples
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - name: forge check risc0-ethereum
         run: forge fmt --check
         working-directory: contracts
@@ -145,7 +145,7 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - name: cargo build
         run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test
@@ -188,7 +188,7 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - name: cargo test all examples
         run: ../.github/scripts/cargo-test.sh
         working-directory: examples
@@ -206,7 +206,7 @@ jobs:
         with:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
       - run: forge doc
 
