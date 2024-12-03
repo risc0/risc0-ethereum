@@ -62,19 +62,18 @@ export CHAIN_KEY="anvil"
 Set the chain you are operating on by the key from the `deployment.toml` file.
 An example chain key is "ethereum-sepolia", and you can look at `deployment.toml` for the full list.
 
-> TODO: Instead of reading these into environment variables, we can have the Forge script directly read them from the TOML file.
-
 ```zsh
 export CHAIN_KEY="xxx-testnet"
 ```
 
-Set your RPC URL, public and private key, and Etherscan API key:
+**Based on the chain key, the `manage` script will automatically load environment variables from deployment.toml and deployment_secrets.toml**
+
+If the chain you are deploying to is not in `deployment_secrets.toml`, set your RPC URL, public and private key, and Etherscan API key:
 
 ```bash
 export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" contracts/deployment_secrets.toml | tee /dev/stderr)
 export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" contracts/deployment.toml | tee /dev/stderr)
 export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" contracts/deployment_secrets.toml | tee /dev/stderr)
-export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" contracts/deployment.toml | tee /dev/stderr)
 ```
 
 > [!TIP]
@@ -86,19 +85,6 @@ Example RPC URLs:
 
 * `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY`
 * `https://sepolia.infura.io/v3/YOUR_API_KEY`
-
-If the timelock and router contracts are already deployed, you can also load their addresses:
-
-```zsh
-export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
-export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
-```
-
-> TIP: If you want to see a contract in Etherscan, you can run a command like the example below:
->
-> ```zsh
-> open ${ETHERSCAN_URL:?}/address/${TIMELOCK_CONTROLLER:?}
-> ```
 
 ### Fireblocks
 
@@ -196,18 +182,9 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Deploy the verifier
 
-1. Set the verifier selector for the verifier you will be deploying:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry run deployment of verifier and estop:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
-    ```
-
-2. Dry run deployment of verifier and estop:
-
-    ```zsh
-    VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
     bash contracts/script/manage DeployEstopVerifier
     ```
 
@@ -218,7 +195,7 @@ This is a two-step process, guarded by the `TimelockController`.
     > Also check the chain ID to ensure you are deploying to the chain you expect.
     > And check the selector to make sure it matches what you expect.
 
-3. Send deployment transactions for verifier and estop by running the command again with `--broadcast`.
+2. Send deployment transactions for verifier and estop by running the command again with `--broadcast`.
 
     This will result in two transactions sent from the deployer address.
 
@@ -226,9 +203,9 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
-4. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+3. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
 
-5. Add the addresses for the newly deployed contract to the `deployment.toml` file.
+4. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
     Load the deployed addresses into the environment:
 
@@ -238,7 +215,7 @@ This is a two-step process, guarded by the `TimelockController`.
     export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
-6. Test the deployment.
+5. Test the deployment.
 
     ```console
     cast call --rpc-url ${RPC_URL:?} \
@@ -252,7 +229,7 @@ This is a two-step process, guarded by the `TimelockController`.
     0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
     ```
 
-7. Dry run the operation to schedule the operation to add the verifier to the router.
+6. Dry run the operation to schedule the operation to add the verifier to the router.
 
     Fill in the addresses for the relevant chain below.
     `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
@@ -261,7 +238,7 @@ This is a two-step process, guarded by the `TimelockController`.
     bash contracts/script/manage ScheduleAddVerifier
     ```
 
-8. Send the transaction for the scheduled update by running the command again with `--broadcast`.
+7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
 
     This will send one transaction from the admin address.
 

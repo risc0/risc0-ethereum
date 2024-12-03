@@ -57,7 +57,7 @@ contract RiscZeroManagementScript is Script {
     IRiscZeroVerifier internal _verifier;
 
     function loadConfig() internal {
-        string memory configPath = vm.envOr("DEPLOYMENT_CONFIG", string("./contracts/deployment.toml"));
+        string memory configPath = vm.envOr("DEPLOYMENT_CONFIG", string("./deployment.toml"));
         console2.log("Loading deployment config from %s", configPath);
         ConfigLoader.loadDeploymentConfig(configPath).copyTo(deployment);
 
@@ -233,7 +233,7 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         string memory chainKey = vm.envString("CHAIN_KEY");
         console2.log("chainKey:", chainKey);
-        address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
+        address verifierEstopOwner = vm.envOr("VERIFIER_ESTOP_OWNER", adminAddress());
         console2.log("verifierEstopOwner:", verifierEstopOwner);
 
         // Deploy new contracts
