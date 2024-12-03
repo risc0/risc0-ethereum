@@ -210,15 +210,7 @@ This is a two-step process, guarded by the `TimelockController`.
 5. Test the deployment.
 
     ```console
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'paused()(bool)'
-    false
-
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'owner()(address)'
-    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 6. Dry run the operation to schedule the operation to add the verifier to the router.
@@ -282,25 +274,16 @@ This is a two-step process, guarded by the `TimelockController`.
    To generate a deterministic image ID run (from the repo root folder):
 
    ```zsh
-   RISC0_USE_DOCKER=true cargo build
+   cargo risczero build --manifest-path aggregation/guest/set-builder/Cargo.toml
    ```
 
-   > [!NOTE]
-   > This will populate the image ID in the `contracts/src/SetBuilderImageID.sol`.
-   > You can then upload the file located in `target/riscv-guest/riscv32im-risc0-zkvm-elf/docker/set_builder/set-builder`
-   > to some HTTP server (such as Pinata) and get back a download URL.
-   > Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
+   This will output the image ID and file location.
+   Upload the ELF to some public HTTP location (such as Pinata), and get back a download URL.
+   Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
 
-2. Set the verifier selector for the `RiscZeroSetVerifier` contract you will be deploying:
+2. Dry run deployment of the set verifier and estop:
 
    ```zsh
-   export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
-   ```
-
-3. Dry run deployment of the set verifier and estop:
-
-   ```zsh
-   VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
    bash contracts/script/manage DeployEstopSetVerifier
    ```
 
@@ -311,7 +294,7 @@ This is a two-step process, guarded by the `TimelockController`.
    > Also check the chain ID to ensure you are deploying to the chain you expect.
    > And check the selector to make sure it matches what you expect.
 
-4. Send deployment transactions for the set verifier by running the command again with `--broadcast`.
+3. Send deployment transactions for the set verifier by running the command again with `--broadcast`.
 
     This will result in two transactions sent from the deployer address.
 
@@ -319,9 +302,9 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
-5. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+4. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
 
-6. Add the addresses for the newly deployed contract to the `deployment.toml` file.
+5. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
     Load the deployed addresses into the environment:
 
