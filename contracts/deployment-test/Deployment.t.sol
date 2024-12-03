@@ -117,11 +117,23 @@ contract DeploymentTest is Test {
                 continue;
             }
 
-            IRiscZeroVerifier verifierImpl = router.getVerifier(verifierConfig.selector);
-            require(address(verifierImpl) != address(0), "verifier impl returned the zero address");
-            require(keccak256(address(verifierImpl).code) != keccak256(bytes("")), "verifier impl has no deployed code");
-            address verifierImplAddress = address(RiscZeroVerifierEmergencyStop(address(verifierImpl)).verifier());
-            IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(verifierImplAddress);
+            IRiscZeroVerifier routedVerifier = router.getVerifier(verifierConfig.selector);
+            require(address(routedVerifier) != address(0), "verifier router returned the zero address");
+            require(
+                address(routedVerifier) == address(verifierConfig.estop), "verifier router returned the wrong address"
+            );
+            require(
+                keccak256(address(routedVerifier).code) != keccak256(bytes("")), "routed verifier has no deployed code"
+            );
+
+            RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(address(routedVerifier));
+            require(!verifierEstop.paused(), "verifier estop is paused");
+
+            IRiscZeroVerifier verifierImpl = verifierEstop.verifier();
+            require(address(verifierImpl) != address(0), "verifier impl is the zero address");
+            require(address(verifierImpl) == address(verifierConfig.verifier), "verifier impl is the wrong address");
+
+            IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(address(verifierImpl));
             require(verifierConfig.selector == verifierSelectable.SELECTOR(), "selector mismatch");
         }
     }
