@@ -215,11 +215,8 @@ This is a two-step process, guarded by the `TimelockController`.
 
 6. Dry run the operation to schedule the operation to add the verifier to the router.
 
-    Fill in the addresses for the relevant chain below.
-    `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
-
     ```zsh
-    bash contracts/script/manage ScheduleAddVerifier
+    VERIFIER_SELECTOR="0x..." bash contracts/script/manage ScheduleAddVerifier
     ```
 
 7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
@@ -233,34 +230,22 @@ This is a two-step process, guarded by the `TimelockController`.
 
 After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
 
-Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
-
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry the transaction to execute the add verifier operation:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
+    VERIFIER_SELECTOR="0x..." bash contracts/script/manage FinishAddVerifier
     ```
 
-2. Dry the transaction to execute the add verifier operation:
-
-    ```zsh
-    bash contracts/script/manage FinishAddVerifier
-    ```
-
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
+3. Remove the `unroutable` field from the selected verifier.
+
 4. Test the deployment.
 
-    ```bash
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ROUTER:?} \
-        'getVerifier(bytes4)(address)' ${VERIFIER_SELECTOR:?}
-    0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 ## Deploy a set verifier with emergency stop mechanism
