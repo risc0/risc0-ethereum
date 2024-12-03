@@ -207,14 +207,6 @@ This is a two-step process, guarded by the `TimelockController`.
 
 4. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
-    Load the deployed addresses into the environment:
-
-    ```zsh
-    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
-    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
-    ```
-
 5. Test the deployment.
 
     ```console

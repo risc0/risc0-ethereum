@@ -247,14 +247,13 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
 
         // Print in TOML format
         console2.log("");
-        console2.log(string.concat("[[chains.", chainKey, ".verifiers]]"));
+        console2.log("[[chains.%s.verifiers]]", chainKey);
         console2.log("name = \"RiscZeroGroth16Verifier\"");
-        console2.log(string.concat("version = \"", groth16Verifier.VERSION(), "\""));
-        console2.log(
-            string.concat("selector = \"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4), "\"")
-        );
-        console2.log(string.concat("verifier = \"", Strings.toHexString(uint256(uint160(address(verifier())))), "\""));
-        console2.log(string.concat("estop = \"", Strings.toHexString(uint256(uint160(address(verifierEstop())))), "\""));
+        console2.log("version = \"%s\"", groth16Verifier.VERSION());
+        console2.log("selector = \"%s\"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4));
+        console2.log("verifier = \"%s\"", address(verifier()));
+        console2.log("estop = \"%s\"", address(verifierEstop()));
+        console2.log("unroutable = true # remove when added to the router");
     }
 }
 
@@ -271,8 +270,9 @@ contract DeployEstopSetVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         string memory chainKey = vm.envString("CHAIN_KEY");
         console2.log("chainKey:", chainKey);
-        address verifierEstopOwner = vm.envAddress("VERIFIER_ESTOP_OWNER");
+        address verifierEstopOwner = vm.envOr("VERIFIER_ESTOP_OWNER", adminAddress());
         console2.log("verifierEstopOwner:", verifierEstopOwner);
+
         bytes32 SET_BUILDER_IMAGE_ID = vm.envBytes32("SET_BUILDER_IMAGE_ID");
         console2.log("SET_BUILDER_IMAGE_ID:", Strings.toHexString(uint256(SET_BUILDER_IMAGE_ID)));
         string memory SET_BUILDER_GUEST_URL = vm.envString("SET_BUILDER_GUEST_URL");
@@ -289,14 +289,13 @@ contract DeployEstopSetVerifier is RiscZeroManagementScript {
 
         // Print in TOML format
         console2.log("");
-        console2.log(string.concat("[[chains.", chainKey, ".verifiers]]"));
+        console2.log("[[chains.%s.verifiers]]", chainKey);
         console2.log("name = \"RiscZeroSetVerifier\"");
-        console2.log(string.concat("version = \"", setVerifier.VERSION(), "\""));
-        console2.log(
-            string.concat("selector = \"", Strings.toHexString(uint256(uint32(setVerifier.SELECTOR())), 4), "\"")
-        );
-        console2.log(string.concat("verifier = \"", Strings.toHexString(uint256(uint160(address(setVerifier)))), "\""));
-        console2.log(string.concat("estop = \"", Strings.toHexString(uint256(uint160(address(_verifierEstop)))), "\""));
+        console2.log("version = \"%s\"", setVerifier.VERSION());
+        console2.log("selector = \"%s\"", Strings.toHexString(uint256(uint32(setVerifier.SELECTOR())), 4));
+        console2.log("verifier = \"%s\"", address(verifier()));
+        console2.log("estop = \"%s\"", address(verifierEstop()));
+        console2.log("unroutable = true # remove when added to the router");
     }
 }
 
