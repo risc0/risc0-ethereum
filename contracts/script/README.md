@@ -62,19 +62,18 @@ export CHAIN_KEY="anvil"
 Set the chain you are operating on by the key from the `deployment.toml` file.
 An example chain key is "ethereum-sepolia", and you can look at `deployment.toml` for the full list.
 
-> TODO: Instead of reading these into environment variables, we can have the Forge script directly read them from the TOML file.
-
 ```zsh
 export CHAIN_KEY="xxx-testnet"
 ```
 
-Set your RPC URL, public and private key, and Etherscan API key:
+**Based on the chain key, the `manage` script will automatically load environment variables from deployment.toml and deployment_secrets.toml**
+
+If the chain you are deploying to is not in `deployment_secrets.toml`, set your RPC URL, public and private key, and Etherscan API key:
 
 ```bash
 export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" contracts/deployment_secrets.toml | tee /dev/stderr)
 export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" contracts/deployment.toml | tee /dev/stderr)
 export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" contracts/deployment_secrets.toml | tee /dev/stderr)
-export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" contracts/deployment.toml | tee /dev/stderr)
 ```
 
 > [!TIP]
@@ -86,19 +85,6 @@ Example RPC URLs:
 
 * `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY`
 * `https://sepolia.infura.io/v3/YOUR_API_KEY`
-
-If the timelock and router contracts are already deployed, you can also load their addresses:
-
-```zsh
-export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
-export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
-```
-
-> TIP: If you want to see a contract in Etherscan, you can run a command like the example below:
->
-> ```zsh
-> open ${ETHERSCAN_URL:?}/address/${TIMELOCK_CONTROLLER:?}
-> ```
 
 ### Fireblocks
 
@@ -196,18 +182,9 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Deploy the verifier
 
-1. Set the verifier selector for the verifier you will be deploying:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry run deployment of verifier and estop:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
-    ```
-
-2. Dry run deployment of verifier and estop:
-
-    ```zsh
-    VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
     bash contracts/script/manage DeployEstopVerifier
     ```
 
@@ -218,7 +195,91 @@ This is a two-step process, guarded by the `TimelockController`.
     > Also check the chain ID to ensure you are deploying to the chain you expect.
     > And check the selector to make sure it matches what you expect.
 
-3. Send deployment transactions for verifier and estop by running the command again with `--broadcast`.
+2. Send deployment transactions for verifier and estop by running the command again with `--broadcast`.
+
+    This will result in two transactions sent from the deployer address.
+
+    > [!NOTE]
+    > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
+    > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
+
+3. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+
+4. Add the addresses for the newly deployed contract to the `deployment.toml` file.
+
+5. Test the deployment.
+
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
+    ```
+
+6. Dry run the operation to schedule the operation to add the verifier to the router.
+
+    ```zsh
+    VERIFIER_SELECTOR="0x..." bash contracts/script/manage ScheduleAddVerifier
+    ```
+
+7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
+
+    This will send one transaction from the admin address.
+
+    > [!IMPORTANT]
+    > If the admin address is in Fireblocks, this will prompt the admins for approval.
+
+### Finish the update
+
+After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
+
+1. Dry the transaction to execute the add verifier operation:
+
+    ```zsh
+    VERIFIER_SELECTOR="0x..." bash contracts/script/manage FinishAddVerifier
+    ```
+
+2. Run the command again with `--broadcast`
+
+    This will send one transaction from the admin address.
+
+3. Remove the `unroutable` field from the selected verifier.
+
+4. Test the deployment.
+
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
+    ```
+
+## Deploy a set verifier with emergency stop mechanism
+
+This is a two-step process, guarded by the `TimelockController`.
+
+### Deploy the set verifier
+
+1. Make available for download the `set-builder` elf and export its image ID and url in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables respectively.
+
+   To generate a deterministic image ID run (from the repo root folder):
+
+   ```zsh
+   cargo risczero build --manifest-path aggregation/guest/set-builder/Cargo.toml
+   ```
+
+   This will output the image ID and file location.
+   Upload the ELF to some public HTTP location (such as Pinata), and get back a download URL.
+   Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
+
+2. Dry run deployment of the set verifier and estop:
+
+   ```zsh
+   bash contracts/script/manage DeployEstopSetVerifier
+   ```
+
+   > [!IMPORTANT]
+   > Check the logs from this dry run to verify the estop owner is the expected address.
+   > It should be equal to the RISC Zero admin address on the given chain.
+   > Note that it should not be the `TimelockController`.
+   > Also check the chain ID to ensure you are deploying to the chain you expect.
+   > And check the selector to make sure it matches what you expect.
+
+3. Send deployment transactions for the set verifier by running the command again with `--broadcast`.
 
     This will result in two transactions sent from the deployer address.
 
@@ -254,32 +315,30 @@ This is a two-step process, guarded by the `TimelockController`.
 
 7. Dry run the operation to schedule the operation to add the verifier to the router.
 
-    Fill in the addresses for the relevant chain below.
-    `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
+   Fill in the addresses for the relevant chain below.
+   `ADMIN_PUBLIC_KEY` should be set to the Fireblocks admin address.
 
-    ```zsh
-    bash contracts/script/manage ScheduleAddVerifier
-    ```
+   ```zsh
+   bash contracts/script/manage ScheduleAddVerifier
+   ```
 
 8. Send the transaction for the scheduled update by running the command again with `--broadcast`.
 
-    This will send one transaction from the admin address.
+   This will send one transaction from the admin address.
 
-    > [!IMPORTANT]
-    > If the admin address is in Fireblocks, this will prompt the admins for approval.
+   > [!IMPORTANT]
+   > If the admin address is in Fireblocks, this will prompt the admins for approval.
 
 ### Finish the update
 
-After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
+After the delay on the timelock controller has pass, the operation to add the new set verifier to the router can be executed.
 
 Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
 
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Set the verifier selector and estop address for the set verifier:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
+    export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
     export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
