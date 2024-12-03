@@ -122,11 +122,23 @@ contract DeploymentTest is Test {
             require(
                 address(routedVerifier) == address(verifierConfig.estop), "verifier router returned the wrong address"
             );
-            require(
-                keccak256(address(routedVerifier).code) != keccak256(bytes("")), "routed verifier has no deployed code"
+        }
+    }
+
+    function testVerifierEstopsProperlyConfigured() external view {
+        for (uint256 i = 0; i < deployment.verifiers.length; i++) {
+            VerifierDeployment storage verifierConfig = deployment.verifiers[i];
+            console2.log(
+                "Checking for confgiuration of verifier with selector %x and version %s",
+                uint256(uint32(verifierConfig.selector)),
+                verifierConfig.version
             );
 
-            RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(address(routedVerifier));
+            RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(verifierConfig.estop);
+            require(address(verifierEstop) != address(0), "verifier estop is the zero address");
+            require(
+                keccak256(address(verifierEstop).code) != keccak256(bytes("")), "verifier estop has no deployed code"
+            );
             require(!verifierEstop.paused(), "verifier estop is paused");
 
             IRiscZeroVerifier verifierImpl = verifierEstop.verifier();
