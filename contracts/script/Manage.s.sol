@@ -28,6 +28,10 @@ import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16
 import {RiscZeroSetVerifier, RiscZeroSetVerifierLib} from "../src/RiscZeroSetVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 
+// Default salt used with CREATE2 for deterministic deployment addresses.
+// NOTE: It kind of spelled risc0 in 1337.
+bytes32 constant CREATE2_SALT = hex"1215c0";
+
 /// @notice Compare strings for equality.
 function stringEq(string memory a, string memory b) pure returns (bool) {
     return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
@@ -201,11 +205,11 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
 
         // Deploy new contracts
         vm.broadcast(deployerAddress());
-        _timelockController = new TimelockController(minDelay, proposers, executors, admin);
+        _timelockController = new TimelockController{salt: CREATE2_SALT}(minDelay, proposers, executors, admin);
         console2.log("Deployed TimelockController to", address(timelockController()));
 
         vm.broadcast(deployerAddress());
-        _verifierRouter = new RiscZeroVerifierRouter(address(timelockController()));
+        _verifierRouter = new RiscZeroVerifierRouter{salt: CREATE2_SALT}(address(timelockController()));
         console2.log("Deployed RiscZeroVerifierRouter to", address(verifierRouter()));
     }
 }
@@ -239,11 +243,11 @@ contract DeployEstopVerifier is RiscZeroManagementScript {
         // Deploy new contracts
         vm.broadcast(deployerAddress());
         RiscZeroGroth16Verifier groth16Verifier =
-            new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+            new RiscZeroGroth16Verifier{salt: CREATE2_SALT}(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         _verifier = groth16Verifier;
 
         vm.broadcast(deployerAddress());
-        _verifierEstop = new RiscZeroVerifierEmergencyStop(groth16Verifier, verifierEstopOwner);
+        _verifierEstop = new RiscZeroVerifierEmergencyStop{salt: CREATE2_SALT}(groth16Verifier, verifierEstopOwner);
 
         // Print in TOML format
         console2.log("");
@@ -281,11 +285,11 @@ contract DeployEstopSetVerifier is RiscZeroManagementScript {
         // Deploy new contracts
         vm.broadcast(deployerAddress());
         RiscZeroSetVerifier setVerifier =
-            new RiscZeroSetVerifier(verifierRouter(), SET_BUILDER_IMAGE_ID, SET_BUILDER_GUEST_URL);
+            new RiscZeroSetVerifier{salt: CREATE2_SALT}(verifierRouter(), SET_BUILDER_IMAGE_ID, SET_BUILDER_GUEST_URL);
         _verifier = setVerifier;
 
         vm.broadcast(deployerAddress());
-        _verifierEstop = new RiscZeroVerifierEmergencyStop(_verifier, verifierEstopOwner);
+        _verifierEstop = new RiscZeroVerifierEmergencyStop{salt: CREATE2_SALT}(_verifier, verifierEstopOwner);
 
         // Print in TOML format
         console2.log("");
