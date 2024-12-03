@@ -19,7 +19,7 @@ use std::fmt::Debug;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
-    transports::http::{Client, Http},
+    transports::BoxTransport,
     uint,
 };
 use alloy_primitives::{address, b256, bytes, hex, Address, Bytes, U256};
@@ -116,7 +116,7 @@ alloy::sol!(
 );
 
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
-async fn test_provider() -> impl Provider<Http<Client>> {
+async fn test_provider() -> impl Provider<BoxTransport> {
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
