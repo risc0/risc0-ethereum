@@ -63,7 +63,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
 estop = "0x47d697328D6A80b00D796cEd9f54468931Aa1ECe"
-unroutable = true # remove when added to the router
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -71,7 +70,6 @@ version = "0.1.0"
 selector = "0xbfca9ccb"
 verifier = "0xea6a0Ca4BfD0A6C43081D57672b3B6D43B69265F"
 estop = "0xFB4D56bdEc378e6625e6448b037EFB4E5FCE085d"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest
 set-builder-commit = "abd97bca9533d70302b41f67020f7fd1e41d9cf7"
 set-builder-image-id = "7d75250e86556132c0e10c05b0f1d823ae72a5e277a596039576b6578cb25260"
@@ -113,7 +111,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
 estop = "0x47d697328D6A80b00D796cEd9f54468931Aa1ECe"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -189,7 +186,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
 estop = "0x47d697328D6A80b00D796cEd9f54468931Aa1ECe"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -266,7 +262,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
 estop = "0x47d697328D6A80b00D796cEd9f54468931Aa1ECe"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -342,7 +337,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
 estop = "0x47d697328D6A80b00D796cEd9f54468931Aa1ECe"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -420,7 +414,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
 estop = "0x47d697328D6A80b00D796cEd9f54468931Aa1ECe"
-unroutable = true # remove when added to the router
 
 ###
 
