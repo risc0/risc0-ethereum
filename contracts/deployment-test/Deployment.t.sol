@@ -25,6 +25,9 @@ import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../sr
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 
+// TODO: Actually send a known good receipt to test each verifier implementation.
+// TODO: Check the image ID and ELF URL on the set verifier contract.
+
 /// Test designed to be run against a chain with an active deployment of the RISC Zero contracts.
 /// Checks that the deployment matches what is recorded in the deployment.toml file.
 contract DeploymentTest is Test {
