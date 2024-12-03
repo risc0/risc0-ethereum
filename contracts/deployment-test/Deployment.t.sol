@@ -145,6 +145,7 @@ contract DeploymentTest is Test {
             require(!verifierEstop.paused(), "verifier estop is paused");
 
             IRiscZeroVerifier verifierImpl = verifierEstop.verifier();
+            console2.log("verifier implementation is at %s", address(verifierImpl));
             require(address(verifierImpl) != address(0), "verifier impl is the zero address");
             require(address(verifierImpl) == address(verifierConfig.verifier), "verifier impl is the wrong address");
 
