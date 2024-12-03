@@ -27,6 +27,14 @@ selector = "0x50bd1769"
 verifier = "0x94A4684d6F7085C19138Bd4f9F3295fa9943C622"
 estop = "0x08AeD6C108E500540a9544beF7a8B8a05E056e87"
 
+[[chains.ethereum-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "1.2.0"
+selector = "0xc101b42b"
+verifier = "0xAC292cF957Dd5BA174cdA13b05C16aFC71700327"
+estop = "0x03B66cEDaB014Ca7E970Bfb83C1951d10DD2A805"
+unroutable = true # remove when added to the router
+
 ###
 
 [chains.ethereum-sepolia]
