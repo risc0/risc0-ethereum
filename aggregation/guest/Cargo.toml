@@ -1,0 +1,14 @@
+[package]
+name = "guest-set-builder"
+resolver = "2"
+version = "0.1.0-alpha.1"
+edition = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+
+[build-dependencies]
+risc0-build = { workspace = true }
+risc0-build-ethereum = { workspace = true }
+
+[package.metadata.risc0]
+methods = ["set-builder"]

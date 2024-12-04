@@ -18,6 +18,8 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: r0.1.81.0
   RISC0_MONOREPO_REF: "main"
+  # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.
+  CARGO_LOCKED:  ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -56,7 +58,7 @@ jobs:
       - name: cargo check examples
         run: ../.github/scripts/cargo-check.sh
         working-directory: examples
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - name: forge check risc0-ethereum
         run: forge fmt --check
         working-directory: contracts
@@ -99,16 +101,18 @@ jobs:
           features: ${{ matrix.feature }}
       - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - name: cargo clippy risc0-ethereum
-        run: cargo clippy --workspace --all-targets --all-features
+        run: cargo clippy $CARGO_LOCKED --workspace --all-targets --all-features
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
-      - name: cargo clippy all examples
+          RISC0_SKIP_BUILD_KERNEL: true,
+      - name: cargo clippy $CARGO_LOCKED all examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
+          RISC0_SKIP_BUILD_KERNEL: true,
       - run: sccache --show-stats
 
   test-risc0-ethereum:
@@ -146,13 +150,13 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - name: cargo build
-        run: cargo build --workspace --all-features
+        run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test
-        run: cargo test --workspace --all-features --timings
+        run: cargo test $CARGO_LOCKED --workspace --all-features --timings
       - name: Upload timings artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cargo-timings-${{ matrix.os }}-${{ matrix.device }}
           path: target/cargo-timings/
@@ -189,7 +193,7 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
+      - uses: foundry-rs/foundry-toolchain@v1
       - name: cargo test all examples
         run: ../.github/scripts/cargo-test.sh
         working-directory: examples
@@ -216,8 +220,11 @@ jobs:
         with:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
-      - run: cargo doc --no-deps --workspace
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
+        env:
+          RISC0_SKIP_BUILD: true,
+          RISC0_SKIP_BUILD_KERNEL: true,
       - run: forge doc
 
   # Run as a separate job because we need to install a different set of tools.

@@ -28,7 +28,7 @@ pub fn abi_encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
 /// Zero circuits.
 ///
 /// NOTE: Selector value of the current zkVM version is used. If you need to use a selector from a
-/// different version of the zkVM, use the [encode_seal] method instead.
+/// different version of the zkVM, use the [encode_seal](crate::encode_seal) method instead.
 pub fn encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
     let verifier_parameters_digest = Groth16ReceiptVerifierParameters::default().digest();
     let selector = &verifier_parameters_digest.as_bytes()[..4];
