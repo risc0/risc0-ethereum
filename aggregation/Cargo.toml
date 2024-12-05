@@ -26,5 +26,5 @@ rand = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
-default = ["verify"]
+default = []
 verify = ["dep:guest-set-builder"]
