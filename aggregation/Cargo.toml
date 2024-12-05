@@ -13,7 +13,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
-guest-set-builder = { version = "0.1.0", path = "./guest", optional = true }
+# TODO(#353) Determine if it is possible to publish risc0-aggregation with set builder image ID and ELF
+#guest-set-builder = { version = "0.1.0", path = "./guest", optional = true }
 hex = { workspace = true }
 risc0-binfmt = { workspace = true }
 risc0-zkp = { workspace = true }
@@ -26,5 +27,5 @@ rand = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
-default = []
-verify = ["dep:guest-set-builder"]
+default = ["verify"]
+verify = []
