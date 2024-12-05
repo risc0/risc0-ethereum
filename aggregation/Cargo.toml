@@ -1,8 +1,10 @@
 [package]
 name = "risc0-aggregation"
+description = "Proof aggregation for RISC Zero"
 resolver = "2"
 version = "0.1.0-rc.1"
 edition = { workspace = true }
+license = { workspace = true }
 homepage = { workspace = true }
 repository = { workspace = true }
 
@@ -13,7 +15,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
-guest-set-builder = { path = "./guest", optional = true }
+# TODO(#353) Determine if it is possible to publish risc0-aggregation with set builder image ID and ELF
+#guest-set-builder = { version = "0.1.0", path = "./guest", optional = true }
 hex = { workspace = true }
 risc0-binfmt = { workspace = true }
 risc0-zkp = { workspace = true }
@@ -27,4 +30,4 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [features]
 default = ["verify"]
-verify = ["dep:guest-set-builder"]
+verify = []

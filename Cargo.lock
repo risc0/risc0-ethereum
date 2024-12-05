@@ -3538,7 +3538,6 @@ version = "0.1.0-rc.1"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-sol-types",
- "guest-set-builder",
  "hex",
  "rand",
  "risc0-binfmt",
