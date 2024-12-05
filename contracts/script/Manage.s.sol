@@ -29,7 +29,7 @@ import {RiscZeroSetVerifier, RiscZeroSetVerifierLib} from "../src/RiscZeroSetVer
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 
 // Default salt used with CREATE2 for deterministic deployment addresses.
-// NOTE: It kind of spelled risc0 in 1337.
+// NOTE: It kind of spells risc0 in 1337.
 bytes32 constant CREATE2_SALT = hex"1215c0";
 
 /// @notice Compare strings for equality.
