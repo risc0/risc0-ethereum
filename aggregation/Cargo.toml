@@ -13,7 +13,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
-guest-set-builder = { path = "./guest", optional = true }
+guest-set-builder = { version = "0.1.0", path = "./guest", optional = true }
 hex = { workspace = true }
 risc0-binfmt = { workspace = true }
 risc0-zkp = { workspace = true }
