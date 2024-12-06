@@ -138,10 +138,7 @@ where
 
     #[inline]
     fn try_from(value: alloy::rpc::types::Header<H>) -> Result<Self, Self::Error> {
-        Ok(Self {
-            inner: value.inner.try_into()?,
-            rlp: None,
-        })
+        Ok(Self::new(value.inner.try_into()?))
     }
 }
 
