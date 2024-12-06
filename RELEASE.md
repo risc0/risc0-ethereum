@@ -11,23 +11,42 @@
 
      <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
      * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
+
+       > Here is a command to help find all the Cargo.toml files that need to be updated
+       >
+       > ```
+       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./target' .
+       > ```
+
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+       * `contracts/src/RiscZeroSetVerifier.sol`
      * Update references to the `main` branch
        * Search for `risc0/risc0-ethereum/refs/heads/main`
      * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
-         >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
+
+         >  You can find the workspaces with `grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib`
+
          * Change the reference for `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
-         * Run `cargo update`.
+         * Run `cargo update`. You can use `.github/scripts/cargo-update.sh` to do this.
+
+         > Here is a nifty oneliner to do that
+         >
+         > ```
+         > grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib | sort -u | xargs -n1 cargo check --manifest-path
+         > ```
+
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
    * The other PR should:
      * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+       * `contracts/src/RiscZeroSetVerifier.sol`
      * Update `steel/CHANGELOG.md` to start a new section for the next release.
+     * Update the value of `RISC0_MONOREPO_REF` in `.github/workflow` files to the matching monorepo branch.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
