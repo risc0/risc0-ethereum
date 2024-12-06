@@ -15,7 +15,7 @@
        > Here is a command to help find all the Cargo.toml files that need to be updated
        >
        > ```
-       > grep -r '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./aggregation/guest/set-builder' -l .
+       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./target' .
        > ```
 
      * Update the version string in contracts that contain it:
@@ -26,10 +26,18 @@
      * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
-         >  You can find the workspaces with `grep -R '\[workspace\]' --include Cargo.toml -l .`
+
+         >  You can find the workspaces with `grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib`
+
          * Change the reference for `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
-         <!-- TODO: Add --locked to checks in CI against the release branch, such that it guarantees the checked in lock files are complete and consistent -->
          * Run `cargo update`. You can use `.github/scripts/cargo-update.sh` to do this.
+
+         > Here is a nifty oneliner to do that
+         >
+         > ```
+         > grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib | sort -u | xargs -n1 cargo check --manifest-path
+         > ```
+
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
    * The other PR should:
