@@ -70,7 +70,7 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
         verifiers[selector] = TOMBSTONE;
     }
 
-    /// @notice Get the associatied verifier, reverting if the selector is unknown or removed.
+    /// @notice Get the associated verifier, reverting if the selector is unknown or removed.
     function getVerifier(bytes4 selector) public view returns (IRiscZeroVerifier) {
         IRiscZeroVerifier verifier = verifiers[selector];
         if (verifier == UNSET) {
@@ -82,7 +82,7 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
         return verifier;
     }
 
-    /// @notice Get the associatied verifier, reverting if the selector is unknown or removed.
+    /// @notice Get the associated verifier, reverting if the selector is unknown or removed.
     function getVerifier(bytes calldata seal) public view returns (IRiscZeroVerifier) {
         // Use the first 4 bytes of the seal at the selector to look up in the mapping.
         return getVerifier(bytes4(seal[0:4]));
