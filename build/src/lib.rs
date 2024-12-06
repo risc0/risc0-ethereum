@@ -53,6 +53,8 @@ const ELF_LIB_HEADER: &str = r#"pragma solidity ^0.8.20;
 library Elf {
 "#;
 
+const FFI_MANIFEST_PATH: &str = "ffi/Cargo.toml";
+
 /// Options for building and code generation.
 #[derive(Debug, Clone, Default)]
 #[non_exhaustive] // more options may be added in the future.
@@ -140,6 +142,25 @@ pub fn generate_elf_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
     let elf_path_lines = elf_paths.join("\n");
     let file_content = format!("{SOL_HEADER}{ELF_LIB_HEADER}\n{elf_path_lines}\n}}");
     forge_fmt(file_content.as_bytes()).context("failed to format image ID file")
+}
+
+/// Build risc0-ethereum forge ffi.
+pub fn build_ffi(risc0_ethereum_path: &str) -> Result<()> {
+    let ffi_path = Path::new(risc0_ethereum_path).join(FFI_MANIFEST_PATH);
+    let status = Command::new("cargo")
+        .arg("build")
+        .arg("--manifest-path")
+        .arg(ffi_path.as_os_str())
+        .arg("--bin")
+        .arg("risc0-forge-ffi")
+        .status()?;
+    if !status.success() {
+        bail!(
+            "risc0-ethereum forge ffi build failed with exit code: {:?}",
+            status.code()
+        )
+    }
+    Ok(())
 }
 
 /// Uses forge fmt as a subprocess to format the given Solidity source.
