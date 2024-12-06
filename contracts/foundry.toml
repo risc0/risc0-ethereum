@@ -3,13 +3,14 @@ src = "src"
 out = "out"
 test = "test"
 libs = ["../lib"]
+fs_permissions = [{ access = "read", path = "deployment.toml" }]
 ffi = true
+solc_version = "0.8.26"
 
 # Profile used to run deployment tests, which check the correctness of contracts as deployed.
 # TIP: You can select this profile by setting env var FOUNDRY_PROFILE=deployment-test
 [profile.deployment-test]
 test = "./deployment-test"
 #match_path = "contracts/deployment-test/*"
-fs_permissions = [{ access = "read", path = "deployment.toml" }]
 
 # See more config options https://book.getfoundry.sh/static/config.default.toml
