@@ -524,7 +524,7 @@ Use the following steps to cancel an operation that is pending on the `TimelockC
 
 1. Identifier the operation ID and set the environment variable.
 
-    > TIP: Once way to get the operation ID is to open the contract in Etherscan and look at the events.
+    > TIP: One way to get the operation ID is to open the contract in Etherscan and look at the events.
     > On the `CallScheduled` event, the ID is labeled as `[topic1]`.
     >
     > ```zsh
@@ -673,7 +673,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 * canceller
 
 > ![WARNING]
-> Renouncing authorization on the timelock controller may make permanently inoperable.
+> Renouncing authorization on the timelock controller may make it permanently inoperable.
 
 1. Dry run the transaction:
 
