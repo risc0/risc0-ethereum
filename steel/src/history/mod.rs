@@ -18,9 +18,10 @@ use crate::{
 };
 use alloy_primitives::{Sealed, B256, U256};
 use beacon::{BeaconCommit, GeneralizedBeaconCommit, STATE_ROOT_LEAF_INDEX};
-use beacon_roots::BeaconRootsContract;
+use beacon_roots::{BeaconRootsContract, BeaconRootsState};
 use serde::{Deserialize, Serialize};
-mod beacon_roots;
+
+pub(crate) mod beacon_roots;
 
 /// Input committing a previous block hash to the corresponding Beacon Chain block root.
 pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
@@ -42,7 +43,7 @@ pub struct HistoryCommit {
 #[derive(Clone, Serialize, Deserialize)]
 struct StateCommit {
     /// State for verifying `evm_commit`.
-    state: beacon_roots::State,
+    state: BeaconRootsState,
     /// Commitment for `state` to a Beacon Chain block root.
     state_commit: GeneralizedBeaconCommit<STATE_ROOT_LEAF_INDEX>,
 }
@@ -60,11 +61,11 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
 
         // starting from evm_commit, "walk forward" along state_commits to reach a later beacon root
         let mut beacon_root = initial_commitment.digest;
-        for state_commit in self.state_commits {
+        for mut state_commit in self.state_commits {
             // verify that the previous commitment is valid wrt the current state
             let state_root = state_commit.state.root();
             let commitment_root =
-                BeaconRootsContract::get_from_state(state_commit.state, timestamp)
+                BeaconRootsContract::get_from_db(&mut state_commit.state, timestamp)
                     .expect("Beacon roots contract failed");
             assert_eq!(commitment_root, beacon_root, "Beacon root does not match");
 
@@ -89,6 +90,7 @@ mod host {
     use crate::{
         beacon::host::{client::BeaconClient, create_beacon_commit},
         ethereum::EthBlockHeader,
+        history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH},
     };
     use alloy::{
         network::{primitives::BlockTransactionsKind, Ethereum},
@@ -132,7 +134,7 @@ mod host {
 
             // we assume that not more than 25% of the blocks have been skipped
             // TODO(#309): implement a more sophisticated way to determine the step size
-            let step = BeaconRootsContract::HISTORY_BUFFER_LENGTH.to::<BlockNumber>() * 75 / 100;
+            let step = HISTORY_BUFFER_LENGTH.to::<BlockNumber>() * 75 / 100;
             let target = commitment_header.number();
 
             let mut state_block = evm_header.number;
@@ -158,7 +160,7 @@ mod host {
                 );
 
                 // derive the historic state needed to verify the previous beacon commitment
-                let (beacon_root, state) = BeaconRootsContract::preflight_get(
+                let (beacon_root, state) = BeaconRootsState::preflight_get(
                     U256::from(commit_ts),
                     &rpc_provider,
                     header.seal().into(),
@@ -220,7 +222,7 @@ mod tests {
         let headers = get_headers(4).await.unwrap();
 
         // create a history commitment executing on header[0] and committing to header[2]
-        let commit =
+        let mut commit =
             HistoryCommit::from_headers(&headers[0], &headers[2], &el, CL_URL.parse().unwrap())
                 .await
                 .unwrap();
@@ -228,22 +230,19 @@ mod tests {
         let [StateCommit {
             state,
             state_commit,
-        }] = &commit.state_commits[..]
+        }] = &mut commit.state_commits[..]
         else {
             panic!("invalid state_commits")
         };
 
-        // the state commit should verify against the beacon block root of headers[2]
+        // the state commit should verify against the beacon block root of headers[2]<
         state_commit
             .verify(state.root(), headers[3].parent_beacon_block_root.unwrap())
             .unwrap();
         // the beacon roots contract should return the beacon block root of headers[0]
         assert_eq!(
-            BeaconRootsContract::get_from_state(
-                state.clone(),
-                U256::from(commit.evm_commit.timestamp())
-            )
-            .unwrap(),
+            BeaconRootsContract::get_from_db(state, U256::from(commit.evm_commit.timestamp()))
+                .unwrap(),
             headers[1].parent_beacon_block_root.unwrap(),
         );
         // the resulting commitment should correspond to the beacon block root of headers[2]

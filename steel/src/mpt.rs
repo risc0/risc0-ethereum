@@ -97,6 +97,12 @@ impl MerkleTrie {
 
         Ok(trie)
     }
+
+    /// Creates a new trie corresponding to the given digest.
+    #[inline]
+    pub fn from_digest(digest: B256) -> Self {
+        MerkleTrie(Node::Digest(digest))
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]

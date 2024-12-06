@@ -15,7 +15,7 @@
 //! [Database] implementations.
 //!
 //! [Database]: revm::Database
-mod alloy;
+pub(crate) mod alloy;
 mod proof;
 mod provider;
 
