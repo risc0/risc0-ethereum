@@ -26,7 +26,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{merkle_path_root, GuestOutput, Seal};
 
-pub use guest_set_builder::{SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH};
+// TODO(#353)
+//pub use guest_set_builder::{SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH};
 
 /// A receipt for a claim that is part of a set of verified claims (i.e. an aggregation).
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -97,18 +98,31 @@ impl<Claim> SetInclusionReceipt<Claim>
 where
     Claim: Digestible + Clone + Serialize,
 {
+    /* TODO(#353)
     /// Construct a [SetInclusionReceipt] with the given Merkle inclusion path and claim.
     ///
     /// Path should contain all sibling nodes in the tree from the leaf to the root. Note that the
     /// path does not include the leaf or the root itself. Resulting receipt will have default
     /// verifier parameters and no root receipt.
-    pub fn from_path(claim: impl Into<MaybePruned<Claim>>, merkle_path: Vec<Digest>) -> Self {
+    pub fn from_path(claim: impl Into<MaybePruned<Claim>>, merkle_path: Vec<Digest>);
+    }
+    */
+
+    /// Construct a [SetInclusionReceipt] with the given Merkle inclusion path and claim.
+    ///
+    /// Path should contain all sibling nodes in the tree from the leaf to the root. Note that the
+    /// path does not include the leaf or the root itself. Resulting receipt will have the given
+    /// verifier parameter digest and no root receipt.
+    pub fn from_path_with_verifier_params(
+        claim: impl Into<MaybePruned<Claim>>,
+        merkle_path: Vec<Digest>,
+        verifier_parameters: impl Into<Digest>,
+    ) -> Self {
         Self {
             claim: claim.into(),
             root: None,
             merkle_path,
-            verifier_parameters: SetInclusionReceiptVerifierParameters::default()
-                .digest::<sha::Impl>(),
+            verifier_parameters: verifier_parameters.into(),
         }
     }
 
@@ -131,6 +145,7 @@ where
         Self { root: None, ..self }
     }
 
+    /* TODO(#353)
     /// Verify the integrity of this receipt, ensuring the claim is attested to by the seal.
     pub fn verify_integrity(&self) -> Result<(), VerificationError> {
         self.verify_integrity_with_context(
@@ -139,6 +154,7 @@ where
             Some(RecursionVerifierParamters::default()),
         )
     }
+    */
 
     /// Verify the integrity of this receipt, ensuring the claim is attested to by the seal.
     // TODO: Use a different error type (e.g. the one from risc0-zkvm).
@@ -250,6 +266,7 @@ impl Digestible for SetInclusionReceiptVerifierParameters {
     }
 }
 
+/* TODO(#353)
 impl Default for SetInclusionReceiptVerifierParameters {
     /// Default set of parameters used to verify a
     /// [SetInclusionReceipt][super::SetInclusionReceipt].
@@ -259,6 +276,7 @@ impl Default for SetInclusionReceiptVerifierParameters {
         }
     }
 }
+*/
 
 // TODO(victor): Move this into risc0-zkvm?
 /// Verifier parameters used for recursive verification (e.g. via env::verify) of receipts.
