@@ -2,7 +2,7 @@
 name = "risc0-aggregation"
 description = "Proof aggregation for RISC Zero"
 resolver = "2"
-version = "0.1.0-alpha.1"
+version = "0.2.0-alpha.1"
 edition = { workspace = true }
 license = { workspace = true }
 homepage = { workspace = true }
