@@ -2057,7 +2057,7 @@ dependencies = [
 
 [[package]]
 name = "guest-set-builder"
-version = "0.1.0-rc.1"
+version = "0.1.0"
 dependencies = [
  "risc0-build",
  "risc0-build-ethereum",
@@ -3534,7 +3534,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-aggregation"
-version = "0.1.0-rc.1"
+version = "0.1.0"
 dependencies = [
  "alloy-primitives 0.8.14",
  "alloy-sol-types",
