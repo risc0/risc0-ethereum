@@ -18,6 +18,9 @@ pragma solidity ^0.8.9;
 
 import {Encoding, Steel} from "./Steel.sol";
 
+/// @notice Validate an OP L2 block commitment, enabling verification on L1 of Steel queries against L2 state.
+/// @dev Application developers should inherit from this contract, and set the `optimismPortal` address
+/// to point to the portal contract of the OP L2 that will be the target for Steel queries.
 abstract contract OpCommitmentValidator {
     /// @notice Address of the OptimismPortal2 contract.
     IOptimismPortal2 public immutable optimismPortal;
