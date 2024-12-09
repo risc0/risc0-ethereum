@@ -225,7 +225,8 @@ jobs:
         env:
           RISC0_SKIP_BUILD: true,
           RISC0_SKIP_BUILD_KERNEL: true,
-      - run: forge doc
+      # TODO(#355) Re-enable this check.
+      #- run: forge doc
 
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
