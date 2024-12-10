@@ -17,10 +17,10 @@ risc0-steel = { version = "1.2.0", default-features = false, path = "steel" }
 risc0-forge-ffi = { version = "1.2.0", default-features = false, path = "ffi" }
 
 # risc0 monorepo dependencies.
-risc0-build = { version = "1.2.0", default-features = false }
-risc0-zkp = { version = "1.2.0", default-features = false }
-risc0-zkvm = { version = "1.2.0", default-features = false }
-risc0-binfmt = { version = "1.2.0", default-features = false }
+risc0-build = { version = "1.2.1-rc.0", default-features = false }
+risc0-zkp = { version = "1.2.1-rc.0", default-features = false }
+risc0-zkvm = { version = "1.2.1-rc.0", default-features = false }
+risc0-binfmt = { version = "1.2.1-rc.0", default-features = false }
 
 # Alloy guest dependencies
 alloy-consensus = { version = "0.6.1" }

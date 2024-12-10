@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 risc0-aggregation = { version = "0.1.0", path = "../..", default-features = false }
-risc0-zkvm = { version = "1.2.0", default-features = false, features = ["std"] }
+risc0-zkvm = { version = "1.2.1-rc.0", default-features = false, features = ["std"] }
