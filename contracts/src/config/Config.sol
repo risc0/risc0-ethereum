@@ -21,7 +21,7 @@ import {console2} from "forge-std/console2.sol";
 import {stdToml} from "forge-std/StdToml.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-/// Deployment a single verifier.
+/// Deployment of a single verifier.
 ///
 /// Many verifiers may be part of a deployment, with the router serving the purpose of making them
 /// all accessible at a single address.
