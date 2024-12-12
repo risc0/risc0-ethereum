@@ -12,9 +12,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::sol_types::SolValue;
+use alloy::{primitives::Bytes, sol_types::SolValue};
 use anyhow::Result;
-use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
+use risc0_zkvm::{
+    sha::Digestible, FakeReceipt, Groth16Receipt, Groth16ReceiptVerifierParameters, InnerReceipt,
+    MaybePruned, Receipt, ReceiptClaim,
+};
+
+alloy::sol!(
+    #![sol(all_derives)]
+    struct Seal {
+        uint256[2] a;
+        uint256[2][2] b;
+        uint256[2] c;
+    }
+);
+
+impl Seal {
+    fn flatten(self) -> Vec<u8> {
+        self.a
+            .iter()
+            .map(|x| x.to_le_bytes_vec())
+            .chain(
+                self.b
+                    .iter()
+                    .flat_map(|x| x.iter().map(|y| y.to_le_bytes_vec())),
+            )
+            .chain(self.c.iter().map(|x| x.to_le_bytes_vec()))
+            .flatten()
+            .collect()
+    }
+
+    /// Convert the seal into a receipt.
+    pub fn to_receipt(
+        self,
+        claim: MaybePruned<ReceiptClaim>,
+        journal: impl AsRef<[u8]>,
+    ) -> Receipt {
+        // This only works for Groth16 seals generated for a zkVM version with compatible Groth16ReceiptVerifierParameters.
+        let verifier_parameters = Groth16ReceiptVerifierParameters::default();
+        let inner = risc0_zkvm::InnerReceipt::Groth16(Groth16Receipt::new(
+            self.flatten(),
+            claim,
+            verifier_parameters.digest(),
+        ));
+        Receipt::new(inner, journal.as_ref().to_vec())
+    }
+}
+
+/// Decode a seal into a receipt.
+pub fn decode_seal(
+    seal: Bytes,
+    claim: MaybePruned<ReceiptClaim>,
+    journal: impl AsRef<[u8]>,
+) -> Result<Receipt> {
+    let seal_bytes = seal.to_vec();
+    let (selector, stripped_seal) = seal_bytes.split_at(4);
+    // Fake receipt seal is 32 bytes
+    let receipt = if stripped_seal.len() == 32 {
+        if selector != &[0u8; 4] {
+            return Err(anyhow::anyhow!("Invalid selector"));
+        };
+        Receipt::new(
+            InnerReceipt::Fake(FakeReceipt::new(claim)),
+            journal.as_ref().to_vec(),
+        )
+    } else {
+        let seal = Seal::abi_decode(&seal, true)?;
+        seal.to_receipt(claim, journal)
+    };
+    Ok(receipt)
+}
 
 /// ABI encoding of the seal.
 pub fn abi_encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
