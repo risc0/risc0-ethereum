@@ -30,7 +30,7 @@ interface IRiscZeroSetVerifier is IRiscZeroVerifier {
     error VerificationFailed();
 
     /// A new root has been added to the set.
-    event VerifiedRoot(bytes32 root);
+    event VerifiedRoot(bytes32 indexed root);
 
     /// Publishes a new root of a proof aggregation.
     function submitMerkleRoot(bytes32 root, bytes calldata seal) external;
