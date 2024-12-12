@@ -41,9 +41,10 @@ contract RiscZeroSetVerifierTest is Test {
     }
 
     function submitRoot(bytes32 root) internal {
+        bytes memory seal = mockProveRoot(root).seal;
         vm.expectEmit(true, true, true, true);
-        emit IRiscZeroSetVerifier.VerifiedRoot(root);
-        setVerifier.submitMerkleRoot(root, mockProveRoot(root).seal);
+        emit IRiscZeroSetVerifier.VerifiedRoot(root, seal);
+        setVerifier.submitMerkleRoot(root, seal);
         require(setVerifier.containsRoot(root), "set verifier does not contain submitted root");
     }
 
