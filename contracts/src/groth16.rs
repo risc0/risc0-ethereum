@@ -54,9 +54,7 @@ impl Seal {
         let inner = risc0_zkvm::InnerReceipt::Groth16(Groth16Receipt::new(
             self.flatten(),
             MaybePruned::Value(claim),
-            verifier_parameters
-                .unwrap_or_else(Groth16ReceiptVerifierParameters::default)
-                .digest(),
+            verifier_parameters.unwrap_or_default().digest(),
         ));
         Receipt::new(inner, journal.as_ref().to_vec())
     }
@@ -74,7 +72,7 @@ pub fn decode_seal(
     let (selector, stripped_seal) = seal_bytes.split_at(4);
     // Fake receipt seal is 32 bytes
     let receipt = if stripped_seal.len() == 32 {
-        if selector != &[0u8; 4] {
+        if selector != [0u8; 4] {
             return Err(anyhow::anyhow!(
                 "Invalid selector {} for fake receipt",
                 hex::encode(selector)
@@ -85,7 +83,7 @@ pub fn decode_seal(
             journal.as_ref().to_vec(),
         )
     } else {
-        let seal = Seal::abi_decode(&stripped_seal, true)?;
+        let seal = Seal::abi_decode(stripped_seal, true)?;
         seal.to_receipt(claim, journal, verifier_parameters)
     };
     Ok(receipt)
@@ -161,7 +159,6 @@ mod tests {
 
     #[test]
     fn test_decode_seal() {
-        let verifier_parameters = Groth16ReceiptVerifierParameters::default();
         let seal_bytes =
             Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, SEAL).unwrap()).unwrap());
         let journal =
@@ -176,7 +173,7 @@ mod tests {
             seal_bytes,
             ReceiptClaim::ok(image_id, journal.clone()),
             &journal,
-            Some(verifier_parameters),
+            None,
         )
         .unwrap();
         receipt.verify(image_id).unwrap();
