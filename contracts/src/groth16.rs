@@ -60,8 +60,8 @@ impl Seal {
     }
 }
 
-/// Decode a [Seal] as [Bytes] into a [Receipt] constructed with the given [ReceiptClaim] and
-/// journal. The verifier parameters are optional and default to the current zkVM version.
+/// Decode a seal with selector as [Bytes] into a [Receipt] constructed with the given [ReceiptClaim]
+/// and journal. The verifier parameters are optional and default to the current zkVM version.
 pub fn decode_seal(
     seal: Bytes,
     claim: ReceiptClaim,
