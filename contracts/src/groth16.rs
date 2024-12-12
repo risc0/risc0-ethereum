@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::{primitives::Bytes, sol_types::SolValue};
+use alloy::{hex, primitives::Bytes, sol_types::SolValue};
 use anyhow::Result;
 use risc0_zkvm::{
     sha::Digestible, FakeReceipt, Groth16Receipt, Groth16ReceiptVerifierParameters, InnerReceipt,
@@ -32,54 +32,59 @@ impl Seal {
     fn flatten(self) -> Vec<u8> {
         self.a
             .iter()
-            .map(|x| x.to_le_bytes_vec())
+            .map(|x| x.to_be_bytes_vec())
             .chain(
                 self.b
                     .iter()
-                    .flat_map(|x| x.iter().map(|y| y.to_le_bytes_vec())),
+                    .flat_map(|x| x.iter().map(|y| y.to_be_bytes_vec())),
             )
-            .chain(self.c.iter().map(|x| x.to_le_bytes_vec()))
+            .chain(self.c.iter().map(|x| x.to_be_bytes_vec()))
             .flatten()
             .collect()
     }
 
-    /// Convert the seal into a receipt.
+    /// Convert the [Seal] into a [Receipt] constructed with the given [ReceiptClaim] and
+    /// journal. The verifier parameters are optional and default to the current zkVM version.
     pub fn to_receipt(
         self,
-        claim: MaybePruned<ReceiptClaim>,
+        claim: ReceiptClaim,
         journal: impl AsRef<[u8]>,
+        verifier_parameters: Option<Groth16ReceiptVerifierParameters>,
     ) -> Receipt {
-        // This only works for Groth16 seals generated for a zkVM version with compatible Groth16ReceiptVerifierParameters.
-        let verifier_parameters = Groth16ReceiptVerifierParameters::default();
         let inner = risc0_zkvm::InnerReceipt::Groth16(Groth16Receipt::new(
             self.flatten(),
-            claim,
-            verifier_parameters.digest(),
+            MaybePruned::Value(claim),
+            verifier_parameters.unwrap_or_default().digest(),
         ));
         Receipt::new(inner, journal.as_ref().to_vec())
     }
 }
 
-/// Decode a seal into a receipt.
+/// Decode a seal with selector as [Bytes] into a [Receipt] constructed with the given [ReceiptClaim]
+/// and journal. The verifier parameters are optional and default to the current zkVM version.
 pub fn decode_seal(
     seal: Bytes,
-    claim: MaybePruned<ReceiptClaim>,
+    claim: ReceiptClaim,
     journal: impl AsRef<[u8]>,
+    verifier_parameters: Option<Groth16ReceiptVerifierParameters>,
 ) -> Result<Receipt> {
     let seal_bytes = seal.to_vec();
     let (selector, stripped_seal) = seal_bytes.split_at(4);
     // Fake receipt seal is 32 bytes
     let receipt = if stripped_seal.len() == 32 {
-        if selector != &[0u8; 4] {
-            return Err(anyhow::anyhow!("Invalid selector"));
+        if selector != [0u8; 4] {
+            return Err(anyhow::anyhow!(
+                "Invalid selector {} for fake receipt",
+                hex::encode(selector)
+            ));
         };
         Receipt::new(
             InnerReceipt::Fake(FakeReceipt::new(claim)),
             journal.as_ref().to_vec(),
         )
     } else {
-        let seal = Seal::abi_decode(&seal, true)?;
-        seal.to_receipt(claim, journal)
+        let seal = Seal::abi_decode(stripped_seal, true)?;
+        seal.to_receipt(claim, journal, verifier_parameters)
     };
     Ok(receipt)
 }
@@ -112,6 +117,7 @@ pub fn encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
 mod tests {
     use anyhow::anyhow;
     use regex::Regex;
+    use risc0_zkvm::sha::Digest;
 
     use super::*;
     use std::fs;
@@ -119,6 +125,10 @@ mod tests {
     const CONTROL_ID_PATH: &str = "./src/groth16/ControlID.sol";
     const CONTROL_ROOT: &str = "CONTROL_ROOT";
     const BN254_CONTROL_ID: &str = "BN254_CONTROL_ID";
+    const TEST_RECEIPT_PATH: &str = "./test/TestReceipt.sol";
+    const SEAL: &str = "SEAL";
+    const JOURNAL: &str = "JOURNAL";
+    const IMAGE_ID: &str = "IMAGE_ID";
 
     fn parse_digest(file_path: &str, name: &str) -> Result<String, anyhow::Error> {
         let content = fs::read_to_string(file_path)?;
@@ -145,5 +155,27 @@ mod tests {
         let bn254_control_id = parse_digest(CONTROL_ID_PATH, BN254_CONTROL_ID).unwrap();
 
         assert_eq!(bn254_control_id, expected_bn254_control_id);
+    }
+
+    #[test]
+    fn test_decode_seal() {
+        let seal_bytes =
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, SEAL).unwrap()).unwrap());
+        let journal =
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, JOURNAL).unwrap()).unwrap())
+                .to_vec();
+        let image_id = Digest::try_from(
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, IMAGE_ID).unwrap()).unwrap())
+                .as_ref(),
+        )
+        .unwrap();
+        let receipt = decode_seal(
+            seal_bytes,
+            ReceiptClaim::ok(image_id, journal.clone()),
+            &journal,
+            None,
+        )
+        .unwrap();
+        receipt.verify(image_id).unwrap();
     }
 }
