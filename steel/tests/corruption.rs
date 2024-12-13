@@ -20,10 +20,7 @@ use std::{fs::File, io::BufReader, path::Path};
 use crate::common::ANVIL_CHAIN_SPEC;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
-    transports::{
-        http::{Client, Http},
-        BoxFuture,
-    },
+    transports::{BoxFuture, BoxTransport},
 };
 use alloy_primitives::{address, Address, Bytes, B256, U256};
 use anyhow::Context;
@@ -78,7 +75,7 @@ mod sol {
 }
 
 /// Returns an Anvil provider with the deployed `Pair` contract.
-async fn anvil_provider() -> impl Provider<Http<Client>> {
+async fn anvil_provider() -> impl Provider<BoxTransport> {
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
