@@ -52,3 +52,4 @@ host = [
     "dep:url",
 ]
 unstable-history = []
+unstable-verifier = []

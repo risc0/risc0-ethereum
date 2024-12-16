@@ -20,6 +20,7 @@ use alloy_primitives::U256;
 use anyhow::ensure;
 
 /// Represents a verifier for validating Steel commitments within Steel.
+#[stability::unstable(feature = "verifier")]
 pub struct SteelVerifier<E> {
     env: E,
 }
