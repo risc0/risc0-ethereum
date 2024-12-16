@@ -89,6 +89,8 @@ async fn main() -> Result<()> {
         rate
     );
 
+    let commitment = env.commitment();
+
     // Construct the input from the environment.
     let input1 = env.into_input().await?;
 
@@ -96,12 +98,6 @@ async fn main() -> Result<()> {
     let mut env = EthEvmEnv::builder().provider(provider).build().await?;
     env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
-    // TODO: Make it easier to get the commitment from a HostEvmEnv
-    let commitment = input1
-        .clone()
-        .into_env()
-        .with_chain_spec(&ETH_MAINNET_CHAIN_SPEC)
-        .into_commitment();
     // Preflight the verification of the commitment of the previous input.
     SteelVerifier::preflight(&mut env)
         .verify(&commitment)
