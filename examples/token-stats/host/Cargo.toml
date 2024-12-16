@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }

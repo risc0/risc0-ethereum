@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::{
-    providers::{Provider, ProviderBuilder},
-    sol_types::{SolCall, SolValue},
-};
+use alloy_sol_types::{SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use risc0_steel::{
+    alloy::providers::{Provider, ProviderBuilder},
     ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
     Contract, SteelVerifier,
 };
@@ -89,9 +87,8 @@ async fn main() -> Result<()> {
         rate
     );
 
-    let commitment = env.commitment();
-
-    // Construct the input from the environment.
+    // Construct the commitment and input from the environment representing the state 12h ago.
+    let commitment_input1 = env.commitment();
     let input1 = env.into_input().await?;
 
     // Create another EVM environment for that provider defaulting to the latest block.
@@ -100,7 +97,7 @@ async fn main() -> Result<()> {
 
     // Preflight the verification of the commitment of the previous input.
     SteelVerifier::preflight(&mut env)
-        .verify(&commitment)
+        .verify(&commitment_input1)
         .await?;
 
     // Preflight the actual contract calls.
@@ -128,7 +125,7 @@ async fn main() -> Result<()> {
         rate
     );
 
-    // Finally, construct the second input from the environment.
+    // Finally, construct the second input from the environment representing the latest state.
     let input2 = env.into_input().await?;
 
     println!("Running the guest with the constructed input:");

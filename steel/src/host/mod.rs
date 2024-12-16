@@ -25,8 +25,7 @@ use crate::{
     ethereum::{EthBlockHeader, EthEvmEnv},
     history::HistoryCommit,
     host::db::ProviderDb,
-    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv,
-    EvmInput,
+    BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
 use alloy::eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError};
 use alloy::{
@@ -191,16 +190,6 @@ where
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Block(input))
-    }
-
-    /// Returns the [Commitment] used to validate the environment.
-    pub fn commitment(&self) -> Commitment {
-        Commitment::new(
-            CommitmentVersion::Block as u16,
-            self.header.number(),
-            self.header.seal(),
-            self.commit.config_id,
-        )
     }
 }
 

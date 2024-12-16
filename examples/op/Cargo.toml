@@ -13,4 +13,3 @@ risc0-op-steel = { path = "../../op-steel" }
 risc0-steel = { path = "../../steel" }
 risc0-ethereum-contracts =  { path = "../../contracts" }
 examples-common = { path = "common" }
-alloy = { version = "0.7" }
