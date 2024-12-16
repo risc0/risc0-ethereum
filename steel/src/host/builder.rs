@@ -35,6 +35,7 @@ use alloy_primitives::Sealed;
 use anyhow::{anyhow, ensure, Context, Result};
 use std::{fmt::Display, marker::PhantomData};
 use url::Url;
+use crate::block::BlockCommit;
 
 impl<H> EvmEnv<(), H, ()> {
     /// Creates a builder for building an environment.
@@ -187,7 +188,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
 impl<P, H> EvmEnvBuilder<P, H, ()> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a block hash.
-    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, ()>>
+    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, BlockCommit>>
     where
         T: Transport + Clone,
         N: Network,
@@ -208,7 +209,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
             header.seal(),
         ));
         let commit = HostCommit {
-            inner: (),
+            inner: BlockCommit,
             config_id: ChainSpec::DEFAULT_DIGEST,
         };
 

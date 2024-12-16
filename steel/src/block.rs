@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-    config::ChainSpec, state::StateDb, Commitment, CommitmentVersion, EvmBlockHeader, EvmEnv,
-    GuestEvmEnv, MerkleTrie,
-};
+use crate::{state::StateDb, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie};
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{map::HashMap, Bytes};
+use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
 
-/// Input committing to the corresponding execution block hash.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct BlockInput<H> {
+pub struct Input<H> {
     header: H,
     state_trie: MerkleTrie,
     storage_tries: Vec<MerkleTrie>,
@@ -29,7 +25,26 @@ pub struct BlockInput<H> {
     ancestors: Vec<H>,
 }
 
-impl<H: EvmBlockHeader> BlockInput<H> {
+/// Input committing to the corresponding execution block hash.
+pub type BlockInput<H> = ComposeInput<H, BlockCommit>;
+
+/// A commitment to an execution block hash, along with the corresponding block number.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct BlockCommit;
+
+impl<H: EvmBlockHeader> BlockHeaderCommit<H> for BlockCommit {
+    #[inline]
+    fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
+        Commitment::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.seal(),
+            config_id,
+        )
+    }
+}
+
+impl<H: EvmBlockHeader> Input<H> {
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
     pub fn into_env(self) -> GuestEvmEnv<H> {
         // verify that the state root matches the state trie
@@ -64,14 +79,8 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             self.contracts,
             block_hashes,
         );
-        let commit = Commitment::new(
-            CommitmentVersion::Block as u16,
-            header.number(),
-            header.seal(),
-            ChainSpec::DEFAULT_DIGEST,
-        );
 
-        EvmEnv::new(db, header, commit)
+        EvmEnv::new(db, header, Commitment::default())
     }
 }
 
@@ -79,7 +88,7 @@ impl<H: EvmBlockHeader> BlockInput<H> {
 pub mod host {
     use std::fmt::Display;
 
-    use super::BlockInput;
+    use super::Input;
     use crate::{
         host::db::{AlloyDb, ProofDb, ProviderDb},
         EvmBlockHeader,
@@ -89,7 +98,7 @@ pub mod host {
     use anyhow::{anyhow, ensure};
     use log::debug;
 
-    impl<H: EvmBlockHeader> BlockInput<H> {
+    impl<H: EvmBlockHeader> Input<H> {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
         pub(crate) async fn from_proof_db<T, N, P>(
@@ -132,7 +141,7 @@ pub mod host {
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
 
-            let input = BlockInput {
+            let input = Input {
                 header: header.into_inner(),
                 state_trie,
                 storage_tries,
