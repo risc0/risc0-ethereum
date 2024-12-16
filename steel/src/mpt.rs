@@ -16,6 +16,7 @@ use std::fmt::Debug;
 
 use alloy_primitives::{b256, keccak256, map::B256HashMap, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
+use alloy_trie::nodes::encode_path_leaf;
 use nybbles::Nibbles;
 use serde::{Deserialize, Serialize};
 
@@ -152,7 +153,7 @@ impl Node {
         match self {
             Node::Null => vec![EMPTY_STRING_CODE],
             Node::Leaf(prefix, value) => {
-                let path = prefix.encode_path_leaf(true);
+                let path = encode_path_leaf(prefix, true);
                 let mut out = encode_list_header(path.length() + value.length());
                 path.encode(&mut out);
                 value.encode(&mut out);
@@ -160,7 +161,7 @@ impl Node {
                 out
             }
             Node::Extension(prefix, child) => {
-                let path = prefix.encode_path_leaf(false);
+                let path = encode_path_leaf(prefix, false);
                 let node_ref = NodeRef::from_node(child);
                 let mut out = encode_list_header(path.length() + node_ref.length());
                 path.encode(&mut out);
