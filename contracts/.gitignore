@@ -18,3 +18,7 @@ target/
 
 # Misc
 .idea
+
+# Ignore generated image ID file
+/src/SetBuilderImageID.sol
+/test/SetBuilderElf.sol

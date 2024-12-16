@@ -34,6 +34,7 @@ import {
 } from "../IRiscZeroVerifier.sol";
 import {StructHash} from "../StructHash.sol";
 import {reverseByteOrderUint256, reverseByteOrderUint32} from "../Util.sol";
+import {IRiscZeroSelectable} from "../IRiscZeroSelectable.sol";
 
 /// @notice A Groth16 seal over the claimed receipt claim.
 struct Seal {
@@ -48,13 +49,13 @@ struct Seal {
 error SelectorMismatch(bytes4 received, bytes4 expected);
 
 /// @notice Groth16 verifier contract for RISC Zero receipts of execution.
-contract RiscZeroGroth16Verifier is IRiscZeroVerifier, Groth16Verifier {
+contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Groth16Verifier {
     using ReceiptClaimLib for ReceiptClaim;
     using OutputLib for Output;
     using SafeCast for uint256;
 
     /// Semantic version of the the RISC Zero system of which this contract is part.
-    string public constant VERSION = "1.2.0-alpha.1";
+    string public constant VERSION = "1.3.0-alpha.1";
 
     /// @notice Control root hash binding the set of circuits in the RISC Zero system.
     /// @dev This value controls what set of recursion programs (e.g. lift, join, resolve), and
