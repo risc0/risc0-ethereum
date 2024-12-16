@@ -20,7 +20,7 @@ use std::{
 
 use crate::{
     beacon::BeaconCommit,
-    block::Input,
+    block::BlockInput,
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
     history::HistoryCommit,
@@ -44,7 +44,6 @@ mod builder;
 pub mod db;
 
 pub use builder::EvmEnvBuilder;
-use crate::block::BlockCommit;
 
 /// A block number (or tag - "latest", "safe", "finalized").
 /// This enum is used to specify which block to query when interacting with the blockchain.
@@ -178,6 +177,22 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     }
 }
 
+impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
+where
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
+    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+{
+    /// Converts the environment into a [EvmInput] committing to an execution block hash.
+    pub async fn into_input(self) -> Result<EvmInput<H>> {
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
+
+        Ok(EvmInput::Block(input))
+    }
+}
+
 impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> {
     /// Returns the [Commitment] used to validate the environment.
     pub fn commitment(&self) -> Commitment {
@@ -188,24 +203,6 @@ impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> 
     }
 }
 
-impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, BlockCommit>
-where
-    T: Transport + Clone,
-    N: Network,
-    P: Provider<T, N>,
-    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
-{
-    /// Converts the environment into a [EvmInput] committing to an execution block hash.
-    pub async fn into_input(self) -> Result<EvmInput<H>> {
-        let input = Input::from_proof_db(self.db.unwrap(), self.header).await?;
-
-        Ok(EvmInput::Block(ComposeInput::new(
-            input, self.commit.inner,
-        )))
-    }
-}
-
 impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>
 where
     T: Transport + Clone,
@@ -213,7 +210,7 @@ where
 {
     /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
-        let input = Input::from_proof_db(self.db.unwrap(), self.header).await?;
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(
             input,
@@ -231,7 +228,7 @@ where
     /// block roots.
     #[stability::unstable(feature = "history")]
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
-        let input = Input::from_proof_db(self.db.unwrap(), self.header).await?;
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::History(ComposeInput::new(
             input,
@@ -253,7 +250,7 @@ where
     pub async fn into_beacon_input(self, url: Url) -> Result<EvmInput<EthBlockHeader>> {
         let commit =
             BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
-        let input = Input::from_proof_db(self.db.unwrap(), self.header).await?;
+        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))
     }

@@ -47,6 +47,7 @@ mod state;
 mod verifier;
 
 pub use beacon::BeaconInput;
+pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
@@ -83,8 +84,6 @@ impl<H: EvmBlockHeader> EvmInput<H> {
     }
 }
 
-
-
 /// A trait linking the block header to a commitment.
 pub trait BlockHeaderCommit<H: EvmBlockHeader> {
     /// Creates a verifiable [Commitment] of the `header`.
@@ -97,18 +96,18 @@ pub trait BlockHeaderCommit<H: EvmBlockHeader> {
 /// contained within the `input` field.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ComposeInput<H, C> {
-    input: Input<H>,
+    input: BlockInput<H>,
     commit: C,
 }
 
 impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
-    /// Creates a new composed input from a [Input] and a [BlockHeaderCommit].
-    pub const fn new(input: Input<H>, commit: C) -> Self {
+    /// Creates a new composed input from a [BlockInput] and a [BlockHeaderCommit].
+    pub const fn new(input: BlockInput<H>, commit: C) -> Self {
         Self { input, commit }
     }
 
     /// Disassembles this `ComposeInput`, returning the underlying input and commitment creator.
-    pub fn into_parts(self) -> (Input<H>, C) {
+    pub fn into_parts(self) -> (BlockInput<H>, C) {
         (self.input, self.commit)
     }
 
@@ -236,7 +235,6 @@ mod private {
 }
 
 pub use private::Commitment;
-use crate::block::{BlockInput, Input};
 
 /// Version of a [`Commitment`].
 #[repr(u16)]

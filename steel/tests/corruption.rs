@@ -159,9 +159,8 @@ async fn load_or_create<'a, T: serde::ser::Serialize + serde::de::DeserializeOwn
 fn get_block_input_mut(input: &mut Value) -> &mut Value {
     let (key, value) = input.as_object_mut().unwrap().into_iter().next().unwrap();
     match key.as_str() {
-        "Block" => &mut value["input"],
+        "Block" => value,
         "Beacon" => &mut value["input"],
-        "History" => &mut value["input"],
         _ => unreachable!(),
     }
 }
