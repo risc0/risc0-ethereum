@@ -17,7 +17,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: r0.1.81.0
-  RISC0_MONOREPO_REF: "release-1.2"
+  RISC0_VERSION: "^1.2"
   # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.
   CARGO_LOCKED:  ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
 
@@ -94,7 +94,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - name: cargo clippy risc0-ethereum
@@ -144,7 +144,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: foundry-rs/foundry-toolchain@v1
@@ -187,7 +187,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: foundry-rs/foundry-toolchain@v1
