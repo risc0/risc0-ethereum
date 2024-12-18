@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::{hex, primitives::Bytes, sol_types::SolValue};
+use alloy::{primitives::Bytes, sol_types::SolValue};
 use anyhow::Result;
 use risc0_zkvm::{
-    sha::Digestible, FakeReceipt, Groth16Receipt, Groth16ReceiptVerifierParameters, InnerReceipt,
-    MaybePruned, Receipt, ReceiptClaim,
+    sha::{Digest, Digestible},
+    Groth16Receipt, Groth16ReceiptVerifierParameters, MaybePruned, Receipt, ReceiptClaim,
 };
 
 alloy::sol!(
@@ -45,16 +45,17 @@ impl Seal {
 
     /// Convert the [Seal] into a [Receipt] constructed with the given [ReceiptClaim] and
     /// journal. The verifier parameters are optional and default to the current zkVM version.
-    pub fn to_receipt(
+    pub(crate) fn to_receipt(
         self,
         claim: ReceiptClaim,
         journal: impl AsRef<[u8]>,
-        verifier_parameters: Option<Groth16ReceiptVerifierParameters>,
+        verifier_parameters: Option<Digest>,
     ) -> Receipt {
         let inner = risc0_zkvm::InnerReceipt::Groth16(Groth16Receipt::new(
             self.flatten(),
             MaybePruned::Value(claim),
-            verifier_parameters.unwrap_or_default().digest(),
+            verifier_parameters
+                .unwrap_or_else(|| Groth16ReceiptVerifierParameters::default().digest()),
         ));
         Receipt::new(inner, journal.as_ref().to_vec())
     }
@@ -62,31 +63,14 @@ impl Seal {
 
 /// Decode a seal with selector as [Bytes] into a [Receipt] constructed with the given [ReceiptClaim]
 /// and journal. The verifier parameters are optional and default to the current zkVM version.
-pub fn decode_seal(
+pub(crate) fn decode_seal(
     seal: Bytes,
     claim: ReceiptClaim,
     journal: impl AsRef<[u8]>,
-    verifier_parameters: Option<Groth16ReceiptVerifierParameters>,
+    verifier_parameters: Option<Digest>,
 ) -> Result<Receipt> {
-    let seal_bytes = seal.to_vec();
-    let (selector, stripped_seal) = seal_bytes.split_at(4);
-    // Fake receipt seal is 32 bytes
-    let receipt = if stripped_seal.len() == 32 {
-        if selector != [0u8; 4] {
-            return Err(anyhow::anyhow!(
-                "Invalid selector {} for fake receipt",
-                hex::encode(selector)
-            ));
-        };
-        Receipt::new(
-            InnerReceipt::Fake(FakeReceipt::new(claim)),
-            journal.as_ref().to_vec(),
-        )
-    } else {
-        let seal = Seal::abi_decode(stripped_seal, true)?;
-        seal.to_receipt(claim, journal, verifier_parameters)
-    };
-    Ok(receipt)
+    let seal = Seal::abi_decode(&seal[4..], true)?;
+    Ok(seal.to_receipt(claim, journal, verifier_parameters))
 }
 
 /// ABI encoding of the seal.

@@ -18,6 +18,7 @@ anyhow = "1.0"
 alloy = { workspace = true, features = ["sol-types", "contract"] }
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
+risc0-aggregation = { workspace = true }
 risc0-zkvm = { workspace = true }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
