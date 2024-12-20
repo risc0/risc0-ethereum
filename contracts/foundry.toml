@@ -3,7 +3,25 @@ src = "src"
 out = "out"
 test = "test"
 libs = ["../lib"]
+
+# Allow use of the ffi cheatcode in tests.
 ffi = true
+
+# Compiler options
+
+via_ir = true
+evm_version = 'cancun'
+optimizer_runs = 10000
+solc_version = "0.8.26"
+# Do not append metadata hash to bytecode. We do not currently use it, and omitting it results in
+# more stable build artifacts, which is important since we check the bytecode into git.
+# For information about Solidity metadata, see https://docs.soliditylang.org/en/latest/metadata.html
+bytecode_hash = "none"
+
+[fmt]
+line_length = 120
+tab_width = 4
+quote_style = "double"
 
 # Profile used to run deployment tests, which check the correctness of contracts as deployed.
 # TIP: You can select this profile by setting env var FOUNDRY_PROFILE=deployment-test
