@@ -33,7 +33,7 @@ alloy-sol-types = { version = "0.8.8" }
 op-alloy-network = { version = "0.8" }
 
 # Alloy host dependencies
-alloy = { version = "0.8" }
+alloy = { version = "0.9" }
 alloy-trie = { version = "0.7" }
 
 # Beacon chain support
