@@ -35,6 +35,7 @@ const CODE_HASH: B256 = b256!("f57acd40259872606d76197ef052f3d35588dadf919ee1f0e
 
 /// Enum representing possible errors that can occur within the `BeaconRootsContract`.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Error indicating that the contract is not deployed at the expected address.
     #[error("wrong or no contract deployed")]
@@ -154,7 +155,8 @@ impl Database for BeaconRootsState {
     }
 
     fn code_by_hash(&mut self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
-        unreachable!()
+        // should never be called.
+        unimplemented!()
     }
 
     #[inline(always)]
@@ -168,7 +170,8 @@ impl Database for BeaconRootsState {
     }
 
     fn block_hash(&mut self, _number: u64) -> Result<B256, Self::Error> {
-        unreachable!()
+        // should never be called.
+        unimplemented!()
     }
 }
 
