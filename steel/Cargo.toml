@@ -18,6 +18,7 @@ alloy-consensus = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
 alloy-sol-types = { workspace = true }
+alloy-trie = { workspace = true }
 anyhow = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
@@ -34,7 +35,6 @@ url = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy = { workspace = true, features = ["contract", "node-bindings"] }
-alloy-trie = { workspace = true }
 bincode = { workspace = true }
 risc0-steel = { path = ".", features = ["host"] }
 serde_json = { workspace = true }

@@ -121,7 +121,7 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
         VERIFIER.verify(seal, IMAGE_ID, sha256(abi.encode(IMAGE_ID, root)));
         merkleRoots[root] = true;
 
-        emit VerifiedRoot(root);
+        emit VerifiedRoot(root, seal);
     }
 
     function containsRoot(bytes32 root) external view returns (bool) {
