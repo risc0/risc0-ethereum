@@ -86,6 +86,8 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
@@ -97,6 +99,7 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
+      - uses: risc0/foundry-toolchain@2fe7e70b520f62368a0e3c464f997df07ede420f
       - name: cargo clippy risc0-ethereum
         run: cargo clippy $CARGO_LOCKED --workspace --all-targets --all-features
         env:
@@ -197,6 +200,15 @@ jobs:
       - name: forge test all examples
         run: ../.github/scripts/forge-test.sh
         working-directory: examples
+      - name: cargo run -F verify all examples
+        run: ../.github/scripts/run-verify.sh
+        working-directory: examples
+        env:
+          RUST_LOG: "info,risc0_steel=debug,risc0_op_steel=debug"
+          RISC0_DEV_MODE: true
+          L1_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
+          L2_RPC_URL: https://opt-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
+          BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
       - run: sccache --show-stats
 
   doc:
