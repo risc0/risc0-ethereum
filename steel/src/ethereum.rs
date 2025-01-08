@@ -93,7 +93,7 @@ impl EvmBlockHeader for EthBlockHeader {
         // technically, this is only valid after EIP-4399 but revm makes sure it is not used before
         blk_env.prevrandao = Some(header.mix_hash);
         if let Some(excess_blob_gas) = header.excess_blob_gas {
-            blk_env.set_blob_excess_gas_and_price(excess_blob_gas)
+            blk_env.set_blob_excess_gas_and_price(excess_blob_gas, false);
         };
     }
 }

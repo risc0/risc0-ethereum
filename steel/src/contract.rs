@@ -273,7 +273,7 @@ mod host {
     }
 }
 
-impl<'a, S, H> CallBuilder<S, &'a GuestEvmEnv<H>>
+impl<S, H> CallBuilder<S, &GuestEvmEnv<H>>
 where
     S: SolCall,
     H: EvmBlockHeader,

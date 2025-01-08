@@ -18,11 +18,10 @@ alloy-consensus = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
 alloy-sol-types = { workspace = true }
-alloy-trie = { workspace = true }
+alloy-trie = { workspace = true, features = ["serde"] }
 anyhow = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
-nybbles = { workspace = true, features = ["serde"] }
 reqwest = { workspace = true, optional = true }
 revm = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
