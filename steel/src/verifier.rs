@@ -17,7 +17,7 @@ use crate::{
     GuestEvmEnv,
 };
 use alloy_primitives::U256;
-use anyhow::ensure;
+use anyhow::{ensure, Context};
 
 /// Represents a verifier for validating Steel commitments within Steel.
 #[stability::unstable(feature = "verifier")]
@@ -142,7 +142,8 @@ mod host {
 }
 
 fn validate_block_number(header: &impl EvmBlockHeader, block_number: U256) -> anyhow::Result<u64> {
-    let block_number: u64 = block_number.saturating_to();
+    let block_number = block_number.try_into().context("invalid block number")?;
+    // if block_number > header.number(), this will also be caught in the following `ensure`
     let diff = header.number().saturating_sub(block_number);
     ensure!(
         diff > 0 && diff <= 256,
