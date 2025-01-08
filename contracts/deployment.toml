@@ -478,7 +478,7 @@ timelock-delay = 1
 router = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 # NOTE: As of the 1.1.0-rc.2 deployment on August 21, Forge could not verify the contracts.
-# Apperent issue is that because Linea Sepolia is not in the list of chains named in alloy-chains, Forge doesn't know its Etherscan API URL.
+# Apparent issue is that because Linea Sepolia is not in the list of chains named in alloy-chains, Forge doesn't know its Etherscan API URL.
 
 # NOTE: As of the 1.1.0-rc.3 Deployment on August 29, Fireblocks does not support sending transactions to Linea Sepolia.
 # As a result, the router is deployed, but it is empty and useless.
