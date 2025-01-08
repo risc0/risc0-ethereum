@@ -17,7 +17,7 @@ use std::fmt::Debug;
 use alloy_primitives::{b256, keccak256, map::B256HashMap, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
 use alloy_trie::nodes::encode_path_leaf;
-use nybbles::Nibbles;
+use alloy_trie::Nibbles;
 use serde::{Deserialize, Serialize};
 
 /// Root hash of an empty Merkle Patricia trie, i.e. `keccak256(RLP(""))`.
