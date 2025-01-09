@@ -12,41 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![no_main]
+use risc0_aggregation::{GuestInput, GuestState};
+use risc0_zkvm::{guest::env, sha::Digestible};
 
-use risc0_aggregation::{GuestInput, GuestOutput};
-use risc0_zkvm::{guest::env, sha::Digest};
-
-risc0_zkvm::guest::entry!(main);
-
-fn verify_child(self_image_id: Digest, set_root: Digest) {
-    let journal = GuestOutput::new(self_image_id, set_root).abi_encode();
-    env::verify(self_image_id, &journal).unwrap();
-}
-
-fn run(input: GuestInput) -> GuestOutput {
-    let output = input.to_output();
-    match input {
-        GuestInput::Singleton { claim, .. } => {
-            env::verify_integrity(&claim).unwrap();
-        }
-        GuestInput::Join {
-            self_image_id,
-            left_set_root,
-            right_set_root,
-        } => {
-            verify_child(self_image_id, left_set_root);
-            verify_child(self_image_id, right_set_root);
-        }
+// Verify that the state is either the initial state, is a verified output of self_image_id.
+fn verify_state(state: &GuestState) {
+    if state.is_initial() {
+        return;
     }
-
-    output
+    env::verify(state.self_image_id, &state.encode()).unwrap();
 }
 
 pub fn main() {
+    // Read the input and verify the given state.
     let input: GuestInput = env::read();
-    let output = run(input);
+    verify_state(&input.state);
+    let mut state = input.state;
 
-    // commit to the ABI encoded output
-    env::commit_slice(&output.abi_encode());
+    // Add the given claims to the set committed by the MerkleMountainRange.
+    for claim in input.claims {
+        env::verify_integrity(&claim).unwrap();
+        state.mmr.push(claim.digest()).unwrap();
+    }
+
+    // Finalize the state if requested.
+    if input.finalize {
+        state.mmr.finalize().unwrap();
+    }
+
+    // Commit the encoded state.
+    env::commit_slice(&state.encode());
 }
