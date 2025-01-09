@@ -13,11 +13,11 @@
 // limitations under the License.
 
 use crate::{
-    config::ChainSpec, state::StateDb, Commitment, CommitmentVersion, EvmBlockHeader, EvmEnv,
-    GuestEvmEnv, MerkleTrie,
+    config::ChainSpec, state::StateDb, BlockHeaderCommit, Commitment, CommitmentVersion,
+    EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
 };
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{map::HashMap, Bytes};
+use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
 
 /// Input committing to the corresponding execution block hash.
 #[derive(Clone, Serialize, Deserialize)]
@@ -27,6 +27,20 @@ pub struct BlockInput<H> {
     storage_tries: Vec<MerkleTrie>,
     contracts: Vec<Bytes>,
     ancestors: Vec<H>,
+}
+
+/// Implement [BlockHeaderCommit] for the unit type.
+/// This makes it possible to treat an `HostEvmEnv<D, H, ()>`, which is used for the [BlockInput]
+/// in the same way as any other `HostEvmEnv<D, H, BlockHeaderCommit>`.
+impl<H: EvmBlockHeader> BlockHeaderCommit<H> for () {
+    fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
+        Commitment::new(
+            CommitmentVersion::Block as u16,
+            header.number(),
+            header.seal(),
+            config_id,
+        )
+    }
 }
 
 impl<H: EvmBlockHeader> BlockInput<H> {

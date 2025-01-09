@@ -15,6 +15,7 @@
 use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
+    consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
     network::{primitives::BlockTransactionsKind, BlockResponse, Network},
     providers::Provider,
@@ -139,9 +140,26 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// recorded by the [Database].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         ensure!(
-            !self.accounts.is_empty(),
+            !self.accounts.is_empty() || !self.block_hash_numbers.is_empty(),
             "no accounts accessed: use Contract::preflight"
         );
+
+        // if no accounts were accessed, use the state root of the corresponding block as is
+        if self.accounts.is_empty() {
+            let hash = self.inner.block_hash();
+            let block = self
+                .inner
+                .provider()
+                .get_block_by_hash(hash, BlockTransactionsKind::Hashes)
+                .await
+                .context("eth_getBlockByNumber failed")?
+                .with_context(|| format!("block {} not found", hash))?;
+
+            return Ok((
+                MerkleTrie::from_digest(block.header().state_root()),
+                Vec::default(),
+            ));
+        }
 
         let proofs = &mut self.proofs;
         for (address, storage_keys) in &self.accounts {
