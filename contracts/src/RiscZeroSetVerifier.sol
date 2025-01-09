@@ -111,14 +111,21 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
         // even if the root was already verified earlier and stored in state.
         bytes32 root = MerkleProof.processProof(setVerifierSeal.path, claimDigest);
         if (setVerifierSeal.rootSeal.length > 0) {
-            VERIFIER.verify(setVerifierSeal.rootSeal, IMAGE_ID, sha256(abi.encode(IMAGE_ID, root)));
+            _verifyRoot(root, setVerifierSeal.rootSeal);
         } else if (!merkleRoots[root]) {
             revert VerificationFailed();
         }
     }
 
+    function _verifyRoot(bytes32 root, bytes calldata rootSeal) internal view {
+        // encoded_finalized_root is the encoding of the guest state for a finalized Merkle mountain range.
+        //See GuestState in the risc0-aggregation crate for more information.
+        bytes memory encoded_finalized_root = abi.encodePacked(IMAGE_ID, uint256(1 << 255), root);
+        VERIFIER.verify(setVerifierSeal.rootSeal, IMAGE_ID, sha256(encoded_finalized_root));
+    }
+
     function submitMerkleRoot(bytes32 root, bytes calldata seal) external {
-        VERIFIER.verify(seal, IMAGE_ID, sha256(abi.encode(IMAGE_ID, root)));
+        _verifyRoot(root, seal);
         merkleRoots[root] = true;
 
         emit VerifiedRoot(root, seal);
