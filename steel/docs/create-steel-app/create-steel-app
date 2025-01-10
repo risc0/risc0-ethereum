@@ -26,10 +26,12 @@ get_risc0_version() {
     echo "detected risc0 version: ${RISC0_VERSION:?}"
 
     # map version to branch
-    if [[ "${RISC0_VERSION:?}" =~ ^1\.1\. ]]; then
+    if [[ "${RISC0_VERSION:?}" =~ ^1\.2\. ]]; then
+        BRANCH="release-1.2"
+    elif [[ "${RISC0_VERSION:?}" =~ ^1\.1\. ]]; then
         BRANCH="release-1.1"
     else
-        echo "unsupported risc0 version. version 1.1 is supported"
+        echo "unsupported risc0 version. version 1.2 and 1.1 are supported"
         BRANCH=""
     fi
 }
@@ -39,32 +41,34 @@ select_branch() {
     
     # NOTE: Only 1.1 is currently supported.
 
-    BRANCH="release-1.1"
-    echo "selected branch: ${BRANCH:?}"
+    # BRANCH="release-1.1"
+    # echo "selected branch: ${BRANCH:?}"
 
     # Logic below can be used when more than one version is supported.
-    #if [[ -n "$BRANCH" ]]; then
-    #    echo "using branch: ${BRANCH:?} based on installed risc0 version"
-    #    read -p "do you want to use a different release? (y/N): " change_branch
-    #    if [[ "$change_branch" =~ ^[Yy]$ ]]; then
-    #        BRANCH=""
-    #    else
-    #        echo "selected branch: ${BRANCH:?}"
-    #        return
-    #    fi
-    #fi
-    #
-    #while [[ -z "$BRANCH" ]]; do
-    #    echo "select the branch you want to use:"
-    #    echo "1) release-1.1"
-    #    read -p "enter 1: " choice
-    #    case $choice in
-    #        1) BRANCH="release-1.1"; break;;
-    #        *) echo "invalid option. please try again.";;
-    #    esac
-    #done
-    #
-    #echo "selected branch: ${BRANCH:?}"
+    if [[ -n "$BRANCH" ]]; then
+       echo "using branch: ${BRANCH:?} based on installed risc0 version"
+       read -p "do you want to use a different release? (y/N): " change_branch
+       if [[ "$change_branch" =~ ^[Yy]$ ]]; then
+           BRANCH=""
+       else
+           echo "selected branch: ${BRANCH:?}"
+           return
+       fi
+    fi
+    
+    while [[ -z "$BRANCH" ]]; do
+       echo "select the branch you want to use:"
+       echo "1) release-1.2"
+       echo "2) release-1.1"
+       read -p "enter 1: " choice
+       case $choice in
+           1) BRANCH="release-1.2"; break;;
+           2) BRANCH="release-1.1"; break;;
+           *) echo "invalid option. please try again.";;
+       esac
+    done
+    
+    echo "selected branch: ${BRANCH:?}"
 }
 
 get_folder_name() {
