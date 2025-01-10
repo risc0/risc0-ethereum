@@ -330,7 +330,7 @@ impl MerkleMountainRange {
                 max_depth: i,
             });
         }
-        if bytes.len() != 0 {
+        if !bytes.is_empty() {
             return Err(DecodingError::TrailingBytes);
         }
 
