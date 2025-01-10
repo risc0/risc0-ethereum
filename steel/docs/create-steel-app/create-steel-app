@@ -60,7 +60,7 @@ select_branch() {
        echo "select the branch you want to use:"
        echo "1) release-1.2"
        echo "2) release-1.1"
-       read -p "enter 1: " choice
+       read -p "enter: " choice
        case $choice in
            1) BRANCH="release-1.2"; break;;
            2) BRANCH="release-1.1"; break;;
