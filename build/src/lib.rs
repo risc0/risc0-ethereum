@@ -21,7 +21,6 @@ use std::{
 
 use anyhow::{anyhow, bail, Context, Result};
 use risc0_build::GuestListEntry;
-use risc0_zkp::core::digest::Digest;
 
 const SOL_HEADER: &str = r#"// Copyright 2024 RISC Zero, Inc.
 //
