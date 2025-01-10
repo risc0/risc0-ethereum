@@ -13,7 +13,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-alloy = { workspace = true, optional = true, features = ["eips", "network", "provider-http", "rpc-types"] }
+alloy = { workspace = true, optional = true, features = ["full"] }
 alloy-consensus = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
@@ -51,3 +51,4 @@ host = [
     "dep:url",
 ]
 unstable-history = []
+unstable-verifier = []

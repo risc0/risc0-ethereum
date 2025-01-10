@@ -16,8 +16,7 @@ use std::fmt::Debug;
 
 use alloy_primitives::{b256, keccak256, map::B256HashMap, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
-use alloy_trie::nodes::encode_path_leaf;
-use alloy_trie::Nibbles;
+use alloy_trie::{nodes::encode_path_leaf, nybbles::Nibbles};
 use serde::{Deserialize, Serialize};
 
 /// Root hash of an empty Merkle Patricia trie, i.e. `keccak256(RLP(""))`.
@@ -97,6 +96,12 @@ impl MerkleTrie {
         debug_assert!(trie.hash_slow() == MerkleTrie(root_node).hash_slow());
 
         Ok(trie)
+    }
+
+    /// Creates a new trie corresponding to the given digest.
+    #[inline]
+    pub fn from_digest(digest: B256) -> Self {
+        MerkleTrie(Node::Digest(digest))
     }
 }
 

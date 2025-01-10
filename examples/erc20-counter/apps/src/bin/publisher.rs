@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 // to the Bonsai proving service and publish the received proofs directly
 // to your deployed app contract.
 
-use alloy::{
-    network::EthereumWallet,
-    providers::ProviderBuilder,
-    signers::local::PrivateKeySigner,
-    sol_types::{SolCall, SolValue},
-};
 use alloy_primitives::{Address, U256};
 use anyhow::{ensure, Context, Result};
 use clap::Parser;
 use erc20_counter_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_contracts::encode_seal;
+use risc0_steel::alloy::{
+    network::EthereumWallet,
+    providers::ProviderBuilder,
+    signers::local::PrivateKeySigner,
+    sol,
+    sol_types::{SolCall, SolValue},
+};
 use risc0_steel::{
     ethereum::{EthEvmEnv, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
@@ -37,7 +38,7 @@ use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
-alloy::sol! {
+sol! {
     /// Interface to be called by the guest.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
@@ -50,7 +51,7 @@ alloy::sol! {
     }
 }
 
-alloy::sol!(
+sol!(
     #[sol(rpc, all_derives)]
     "../contracts/src/ICounter.sol"
 );
