@@ -37,7 +37,9 @@ contract RiscZeroSetVerifierTest is Test {
     RiscZeroSetVerifier public setVerifier;
 
     function mockProveRoot(bytes32 root) internal view returns (RiscZeroReceipt memory) {
-        return verifier.mockProve(SET_BUILDER_IMAGE_ID, sha256(abi.encodePacked(SET_BUILDER_IMAGE_ID, root)));
+        return verifier.mockProve(
+            SET_BUILDER_IMAGE_ID, sha256(abi.encodePacked(SET_BUILDER_IMAGE_ID, uint256(1) << 255, root))
+        );
     }
 
     function submitRoot(bytes32 root) internal {
