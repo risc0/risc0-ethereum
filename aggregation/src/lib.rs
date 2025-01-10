@@ -97,13 +97,13 @@ impl GuestState {
         self.mmr.is_empty()
     }
 
-    /// Encodes the [GuestOutput] for committing to the journal. Uses a specialized codec.
+    /// Encodes the [GuestState] for committing to the journal. Uses a specialized codec.
     /// See [MerkleMountainRange::encode].
     pub fn encode(&self) -> Vec<u8> {
         [self.self_image_id.as_bytes(), &self.mmr.encode()].concat()
     }
 
-    /// Decodes the [GuestOutput] for the journal. Uses a specialized codec.
+    /// Decodes the [GuestState] for the journal. Uses a specialized codec.
     /// See [MerkleMountainRange::encode].
     pub fn decode(bytes: impl AsRef<[u8]>) -> Result<Self, DecodingError> {
         // Read the first 32 bytes as the self_image_id.
@@ -116,11 +116,11 @@ impl GuestState {
         Ok(Self { self_image_id, mmr })
     }
 
-    /// Create a [GuestInput] from this [GuestOutput]. When run with the guest, the given claims
+    /// Create a [GuestInput] from this [GuestState]. When run with the guest, the given claims
     /// will be accumulated into the Merkle mountain range, and will be finalized if `finalize` is
     /// set to `true`.
     ///
-    /// Will return an error if the [MerkleMountainRange] on the [GuestOutput] is already
+    /// Will return an error if the [MerkleMountainRange] on the [GuestState] is already
     /// finalized, as no more claims may be added and the guest would reject this input.
     pub fn into_input(
         self,

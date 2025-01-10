@@ -23,7 +23,7 @@ fn verify_state(state: &GuestState) {
     env::verify(state.self_image_id, &state.encode()).unwrap();
 }
 
-pub fn main() {
+fn main() {
     // Read the input and verify the given state.
     let input: GuestInput = env::read();
     verify_state(&input.state);
