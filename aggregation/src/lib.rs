@@ -147,9 +147,11 @@ impl GuestState {
 /// Note that the max size of the internal vec of digests (peaks) is equal to log_2 n where n is
 /// the number of leaves in the tree.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct MerkleMountainRange(Vec<Peak>);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 struct Peak {
     /// Digest for the root of the Merkle subtree committed to by this peak.
     digest: Digest,
@@ -318,7 +320,7 @@ impl MerkleMountainRange {
 
         // Read the rest of the bytes as the peaks, with depth specified by the bitmap.
         let mut peaks = Vec::<Peak>::with_capacity(bitmap.count_ones());
-        for i in 0..u8::MAX {
+        for i in (0..=u8::MAX).rev() {
             if !bitmap.bit(i as usize) {
                 continue;
             }
@@ -507,6 +509,18 @@ mod tests {
                 let path = merkle_path(&digests, i);
                 assert_eq!(merkle_path_root(&digests[i], &path), root);
             }
+        }
+    }
+
+    #[test]
+    fn test_encode_decode() {
+        for length in 0..=128 {
+            let digests: Vec<Digest> = (0..length)
+                .map(|_| rand::random::<[u8; 32]>().into())
+                .collect();
+            let mmr = MerkleMountainRange::from_iter(digests);
+
+            assert_eq!(mmr, MerkleMountainRange::decode(mmr.encode()).unwrap());
         }
     }
 }
