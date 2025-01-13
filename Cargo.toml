@@ -3,7 +3,7 @@ resolver = "2"
 members = ["aggregation", "aggregation/guest", "build", "contracts", "ffi", "ffi/guests", "steel"]
 
 [workspace.package]
-version = "1.2.0"
+version = "1.2.1-rc.1"
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://risczero.com/"
@@ -11,16 +11,16 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
-risc0-build-ethereum = { version = "1.2.0", default-features = false, path = "build" }
-risc0-ethereum-contracts = { version = "1.2.0", default-features = false, path = "contracts" }
-risc0-steel = { version = "1.2.0", default-features = false, path = "steel" }
-risc0-forge-ffi = { version = "1.2.0", default-features = false, path = "ffi" }
+risc0-build-ethereum = { version = "1.2.1-rc.1", default-features = false, path = "build" }
+risc0-ethereum-contracts = { version = "1.2.1-rc.1", default-features = false, path = "contracts" }
+risc0-steel = { version = "1.2.1-rc.1", default-features = false, path = "steel" }
+risc0-forge-ffi = { version = "1.2.1-rc.1", default-features = false, path = "ffi" }
 
 # risc0 monorepo dependencies.
-risc0-build = { version = "1.2.0", default-features = false }
-risc0-zkp = { version = "1.2.0", default-features = false }
-risc0-zkvm = { version = "1.2.0", default-features = false }
-risc0-binfmt = { version = "1.2.0", default-features = false }
+risc0-build = { version = "1.2.1-rc.1", default-features = false }
+risc0-zkp = { version = "1.2.1-rc.1", default-features = false }
+risc0-zkvm = { version = "1.2.1-rc.1", default-features = false }
+risc0-binfmt = { version = "1.2.1-rc.1", default-features = false }
 
 # Alloy guest dependencies
 alloy-consensus = { version = "0.6.1" }
