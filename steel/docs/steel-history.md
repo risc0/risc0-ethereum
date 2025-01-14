@@ -56,9 +56,9 @@ Ultimately, Steel will check the integrity of the view call data in the executio
 1. proving that the execution block is a canonical ancestor of the commitment block
 2. carrying out the standard Steel commitment validation on-chain proving the integrity of the block root for the commitment block
 
-## How far can you go back? Is there a hard limit?
+## How far can you go back?
 
-There is a hard limit: the entire validation procedure depends on [EIP-4788] which was introduced with the [Cancun upgrade] in March 2024.
+There is a hard limit on how far back in time you can place the execution block: the entire validation procedure depends on [EIP-4788] which was introduced with the [Cancun upgrade] on March 13 2024; this is the furthest that Steel history can go back.
 
 ## How much does Steel history cost? 
 
