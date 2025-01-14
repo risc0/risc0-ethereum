@@ -48,32 +48,33 @@ The execution block is the block from which the view call state is retrieved. Th
 The execution and commitment blocks are fundamentally related. The execution block is always an ancestor of the commitment block. Therefore, it is possible to prove that the commitment block block root is canonical with the execution block block root. Steel handles this automatically within the Steel guest when the history feature is enabled. Steel works backwards from the commitment block to the execution block with consecutive calls to the beacon roots contract; validating a beacon root is a single call for every 24 hours of history and this step takes approximately 1M cycles. Ultimately, Steel will prove that the execution block is a canonical ancestor of the commitment block. Once on-chain, the standard Steel commitment procedure will then prove the validity of the block root for the commitment block and by verifying the Steel proof, the developer can be sure of the integrity of the view call data at the execution block.
 
 
-## What does Steel history require? 
+## What does Steel history require (for the host)? 
 
 On the host side, the developer needs to specify valid RPC URLs for both an archive execution node and a beacon node. For each block between the commitment block and the execution block, Steel will query the full beacon block for verification. Please bear in mind that the wider the gap between the execution block and the commitment block, the larger the load on the beacon endpoint will be. 
+
+## How much does Steel history cost? 
 
 So both the cycles and the API calls are linear in the number of days you go back... Which can get expensive.
 
 
+## How to enable Steel history?
 
-
-the block from which the view call state is retrieved, and the commitment block, the block that is used for the Steel commitment. The commitment block still has to fall within the 24 hour time window necessary for Steel commitment validation on-chain, but *crucially* the execution block can go further back on the scale of days, weeks and even months. The further back the execution block is, the larger the number of cycles in the Steel zkVM guest and the larger the RPC load becomes. The fundamental execution proof verification on-chain costs the same amount of gas, no matter how far your execution block goes. 
-
-
-
-
-
-
-How to enable
-
-
+```toml
 [features]
 history = ["risc0-steel/unstable-history"]
 beacon = []
+```
+
+## Example runthrough
+
+publisher.rs
 
 
 
 
+## Misc
+
+the block from which the view call state is retrieved, and the commitment block, the block that is used for the Steel commitment. The commitment block still has to fall within the 24 hour time window necessary for Steel commitment validation on-chain, but *crucially* the execution block can go further back on the scale of days, weeks and even months. The further back the execution block is, the larger the number of cycles in the Steel zkVM guest and the larger the RPC load becomes. The fundamental execution proof verification on-chain costs the same amount of gas, no matter how far your execution block goes. 
 
 ---
 
