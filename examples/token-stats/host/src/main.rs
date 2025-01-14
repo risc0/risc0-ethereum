@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@ use alloy_sol_types::{SolCall, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use risc0_steel::{
+    alloy::providers::{Provider, ProviderBuilder},
     ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
-    Contract,
+    Contract, SteelVerifier,
 };
 use risc0_zkvm::{default_executor, ExecutorEnv};
 use token_stats_core::{APRCommitment, CometMainInterface, CONTRACT};
@@ -25,13 +26,16 @@ use token_stats_methods::TOKEN_STATS_ELF;
 use tracing_subscriber::EnvFilter;
 use url::Url;
 
-// Simple program to show the use of Ethereum contract data inside the guest.
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
 struct Args {
     /// URL of the RPC endpoint
-    #[arg(short, long, env = "RPC_URL")]
+    #[arg(long, env)]
     rpc_url: Url,
+
+    /// Beacon API endpoint URL
+    #[clap(long, env)]
+    beacon_api_url: Url,
 }
 
 #[tokio::main]
@@ -43,8 +47,17 @@ async fn main() -> Result<()> {
     // Parse the command line arguments.
     let args = Args::parse();
 
-    // Create an EVM environment from an RPC endpoint defaulting to the latest block.
-    let mut env = EthEvmEnv::builder().rpc(args.rpc_url).build().await?;
+    // Query the latest block number.
+    let provider = ProviderBuilder::new().on_http(args.rpc_url);
+    let latest = provider.get_block_number().await?;
+
+    // Create an EVM environment for that provider and about 12h (3600 blocks) ago.
+    let mut env = EthEvmEnv::builder()
+        .provider(provider.clone())
+        .block_number(latest - 3600)
+        .beacon_api(args.beacon_api_url)
+        .build()
+        .await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
@@ -74,13 +87,53 @@ async fn main() -> Result<()> {
         rate
     );
 
-    // Finally, construct the input from the environment.
-    let input = env.into_input().await?;
+    // Construct the commitment and input from the environment representing the state 12h ago.
+    let commitment_input1 = env.commitment();
+    let input1 = env.into_input().await?;
+
+    // Create another EVM environment for that provider defaulting to the latest block.
+    let mut env = EthEvmEnv::builder().provider(provider).build().await?;
+    env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+
+    // Preflight the verification of the commitment of the previous input.
+    SteelVerifier::preflight(&mut env)
+        .verify(&commitment_input1)
+        .await?;
+
+    // Preflight the actual contract calls.
+    let mut contract = Contract::preflight(CONTRACT, &mut env);
+    let utilization = contract
+        .call_builder(&CometMainInterface::getUtilizationCall {})
+        .call()
+        .await?
+        ._0;
+    println!(
+        "Call {} Function on {:#} returns: {}",
+        CometMainInterface::getUtilizationCall::SIGNATURE,
+        CONTRACT,
+        utilization
+    );
+    let rate = contract
+        .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
+        .call()
+        .await?
+        ._0;
+    println!(
+        "Call {} Function on {:#} returns: {}",
+        CometMainInterface::getSupplyRateCall::SIGNATURE,
+        CONTRACT,
+        rate
+    );
+
+    // Finally, construct the second input from the environment representing the latest state.
+    let input2 = env.into_input().await?;
 
     println!("Running the guest with the constructed input:");
     let session_info = {
         let env = ExecutorEnv::builder()
-            .write(&input)
+            .write(&input1)
+            .unwrap()
+            .write(&input2)
             .unwrap()
             .build()
             .context("failed to build executor env")?;

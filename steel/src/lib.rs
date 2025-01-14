@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
+#[cfg(feature = "unstable-verifier")]
+mod verifier;
 
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
@@ -55,6 +57,8 @@ pub use state::{StateAccount, StateDb};
 pub use history::HistoryInput;
 #[cfg(not(feature = "unstable-history"))]
 pub(crate) use history::HistoryInput;
+#[cfg(feature = "unstable-verifier")]
+pub use verifier::SteelVerifier;
 
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
@@ -150,13 +154,13 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
         &self.header
     }
 
-    fn db(&self) -> &D {
+    pub(crate) fn db(&self) -> &D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_ref().unwrap()
     }
 
     #[allow(dead_code)]
-    fn db_mut(&mut self) -> &mut D {
+    pub(crate) fn db_mut(&mut self) -> &mut D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_mut().unwrap()
     }
@@ -285,7 +289,7 @@ impl std::fmt::Debug for Commitment {
         f.debug_struct("Commitment")
             .field("version", &version)
             .field("id", &id)
-            .field("claim", &self.digest)
+            .field("digest", &self.digest)
             .field("configID", &self.configID)
             .finish()
     }

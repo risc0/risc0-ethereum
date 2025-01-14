@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ use std::{
 
 use anyhow::{anyhow, bail, Context, Result};
 use risc0_build::GuestListEntry;
-use risc0_zkp::core::digest::Digest;
 
 const SOL_HEADER: &str = r#"// Copyright 2024 RISC Zero, Inc.
 //
@@ -109,7 +108,7 @@ pub fn generate_image_id_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
         .iter()
         .map(|guest| {
             let name = guest.name.to_uppercase().replace('-', "_");
-            let image_id = hex::encode(Digest::from(guest.image_id));
+            let image_id = hex::encode(guest.image_id);
             format!("bytes32 public constant {name}_ID = bytes32(0x{image_id});")
         })
         .collect();
