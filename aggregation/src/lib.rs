@@ -230,7 +230,9 @@ impl MerkleMountainRange {
                 let peak = self.0.pop().unwrap();
                 self.push_peak(Peak {
                     digest: commutative_keccak256(&peak.digest, &new_peak.digest),
-                    max_depth: peak.max_depth + 1, //TODO this is fallible
+                    max_depth: peak.max_depth.checked_add(1).expect(
+                        "violation of invariant on the finalization of the Merkle mountain range",
+                    ),
                 })?;
             }
             Some(_) => {
