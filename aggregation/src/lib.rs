@@ -159,6 +159,8 @@ struct Peak {
     ///
     /// It is expressed as the total height of the subtree - 1, such that a peak with a single node
     /// (i.e. a leaf) has a max_depth value of 0.
+    ///
+    /// A finalized [MerkleMountainRange] will have a single peak with max-depth set to `0xff`.
     max_depth: u8,
 }
 
