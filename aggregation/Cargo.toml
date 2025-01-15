@@ -15,6 +15,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
+bytemuck = { workspace = true }
 # TODO(#353) Determine if it is possible to publish risc0-aggregation with set builder image ID and ELF
 #guest-set-builder = { version = "0.1.0", path = "./guest", optional = true }
 hex = { workspace = true }

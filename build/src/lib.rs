@@ -108,7 +108,8 @@ pub fn generate_image_id_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
         .iter()
         .map(|guest| {
             let name = guest.name.to_uppercase().replace('-', "_");
-            let image_id = hex::encode(guest.image_id);
+            // NOTE: Works with both risc0-build v1 and v2
+            let image_id = hex::encode(bytemuck::cast::<_, [u8; 32]>(guest.image_id));
             format!("bytes32 public constant {name}_ID = bytes32(0x{image_id});")
         })
         .collect();
