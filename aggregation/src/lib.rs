@@ -55,14 +55,14 @@ alloy_sol_types::sol! {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GuestInput {
     /// State of the incremental set building process. On first run, this will be the initial
-    /// state, which does not require verification (it is trivially true than an empty set contains
+    /// state, which does not require verification (it is trivially true that an empty set contains
     /// no false claims). On subsequent runs, it will be set to the state written to the journal by
     /// the last run of the set builder guest.
     pub state: GuestState,
     /// Vector of claims to be verified and added to the set of verified claims committed to by the
     /// [MerkleMountainRange].
     pub claims: Vec<ReceiptClaim>,
-    /// Whether or not the finalize the Merkle mountain range at the end of guest execution.
+    /// Whether or not to finalize the Merkle mountain range at the end of guest execution.
     ///
     /// A finalized [MerkleMountainRange] cannot have additional leaves added, but is guaranteed to
     /// be a single root. The [MerkleMountainRange] should be finalized to obtain the root for use
@@ -74,7 +74,7 @@ pub struct GuestInput {
 pub struct GuestState {
     /// Image ID of the set builder itself.
     ///
-    /// Passed as input since a guest cannot contain it's own image ID. All successive calls to the
+    /// Passed as input since a guest cannot contain its own image ID. All successive calls to the
     /// set builder must use the same image ID, which is propagated to the journal as part of the
     /// guest output.
     pub self_image_id: Digest,
@@ -92,7 +92,7 @@ impl GuestState {
         }
     }
 
-    /// Returns true is this is the initial state, for an empty claim set.
+    /// Returns true if this is the initial state, for an empty claim set.
     pub fn is_initial(&self) -> bool {
         self.mmr.is_empty()
     }
@@ -185,6 +185,7 @@ pub enum DecodingError {
 }
 
 impl MerkleMountainRange {
+    /// Constructs a new empty Merkle mountain range.
     pub fn empty() -> Self {
         Self(Vec::new())
     }
@@ -280,8 +281,7 @@ impl MerkleMountainRange {
         // single peak with max depth value of 255, it would be naturally finalized.
         self.0
             .first()
-            .map(|peak| peak.max_depth == u8::MAX)
-            .unwrap_or(false)
+            .map_or(false, |peak| peak.max_depth == u8::MAX)
     }
 
     /// Returns true if the [MerkleMountainRange] is empty.
