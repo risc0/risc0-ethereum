@@ -61,15 +61,13 @@ The execution and commitment blocks are fundamentally related;
 the execution block should always be an ancestor of the commitment block.
 Therefore, it is possible to prove that the committed chain includes the execution block by validating a chain of beacon block roots in between the two blocks.
 
-Steel handles this verification automatically when the history feature is enabled.
+Steel handles this verification automatically when the history feature (feature flag: `unstable-history`) is enabled.
 Steel history works backwards from the commitment block to the execution block with consecutive calls to the beacon roots contract;
 validating a beacon root is a single call for every 24 hours of history.
 This step takes approximately 1M cycles per 24 hours of history within the Steel guest. 
 
-Ultimately, Steel will check the integrity of the view call data in the execution block by:
-
-1. proving that the execution block is a canonical ancestor of the commitment block
-2. carrying out the standard Steel commitment validation on-chain proving the integrity of the block root for the commitment block
+Ultimately, Steel will check the integrity of the view call data in the execution block by proving that the execution block is a canonical ancestor of the commitment block. 
+Once on-chain, succesfully validating the Steel commitment will prove the integrity of the block root for the commitment block.
 
 ## How far can you go back?
 
@@ -87,7 +85,7 @@ For each block between the commitment block and the execution block, Steel will 
 Please bear in mind that the wider the gap between the execution block and the commitment block, the larger the load on the beacon endpoint will be. 
 
 In terms of compute, the number of cycles for the Steel guest will also increase linearly with the number of blocks between the commitment block and the execution block.
-For every extra 24 hours of history, this is around 1 million cycles in the Steel guest.
+For every extra 24 hours of history, this is around 1 million cycles in the Steel guest. Please note this cycle count is without the Keccak precompile scheduled for release in Q1 2025. Once the Keccak precompile is available, the cycle count should be significantly reduced.
 
 ## Enabling Steel History
 
