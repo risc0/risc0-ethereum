@@ -20,7 +20,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 
-use alloy_primitives::{Keccak256, U256};
+use alloy_primitives::{uint, Keccak256, U256};
 use risc0_zkvm::{
     sha::{Digest, DIGEST_BYTES},
     ReceiptClaim,
@@ -317,7 +317,7 @@ impl MerkleMountainRange {
             .split_at_checked(U256::BYTES)
             .ok_or(DecodingError::UnexpectedEnd)?;
         let bitmap = U256::from_le_slice(chunk);
-        if bitmap > (U256::from(1) << u8::MAX) {
+        if bitmap > (uint!(1_U256 << u8::MAX)) {
             // When the leading bit is set, it must be finalized. Any value above 2^255 is invalid.
             return Err(DecodingError::InvalidBitmap);
         }
