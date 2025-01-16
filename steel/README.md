@@ -35,6 +35,13 @@ This documentation covers the core concepts of Steel. After reading, you will un
   - [Trust Anchor: The Blockhash]
   - [What is a Steel Commitment?]
   - [Validation of Steel Commitments]
+- [Steel History]
+  - [Why use Steel history?]
+  - [Overview]
+  - [How does Steel history work?]
+  - [How far can you go back?]
+  - [How much does Steel history cost?]
+  - [Enabling Steel history]
 
 ## Further Reading & Ask Questions
 
@@ -53,5 +60,12 @@ The RISC Zero [dev docs][dev-docs] are a great place to start to understand the 
 [Trust Anchor: The Blockhash]: docs/steel-commitments.md#steels-trust-anchor-the-blockhash
 [What is a Steel Commitment?]: docs/steel-commitments.md#what-is-a-steel-commitment
 [Validation of Steel Commitments]: docs/steel-commitments.md#validation-of-steel-commitments
+[Steel History]: docs/steel-history.md
+[Why use Steel history?]: docs/steel-history.md#why-use-steel-history
+[Overview]: docs/steel-history.md#overview
+[How does Steel history work?]: docs/steel-history.md#how-does-steel-history-work
+[How far can you go back?]: docs/steel-history.md#how-far-can-you-go-back
+[How much does Steel history cost?]: docs/steel-history.md#how-much-does-steel-history-cost
+[Enabling Steel history]: docs/steel-history.md#enabling-steel-history
 [dev-docs]: https://dev.risczero.com/api/
 [risczero-discord]: https://discord.com/invite/risczero
