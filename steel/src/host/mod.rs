@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,10 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
+use std::{
+    fmt::{self, Debug, Display},
+    str::FromStr,
+};
 
 use crate::{
     beacon::BeaconCommit,
@@ -21,10 +25,10 @@ use crate::{
     ethereum::{EthBlockHeader, EthEvmEnv},
     history::HistoryCommit,
     host::db::ProviderDb,
-    ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
+    BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
-use alloy::eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError};
 use alloy::{
+    eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError},
     network::{Ethereum, Network},
     providers::Provider,
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
@@ -32,10 +36,7 @@ use alloy::{
 };
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
-use core::fmt;
 use db::{AlloyDb, ProofDb};
-use std::fmt::Display;
-use std::str::FromStr;
 use url::Url;
 
 mod builder;
@@ -130,6 +131,21 @@ pub struct HostCommit<C> {
     config_id: B256,
 }
 
+impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
+    /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
+        self.cfg_env.chain_id = chain_spec.chain_id();
+        self.cfg_env.handler_cfg.spec_id = chain_spec
+            .active_fork(self.header.number(), self.header.timestamp())
+            .unwrap();
+        self.commit.config_id = chain_spec.digest();
+
+        self
+    }
+}
+
 impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
 where
     T: Transport + Clone,
@@ -146,18 +162,13 @@ where
     }
 }
 
-impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
-    /// Sets the chain ID and specification ID from the given chain spec.
-    ///
-    /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
-        self.cfg_env.chain_id = chain_spec.chain_id();
-        self.cfg_env.handler_cfg.spec_id = chain_spec
-            .active_fork(self.header.number(), self.header.timestamp())
-            .unwrap();
-        self.commit.config_id = chain_spec.digest();
-
-        self
+impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> {
+    /// Returns the [Commitment] used to validate the environment.
+    pub fn commitment(&self) -> Commitment {
+        self.commit
+            .inner
+            .clone()
+            .commit(&self.header, self.commit.config_id)
     }
 }
 

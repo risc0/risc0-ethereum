@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 
-use alloy_primitives::{Keccak256, B256};
-use alloy_sol_types::SolValue;
-use risc0_binfmt::Digestible;
-use risc0_zkvm::{sha, sha::Digest, ReceiptClaim};
+use alloy_primitives::{uint, Keccak256, U256};
+use risc0_zkvm::{
+    sha::{Digest, DIGEST_BYTES},
+    ReceiptClaim,
+};
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "verify")]
@@ -52,45 +53,313 @@ alloy_sol_types::sol! {
 
 /// Input of the aggregation set builder guest.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum GuestInput {
-    /// Input is a leaf of the Merkle tree.
-    Singleton {
-        self_image_id: Digest,
-        claim: ReceiptClaim,
-    },
-    /// Input is an inner node of the Merkle tree.
-    Join {
-        self_image_id: Digest,
-        left_set_root: Digest,
-        right_set_root: Digest,
-    },
+pub struct GuestInput {
+    /// State of the incremental set building process. On first run, this will be the initial
+    /// state, which does not require verification (it is trivially true that an empty set contains
+    /// no false claims). On subsequent runs, it will be set to the state written to the journal by
+    /// the last run of the set builder guest.
+    pub state: GuestState,
+    /// Vector of claims to be verified and added to the set of verified claims committed to by the
+    /// [MerkleMountainRange].
+    pub claims: Vec<ReceiptClaim>,
+    /// Whether or not to finalize the Merkle mountain range at the end of guest execution.
+    ///
+    /// A finalized [MerkleMountainRange] cannot have additional leaves added, but is guaranteed to
+    /// be a single root. The [MerkleMountainRange] should be finalized to obtain the root for use
+    /// with the Solidity set verifier contract.
+    pub finalize: bool,
 }
 
-impl GuestInput {
-    #[inline]
-    pub fn image_id(&self) -> Digest {
-        match self {
-            GuestInput::Singleton { self_image_id, .. } => *self_image_id,
-            GuestInput::Join { self_image_id, .. } => *self_image_id,
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct GuestState {
+    /// Image ID of the set builder itself.
+    ///
+    /// Passed as input since a guest cannot contain its own image ID. All successive calls to the
+    /// set builder must use the same image ID, which is propagated to the journal as part of the
+    /// guest output.
+    pub self_image_id: Digest,
+    /// Merkle mountain range representing the state of the iterative tree building process at the
+    /// end of guest execution.
+    pub mmr: MerkleMountainRange,
+}
+
+impl GuestState {
+    /// Construct the initial, empty, state for for set builder.
+    pub fn initial(self_image_id: impl Into<Digest>) -> Self {
+        Self {
+            self_image_id: self_image_id.into(),
+            mmr: MerkleMountainRange::empty(),
         }
     }
 
-    #[inline]
-    pub fn root(&self) -> Digest {
-        match self {
-            GuestInput::Singleton { claim, .. } => claim.digest::<sha::Impl>(),
-            GuestInput::Join {
-                left_set_root,
-                right_set_root,
-                ..
-            } => commutative_keccak256(left_set_root, right_set_root),
+    /// Returns true if this is the initial state, for an empty claim set.
+    pub fn is_initial(&self) -> bool {
+        self.mmr.is_empty()
+    }
+
+    /// Encodes the [GuestState] for committing to the journal. Uses a specialized codec.
+    /// See [MerkleMountainRange::encode].
+    pub fn encode(&self) -> Vec<u8> {
+        [self.self_image_id.as_bytes(), &self.mmr.encode()].concat()
+    }
+
+    /// Decodes the [GuestState] for the journal. Uses a specialized codec.
+    /// See [MerkleMountainRange::encode].
+    pub fn decode(bytes: impl AsRef<[u8]>) -> Result<Self, DecodingError> {
+        // Read the first 32 bytes as the self_image_id.
+        let (chunk, bytes) = bytes
+            .as_ref()
+            .split_at_checked(U256::BYTES)
+            .ok_or(DecodingError::UnexpectedEnd)?;
+        let self_image_id = Digest::try_from(chunk).unwrap();
+        let mmr = MerkleMountainRange::decode(bytes)?;
+        Ok(Self { self_image_id, mmr })
+    }
+
+    /// Create a [GuestInput] from this [GuestState]. When run with the guest, the given claims
+    /// will be accumulated into the Merkle mountain range, and will be finalized if `finalize` is
+    /// set to `true`.
+    ///
+    /// Will return an error if the [MerkleMountainRange] on the [GuestState] is already
+    /// finalized, as no more claims may be added and the guest would reject this input.
+    pub fn into_input(
+        self,
+        claims: Vec<ReceiptClaim>,
+        finalize: bool,
+    ) -> Result<GuestInput, Error> {
+        if self.mmr.is_finalized() {
+            return Err(Error::FinalizedError);
+        }
+        Ok(GuestInput {
+            state: self,
+            claims,
+            finalize,
+        })
+    }
+}
+
+/// Incrementally constructable Merkle mountain range.
+///
+/// Each entry in the list is a pair of (digest, max-depth), where max-depth tracks an upper bound
+/// on the size of the subtree for which the digest is the root. The largest subtree is at index 0,
+/// the smallest at index len - 1.
+///
+/// Note that the max size of the internal vec of digests (peaks) is equal to log_2 n where n is
+/// the number of leaves in the tree.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
+pub struct MerkleMountainRange(Vec<Peak>);
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
+struct Peak {
+    /// Digest for the root of the Merkle subtree committed to by this peak.
+    digest: Digest,
+    /// An upper-bound on the depth of the subtree rooted rooted at this peak.
+    ///
+    /// It is expressed as the total height of the subtree - 1, such that a peak with a single node
+    /// (i.e. a leaf) has a max_depth value of 0.
+    ///
+    /// A finalized [MerkleMountainRange] will have a single peak with max-depth set to `0xff`.
+    max_depth: u8,
+}
+
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum Error {
+    #[error("Merkle mountain range is finalized")]
+    FinalizedError,
+    #[error("Merkle mountain range is empty")]
+    EmptyError,
+    #[error("decoding error: {0}")]
+    DecodingError(#[from] DecodingError),
+}
+
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
+pub enum DecodingError {
+    #[error("invalid bitmap")]
+    InvalidBitmap,
+    #[error("unexpected end of byte stream")]
+    UnexpectedEnd,
+    #[error("trailing bytes")]
+    TrailingBytes,
+}
+
+impl MerkleMountainRange {
+    /// Constructs a new empty Merkle mountain range.
+    pub fn empty() -> Self {
+        Self(Vec::new())
+    }
+
+    /// Construct a new [MerkleMountainRange] in a finalized state, given a root.
+    pub fn new_finalized(root: Digest) -> Self {
+        Self(vec![Peak {
+            max_depth: u8::MAX,
+            digest: root,
+        }])
+    }
+
+    /// Push a new leaf onto the Merkle mountain range.
+    pub fn push(&mut self, leaf: Digest) -> Result<(), Error> {
+        self.push_peak(Peak {
+            digest: leaf,
+            max_depth: 0,
+        })
+    }
+
+    fn push_peak(&mut self, new_peak: Peak) -> Result<(), Error> {
+        // If the peak has a max-depth of 255, then the mountain range is finalized and no new
+        // peaks can be pushed to it. Note that this state can only be achieved by calling
+        // `finalize` since it is computationally infeasible to push 2^256 nodes onto the MMR,
+        // although it is theoretically consistent that if an MMR reached a state of being a
+        // single peak with max depth value of 255, it would be naturally finalized.
+        if self.is_finalized() {
+            return Err(Error::FinalizedError);
+        }
+        match self.0.last() {
+            // If the MerkleMountainRange is empty, push the new peak.
+            None => self.0.push(new_peak),
+            // If the tail subtree is larger, push the new subtree onto the end.
+            Some(peak) if peak.max_depth > new_peak.max_depth => {
+                self.0.push(new_peak);
+            }
+            // If the tail subtree is the same size, combine them and recurse.
+            Some(peak) if peak.max_depth == new_peak.max_depth => {
+                // Will never panic, since we've already checked that there is at least one peak.
+                let peak = self.0.pop().unwrap();
+                self.push_peak(Peak {
+                    digest: commutative_keccak256(&peak.digest, &new_peak.digest),
+                    max_depth: peak.max_depth.checked_add(1).expect(
+                        "violation of invariant on the finalization of the Merkle mountain range",
+                    ),
+                })?;
+            }
+            Some(_) => {
+                unreachable!("violation of ordering invariant in Merkle mountain range builder")
+            }
+        };
+        Ok(())
+    }
+
+    /// Finalize the [MerkleMountainRange], combining all peaks into one root. No new nodes can be
+    /// added to a finalized commitment.
+    pub fn finalize(&mut self) -> Result<(), Error> {
+        let root = self.0.iter().rev().fold(None, |root, peak| {
+            Some(match root {
+                Some(root) => commutative_keccak256(&root, &peak.digest),
+                None => peak.digest,
+            })
+        });
+        let Some(root) = root else {
+            return Err(Error::EmptyError);
+        };
+        self.0.clear();
+        self.0.push(Peak {
+            digest: root,
+            max_depth: u8::MAX,
+        });
+        Ok(())
+    }
+
+    /// Finalizes the [MerkleMountainRange] and returns the root, or returns `None` is the
+    /// [MerkleMountainRange] is empty.
+    pub fn finalized_root(mut self) -> Option<Digest> {
+        match self.is_empty() {
+            true => None,
+            false => {
+                // finalize should only fail if the MMR is empty.
+                self.finalize().unwrap();
+                Some(self.0[0].digest)
+            }
         }
     }
 
-    /// Creates a [GuestOutput] from the input.
-    #[inline]
-    pub fn to_output(&self) -> GuestOutput {
-        GuestOutput::new(self.image_id(), self.root())
+    /// Returns true if the [MerkleMountainRange] is finalized. No new nodes can be added to a
+    /// finalized [MerkleMountainRange].
+    pub fn is_finalized(&self) -> bool {
+        // If the peak has a max-depth of 255, then the mountain range is finalized and no new
+        // peaks can be pushed to it. Note that this state can only be achieved by calling
+        // `finalize` since it is computationally infeasible to push 2^256 nodes onto the MMR,
+        // although it is theoretically consistent that if an MMR reached a state of being a
+        // single peak with max depth value of 255, it would be naturally finalized.
+        self.0
+            .first()
+            .map_or(false, |peak| peak.max_depth == u8::MAX)
+    }
+
+    /// Returns true if the [MerkleMountainRange] is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// A compact encoding for the [MerkleMountainRange] used in encoding the journal designed to
+    /// be efficient for use in the EVM, and designed to ensure it is possible to construct the
+    /// journal encoding of a finalized [MerkleMountainRange] given only the finalized root.
+    pub fn encode(&self) -> Vec<u8> {
+        // bitmap encodes the max-depth values present in the MerkleMountainRange. Note that when
+        // finalized, the bitmap is guaranteed to be equal to 1 << 255.
+        let mut bitmap = U256::ZERO;
+        let mut peaks = Vec::<Digest>::with_capacity(self.0.len());
+        // Iterate over the peaks from greatest to least max-depth.
+        for peak in self.0.iter() {
+            bitmap.set_bit(peak.max_depth as usize, true);
+            peaks.push(peak.digest);
+        }
+        [&bitmap.as_le_bytes(), bytemuck::cast_slice(&peaks)].concat()
+    }
+
+    /// Decode the specialized journal encoding. See [MerkleMountainRange::encode].
+    pub fn decode(bytes: impl AsRef<[u8]>) -> Result<Self, DecodingError> {
+        // Read the first 32 bytes as the bitmap.
+        let (mut chunk, mut bytes) = bytes
+            .as_ref()
+            .split_at_checked(U256::BYTES)
+            .ok_or(DecodingError::UnexpectedEnd)?;
+        let bitmap = U256::from_le_slice(chunk);
+        if bitmap > (uint!(1_U256 << u8::MAX)) {
+            // When the leading bit is set, it must be finalized. Any value above 2^255 is invalid.
+            return Err(DecodingError::InvalidBitmap);
+        }
+
+        // Read the rest of the bytes as the peaks, with depth specified by the bitmap.
+        let mut peaks = Vec::<Peak>::with_capacity(bitmap.count_ones());
+        for i in (0..=u8::MAX).rev() {
+            if !bitmap.bit(i as usize) {
+                continue;
+            }
+            (chunk, bytes) = bytes
+                .split_at_checked(DIGEST_BYTES)
+                .ok_or(DecodingError::UnexpectedEnd)?;
+            peaks.push(Peak {
+                digest: Digest::try_from(chunk).unwrap(),
+                max_depth: i,
+            });
+        }
+        if !bytes.is_empty() {
+            return Err(DecodingError::TrailingBytes);
+        }
+
+        Ok(Self(peaks))
+    }
+}
+
+impl<D: Borrow<Digest>> Extend<D> for MerkleMountainRange {
+    /// Extend a [MerkleMountainRange] from an iterator of digest leaves.
+    fn extend<T: IntoIterator<Item = D>>(&mut self, leaves: T) {
+        for leaf in leaves {
+            self.push(*leaf.borrow())
+                .expect("attempted to extend a finalized MerkleMountainRange");
+        }
+    }
+}
+
+impl<D: Borrow<Digest>> FromIterator<D> for MerkleMountainRange {
+    /// Construct a [MerkleMountainRange] from an iterator of digest leaves.
+    fn from_iter<T: IntoIterator<Item = D>>(leaves: T) -> Self {
+        let mut mmr = Self::empty();
+        mmr.extend(leaves);
+        mmr
     }
 }
 
@@ -100,15 +369,9 @@ impl GuestInput {
 pub fn merkle_root(leaves: &[Digest]) -> Digest {
     match leaves {
         [] => panic!("digest list is empty, cannot compute Merkle root"),
-        [digest] => *digest, // If only one digest, return it as the root
-        _ => {
-            // Split the list into two halves
-            let (left, right) = leaves.split_at(leaves.len().next_power_of_two() / 2);
-            let left_root = merkle_root(left);
-            let right_root = merkle_root(right);
-            // Hash the combined roots of the left and right halves
-            commutative_keccak256(&left_root, &right_root)
-        }
+        _ => MerkleMountainRange::from_iter(leaves)
+            .finalized_root()
+            .unwrap(),
     }
 }
 
@@ -175,47 +438,6 @@ fn commutative_keccak256(a: &Digest, b: &Digest) -> Digest {
         hasher.update(a.as_bytes());
     }
     hasher.finalize().0.into()
-}
-
-alloy_sol_types::sol! {
-    /// Journal output of aggregation set builder guest.
-    #[sol(all_derives)]
-    struct GuestOutput {
-        /// Image ID used to verify the assumptions.
-        bytes32 id;
-        /// Root of the current sub-set.
-        bytes32 root;
-    }
-}
-
-impl GuestOutput {
-    // NOTE: We use `impl Into<Digest>` here for the image ID type to accept the image ID constants
-    // produced by risc0-build, which are [u8; 32].
-    pub fn new(image_id: impl Into<Digest>, root: Digest) -> Self {
-        Self {
-            id: to_b256(image_id.into()),
-            root: to_b256(root),
-        }
-    }
-
-    /// ABI-encodes the output.
-    #[inline]
-    pub fn abi_encode(&self) -> Vec<u8> {
-        SolValue::abi_encode(self)
-    }
-
-    #[inline]
-    pub fn image_id(&self) -> Digest {
-        self.id.0.into()
-    }
-    #[inline]
-    pub fn root(&self) -> Digest {
-        self.root.0.into()
-    }
-}
-
-fn to_b256(digest: Digest) -> B256 {
-    <[u8; 32]>::from(digest).into()
 }
 
 #[cfg(test)]
@@ -291,6 +513,18 @@ mod tests {
                 let path = merkle_path(&digests, i);
                 assert_eq!(merkle_path_root(&digests[i], &path), root);
             }
+        }
+    }
+
+    #[test]
+    fn test_encode_decode() {
+        for length in 0..=128 {
+            let digests: Vec<Digest> = (0..length)
+                .map(|_| rand::random::<[u8; 32]>().into())
+                .collect();
+            let mmr = MerkleMountainRange::from_iter(digests);
+
+            assert_eq!(mmr, MerkleMountainRange::decode(mmr.encode()).unwrap());
         }
     }
 }

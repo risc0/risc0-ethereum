@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@ contract RiscZeroSetVerifierTest is Test {
     RiscZeroSetVerifier public setVerifier;
 
     function mockProveRoot(bytes32 root) internal view returns (RiscZeroReceipt memory) {
-        return verifier.mockProve(SET_BUILDER_IMAGE_ID, sha256(abi.encodePacked(SET_BUILDER_IMAGE_ID, root)));
+        return verifier.mockProve(
+            SET_BUILDER_IMAGE_ID, sha256(abi.encodePacked(SET_BUILDER_IMAGE_ID, uint256(1) << 255, root))
+        );
     }
 
     function submitRoot(bytes32 root) internal {

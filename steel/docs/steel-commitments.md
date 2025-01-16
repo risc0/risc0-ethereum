@@ -128,7 +128,7 @@ Note that EIP-4788 only provides access to the parent beacon root, requiring ite
 
 ---
 
-<----[How Does Steel Work?](./how-does-steel-work.md) | [Steel README](../README.md) ---->
+<----[How Does Steel Work?](./how-does-steel-work.md) | [Steel History](./steel-history.md) ---->
 
 [revm]: https://docs.rs/revm/latest/revm/
 [eth_getProof]: https://docs.alchemy.com/reference/eth-getproof

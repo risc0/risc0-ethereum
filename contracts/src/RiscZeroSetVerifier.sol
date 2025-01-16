@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ library RiscZeroSetVerifierLib {
 contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     using ReceiptClaimLib for ReceiptClaim;
 
-    /// Semantic version of the the RISC Zero Set Verifier.
+    /// Semantic version of the RISC Zero Set Verifier.
     string public constant VERSION = "0.2.0-alpha.1";
 
     IRiscZeroVerifier public immutable VERIFIER;
@@ -111,14 +111,20 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
         // even if the root was already verified earlier and stored in state.
         bytes32 root = MerkleProof.processProof(setVerifierSeal.path, claimDigest);
         if (setVerifierSeal.rootSeal.length > 0) {
-            VERIFIER.verify(setVerifierSeal.rootSeal, IMAGE_ID, sha256(abi.encode(IMAGE_ID, root)));
+            VERIFIER.verify(setVerifierSeal.rootSeal, IMAGE_ID, sha256(_encodeJournal(root)));
         } else if (!merkleRoots[root]) {
             revert VerificationFailed();
         }
     }
 
+    function _encodeJournal(bytes32 root) internal view returns (bytes memory) {
+        // The journal is the encoding of the guest state for a finalized Merkle mountain range.
+        // See GuestState in the risc0-aggregation crate for more information.
+        return abi.encodePacked(IMAGE_ID, uint256(1 << 255), root);
+    }
+
     function submitMerkleRoot(bytes32 root, bytes calldata seal) external {
-        VERIFIER.verify(seal, IMAGE_ID, sha256(abi.encode(IMAGE_ID, root)));
+        VERIFIER.verify(seal, IMAGE_ID, sha256(_encodeJournal(root)));
         merkleRoots[root] = true;
 
         emit VerifiedRoot(root, seal);

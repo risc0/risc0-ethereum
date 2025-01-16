@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -273,7 +273,7 @@ mod host {
     }
 }
 
-impl<'a, S, H> CallBuilder<S, &'a GuestEvmEnv<H>>
+impl<S, H> CallBuilder<S, &GuestEvmEnv<H>>
 where
     S: SolCall,
     H: EvmBlockHeader,

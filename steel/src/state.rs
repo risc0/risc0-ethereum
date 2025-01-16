@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ impl StateDb {
     }
 
     #[inline]
-    fn account(&self, address: Address) -> Option<StateAccount> {
+    pub(crate) fn account(&self, address: Address) -> Option<StateAccount> {
         self.state_trie
             .get_rlp(keccak256(address))
             .expect("Invalid encoded state trie value")
@@ -88,7 +88,7 @@ impl StateDb {
     }
 
     #[inline]
-    fn block_hash(&self, number: u64) -> B256 {
+    pub(crate) fn block_hash(&self, number: u64) -> B256 {
         let hash = self
             .block_hashes
             .get(&number)
@@ -97,7 +97,7 @@ impl StateDb {
     }
 
     #[inline]
-    fn storage_trie(&self, root: &B256) -> Option<&Rc<MerkleTrie>> {
+    pub(crate) fn storage_trie(&self, root: &B256) -> Option<&Rc<MerkleTrie>> {
         self.storage_tries.get(root)
     }
 }
