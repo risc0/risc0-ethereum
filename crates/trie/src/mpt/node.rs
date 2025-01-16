@@ -63,6 +63,7 @@ pub(super) enum Node<M> {
 }
 
 impl<M> PartialEq for Node<M> {
+    /// Equality between nodes ignores the cache.
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Node::Null, Node::Null) => true,

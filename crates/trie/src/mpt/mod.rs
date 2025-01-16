@@ -336,7 +336,7 @@ impl CachedTrie {
 }
 
 impl PartialEq for CachedTrie {
-    /// Equality between CachedTrie ignores the cache.
+    /// Equality between cached tries ignores the cache.
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.inner == other.inner
