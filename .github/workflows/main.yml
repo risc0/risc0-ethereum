@@ -55,6 +55,9 @@ jobs:
         run: |
           cargo fmt --all --check
           cargo sort --workspace --check
+      - name: cargo check risc0-ethereum guests
+        run: ../.github/scripts/cargo-check.sh
+        working-directory: crates
       - name: cargo check examples
         run: ../.github/scripts/cargo-check.sh
         working-directory: examples
@@ -105,14 +108,19 @@ jobs:
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
-          RISC0_SKIP_BUILD_KERNEL: true,
-      - name: cargo clippy $CARGO_LOCKED all examples
+          RISC0_SKIP_BUILD_KERNEL: true
+      - name: cargo clippy risc0-ethereum guests
+        run: ../.github/scripts/cargo-clippy.sh
+        working-directory: crates
+        env:
+          RUSTFLAGS: -Dwarnings
+      - name: cargo clippy examples
         run: ../.github/scripts/cargo-clippy.sh
         working-directory: examples
         env:
           RUSTFLAGS: -Dwarnings
           RISC0_SKIP_BUILD: true
-          RISC0_SKIP_BUILD_KERNEL: true,
+          RISC0_SKIP_BUILD_KERNEL: true
       - run: sccache --show-stats
 
   test-risc0-ethereum:
