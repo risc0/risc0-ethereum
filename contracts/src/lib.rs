@@ -148,3 +148,11 @@ impl IRiscZeroSetVerifierErrors {
         }
     }
 }
+
+#[cfg(all(not(target_os = "zkvm"), feature = "unstable"))]
+pub fn decode_seal(seal: &[u8]) -> Result<()> {
+    use alloy::primitives::Selector;
+
+    let selector = Selector::from_bytes([seal[0], seal[1], seal[2], seal[3]])
+        .ok_or_else(|| DecodingError::MissingData(0, "selector".to_string()))?;
+}
