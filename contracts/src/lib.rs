@@ -28,17 +28,15 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {
         pub mod set_verifier;
         pub mod event_query;
+        #[cfg(not(target_os = "zkvm"))]
+        pub mod selector;
     }
 }
 
 use core::str::FromStr;
 
 use anyhow::{bail, Result};
-use hex::FromHex;
-use risc0_zkvm::{
-    sha::{Digest, Digestible},
-    InnerReceipt,
-};
+use risc0_zkvm::{sha::Digestible, InnerReceipt};
 
 #[cfg(not(target_os = "zkvm"))]
 use alloy::{primitives::Bytes, sol_types::SolInterface, transports::TransportError};
@@ -110,33 +108,6 @@ pub fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>> {
         // TODO(victor): Add set verifier seal here.
     };
     Ok(seal)
-}
-
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum Selector {
-    FakeReceipt = 0x00000000,
-    Groth16V1_1 = 0x50bd1769,
-    Groth16V1_2 = 0xc101b42b,
-    SetVerifierV0_1 = 0xbfca9ccb,
-}
-
-impl Selector {
-    pub fn verifier_parameters_digest(self) -> Result<Digest> {
-        match self {
-            Selector::FakeReceipt => {
-                Err(anyhow::anyhow!("Fake receipt has no verifier parameters"))
-            }
-            Selector::Groth16V1_1 => Ok(Digest::from_hex(
-                "50bd1769093e74abda3711c315d84d78e3e282173f6304a33272d92abb590ef5",
-            )?),
-            Selector::Groth16V1_2 => Ok(Digest::from_hex(
-                "c101b42bcacd62e35222b1207223250814d05dd41d41f8cadc1f16f86707ae15",
-            )?),
-            Selector::SetVerifierV0_1 => Ok(Digest::from_hex("")?),
-        }
-    }
 }
 
 #[cfg(not(target_os = "zkvm"))]

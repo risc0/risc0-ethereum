@@ -29,7 +29,8 @@ use alloy::{
 };
 use anyhow::{bail, Context, Result};
 use risc0_aggregation::{
-    merkle_path_root, GuestOutput, Seal, SetInclusionReceipt, SetInclusionReceiptVerifierParameters,
+    merkle_path_root, GuestState, MerkleMountainRange, Seal, SetInclusionReceipt,
+    SetInclusionReceiptVerifierParameters,
 };
 use risc0_zkvm::{
     sha::{Digest, Digestible},
@@ -220,7 +221,11 @@ where
             .get_verified_root_seal(<[u8; 32]>::from(root).into())
             .await?;
 
-        let aggregation_set_journal = GuestOutput::new(set_builder_id, root).abi_encode();
+        let state = GuestState {
+            self_image_id: set_builder_id.into(),
+            mmr: MerkleMountainRange::new_finalized(root),
+        };
+        let aggregation_set_journal = state.encode();
         let aggregation_set_receipt_claim =
             ReceiptClaim::ok(set_builder_id, aggregation_set_journal.clone());
 

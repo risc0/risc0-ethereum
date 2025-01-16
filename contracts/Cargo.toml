@@ -18,13 +18,14 @@ anyhow = "1.0"
 alloy = { workspace = true, features = ["sol-types", "contract"] }
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
-hex = "0.4"
+hex = { workspace = true, optional = true }
 risc0-aggregation = { workspace = true }
 risc0-zkvm = { workspace = true }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
+hex = { workspace = true }
 regex = "1.10"
 tokio = { workspace = true, features = ["macros", "rt"] }
 
@@ -33,4 +34,4 @@ doctest = false
 
 [features]
 default = []
-unstable = []
+unstable = ["dep:hex", "risc0-aggregation/verify"]
