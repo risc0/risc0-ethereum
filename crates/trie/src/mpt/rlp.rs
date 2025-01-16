@@ -171,7 +171,7 @@ impl<M: Memoization> Node<M> {
         let mut root = match iterator.next() {
             None => return Ok(Self::default()),
             Some(rlp) => {
-                let mut node = alloy_rlp::decode_exact(rlp.as_ref())?;
+                let mut node: Node<M> = alloy_rlp::decode_exact(rlp.as_ref())?;
                 node.cache_set(RlpNode::from_rlp(rlp));
                 node
             }
@@ -211,7 +211,7 @@ impl<M: Memoization> Node<M> {
             }
             Node::Digest(digest) => {
                 if let Some(bytes) = rlp_by_digest.get(digest) {
-                    let mut node = alloy_rlp::decode_exact(bytes.as_ref())?;
+                    let mut node: Node<M> = alloy_rlp::decode_exact(bytes.as_ref())?;
                     node.cache_set(RlpNode::from_digest(digest));
                     *self = node;
                     self.resolve_digests(rlp_by_digest)?;
