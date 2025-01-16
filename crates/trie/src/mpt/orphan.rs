@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn leaf_orphan() {
-        let keys = vec![vec![0x00], vec![0x11]];
+        let keys = [vec![0x00], vec![0x11]];
         let key = &keys[0];
         let leaves = keys.iter().map(|k| (k, Bytes::from(B256::ZERO))).collect::<Vec<_>>();
 
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn extension_orphan() {
-        let keys = vec![vec![0x00], vec![0x10, 0x00], vec![0x10, 0x01]];
+        let keys = [vec![0x00], vec![0x10, 0x00], vec![0x10, 0x01]];
         let key = &keys[0];
         let leaves = keys.iter().map(|k| (k, Bytes::from(B256::ZERO))).collect::<Vec<_>>();
 
@@ -228,7 +228,7 @@ mod tests {
 
     #[test]
     fn unresolvable_orphan() {
-        let keys = vec![vec![0x00], vec![0x10], vec![0x11]];
+        let keys = [vec![0x00], vec![0x10], vec![0x11]];
         let key = &keys[0];
         let leaves = keys.iter().map(|k| (k, Bytes::from(B256::ZERO))).collect::<Vec<_>>();
 

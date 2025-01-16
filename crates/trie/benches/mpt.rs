@@ -111,7 +111,7 @@ fn create_trie(leaves: &BTreeMap<B256, Bytes>) -> Trie {
     _ = hb.root();
 
     let proofs = hb.take_proof_nodes().into_nodes_sorted().into_iter().map(|node| node.1);
-    Trie::from_rlp(proofs.clone()).unwrap()
+    Trie::from_rlp(proofs).unwrap()
 }
 
 criterion_group!(benches, trie, cached_trie);
