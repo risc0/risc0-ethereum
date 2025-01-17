@@ -47,8 +47,8 @@ This documentation covers the core concepts of Steel. After reading, you will un
 
 The RISC Zero [dev docs][dev-docs] are a great place to start to understand the zkVM in detail. If you have any questions, and/or just want to hang out with other builders, please join the [RISC Zero Discord][risczero-discord].
 
-[Steel examples]: ../examples
-[ERC20 Counter]: ../examples/erc20-counter
+[Steel examples]: ../../examples
+[ERC20 Counter]: ../../examples/erc20-counter
 [create-steel-app]: docs/create-steel-app
 [video tutorial]: https://www.loom.com/share/0e2ede7b9d50464fb729819a8bd24e05?sid=3009618b-38ea-449a-90dc-9b39ef569c67
 [Introducing Steel 1.0]: https://risczero.com/blog/introducing-steel-1.0
