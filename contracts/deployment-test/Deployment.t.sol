@@ -25,6 +25,9 @@ import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../sr
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 
+// TODO: Actually send a known good receipt to test each verifier implementation.
+// TODO: Check the image ID and ELF URL on the set verifier contract.
+
 /// Test designed to be run against a chain with an active deployment of the RISC Zero contracts.
 /// Checks that the deployment matches what is recorded in the deployment.toml file.
 contract DeploymentTest is Test {
@@ -117,11 +120,37 @@ contract DeploymentTest is Test {
                 continue;
             }
 
-            IRiscZeroVerifier verifierImpl = router.getVerifier(verifierConfig.selector);
-            require(address(verifierImpl) != address(0), "verifier impl returned the zero address");
+            IRiscZeroVerifier routedVerifier = router.getVerifier(verifierConfig.selector);
+            require(address(routedVerifier) != address(0), "verifier router returned the zero address");
+            require(
+                address(routedVerifier) == address(verifierConfig.estop), "verifier router returned the wrong address"
+            );
+        }
+    }
+
+    function testVerifierEstopsProperlyConfigured() external view {
+        for (uint256 i = 0; i < deployment.verifiers.length; i++) {
+            VerifierDeployment storage verifierConfig = deployment.verifiers[i];
+            console2.log(
+                "Checking for confgiuration of verifier with selector %x and version %s",
+                uint256(uint32(verifierConfig.selector)),
+                verifierConfig.version
+            );
+
+            RiscZeroVerifierEmergencyStop verifierEstop = RiscZeroVerifierEmergencyStop(verifierConfig.estop);
+            require(address(verifierEstop) != address(0), "verifier estop is the zero address");
+            require(
+                keccak256(address(verifierEstop).code) != keccak256(bytes("")), "verifier estop has no deployed code"
+            );
+            require(!verifierEstop.paused(), "verifier estop is paused");
+
+            IRiscZeroVerifier verifierImpl = verifierEstop.verifier();
+            console2.log("verifier implementation is at %s", address(verifierImpl));
+            require(address(verifierImpl) != address(0), "verifier impl is the zero address");
+            require(address(verifierImpl) == address(verifierConfig.verifier), "verifier impl is the wrong address");
             require(keccak256(address(verifierImpl).code) != keccak256(bytes("")), "verifier impl has no deployed code");
-            address verifierImplAddress = address(RiscZeroVerifierEmergencyStop(address(verifierImpl)).verifier());
-            IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(verifierImplAddress);
+
+            IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(address(verifierImpl));
             require(verifierConfig.selector == verifierSelectable.SELECTOR(), "selector mismatch");
         }
     }
