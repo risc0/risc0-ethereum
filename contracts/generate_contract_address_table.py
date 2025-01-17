@@ -85,7 +85,7 @@ def main(toml_file, version):
     for chain_key, chain_data in config.get("chains", {}).items():
         # Skip generation of the table chains where deployment did not succeed.
         # See notes in deployment.toml.
-        if chain_key in ("polygon-zkevm-testnet", "linea-sepolia"):
+        if chain_key in ("polygon-zkevm-testnet",):
             continue
 
         # Generate markdown content for the chain
