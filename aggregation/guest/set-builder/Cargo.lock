@@ -1342,7 +1342,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-aggregation"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
