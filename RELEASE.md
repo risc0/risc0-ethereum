@@ -50,7 +50,7 @@
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
-   Also tag the release as `steel-v0.X.Y`, as long as Steel is pre-1.0 and so on a different version than the rest of the crates.
+   Also tag the release as `aggregation-v0.X.Y`, as long as `risc0-aggregation` is pre-1.0 and so on a different version than the rest of the crates.
 
    Include a summary of the changes in the release notes.
 
@@ -63,6 +63,7 @@
      > NOTE: risc0-steel currently cannot be published to crates.io.
      > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
 
+   * `risc0-aggregation`
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
 
@@ -112,3 +113,5 @@
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 
 6. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
+
+7. Update and test the `create-steel-app` script.

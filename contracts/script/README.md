@@ -62,19 +62,18 @@ export CHAIN_KEY="anvil"
 Set the chain you are operating on by the key from the `deployment.toml` file.
 An example chain key is "ethereum-sepolia", and you can look at `deployment.toml` for the full list.
 
-> TODO: Instead of reading these into environment variables, we can have the Forge script directly read them from the TOML file.
-
 ```zsh
 export CHAIN_KEY="xxx-testnet"
 ```
 
-Set your RPC URL, public and private key, and Etherscan API key:
+**Based on the chain key, the `manage` script will automatically load environment variables from deployment.toml and deployment_secrets.toml**
+
+If the chain you are deploying to is not in `deployment_secrets.toml`, set your RPC URL, public and private key, and Etherscan API key:
 
 ```bash
 export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" contracts/deployment_secrets.toml | tee /dev/stderr)
 export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" contracts/deployment.toml | tee /dev/stderr)
 export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" contracts/deployment_secrets.toml | tee /dev/stderr)
-export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" contracts/deployment.toml | tee /dev/stderr)
 ```
 
 > [!TIP]
@@ -86,19 +85,6 @@ Example RPC URLs:
 
 * `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY`
 * `https://sepolia.infura.io/v3/YOUR_API_KEY`
-
-If the timelock and router contracts are already deployed, you can also load their addresses:
-
-```zsh
-export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
-export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
-```
-
-> TIP: If you want to see a contract in Etherscan, you can run a command like the example below:
->
-> ```zsh
-> open ${ETHERSCAN_URL:?}/address/${TIMELOCK_CONTROLLER:?}
-> ```
 
 ### Fireblocks
 
@@ -165,7 +151,10 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
 
     This will result in two transactions sent from the deployer address.
 
-3. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+3. ~~Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.~~
+
+    > [!WARNING]
+    > The verify functionality appears to be broken see #393
 
 4. Save the contract addresses to `deployment.toml`.
 
@@ -176,18 +165,10 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
     export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
     ```
 
-5. Test the deployment:
+5. Test the deployment.
 
-    ```bash
-    cast call --rpc-url ${RPC_URL:?} \
-        ${TIMELOCK_CONTROLLER:?} \
-        'getMinDelay()(uint256)'
-    1
-
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ROUTER:?} \
-        'owner()(address)'
-    0x5FbDB2315678afecb367f032d93F642f64180aa3
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 ## Deploy a verifier with emergency stop mechanism
@@ -196,18 +177,9 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Deploy the verifier
 
-1. Set the verifier selector for the verifier you will be deploying:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry run deployment of verifier and estop:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
-    ```
-
-2. Dry run deployment of verifier and estop:
-
-    ```zsh
-    VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
     bash contracts/script/manage DeployEstopVerifier
     ```
 
@@ -218,7 +190,7 @@ This is a two-step process, guarded by the `TimelockController`.
     > Also check the chain ID to ensure you are deploying to the chain you expect.
     > And check the selector to make sure it matches what you expect.
 
-3. Send deployment transactions for verifier and estop by running the command again with `--broadcast`.
+2. Send deployment transactions for verifier and estop by running the command again with `--broadcast`.
 
     This will result in two transactions sent from the deployer address.
 
@@ -226,42 +198,26 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
-4. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+3. ~~Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.~~
 
-5. Add the addresses for the newly deployed contract to the `deployment.toml` file.
+    > [!WARNING]
+    > The verify functionality appears to be broken see #393
 
-    Load the deployed addresses into the environment:
+4. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
-    ```zsh
-    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
-    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
-    ```
-
-6. Test the deployment.
+5. Test the deployment.
 
     ```console
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'paused()(bool)'
-    false
-
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'owner()(address)'
-    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
-7. Dry run the operation to schedule the operation to add the verifier to the router.
-
-    Fill in the addresses for the relevant chain below.
-    `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
+6. Dry run the operation to schedule the operation to add the verifier to the router.
 
     ```zsh
-    bash contracts/script/manage ScheduleAddVerifier
+    VERIFIER_SELECTOR="0x..." bash contracts/script/manage ScheduleAddVerifier
     ```
 
-8. Send the transaction for the scheduled update by running the command again with `--broadcast`.
+7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
 
     This will send one transaction from the admin address.
 
@@ -272,34 +228,22 @@ This is a two-step process, guarded by the `TimelockController`.
 
 After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
 
-Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
-
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry the transaction to execute the add verifier operation:
 
     ```zsh
-    export VERIFIER_SELECTOR="0x..."
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
+    VERIFIER_SELECTOR="0x..." bash contracts/script/manage FinishAddVerifier
     ```
 
-2. Dry the transaction to execute the add verifier operation:
-
-    ```zsh
-    bash contracts/script/manage FinishAddVerifier
-    ```
-
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
+3. Remove the `unroutable` field from the selected verifier.
+
 4. Test the deployment.
 
-    ```bash
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ROUTER:?} \
-        'getVerifier(bytes4)(address)' ${VERIFIER_SELECTOR:?}
-    0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 ## Deploy a set verifier with emergency stop mechanism
@@ -313,25 +257,16 @@ This is a two-step process, guarded by the `TimelockController`.
    To generate a deterministic image ID run (from the repo root folder):
 
    ```zsh
-   RISC0_USE_DOCKER=true cargo build
+   cargo risczero build --manifest-path aggregation/guest/set-builder/Cargo.toml
    ```
 
-   > [!NOTE]
-   > This will populate the image ID in the `contracts/src/SetBuilderImageID.sol`.
-   > You can then upload the file located in `target/riscv-guest/riscv32im-risc0-zkvm-elf/docker/set_builder/set-builder`
-   > to some HTTP server (such as Pinata) and get back a download URL.
-   > Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
+   This will output the image ID and file location.
+   Upload the ELF to some public HTTP location (such as Pinata), and get back a download URL.
+   Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
 
-2. Set the verifier selector for the `RiscZeroSetVerifier` contract you will be deploying:
+2. Dry run deployment of the set verifier and estop:
 
    ```zsh
-   export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
-   ```
-
-3. Dry run deployment of the set verifier and estop:
-
-   ```zsh
-   VERIFIER_ESTOP_OWNER=${ADMIN_ADDRESS:?} \
    bash contracts/script/manage DeployEstopSetVerifier
    ```
 
@@ -342,7 +277,7 @@ This is a two-step process, guarded by the `TimelockController`.
    > Also check the chain ID to ensure you are deploying to the chain you expect.
    > And check the selector to make sure it matches what you expect.
 
-4. Send deployment transactions for the set verifier by running the command again with `--broadcast`.
+3. Send deployment transactions for the set verifier by running the command again with `--broadcast`.
 
     This will result in two transactions sent from the deployer address.
 
@@ -350,42 +285,27 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
-5. Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.
+4. ~~Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.~~
 
-6. Add the addresses for the newly deployed contract to the `deployment.toml` file.
+    > [!WARNING]
+    > The verify functionality appears to be broken see #393
 
-    Load the deployed addresses into the environment:
-
-    ```zsh
-    export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
-    export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
-    ```
-
-6. Test the deployment.
+5. Test the deployment.
 
     ```console
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'paused()(bool)'
-    false
-
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'owner()(address)'
-    0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
-7. Dry run the operation to schedule the operation to add the verifier to the router.
+6. Dry run the operation to schedule the operation to add the verifier to the router.
 
    Fill in the addresses for the relevant chain below.
-   `ADMIN_PUBLIC_KEY` should be set to the Fireblocks admin address.
+   `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
 
    ```zsh
    bash contracts/script/manage ScheduleAddVerifier
    ```
 
-8. Send the transaction for the scheduled update by running the command again with `--broadcast`.
+7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
 
    This will send one transaction from the admin address.
 
@@ -396,13 +316,10 @@ This is a two-step process, guarded by the `TimelockController`.
 
 After the delay on the timelock controller has pass, the operation to add the new set verifier to the router can be executed.
 
-Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
-
 1. Set the verifier selector and estop address for the set verifier:
 
     ```zsh
     export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
 2. Dry the transaction to execute the add verifier operation:
@@ -415,13 +332,10 @@ Make sure to set `TIMELOCK_CONTROLLER` and `VERIFIER_ROUTER`.
 
     This will send one transaction from the admin address.
 
-4. Test the deployment.
+5. Test the deployment.
 
-    ```bash
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ROUTER:?} \
-        'getVerifier(bytes4)(address)' ${VERIFIER_SELECTOR:?}
-    0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 ## Remove a verifier
@@ -468,13 +382,12 @@ This is a two-step process, guarded by the `TimelockController`.
 
     This will send one transaction from the admin address.
 
-4. Confirm it was removed.
+4. Update `deployment.toml` and set `unroutable = true` on the removed verifier.
 
-    ```bash
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ROUTER:?} \
-        'getVerifier(bytes4)(address)' ${VERIFIER_SELECTOR:?}
-    Error: ... execution reverted
+5. Test the deployment.
+
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 ## Update the TimelockController minimum delay
@@ -509,13 +422,10 @@ Execute the action:
 
     This will send one transaction from the admin address.
 
-3. Confirm the update.
+5. Test the deployment.
 
-    ```bash
-    cast call --rpc-url ${RPC_URL:?} \
-        ${TIMELOCK_CONTROLLER:?} \
-        'getMinDelay()(uint256)'
-    10
+    ```console
+    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
 ## Cancel a scheduled timelock operation
