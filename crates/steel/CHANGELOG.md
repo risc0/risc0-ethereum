@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
+## [1.3.0](https://github.com/risc0/risc0-ethereum/releases/tag/v1.3.0)
+
+### ⚡️ Features
+
 - Introduce the `SteelVerifier`, which acts as a built-in Steel `Contract` to verify Steel commitments. It is used like any other `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-verifier` feature.
 
 ## [1.2.0](https://github.com/risc0/risc0-ethereum/releases/tag/v1.2.0)
