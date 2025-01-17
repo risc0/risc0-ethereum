@@ -316,7 +316,7 @@ This is a two-step process, guarded by the `TimelockController`.
 7. Dry run the operation to schedule the operation to add the verifier to the router.
 
    Fill in the addresses for the relevant chain below.
-   `ADMIN_PUBLIC_KEY` should be set to the Fireblocks admin address.
+   `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
 
    ```zsh
    bash contracts/script/manage ScheduleAddVerifier
@@ -438,7 +438,7 @@ This is a two-step process, guarded by the `TimelockController`.
 7. Dry run the operation to schedule the operation to add the verifier to the router.
 
    Fill in the addresses for the relevant chain below.
-   `ADMIN_PUBLIC_KEY` should be set to the Fireblocks admin address.
+   `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
 
    ```zsh
    bash contracts/script/manage ScheduleAddVerifier
