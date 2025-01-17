@@ -15,7 +15,7 @@
        > Here is a command to help find all the Cargo.toml files that need to be updated
        >
        > ```
-       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./target' .
+       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./crates/ffi/guests' --exclude-dir='./target' .
        > ```
 
      * Update the version string in contracts that contain it:

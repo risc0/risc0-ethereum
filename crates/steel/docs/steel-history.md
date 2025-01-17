@@ -105,7 +105,7 @@ risc0-steel = { git = "https://github.com/risc0/risc0-ethereum.git", tag = "vX.Y
 [beacon chain]: https://ethereum.org/en/roadmap/beacon-chain/
 [Steel Commitments]: ./steel-commitments.md
 [Cancun upgrade]: https://ethereum.org/en/history/#cancun-summary
-[publisher.rs]: ../../examples/erc20-counter/apps/src/bin/publisher.rs
-[erc20-counter]: ../../examples/erc20-counter/README.md
-[publisher app]: ../../examples/erc20-counter/apps/README.md
-[Cargo.toml]: ../../examples/erc20-counter/apps/Cargo.toml
+[publisher.rs]: ../../../examples/erc20-counter/apps/src/bin/publisher.rs
+[erc20-counter]: ../../../examples/erc20-counter/README.md
+[publisher app]: ../../../examples/erc20-counter/apps/README.md
+[Cargo.toml]: ../../../examples/erc20-counter/apps/Cargo.toml
