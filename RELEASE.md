@@ -23,7 +23,7 @@
        * `contracts/src/RiscZeroSetVerifier.sol`
      * Update references to the `main` branch
        * Search for `risc0/risc0-ethereum/refs/heads/main`
-     * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
+     * Update `crates/steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
 
