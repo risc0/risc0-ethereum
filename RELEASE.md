@@ -45,8 +45,7 @@
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
        * `contracts/src/RiscZeroSetVerifier.sol`
-     * Update `steel/CHANGELOG.md` to start a new section for the next release.
-     * Update the value of `RISC0_MONOREPO_REF` in `.github/workflow` files to the matching monorepo branch.
+     * Update `crates/steel/CHANGELOG.md` to start a new section for the next release.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 

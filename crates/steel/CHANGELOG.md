@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+<!-- TODO: Add link when release is finished -->
+## [1.3.0]
+
 ### ⚡️ Features
 
 - Introduce the `SteelVerifier`, which acts as a built-in Steel `Contract` to verify Steel commitments. It is used like any other `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-verifier` feature.
