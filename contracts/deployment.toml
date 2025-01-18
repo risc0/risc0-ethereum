@@ -471,12 +471,6 @@ timelock-controller = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 timelock-delay = 1
 router = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
-# NOTE: As of the 1.1.0-rc.2 deployment on August 21, Forge could not verify the contracts.
-# Apparent issue is that because Linea Sepolia is not in the list of chains named in alloy-chains, Forge doesn't know its Etherscan API URL.
-
-# NOTE: As of the 1.1.0-rc.3 Deployment on August 29, Fireblocks does not support sending transactions to Linea Sepolia.
-# As a result, the router is deployed, but it is empty and useless.
-
 [[chains.linea-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "1.1.0-rc.2"
@@ -488,7 +482,6 @@ estop = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 [[chains.linea-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "1.1.0-rc.3"
-unroutable = true
 selector = "0x50bd1769"
 verifier = "0xf70aBAb028Eb6F4100A24B203E113D94E87DE93C"
 estop = "0x44c220f0598345195cE99AD6A57aDfFcb9Ea33e7"
@@ -500,7 +493,6 @@ version = "1.2.0"
 selector = "0xc101b42b"
 verifier = "0x8C8b557C6EBDA8E6D62E7b54B7B5Ed8cFa8B48B4"
 estop = "0x61b97ad01416183bd5A4F039baaAb6b75bdC99E4"
-unroutable = true # remove when added to the router
 
 ###
 
