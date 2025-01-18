@@ -17,7 +17,7 @@ N.B. Please make sure to run `foundryup` to update to the latest Foundry version
 ## Usage
 
 ```sh
-sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/steel/docs/create-steel-app/create-steel-app)
+sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/release-1.3/crates/steel/docs/create-steel-app/create-steel-app)
 ```
 
 Once the script is finished running, you should:
@@ -42,7 +42,7 @@ At this point, you will be able to test against a local deployment by running th
 `./test-local-deployment.sh`
 
 [create-steel-app]: create-steel-app
-[erc20-counter]: https://github.com/risc0/risc0-ethereum/tree/main/examples/erc20-counter
+[erc20-counter]: https://github.com/risc0/risc0-ethereum/tree/release-1.3/examples/erc20-counter
 [documentation]: ../../README.md#documentation
 [Rust]: https://www.rust-lang.org/tools/install
 [Foundry]: https://book.getfoundry.sh/getting-started/installation
