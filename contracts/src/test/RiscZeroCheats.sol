@@ -63,7 +63,7 @@ abstract contract RiscZeroCheats is CommonBase {
         imageRunnerInput[i++] = "run";
         imageRunnerInput[i++] = "--locked";
         imageRunnerInput[i++] = "--manifest-path";
-        imageRunnerInput[i++] = "lib/risc0-ethereum/ffi/Cargo.toml";
+        imageRunnerInput[i++] = "lib/risc0-ethereum/crates/ffi/Cargo.toml";
         imageRunnerInput[i++] = "--bin";
         imageRunnerInput[i++] = "risc0-forge-ffi";
         imageRunnerInput[i++] = "-q";
