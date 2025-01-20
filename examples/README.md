@@ -1,4 +1,5 @@
 # Examples
+This directory includes three example uses of Steel. Each example demonstrates a different concept of Steel. 
 
 ## [ERC20 Balance Query](./erc20/README.md)
 
