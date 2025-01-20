@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ abstract contract RiscZeroCheats is CommonBase {
         imageRunnerInput[i++] = "run";
         imageRunnerInput[i++] = "--locked";
         imageRunnerInput[i++] = "--manifest-path";
-        imageRunnerInput[i++] = "lib/risc0-ethereum/ffi/Cargo.toml";
+        imageRunnerInput[i++] = "lib/risc0-ethereum/crates/ffi/Cargo.toml";
         imageRunnerInput[i++] = "--bin";
         imageRunnerInput[i++] = "risc0-forge-ffi";
         imageRunnerInput[i++] = "-q";
