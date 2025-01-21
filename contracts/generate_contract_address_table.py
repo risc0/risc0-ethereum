@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2024 RISC Zero, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,7 +85,7 @@ def main(toml_file, version):
     for chain_key, chain_data in config.get("chains", {}).items():
         # Skip generation of the table chains where deployment did not succeed.
         # See notes in deployment.toml.
-        if chain_key in ("polygon-zkevm-testnet", "linea-sepolia"):
+        if chain_key in ("polygon-zkevm-testnet",):
             continue
 
         # Generate markdown content for the chain
@@ -93,7 +94,7 @@ def main(toml_file, version):
 
     all_md_content += f"[router-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/RiscZeroVerifierRouter.sol\n"
     all_md_content += f"[verifier-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/groth16/RiscZeroGroth16Verifier.sol\n"
-    all_md_content += f"[estop-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/groth16/RiscZeroVerifierEmergencyStop.sol\n"
+    all_md_content += f"[estop-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/RiscZeroVerifierEmergencyStop.sol\n"
 
     all_md_content += "\n<!-- GENERATED CONTENT END-->"
 

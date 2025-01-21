@@ -3,9 +3,8 @@ src = "src"
 out = "out"
 test = "test"
 libs = ["../lib"]
-
-# Allow use of the ffi cheatcode in tests.
-ffi = true
+fs_permissions = [{ access = "read", path = "deployment.toml" }]
+ffi = true # Allow use of the ffi cheatcode in tests.
 
 # Compiler options
 
@@ -28,6 +27,5 @@ quote_style = "double"
 [profile.deployment-test]
 test = "./deployment-test"
 #match_path = "contracts/deployment-test/*"
-fs_permissions = [{ access = "read", path = "deployment.toml" }]
 
 # See more config options https://book.getfoundry.sh/static/config.default.toml

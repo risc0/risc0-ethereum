@@ -15,7 +15,7 @@
        > Here is a command to help find all the Cargo.toml files that need to be updated
        >
        > ```
-       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./target' .
+       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./crates/ffi/guests' --exclude-dir='./target' .
        > ```
 
      * Update the version string in contracts that contain it:
@@ -23,7 +23,7 @@
        * `contracts/src/RiscZeroSetVerifier.sol`
      * Update references to the `main` branch
        * Search for `risc0/risc0-ethereum/refs/heads/main`
-     * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
+     * Update `crates/steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
 
@@ -45,12 +45,11 @@
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
        * `contracts/src/RiscZeroSetVerifier.sol`
-     * Update `steel/CHANGELOG.md` to start a new section for the next release.
-     * Update the value of `RISC0_MONOREPO_REF` in `.github/workflow` files to the matching monorepo branch.
+     * Update `crates/steel/CHANGELOG.md` to start a new section for the next release.
 
 3. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
-   Also tag the release as `steel-v0.X.Y`, as long as Steel is pre-1.0 and so on a different version than the rest of the crates.
+   Also tag the release as `aggregation-v0.X.Y`, as long as `risc0-aggregation` is pre-1.0 and so on a different version than the rest of the crates.
 
    Include a summary of the changes in the release notes.
 
@@ -63,6 +62,7 @@
      > NOTE: risc0-steel currently cannot be published to crates.io.
      > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
 
+   * `risc0-aggregation`
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
 
@@ -112,3 +112,5 @@
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 
 6. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
+
+7. Update and test the `create-steel-app` script.
