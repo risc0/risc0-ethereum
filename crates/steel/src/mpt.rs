@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt::Debug;
+use std::{fmt, fmt::Debug};
 
 use alloy_primitives::{b256, keccak256, map::B256HashMap, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
@@ -67,6 +67,12 @@ impl MerkleTrie {
         }
     }
 
+    /// Gets an iterator over the values of the trie, sorted by key.
+    #[inline]
+    pub fn values(&self) -> Iter {
+        Iter::new(&self.0)
+    }
+
     /// Creates a new trie from the given RLP encoded nodes.
     ///
     /// The first node provided must always be the root node. The remaining nodes can be in any
@@ -101,7 +107,10 @@ impl MerkleTrie {
     /// Creates a new trie corresponding to the given digest.
     #[inline]
     pub fn from_digest(digest: B256) -> Self {
-        MerkleTrie(Node::Digest(digest))
+        match digest {
+            EMPTY_ROOT_HASH => MerkleTrie::default(),
+            _ => MerkleTrie(Node::Digest(digest)),
+        }
     }
 }
 
@@ -298,6 +307,52 @@ impl Encodable for NodeRef<'_> {
                 }
             }
         }
+    }
+}
+
+/// An iterator over the entries of a `MerkleTrie`.
+///
+/// This `struct` is created by the [`values`] method on [`MerkleTrie`]. See its
+/// documentation for more.
+///
+/// [`values`]: MerkleTrie::values
+#[derive(Clone, Default)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct Iter<'a> {
+    stack: Vec<&'a Node>,
+}
+
+impl Debug for Iter<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_list().entries(self.clone()).finish()
+    }
+}
+
+impl<'a> Iter<'a> {
+    fn new(root: &'a Node) -> Self {
+        Self { stack: vec![root] }
+    }
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(node) = self.stack.pop() {
+            match node {
+                Node::Null | Node::Digest(_) => {}
+                Node::Leaf(_, value) => return Some(value),
+                Node::Extension(_, child) => self.stack.push(child),
+                Node::Branch(children) => {
+                    for child in children.iter().rev().flatten() {
+                        if !matches!(**child, Node::Null | Node::Digest(_)) {
+                            self.stack.push(child);
+                        }
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
@@ -543,7 +598,9 @@ mod tests {
         // generate proofs only for every second leaf
         let proof_keys = leaves.keys().step_by(2).cloned().collect();
         let mut hasher = HashBuilder::default().with_proof_retainer(proof_keys);
-        leaves.into_iter().for_each(|(k, v)| hasher.add_leaf(k, &v));
+        leaves
+            .iter()
+            .for_each(|(k, v)| hasher.add_leaf(k.clone(), v));
         let exp_hash = hasher.root();
 
         // reconstruct the trie from the RLP encoded proofs and verify the root hash
@@ -556,6 +613,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(mpt.hash_slow(), exp_hash);
+
+        assert!(mpt.values().eq(leaves.values().step_by(2)));
     }
 
     #[test]

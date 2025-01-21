@@ -23,14 +23,15 @@ use alloy::{
     providers::Provider,
     transports::{Transport, TransportError},
 };
-use alloy_primitives::{map::B256HashMap, Address, BlockHash, B256, U256};
+use alloy_primitives::{map::B256HashMap, Address, BlockHash, Log, B256, U256};
+use alloy_rpc_types::Filter;
 use revm::{
     primitives::{AccountInfo, Bytecode},
-    Database,
+    Database as RevmDatabase,
 };
 use tokio::runtime::Handle;
 
-/// A revm [Database] backed by an alloy [Provider].
+/// A revm [RevmDatabase] backed by an alloy [Provider].
 ///
 /// When accessing the database, it'll use the given provider to fetch the corresponding account's
 /// data. It will block the current thread to execute provider calls, Therefore, its methods
@@ -91,7 +92,7 @@ pub enum Error {
     BlockNotFound,
 }
 
-impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T, N, P> {
+impl<T: Transport + Clone, N: Network, P: Provider<T, N>> RevmDatabase for AlloyDb<T, N, P> {
     type Error = Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
@@ -169,5 +170,17 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         let block = block_response.ok_or(Error::BlockNotFound)?;
 
         Ok(block.header().hash())
+    }
+}
+
+impl<T: Transport + Clone, N: Network, P: Provider<T, N>> crate::EvmDatabase for AlloyDb<T, N, P> {
+    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+        assert_eq!(filter.get_block_hash(), Some(self.block_hash));
+        let rpc_logs = self
+            .handle
+            .block_on(self.provider.get_logs(&filter))
+            .map_err(|err| Error::Rpc("eth_getLogs", err))?;
+
+        Ok(rpc_logs.into_iter().map(|log| log.inner).collect())
     }
 }

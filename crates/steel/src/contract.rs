@@ -284,7 +284,7 @@ where
     /// required.
     pub fn try_call(self) -> Result<S::Return, String> {
         let mut evm = new_evm::<_, H>(
-            WrapStateDb::new(self.env.db()),
+            WrapStateDb::new(self.env.db(), &self.env.header),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );

@@ -20,7 +20,7 @@ use crate::{
     serde::RlpHeader,
     EvmBlockHeader, EvmEnv, EvmInput,
 };
-use alloy_primitives::{BlockNumber, B256, U256};
+use alloy_primitives::{BlockNumber, Bloom, B256, U256};
 use revm::primitives::{BlockEnv, SpecId};
 
 /// The Ethereum Sepolia [ChainSpec].
@@ -78,6 +78,14 @@ impl EvmBlockHeader for EthBlockHeader {
     #[inline]
     fn state_root(&self) -> &B256 {
         &self.inner().state_root
+    }
+    #[inline]
+    fn receipts_root(&self) -> &B256 {
+        &self.inner().receipts_root
+    }
+    #[inline]
+    fn logs_bloom(&self) -> &Bloom {
+        &self.inner().logs_bloom
     }
 
     #[inline]

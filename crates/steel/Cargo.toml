@@ -15,8 +15,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 alloy = { workspace = true, optional = true, features = ["full"] }
 alloy-consensus = { workspace = true }
+alloy-eips = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
+alloy-rpc-types = { workspace = true }
 alloy-sol-types = { workspace = true }
 alloy-trie = { workspace = true, features = ["serde"] }
 anyhow = { workspace = true }

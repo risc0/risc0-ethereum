@@ -24,16 +24,21 @@
 pub use alloy;
 
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{uint, BlockNumber, Sealable, Sealed, B256, U256};
+use alloy_primitives::{uint, BlockNumber, Bloom, Log, Sealable, Sealed, B256, U256};
+use alloy_rpc_types::Filter;
 use alloy_sol_types::SolValue;
 use config::ChainSpec;
-use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
+use revm::{
+    primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId},
+    Database as RevmDatabase,
+};
 
 pub mod beacon;
 mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
+mod event;
 #[cfg(feature = "unstable-history")]
 pub mod history;
 #[cfg(not(feature = "unstable-history"))]
@@ -50,6 +55,7 @@ mod verifier;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
+pub use event::Event;
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
 
@@ -122,6 +128,15 @@ impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
     }
 }
 
+/// A database abstraction for the Steel EVM.
+pub trait EvmDatabase: RevmDatabase {
+    /// Retrieves all the logs matching the given [Filter].
+    ///
+    /// It returns an error, if the corresponding logs cannot be retrieved from DB.
+    /// The filter must match the block hash corresponding to the DB, it will panic otherwise.
+    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error>;
+}
+
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H, Commitment>;
 
@@ -159,7 +174,6 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
         self.db.as_ref().unwrap()
     }
 
-    #[allow(dead_code)]
     pub(crate) fn db_mut(&mut self) -> &mut D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_mut().unwrap()
@@ -203,6 +217,10 @@ pub trait EvmBlockHeader: Sealable {
     fn timestamp(&self) -> u64;
     /// Returns the state root hash.
     fn state_root(&self) -> &B256;
+    /// Returns the receipts root hash of the block.
+    fn receipts_root(&self) -> &B256;
+    /// Returns the logs bloom filter of the block
+    fn logs_bloom(&self) -> &Bloom;
 
     /// Fills the EVM block environment with the header's data.
     fn fill_block_env(&self, blk_env: &mut BlockEnv);

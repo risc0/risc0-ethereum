@@ -13,30 +13,33 @@
 // limitations under the License.
 
 use super::{provider::ProviderDb, AlloyDb};
-use crate::MerkleTrie;
+use crate::{event, MerkleTrie};
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
-    network::{primitives::BlockTransactionsKind, BlockResponse, Network},
+    network::{primitives::BlockTransactionsKind, BlockResponse, Ethereum, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
 };
+use alloy_consensus::{Receipt, ReceiptEnvelope, ReceiptWithBloom, TxReceipt};
 use alloy_primitives::{
     map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashSet},
-    Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256,
+    Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, B256, U256,
 };
+use alloy_rpc_types::{Filter, TransactionReceipt};
 use anyhow::{ensure, Context, Result};
 use revm::{
     primitives::{AccountInfo, Bytecode},
-    Database,
+    Database as RevmDatabase,
 };
 
-/// A simple revm [Database] wrapper that records all DB queries.
+/// A simple revm [RevmDatabase] wrapper that records all DB queries.
 pub struct ProofDb<D> {
     accounts: AddressHashMap<B256HashSet>,
     contracts: B256HashMap<Bytes>,
     block_hash_numbers: HashSet<BlockNumber>,
+    logs: Vec<Filter>,
     proofs: AddressHashMap<AccountProof>,
     inner: D,
 }
@@ -55,13 +58,14 @@ struct StorageProof {
     proof: Vec<Bytes>,
 }
 
-impl<D: Database> ProofDb<D> {
-    /// Creates a new ProofDb instance, with a [Database].
+impl<D> ProofDb<D> {
+    /// Creates a new ProofDb instance, with a [RevmDatabase].
     pub fn new(db: D) -> Self {
         Self {
             accounts: Default::default(),
             contracts: Default::default(),
             block_hash_numbers: Default::default(),
+            logs: Default::default(),
             proofs: Default::default(),
             inner: db,
         }
@@ -79,7 +83,7 @@ impl<D: Database> ProofDb<D> {
         &self.contracts
     }
 
-    /// Returns the underlying [Database].
+    /// Returns the underlying [RevmDatabase].
     pub fn inner(&self) -> &D {
         &self.inner
     }
@@ -113,7 +117,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
         Ok(())
     }
 
-    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
+    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [RevmDatabase].
     pub async fn ancestor_proof(
         &self,
         block_number: BlockNumber,
@@ -137,10 +141,12 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
-    /// recorded by the [Database].
+    /// recorded by the [RevmDatabase].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         ensure!(
-            !self.accounts.is_empty() || !self.block_hash_numbers.is_empty(),
+            !self.accounts.is_empty()
+                || !self.block_hash_numbers.is_empty()
+                || !self.logs.is_empty(),
             "no accounts accessed: use Contract::preflight"
         );
 
@@ -218,7 +224,42 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 }
 
-impl<DB: Database> Database for ProofDb<DB> {
+impl<T: Transport + Clone, P: Provider<T, Ethereum>> ProofDb<AlloyDb<T, Ethereum, P>> {
+    pub async fn receipt_proof(&self) -> Result<Option<Vec<ReceiptEnvelope>>> {
+        if self.logs.is_empty() {
+            return Ok(None);
+        }
+
+        let block_hash = self.inner.block_hash();
+        let block = self
+            .inner
+            .provider()
+            .get_block_by_hash(block_hash, BlockTransactionsKind::Hashes)
+            .await
+            .context("eth_getBlockByNumber failed")?
+            .with_context(|| format!("block {} not found", block_hash))?;
+
+        let bloom_match = self
+            .logs
+            .iter()
+            .any(|filter| event::matches_filter(block.header.logs_bloom, filter));
+        if !bloom_match {
+            return Ok(None);
+        }
+
+        let tx_receipts = self
+            .inner
+            .provider()
+            .get_block_receipts(block_hash.into())
+            .await?
+            .with_context(|| format!("block {} not found", block_hash))?;
+        let receipts = tx_receipts.into_iter().map(simplify_receipt).collect();
+
+        Ok(Some(receipts))
+    }
+}
+
+impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
     type Error = DB::Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
@@ -262,6 +303,17 @@ impl<DB: Database> Database for ProofDb<DB> {
         self.block_hash_numbers.insert(number);
 
         self.inner.block_hash(number)
+    }
+}
+
+impl<DB: crate::EvmDatabase> crate::EvmDatabase for ProofDb<DB> {
+    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+        log::trace!("LOGS: signatures={:?}", filter.topics[0]);
+        let logs = self.inner.logs(filter.clone())?;
+
+        self.logs.push(filter);
+
+        Ok(logs)
     }
 }
 
@@ -310,4 +362,25 @@ fn add_proof(
     }
 
     Ok(())
+}
+
+fn simplify_receipt(tx_receipt: TransactionReceipt) -> ReceiptEnvelope {
+    fn simplify_receipt(t: ReceiptWithBloom<Receipt<alloy::rpc::types::Log>>) -> ReceiptWithBloom {
+        ReceiptWithBloom::new(
+            Receipt {
+                status: t.receipt.status,
+                cumulative_gas_used: t.cumulative_gas_used(),
+                logs: t.receipt.logs.into_iter().map(|log| log.inner).collect(),
+            },
+            t.logs_bloom,
+        )
+    }
+
+    match tx_receipt.inner {
+        ReceiptEnvelope::Legacy(t) => ReceiptEnvelope::Legacy(simplify_receipt(t)),
+        ReceiptEnvelope::Eip2930(t) => ReceiptEnvelope::Eip2930(simplify_receipt(t)),
+        ReceiptEnvelope::Eip1559(t) => ReceiptEnvelope::Eip1559(simplify_receipt(t)),
+        ReceiptEnvelope::Eip4844(t) => ReceiptEnvelope::Eip4844(simplify_receipt(t)),
+        ReceiptEnvelope::Eip7702(t) => ReceiptEnvelope::Eip7702(simplify_receipt(t)),
+    }
 }
