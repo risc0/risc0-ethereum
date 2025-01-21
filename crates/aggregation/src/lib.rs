@@ -32,7 +32,7 @@ mod receipt;
 
 #[cfg(feature = "verify")]
 pub use receipt::{
-    decode_seal,
+    decode_seal, extract_path,
     /* TODO(#353)
     SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH,
     */

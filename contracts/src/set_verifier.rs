@@ -24,12 +24,11 @@ use alloy::{
     network::Ethereum,
     primitives::{Address, Bytes, B256},
     providers::Provider,
-    sol_types::SolValue,
     transports::Transport,
 };
 use anyhow::{bail, Context, Result};
 use risc0_aggregation::{
-    merkle_path_root, GuestState, MerkleMountainRange, Seal, SetInclusionReceipt,
+    extract_path, merkle_path_root, GuestState, MerkleMountainRange, SetInclusionReceipt,
     SetInclusionReceiptVerifierParameters,
 };
 use risc0_zkvm::{

@@ -44,6 +44,9 @@ pub fn decode_seal(
     claim: ReceiptClaim,
     journal: impl AsRef<[u8]>,
 ) -> Result<ReceiptType> {
+    if seal.len() < 4 {
+        return Err(anyhow::anyhow!("seal too short"));
+    }
     let selector =
         Selector::from_bytes(seal[..4].try_into().unwrap()).context("decode selector")?;
     let verifier_parameters = selector.verifier_parameters_digest()?;
