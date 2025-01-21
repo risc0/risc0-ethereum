@@ -16,7 +16,7 @@ use anyhow::{Context, Result};
 use risc0_aggregation::{
     decode_seal as decode_set_inclusion_seal, EncodingError, SetInclusionReceipt,
 };
-use risc0_zkvm::{Receipt as Risc0Receipt, ReceiptClaim};
+use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt as Risc0Receipt, ReceiptClaim};
 
 use crate::{
     encode_seal, groth16,
@@ -52,8 +52,10 @@ pub fn decode_seal(
     let verifier_parameters = selector.verifier_parameters_digest()?;
     match selector.get_type() {
         SelecorType::FakeReceipt => {
-            let receipt =
-                groth16::decode_seal(seal.into(), claim, journal, Some(verifier_parameters))?;
+            let receipt = Risc0Receipt::new(
+                InnerReceipt::Fake(FakeReceipt::new(claim)),
+                journal.as_ref().to_vec(),
+            );
             Ok(ReceiptType::Risc0(receipt))
         }
         SelecorType::Groth16 => {
