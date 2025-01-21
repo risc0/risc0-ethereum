@@ -21,6 +21,7 @@ cfg-if = { workspace = true }
 hex = { workspace = true, optional = true }
 risc0-aggregation = { workspace = true }
 risc0-zkvm = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
 

@@ -25,6 +25,14 @@ pub enum SelectorError {
     NoVerifierParameters(Selector),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SelecorType {
+    FakeReceipt,
+    Groth16,
+    SetVerifier,
+}
+
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
@@ -67,6 +75,14 @@ impl Selector {
                 "bfca9ccb59eb38b8c78ddc399a734d8e0e84e8028b7d616fa54fe707a1ff1b3b",
             )
             .unwrap()),
+        }
+    }
+
+    pub fn get_type(self) -> SelecorType {
+        match self {
+            Selector::FakeReceipt => SelecorType::FakeReceipt,
+            Selector::Groth16V1_1 | Selector::Groth16V1_2 => SelecorType::Groth16,
+            Selector::SetVerifierV0_1 => SelecorType::SetVerifier,
         }
     }
 

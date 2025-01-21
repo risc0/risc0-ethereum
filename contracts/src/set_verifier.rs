@@ -246,21 +246,3 @@ where
         Ok(receipt)
     }
 }
-
-fn extract_path(seal: &[u8]) -> Result<Vec<Digest>> {
-    // Early return if seal is too short to contain a path
-    if seal.len() <= 4 {
-        return Ok(Vec::new());
-    }
-
-    // Skip the first 4 bytes (selector) and decode the seal
-    let aggregation_seal = <Seal>::abi_decode(&seal[4..], true)
-        .context("Failed to decode aggregation seal from bytes")?;
-
-    // Convert each path element to a Digest
-    aggregation_seal
-        .path
-        .iter()
-        .map(|x| Digest::try_from(x.as_slice()).context("Invalid digest in path"))
-        .collect()
-}

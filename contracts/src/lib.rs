@@ -28,7 +28,7 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {
         pub mod set_verifier;
         pub mod event_query;
-        #[cfg(not(target_os = "zkvm"))]
+        pub mod receipt;
         pub mod selector;
     }
 }

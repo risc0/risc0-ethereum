@@ -25,23 +25,35 @@ pub struct EventQueryConfig {
 impl Default for EventQueryConfig {
     fn default() -> Self {
         // Default values chosen based on the docs and pricing of requests on common RPC providers.
-        Self { max_iterations: 100, block_range: 1000 }
+        Self {
+            max_iterations: 100,
+            block_range: 1000,
+        }
     }
 }
 
 impl EventQueryConfig {
     /// Creates a new event query configuration.
     pub fn new(max_iterations: u64, block_range: u64) -> Self {
-        Self { max_iterations, block_range }
+        Self {
+            max_iterations,
+            block_range,
+        }
     }
 
     /// Sets the maximum number of iterations to search for a fulfilled event.
     pub fn with_max_iterations(self, max_iterations: u64) -> Self {
-        Self { max_iterations, ..self }
+        Self {
+            max_iterations,
+            ..self
+        }
     }
 
     /// Sets the number of blocks to query in each iteration when searching for a fulfilled event.
     pub fn with_block_range(self, block_range: u64) -> Self {
-        Self { block_range, ..self }
+        Self {
+            block_range,
+            ..self
+        }
     }
 }
