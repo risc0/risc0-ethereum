@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::VecDeque, fmt, fmt::Debug};
+use std::{fmt, fmt::Debug};
 
 use alloy_primitives::{b256, keccak256, map::B256HashMap, B256};
 use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
@@ -319,7 +319,7 @@ impl Encodable for NodeRef<'_> {
 #[derive(Clone, Default)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iter<'a> {
-    stack: VecDeque<&'a Node>,
+    stack: Vec<&'a Node>,
 }
 
 impl Debug for Iter<'_> {
@@ -330,9 +330,7 @@ impl Debug for Iter<'_> {
 
 impl<'a> Iter<'a> {
     fn new(root: &'a Node) -> Self {
-        let mut stack = VecDeque::new();
-        stack.push_back(root);
-        Self { stack }
+        Self { stack: vec![root] }
     }
 }
 
@@ -340,15 +338,15 @@ impl<'a> Iterator for Iter<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(node) = self.stack.pop_front() {
+        while let Some(node) = self.stack.pop() {
             match node {
                 Node::Null | Node::Digest(_) => {}
                 Node::Leaf(_, value) => return Some(value),
-                Node::Extension(_, child) => self.stack.push_back(child),
+                Node::Extension(_, child) => self.stack.push(child),
                 Node::Branch(children) => {
-                    for child in children.iter().flatten() {
+                    for child in children.iter().rev().flatten() {
                         if !matches!(**child, Node::Null | Node::Digest(_)) {
-                            self.stack.push_back(child);
+                            self.stack.push(child);
                         }
                     }
                 }
@@ -615,6 +613,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(mpt.hash_slow(), exp_hash);
+
+        assert!(mpt.values().eq(leaves.values().step_by(2)));
     }
 
     #[test]
