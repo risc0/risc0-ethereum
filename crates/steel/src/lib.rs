@@ -24,7 +24,8 @@
 pub use alloy;
 
 use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{uint, BlockNumber, Sealable, Sealed, B256, U256};
+use alloy_primitives::{uint, BlockNumber, Log, Sealable, Sealed, B256, U256};
+use alloy_rpc_types::Filter;
 use alloy_sol_types::SolValue;
 use config::ChainSpec;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
@@ -34,6 +35,7 @@ mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
+mod event;
 #[cfg(feature = "unstable-history")]
 pub mod history;
 #[cfg(not(feature = "unstable-history"))]
@@ -50,6 +52,7 @@ mod verifier;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
+pub use event::Event;
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
 
@@ -120,6 +123,11 @@ impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
 
         env
     }
+}
+
+pub trait Database: revm::Database {
+    fn logs(&mut self, filter: &Filter)
+        -> Result<Vec<(u64, Log)>, <Self as revm::Database>::Error>;
 }
 
 /// Alias for readability, do not make public.
@@ -203,6 +211,8 @@ pub trait EvmBlockHeader: Sealable {
     fn timestamp(&self) -> u64;
     /// Returns the state root hash.
     fn state_root(&self) -> &B256;
+    // Returns the receipt root.
+    fn receipts_root(&self) -> &B256;
 
     /// Fills the EVM block environment with the header's data.
     fn fill_block_env(&self, blk_env: &mut BlockEnv);

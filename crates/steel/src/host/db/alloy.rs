@@ -23,7 +23,8 @@ use alloy::{
     providers::Provider,
     transports::{Transport, TransportError},
 };
-use alloy_primitives::{map::B256HashMap, Address, BlockHash, B256, U256};
+use alloy_primitives::{map::B256HashMap, Address, BlockHash, Log, B256, U256};
+use alloy_rpc_types::Filter;
 use revm::{
     primitives::{AccountInfo, Bytecode},
     Database,
@@ -169,5 +170,20 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         let block = block_response.ok_or(Error::BlockNotFound)?;
 
         Ok(block.header().hash())
+    }
+}
+
+impl<T: Transport + Clone, N: Network, P: Provider<T, N>> crate::Database for AlloyDb<T, N, P> {
+    fn logs(&mut self, filter: &Filter) -> Result<Vec<(u64, Log)>, <Self as Database>::Error> {
+        assert_eq!(filter.get_block_hash(), Some(self.block_hash));
+        let rpc_logs = self
+            .handle
+            .block_on(self.provider.get_logs(filter))
+            .map_err(|err| Error::Rpc("eth_getLogs", err))?;
+
+        Ok(rpc_logs
+            .into_iter()
+            .map(|log| (log.log_index.unwrap(), log.inner))
+            .collect())
     }
 }

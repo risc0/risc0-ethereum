@@ -16,16 +16,22 @@ use super::{provider::ProviderDb, AlloyDb};
 use crate::MerkleTrie;
 use alloy::{
     consensus::BlockHeader,
-    eips::eip2930::{AccessList, AccessListItem},
-    network::{primitives::BlockTransactionsKind, BlockResponse, Network},
+    eips::{
+        eip2718::Encodable2718,
+        eip2930::{AccessList, AccessListItem},
+    },
+    network::{primitives::BlockTransactionsKind, BlockResponse, Ethereum, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
 };
+use alloy_consensus::{Receipt, ReceiptEnvelope, ReceiptWithBloom, TxReceipt};
 use alloy_primitives::{
     map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashSet},
-    Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256,
+    Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, TxIndex, B256, U256,
 };
+use alloy_rpc_types::{Filter, TransactionReceipt};
+use alloy_trie::Nibbles;
 use anyhow::{ensure, Context, Result};
 use revm::{
     primitives::{AccountInfo, Bytecode},
@@ -37,6 +43,7 @@ pub struct ProofDb<D> {
     accounts: AddressHashMap<B256HashSet>,
     contracts: B256HashMap<Bytes>,
     block_hash_numbers: HashSet<BlockNumber>,
+    receipt_indices: HashSet<TxIndex>,
     proofs: AddressHashMap<AccountProof>,
     inner: D,
 }
@@ -62,6 +69,7 @@ impl<D: Database> ProofDb<D> {
             accounts: Default::default(),
             contracts: Default::default(),
             block_hash_numbers: Default::default(),
+            receipt_indices: Default::default(),
             proofs: Default::default(),
             inner: db,
         }
@@ -140,7 +148,9 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     /// recorded by the [Database].
     pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         ensure!(
-            !self.accounts.is_empty() || !self.block_hash_numbers.is_empty(),
+            !self.accounts.is_empty()
+                || !self.block_hash_numbers.is_empty()
+                || !self.receipt_indices.is_empty(),
             "no accounts accessed: use Contract::preflight"
         );
 
@@ -218,6 +228,45 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 }
 
+impl<T: Transport + Clone, P: Provider<T, Ethereum>> ProofDb<AlloyDb<T, Ethereum, P>> {
+    pub async fn receipt_proof(&self) -> Result<Option<MerkleTrie>> {
+        if self.receipt_indices.is_empty() {
+            return Ok(None);
+        }
+
+        let block_hash = self.inner.block_hash();
+        let tx_receipts = self
+            .inner
+            .provider()
+            .get_block_receipts(block_hash.into())
+            .await?
+            .with_context(|| format!("block {} not found", block_hash))?;
+
+        let hb = alloy_trie::HashBuilder::default();
+        let mut hb = hb.with_proof_retainer(
+            self.receipt_indices
+                .iter()
+                .map(|i| Nibbles::unpack(alloy_rlp::encode(i)))
+                .collect(),
+        );
+
+        for (i, tx_receipt) in tx_receipts.into_iter().enumerate() {
+            ensure!(tx_receipt.transaction_index == Some(i as u64));
+            let receipt = simplify_receipt(tx_receipt);
+
+            hb.add_leaf(
+                Nibbles::unpack(alloy_rlp::encode(i)),
+                &receipt.encoded_2718(),
+            );
+        }
+        let _ = hb.root();
+
+        Ok(Some(
+            MerkleTrie::from_rlp_nodes(hb.take_proof_nodes().values()).unwrap(),
+        ))
+    }
+}
+
 impl<DB: Database> Database for ProofDb<DB> {
     type Error = DB::Error;
 
@@ -262,6 +311,21 @@ impl<DB: Database> Database for ProofDb<DB> {
         self.block_hash_numbers.insert(number);
 
         self.inner.block_hash(number)
+    }
+}
+
+impl<DB: crate::Database> crate::Database for ProofDb<DB> {
+    fn logs(
+        &mut self,
+        filter: &Filter,
+    ) -> std::result::Result<Vec<(u64, Log)>, <Self as Database>::Error> {
+        log::trace!("LOGS: signatures={:?}", filter.topics[0]);
+        let logs = self.inner.logs(filter)?;
+        logs.iter().for_each(|(i, _)| {
+            self.receipt_indices.insert(*i);
+        });
+
+        Ok(logs)
     }
 }
 
@@ -310,4 +374,25 @@ fn add_proof(
     }
 
     Ok(())
+}
+
+fn simplify_receipt(tx_receipt: TransactionReceipt) -> ReceiptEnvelope {
+    fn simplify_receipt(t: ReceiptWithBloom<Receipt<alloy::rpc::types::Log>>) -> ReceiptWithBloom {
+        ReceiptWithBloom::new(
+            Receipt {
+                status: t.receipt.status,
+                cumulative_gas_used: t.cumulative_gas_used(),
+                logs: t.receipt.logs.into_iter().map(|log| log.inner).collect(),
+            },
+            t.logs_bloom,
+        )
+    }
+
+    match tx_receipt.inner {
+        ReceiptEnvelope::Legacy(t) => ReceiptEnvelope::Legacy(simplify_receipt(t)),
+        ReceiptEnvelope::Eip2930(t) => ReceiptEnvelope::Eip2930(simplify_receipt(t)),
+        ReceiptEnvelope::Eip1559(t) => ReceiptEnvelope::Eip1559(simplify_receipt(t)),
+        ReceiptEnvelope::Eip4844(t) => ReceiptEnvelope::Eip4844(simplify_receipt(t)),
+        ReceiptEnvelope::Eip7702(t) => ReceiptEnvelope::Eip7702(simplify_receipt(t)),
+    }
 }

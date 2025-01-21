@@ -18,7 +18,7 @@ use crate::mpt::MerkleTrie;
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
-    Address, Bytes, B256, U256,
+    Address, Bytes, Log, B256, U256,
 };
 use revm::{
     primitives::{AccountInfo, Bytecode},
@@ -26,6 +26,8 @@ use revm::{
 };
 
 pub use alloy_consensus::Account as StateAccount;
+use alloy_consensus::ReceiptEnvelope;
+use alloy_rpc_types::{Filter, FilteredParams};
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
@@ -47,6 +49,8 @@ pub struct StateDb {
     contracts: B256HashMap<Bytes>,
     /// Block hashes by their number.
     block_hashes: HashMap<u64, B256>,
+
+    receipts_trie: MerkleTrie,
 }
 
 impl StateDb {
@@ -56,6 +60,7 @@ impl StateDb {
         storage_tries: impl IntoIterator<Item = MerkleTrie>,
         contracts: impl IntoIterator<Item = Bytes>,
         block_hashes: HashMap<u64, B256>,
+        receipts_trie: MerkleTrie,
     ) -> Self {
         let contracts = contracts
             .into_iter()
@@ -70,6 +75,7 @@ impl StateDb {
             contracts,
             storage_tries,
             block_hashes,
+            receipts_trie,
         }
     }
 
@@ -183,6 +189,26 @@ impl Database for WrapStateDb<'_> {
     #[inline]
     fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
         Ok(self.inner.block_hash(number))
+    }
+}
+
+impl crate::Database for WrapStateDb<'_> {
+    fn logs(&mut self, filter: &Filter) -> Result<Vec<(u64, Log)>, <Self as Database>::Error> {
+        let params = FilteredParams::new(Some(filter.clone()));
+        // TODO: check the block option of the filter
+
+        let mut logs = Vec::new();
+        for value in self.inner.receipts_trie.values() {
+            let receipt: ReceiptEnvelope =
+                alloy_rlp::decode_exact(value).expect("Invalid encoded receipts trie value");
+            for log in receipt.logs() {
+                if params.filter_address(&log.address) && params.filter_topics(log.topics()) {
+                    // TODO: handle the log index correctly
+                    logs.push((0, log.clone()));
+                }
+            }
+        }
+        Ok(logs)
     }
 }
 

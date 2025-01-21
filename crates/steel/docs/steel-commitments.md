@@ -12,7 +12,7 @@ Steel uses [revm] to generate an EVM execution environment, `EvmEnv` within the 
 // Create an EVM environment from that provider 
 let mut env = EthEvmEnv::builder()
     .provider(provider.clone())
-    .block_number(20842508)
+    .BLOCK_NUMBER(20842508)
     .build()
     .await?;
 ```

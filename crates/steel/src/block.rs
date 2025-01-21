@@ -27,6 +27,7 @@ pub struct BlockInput<H> {
     storage_tries: Vec<MerkleTrie>,
     contracts: Vec<Bytes>,
     ancestors: Vec<H>,
+    receipts_trie: MerkleTrie,
 }
 
 /// Implement [BlockHeaderCommit] for the unit type.
@@ -72,11 +73,19 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             previous_header = ancestor;
         }
 
+        let receipts_root = self.receipts_trie.hash_slow();
+        assert_eq!(
+            header.receipts_root(),
+            &receipts_root,
+            "Receipts root mismatch"
+        );
+
         let db = StateDb::new(
             self.state_trie,
             self.storage_tries,
             self.contracts,
             block_hashes,
+            self.receipts_trie,
         );
         let commit = Commitment::new(
             CommitmentVersion::Block as u16,
@@ -91,31 +100,31 @@ impl<H: EvmBlockHeader> BlockInput<H> {
 
 #[cfg(feature = "host")]
 pub mod host {
-    use std::fmt::Display;
-
     use super::BlockInput;
     use crate::{
         host::db::{AlloyDb, ProofDb, ProviderDb},
-        EvmBlockHeader,
+        EvmBlockHeader, MerkleTrie,
     };
-    use alloy::{network::Network, providers::Provider, transports::Transport};
+    use alloy::{
+        network::{Ethereum, Network},
+        providers::Provider,
+        transports::Transport,
+    };
     use alloy_primitives::Sealed;
     use anyhow::{anyhow, ensure};
     use log::debug;
 
-    impl<H: EvmBlockHeader> BlockInput<H> {
+    impl<H> BlockInput<H> {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
-        pub(crate) async fn from_proof_db<T, N, P>(
-            mut db: ProofDb<AlloyDb<T, N, P>>,
+        pub(crate) async fn from_proof_db<T, P>(
+            mut db: ProofDb<AlloyDb<T, Ethereum, P>>,
             header: Sealed<H>,
         ) -> anyhow::Result<Self>
         where
             T: Transport + Clone,
-            N: Network,
-            P: Provider<T, N>,
-            H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-            <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+            P: Provider<T, Ethereum>,
+            H: EvmBlockHeader + From<<Ethereum as Network>::HeaderResponse>,
         {
             assert_eq!(db.inner().block_hash(), header.seal(), "DB block mismatch");
 
@@ -137,12 +146,22 @@ pub mod host {
                 ancestors.push(header);
             }
 
+            let receipts_trie = db
+                .receipt_proof()
+                .await?
+                .unwrap_or_else(|| MerkleTrie::from_digest(*header.receipts_root()));
+            ensure!(
+                header.receipts_root() == &receipts_trie.hash_slow(),
+                "block receipts does not match header's receiptsRoot"
+            );
+
             debug!("state size: {}", state_trie.size());
             debug!("storage tries: {}", storage_tries.len());
             debug!(
                 "total storage size: {}",
                 storage_tries.iter().map(|t| t.size()).sum::<usize>()
             );
+            debug!("receipts size: {}", receipts_trie.size());
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
 
@@ -152,6 +171,7 @@ pub mod host {
                 storage_tries,
                 contracts,
                 ancestors,
+                receipts_trie,
             };
 
             Ok(input)
