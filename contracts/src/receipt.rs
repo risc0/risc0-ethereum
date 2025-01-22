@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use anyhow::{Context, Result};
+use alloy_primitives::Bytes;
 use risc0_aggregation::{
-    decode_seal as decode_set_inclusion_seal, EncodingError, SetInclusionReceipt,
+    decode_set_inclusion_seal, SetInclusionDecodingError, SetInclusionEncodingError,
+    SetInclusionReceipt,
 };
 use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt as Risc0Receipt, ReceiptClaim};
+use thiserror::Error;
 
 use crate::{
-    encode_seal, groth16,
-    selector::{SelecorType, Selector},
+    encode_seal,
+    groth16::decode_groth16_seal,
+    selector::{SelecorType, Selector, SelectorError},
 };
 
 pub enum ReceiptType {
@@ -29,26 +32,43 @@ pub enum ReceiptType {
 }
 
 impl ReceiptType {
-    pub fn encode_seal(&self) -> Result<Vec<u8>, EncodingError> {
+    pub fn encode_seal(&self) -> Result<Vec<u8>, SetInclusionEncodingError> {
         match self {
             ReceiptType::Risc0(receipt) => {
-                encode_seal(receipt).map_err(|_| EncodingError::UnsupportedReceiptType)
+                encode_seal(receipt).map_err(|_| SetInclusionEncodingError::UnsupportedReceiptType)
             }
             ReceiptType::SetInclusion(receipt) => receipt.abi_encode_seal(),
         }
     }
 }
 
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum DecodingError {
+    #[error("Seal too short")]
+    SealTooShort,
+    #[error("Unsupported selector {0:?}")]
+    UnsupportedSelector([u8; 4]),
+    #[error("Selector error: {0}")]
+    SelectorError(#[from] SelectorError),
+    #[error("Decoding error: {0}")]
+    SetInclusionError(#[from] SetInclusionDecodingError),
+    #[error("Decoding error: {0}")]
+    Anyhow(#[from] anyhow::Error),
+}
+
+///
 pub fn decode_seal(
-    seal: Vec<u8>,
+    seal: Bytes,
     claim: ReceiptClaim,
     journal: impl AsRef<[u8]>,
-) -> Result<ReceiptType> {
+) -> Result<ReceiptType, DecodingError> {
     if seal.len() < 4 {
-        return Err(anyhow::anyhow!("seal too short"));
+        return Err(DecodingError::SealTooShort);
     }
-    let selector =
-        Selector::from_bytes(seal[..4].try_into().unwrap()).context("decode selector")?;
+    let selector = [seal[0], seal[1], seal[2], seal[3]];
+    let selector = Selector::from_bytes(selector)
+        .ok_or_else(|| DecodingError::UnsupportedSelector(selector))?;
     let verifier_parameters = selector.verifier_parameters_digest()?;
     match selector.get_type() {
         SelecorType::FakeReceipt => {
@@ -60,7 +80,7 @@ pub fn decode_seal(
         }
         SelecorType::Groth16 => {
             let receipt =
-                groth16::decode_seal(seal.into(), claim, journal, Some(verifier_parameters))?;
+                decode_groth16_seal(seal.into(), claim, journal, Some(verifier_parameters))?;
             Ok(ReceiptType::Risc0(receipt))
         }
         SelecorType::SetVerifier => {

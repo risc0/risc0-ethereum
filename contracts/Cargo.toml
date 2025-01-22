@@ -16,6 +16,8 @@ anyhow = "1.0"
 
 [dependencies]
 alloy = { workspace = true, features = ["sol-types", "contract"] }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
 hex = { workspace = true, optional = true }

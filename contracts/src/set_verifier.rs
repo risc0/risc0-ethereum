@@ -16,7 +16,7 @@ use core::time::Duration;
 
 use crate::{
     event_query::EventQueryConfig,
-    groth16,
+    groth16::decode_groth16_seal,
     IRiscZeroSetVerifier::{self, IRiscZeroSetVerifierErrors, IRiscZeroSetVerifierInstance},
     IRiscZeroVerifier,
 };
@@ -228,7 +228,7 @@ where
         let aggregation_set_receipt_claim =
             ReceiptClaim::ok(set_builder_id, aggregation_set_journal.clone());
 
-        let root_receipt = groth16::decode_seal(
+        let root_receipt = decode_groth16_seal(
             root_seal,
             aggregation_set_receipt_claim,
             aggregation_set_journal,

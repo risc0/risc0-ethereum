@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::{primitives::Bytes, sol_types::SolValue};
+use alloy_sol_types::SolValue;
 use anyhow::Result;
-use risc0_zkvm::{
-    sha::{Digest, Digestible},
-    Groth16Receipt, Groth16ReceiptVerifierParameters, MaybePruned, Receipt, ReceiptClaim,
-};
+use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
 
-alloy::sol!(
+#[cfg(feature = "unstable")]
+use alloy_primitives::Bytes;
+#[cfg(feature = "unstable")]
+use risc0_zkvm::{sha::Digest, Groth16Receipt, MaybePruned, Receipt, ReceiptClaim};
+
+#[cfg(feature = "unstable")]
+alloy_sol_types::sol!(
     #![sol(all_derives)]
     struct Seal {
         uint256[2] a;
@@ -28,6 +31,7 @@ alloy::sol!(
     }
 );
 
+#[cfg(feature = "unstable")]
 impl Seal {
     fn flatten(self) -> Vec<u8> {
         self.a
@@ -45,7 +49,7 @@ impl Seal {
 
     /// Convert the [Seal] into a [Receipt] constructed with the given [ReceiptClaim] and
     /// journal. The verifier parameters are optional and default to the current zkVM version.
-    pub(crate) fn to_receipt(
+    pub fn to_receipt(
         self,
         claim: ReceiptClaim,
         journal: impl AsRef<[u8]>,
@@ -63,7 +67,8 @@ impl Seal {
 
 /// Decode a seal with selector as [Bytes] into a [Receipt] constructed with the given [ReceiptClaim]
 /// and journal. The verifier parameters are optional and default to the current zkVM version.
-pub(crate) fn decode_seal(
+#[cfg(feature = "unstable")]
+pub fn decode_groth16_seal(
     seal: Bytes,
     claim: ReceiptClaim,
     journal: impl AsRef<[u8]>,
@@ -101,7 +106,6 @@ pub fn encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
 mod tests {
     use anyhow::anyhow;
     use regex::Regex;
-    use risc0_zkvm::sha::Digest;
 
     use super::*;
     use std::fs;
@@ -109,10 +113,6 @@ mod tests {
     const CONTROL_ID_PATH: &str = "./src/groth16/ControlID.sol";
     const CONTROL_ROOT: &str = "CONTROL_ROOT";
     const BN254_CONTROL_ID: &str = "BN254_CONTROL_ID";
-    const TEST_RECEIPT_PATH: &str = "./test/TestReceipt.sol";
-    const SEAL: &str = "SEAL";
-    const JOURNAL: &str = "JOURNAL";
-    const IMAGE_ID: &str = "IMAGE_ID";
 
     fn parse_digest(file_path: &str, name: &str) -> Result<String, anyhow::Error> {
         let content = fs::read_to_string(file_path)?;
@@ -142,7 +142,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "unstable")]
     fn test_decode_seal() {
+        use risc0_zkvm::sha::Digest;
+        const TEST_RECEIPT_PATH: &str = "./test/TestReceipt.sol";
+        const SEAL: &str = "SEAL";
+        const JOURNAL: &str = "JOURNAL";
+        const IMAGE_ID: &str = "IMAGE_ID";
         let seal_bytes =
             Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, SEAL).unwrap()).unwrap());
         let journal =
@@ -153,7 +159,7 @@ mod tests {
                 .as_ref(),
         )
         .unwrap();
-        let receipt = decode_seal(
+        let receipt = decode_groth16_seal(
             seal_bytes,
             ReceiptClaim::ok(image_id, journal.clone()),
             &journal,

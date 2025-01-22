@@ -89,13 +89,13 @@ impl From<risc0_zkp::verify::VerificationError> for VerificationError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum EncodingError {
+pub enum SetInclusionEncodingError {
     #[error("unsupported receipt type")]
     UnsupportedReceiptType,
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum DecodingError {
+pub enum SetInclusionDecodingError {
     #[error("unsupported receipt type")]
     UnsupportedReceiptType,
     #[error("Digest decoding error")]
@@ -219,7 +219,7 @@ where
     /// Appends the verifier selector, determined from the first 4 bytes of the verifier
     /// parameters digest, which contains the aggregation set builder image ID. If non-empty, the
     /// root receipt will be appended.
-    pub fn abi_encode_seal(&self) -> Result<Vec<u8>, EncodingError> {
+    pub fn abi_encode_seal(&self) -> Result<Vec<u8>, SetInclusionEncodingError> {
         let selector = &self.verifier_parameters.as_bytes()[..4];
         let merkle_path: Vec<B256> = self
             .merkle_path
@@ -238,7 +238,7 @@ where
     }
 }
 
-pub fn extract_path(seal: &[u8]) -> Result<Vec<Digest>, DecodingError> {
+pub fn extract_path(seal: &[u8]) -> Result<Vec<Digest>, SetInclusionDecodingError> {
     // Early return if seal is too short to contain a path
     if seal.len() <= 4 {
         return Ok(Vec::new());
@@ -251,15 +251,15 @@ pub fn extract_path(seal: &[u8]) -> Result<Vec<Digest>, DecodingError> {
     aggregation_seal
         .path
         .iter()
-        .map(|x| Digest::try_from(x.as_slice()).map_err(|_| DecodingError::Digest))
+        .map(|x| Digest::try_from(x.as_slice()).map_err(|_| SetInclusionDecodingError::Digest))
         .collect()
 }
 
-pub fn decode_seal(
+pub fn decode_set_inclusion_seal(
     seal: &[u8],
     claim: ReceiptClaim,
     verifier_parameters: Digest,
-) -> Result<SetInclusionReceipt<ReceiptClaim>, DecodingError> {
+) -> Result<SetInclusionReceipt<ReceiptClaim>, SetInclusionDecodingError> {
     let receipt = SetInclusionReceipt::from_path_with_verifier_params(
         claim.clone(),
         extract_path(&seal)?,
@@ -270,7 +270,7 @@ pub fn decode_seal(
 }
 
 // TODO: Extract this method to a core crate to dedup with the one in risc0-ethereum-contracts
-fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>, EncodingError> {
+fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>, SetInclusionEncodingError> {
     match receipt.inner.clone() {
         InnerReceipt::Fake(receipt) => {
             let seal = receipt.claim.digest::<sha::Impl>().as_bytes().to_vec();
@@ -289,7 +289,7 @@ fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>, EncodingError> 
             selector_seal.extend_from_slice(receipt.seal.as_ref());
             Ok(selector_seal)
         }
-        _ => Err(EncodingError::UnsupportedReceiptType),
+        _ => Err(SetInclusionEncodingError::UnsupportedReceiptType),
     }
 }
 
