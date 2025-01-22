@@ -15,15 +15,15 @@ rustdoc-args = ["--cfg", "docsrs"]
 anyhow = "1.0"
 
 [dependencies]
-alloy = { workspace = true, features = ["sol-types", "contract"] }
-alloy-primitives = { workspace = true }
+alloy = { workspace = true, features = ["contract"] }
+alloy-primitives = { workspace = true, optional = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
 hex = { workspace = true, optional = true }
-risc0-aggregation = { workspace = true }
+risc0-aggregation = { workspace = true, optional = true }
 risc0-zkvm = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
 
@@ -37,4 +37,10 @@ doctest = false
 
 [features]
 default = []
-unstable = ["dep:hex", "risc0-aggregation/verify"]
+unstable = [
+    "dep:alloy-primitives", 
+    "dep:hex", 
+    "dep:risc0-aggregation",  
+    "dep:serde",
+    "risc0-aggregation/verify"
+]

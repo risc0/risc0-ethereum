@@ -32,7 +32,7 @@ mod receipt;
 
 #[cfg(feature = "verify")]
 pub use receipt::{
-    decode_set_inclusion_seal, extract_path, RecursionVerifierParamters, SetInclusionDecodingError,
+    decode_set_inclusion_seal, RecursionVerifierParamters, SetInclusionDecodingError,
     /* TODO(#353)
     SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH,
     */

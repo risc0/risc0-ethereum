@@ -28,7 +28,7 @@ use alloy::{
 };
 use anyhow::{bail, Context, Result};
 use risc0_aggregation::{
-    extract_path, merkle_path_root, GuestState, MerkleMountainRange, SetInclusionReceipt,
+    merkle_path_root, GuestState, MerkleMountainRange, SetInclusionReceipt,
     SetInclusionReceiptVerifierParameters,
 };
 use risc0_zkvm::{
@@ -203,45 +203,43 @@ where
         bail!("VerifiedRoot event not found for root {:?}", root);
     }
 
-    /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its root.
-    pub async fn decode_seal(
-        &self,
-        seal: Bytes,
-        claim: ReceiptClaim,
-        groth16_verifier_parameters: Option<Digest>,
-    ) -> Result<SetInclusionReceipt<ReceiptClaim>> {
-        let set_builder_id = Digest::from_bytes(self.image_info().await?.0 .0);
-        let verifier_parameters = SetInclusionReceiptVerifierParameters {
-            image_id: set_builder_id,
-        };
-        let path = extract_path(&seal)?;
-        let root = merkle_path_root(&claim.digest(), &path);
-        let root_seal = self
-            .get_verified_root_seal(<[u8; 32]>::from(root).into())
-            .await?;
+    // /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its root.
+    // pub async fn decode_seal(
+    //     &self,
+    //     seal: Bytes,
+    //     claim: ReceiptClaim,
+    //     journal: impl AsRef<[u8]>,
+    // ) -> Result<SetInclusionReceipt<ReceiptClaim>> {
+    //     let set_inclusion_receipt = decode_set_inclusion_seal(seal, claim, journal)
+    //         .map_err(|e| anyhow::anyhow!("Failed to decode seal: {:?}", e))?;
 
-        let state = GuestState {
-            self_image_id: set_builder_id.into(),
-            mmr: MerkleMountainRange::new_finalized(root),
-        };
-        let aggregation_set_journal = state.encode();
-        let aggregation_set_receipt_claim =
-            ReceiptClaim::ok(set_builder_id, aggregation_set_journal.clone());
+    //     let root = merkle_path_root(&claim.digest(), &set_inclusion_receipt.merkle_path);
+    //     let root_seal = self
+    //         .get_verified_root_seal(<[u8; 32]>::from(root).into())
+    //         .await?;
 
-        let root_receipt = decode_groth16_seal(
-            root_seal,
-            aggregation_set_receipt_claim,
-            aggregation_set_journal,
-            groth16_verifier_parameters,
-        )?;
+    //     let state = GuestState {
+    //         self_image_id: set_builder_id.into(),
+    //         mmr: MerkleMountainRange::new_finalized(root),
+    //     };
+    //     let aggregation_set_journal = state.encode();
+    //     let aggregation_set_receipt_claim =
+    //         ReceiptClaim::ok(set_builder_id, aggregation_set_journal.clone());
 
-        let receipt = SetInclusionReceipt::from_path_with_verifier_params(
-            claim.clone(),
-            path.clone(),
-            verifier_parameters.digest(),
-        )
-        .with_root(root_receipt);
+    //     let root_receipt = decode_groth16_seal(
+    //         root_seal,
+    //         aggregation_set_receipt_claim,
+    //         aggregation_set_journal,
+    //         groth16_verifier_parameters,
+    //     )?;
 
-        Ok(receipt)
-    }
+    //     let receipt = SetInclusionReceipt::from_path_with_verifier_params(
+    //         claim.clone(),
+    //         path.clone(),
+    //         verifier_parameters.digest(),
+    //     )
+    //     .with_root(root_receipt);
+
+    //     Ok(receipt)
+    // }
 }

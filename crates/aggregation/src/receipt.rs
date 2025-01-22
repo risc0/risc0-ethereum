@@ -238,7 +238,7 @@ where
     }
 }
 
-pub fn extract_path(seal: &[u8]) -> Result<Vec<Digest>, SetInclusionDecodingError> {
+fn extract_path(seal: &[u8]) -> Result<Vec<Digest>, SetInclusionDecodingError> {
     // Early return if seal is too short to contain a path
     if seal.len() <= 4 {
         return Ok(Vec::new());
@@ -262,7 +262,7 @@ pub fn decode_set_inclusion_seal(
 ) -> Result<SetInclusionReceipt<ReceiptClaim>, SetInclusionDecodingError> {
     let receipt = SetInclusionReceipt::from_path_with_verifier_params(
         claim.clone(),
-        extract_path(&seal)?,
+        extract_path(seal)?,
         verifier_parameters,
     );
 
