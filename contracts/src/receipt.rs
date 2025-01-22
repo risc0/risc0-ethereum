@@ -26,12 +26,14 @@ use crate::{
     selector::{SelecorType, Selector, SelectorError},
 };
 
+/// Wrapper around different types of receipts.
 pub enum ReceiptType {
     Risc0(Risc0Receipt),
     SetInclusion(SetInclusionReceipt<ReceiptClaim>),
 }
 
 impl ReceiptType {
+    /// Encode the receipt as a seal.
     pub fn encode_seal(&self) -> Result<Vec<u8>, SetInclusionEncodingError> {
         match self {
             ReceiptType::Risc0(receipt) => {
@@ -40,8 +42,25 @@ impl ReceiptType {
             ReceiptType::SetInclusion(receipt) => receipt.abi_encode_seal(),
         }
     }
+
+    /// Get the receipt if it is a RISC0 receipt.
+    pub fn receipt(&self) -> Option<Risc0Receipt> {
+        match self {
+            ReceiptType::Risc0(receipt) => Some(receipt.clone()),
+            _ => None,
+        }
+    }
+
+    /// Get the receipt if it is a set inclusion receipt.
+    pub fn set_inclusion_receipt(&self) -> Option<&SetInclusionReceipt<ReceiptClaim>> {
+        match self {
+            ReceiptType::SetInclusion(receipt) => Some(receipt),
+            _ => None,
+        }
+    }
 }
 
+/// Errors that can occur when decoding a seal.
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum DecodingError {
@@ -57,7 +76,7 @@ pub enum DecodingError {
     Anyhow(#[from] anyhow::Error),
 }
 
-///
+/// Decode a seal into a receipt.
 pub fn decode_seal(
     seal: Bytes,
     claim: ReceiptClaim,
