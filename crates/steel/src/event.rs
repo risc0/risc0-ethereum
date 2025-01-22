@@ -21,6 +21,48 @@ use alloy_sol_types::SolEvent;
 use std::marker::PhantomData;
 
 /// Represents an Ethereum event query.
+///
+/// ### Usage
+/// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
+///   necessary proof, use [Event::preflight].
+/// - **Calls in the Guest:** To initialize the contract in the guest environment, use [Event::new].
+/// See [Contract] for more details.
+///
+/// ### Examples
+/// ```rust,no_run
+/// # use risc0_steel::{ethereum::EthEvmEnv, Event};
+/// # use alloy_primitives::address;
+/// # use alloy_sol_types::sol;
+///
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() -> anyhow::Result<()> {
+/// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
+/// sol! {
+/// #     #[derive(Debug)]
+///     interface IERC20 {
+///         event Transfer(address indexed from, address indexed to, uint256 value);
+///     }
+/// }
+///
+/// // Host:
+/// let url = "https://ethereum-rpc.publicnode.com".parse()?;
+/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
+/// let event = Event::preflight::<IERC20::Transfer>(&mut env).address(contract_address);
+/// event.query().await?;
+///
+/// let evm_input = env.into_input().await?;
+///
+/// // Guest:
+/// let env = evm_input.into_env();
+/// let event = Event::new::<IERC20::Transfer>(&env).address(contract_address);
+/// let logs = event.query();
+/// # dbg!(logs);
+///
+/// # Ok(())
+/// # }
+/// ```
+///
+/// [Contract]: crate::Contract
 pub struct Event<S, E> {
     filter: Filter,
     env: E,
@@ -105,6 +147,7 @@ mod host {
         ///
         /// [EvmEnv::into_input]: crate::EvmEnv::into_input
         /// [EvmEnv]: crate::EvmEnv
+        /// [Provider]: alloy::providers::Provider
         pub fn preflight<S: SolEvent>(
             env: &mut HostEvmEnv<D, H, C>,
         ) -> Event<S, &mut HostEvmEnv<D, H, C>> {

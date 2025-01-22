@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{convert::Infallible, rc::Rc};
+pub use alloy_consensus::Account as StateAccount;
 
-use crate::mpt::MerkleTrie;
+use crate::{event, mpt::MerkleTrie, EvmBlockHeader, EvmDatabase};
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
     Address, Bytes, Log, Sealed, B256, U256,
 };
+use alloy_rpc_types::{Filter, FilteredParams};
 use revm::{
     primitives::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
-
-use crate::{event, EvmBlockHeader};
-pub use alloy_consensus::Account as StateAccount;
-use alloy_rpc_types::{Filter, FilteredParams};
+use std::{convert::Infallible, rc::Rc};
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
@@ -195,7 +193,7 @@ impl<H> RevmDatabase for WrapStateDb<'_, H> {
     }
 }
 
-impl<H: EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
+impl<H: EvmBlockHeader> EvmDatabase for WrapStateDb<'_, H> {
     fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
         assert_eq!(filter.get_block_hash(), Some(self.header.seal()));
 
