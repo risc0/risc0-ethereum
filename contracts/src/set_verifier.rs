@@ -140,12 +140,11 @@ where
     }
 
     async fn get_latest_block(&self) -> Result<u64> {
-        Ok(self
-            .instance
+        self.instance
             .provider()
             .get_block_number()
             .await
-            .context("Failed to get latest block number")?)
+            .context("Failed to get latest block number")
     }
 
     /// Query the VerifiedRoot event based on the root and block options.
@@ -221,7 +220,7 @@ where
 
         let set_builder_id = Digest::from_bytes(self.image_info().await?.0 .0);
         let state = GuestState {
-            self_image_id: set_builder_id.into(),
+            self_image_id: set_builder_id,
             mmr: MerkleMountainRange::new_finalized(root),
         };
         let aggregation_set_journal = state.encode();

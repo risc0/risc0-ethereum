@@ -98,8 +98,7 @@ pub fn decode_seal(
             Ok(ReceiptType::Risc0(receipt))
         }
         SelecorType::Groth16 => {
-            let receipt =
-                decode_groth16_seal(seal.into(), claim, journal, Some(verifier_parameters))?;
+            let receipt = decode_groth16_seal(seal, claim, journal, Some(verifier_parameters))?;
             Ok(ReceiptType::Risc0(receipt))
         }
         SelecorType::SetVerifier => {
