@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::game::DisputeGameInput;
+use alloy_primitives::Bloom;
 use op_alloy_network::{Network, Optimism};
 use revm::{
     precompile::B256,
@@ -97,6 +98,16 @@ impl EvmBlockHeader for OpBlockHeader {
     #[inline]
     fn state_root(&self) -> &B256 {
         &self.0.inner().state_root
+    }
+    #[cfg(feature = "unstable-event")]
+    #[inline]
+    fn receipts_root(&self) -> &B256 {
+        &self.0.inner().receipts_root
+    }
+    #[cfg(feature = "unstable-event")]
+    #[inline]
+    fn logs_bloom(&self) -> &Bloom {
+        &self.0.inner().logs_bloom
     }
 
     #[inline]
