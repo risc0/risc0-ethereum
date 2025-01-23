@@ -133,7 +133,7 @@ pub struct HostCommit<C> {
 
 impl<D, H, C> HostEvmEnv<D, H, C>
 where
-    D: crate::EvmDatabase + Send + 'static,
+    D: Send + 'static,
 {
     /// Runs the provided closure that requires mutable access to the database on a thread where
     /// blocking is acceptable.
@@ -176,11 +176,13 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     }
 }
 
-impl<T, P, H> HostEvmEnv<AlloyDb<T, Ethereum, P>, H, ()>
+impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
 where
     T: Transport + Clone,
-    P: Provider<T, Ethereum>,
-    H: EvmBlockHeader + From<<Ethereum as Network>::HeaderResponse>,
+    N: Network,
+    P: Provider<T, N>,
+    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
     /// Converts the environment into a [EvmInput] committing to an execution block hash.
     pub async fn into_input(self) -> Result<EvmInput<H>> {

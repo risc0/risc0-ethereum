@@ -35,6 +35,7 @@ pub struct RlpHeader<H: Encodable> {
 impl<H: Encodable> ops::Deref for RlpHeader<H> {
     type Target = H;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
@@ -105,12 +106,15 @@ impl<'de, H: Encodable + Decodable> Deserialize<'de> for RlpHeader<H> {
 }
 
 #[cfg(feature = "host")]
-impl<H, I> From<alloy::rpc::types::Header<H>> for RlpHeader<I>
+impl<H, I> TryFrom<alloy::rpc::types::Header<H>> for RlpHeader<I>
 where
-    I: Encodable + Decodable + From<H>,
+    I: Encodable + Decodable + TryFrom<H>,
 {
-    fn from(value: alloy::rpc::types::Header<H>) -> Self {
-        Self::new(value.inner.into())
+    type Error = <I as TryFrom<H>>::Error;
+
+    #[inline]
+    fn try_from(value: alloy::rpc::types::Header<H>) -> Result<Self, Self::Error> {
+        Ok(Self::new(value.inner.try_into()?))
     }
 }
 
@@ -145,6 +149,7 @@ impl<T: Eip2718Envelope> Eip2718Wrapper<T> {
 impl<T: Eip2718Envelope> ops::Deref for Eip2718Wrapper<T> {
     type Target = T;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
