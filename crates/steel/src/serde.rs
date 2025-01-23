@@ -35,7 +35,6 @@ pub struct RlpHeader<H: Encodable> {
 impl<H: Encodable> ops::Deref for RlpHeader<H> {
     type Target = H;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
@@ -43,19 +42,20 @@ impl<H: Encodable> ops::Deref for RlpHeader<H> {
 
 impl<H: Encodable> RlpHeader<H> {
     #[must_use]
-    #[inline]
     pub const fn new(inner: H) -> Self {
         Self { inner, rlp: None }
     }
 
-    #[inline]
     pub fn inner(&self) -> &H {
         &self.inner
     }
 
-    #[inline]
     pub fn inner_mut(&mut self) -> &mut H {
         &mut self.inner
+    }
+
+    pub fn into_inner(self) -> H {
+        self.inner
     }
 }
 
@@ -109,7 +109,6 @@ impl<H, I> From<alloy::rpc::types::Header<H>> for RlpHeader<I>
 where
     I: Encodable + Decodable + From<H>,
 {
-    #[inline]
     fn from(value: alloy::rpc::types::Header<H>) -> Self {
         Self::new(value.inner.into())
     }
@@ -127,7 +126,6 @@ pub struct Eip2718Wrapper<T: Eip2718Envelope> {
 
 impl<T: Eip2718Envelope> Eip2718Wrapper<T> {
     #[must_use]
-    #[inline]
     pub const fn new(inner: T) -> Self {
         Self {
             inner,
@@ -135,12 +133,10 @@ impl<T: Eip2718Envelope> Eip2718Wrapper<T> {
         }
     }
 
-    #[inline]
     pub fn inner(&self) -> &T {
         &self.inner
     }
 
-    #[inline]
     pub fn into_inner(self) -> T {
         self.inner
     }
@@ -149,19 +145,16 @@ impl<T: Eip2718Envelope> Eip2718Wrapper<T> {
 impl<T: Eip2718Envelope> ops::Deref for Eip2718Wrapper<T> {
     type Target = T;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
 impl<T: Eip2718Envelope> Encodable for Eip2718Wrapper<T> {
-    #[inline]
     fn encode(&self, out: &mut dyn BufMut) {
         self.encode_2718(out);
     }
 
-    #[inline]
     fn length(&self) -> usize {
         self.encode_2718_len()
     }
@@ -210,7 +203,7 @@ impl<'de, T: Eip2718Envelope> Deserialize<'de> for Eip2718Wrapper<T> {
         let mut buf = bytes.as_slice();
         let inner = T::decode_2718(&mut buf).map_err(de::Error::custom)?;
         if !buf.is_empty() {
-            return Err(de::Error::custom("invalid rlp length"));
+            return Err(de::Error::custom("unexpected length"));
         }
 
         Ok(Eip2718Wrapper {
@@ -228,19 +221,15 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("bytes represented as a hex string, sequence or raw bytes")
     }
-
     fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
         hex::decode(v).map_err(de::Error::custom)
     }
-
     fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
         Ok(v.to_vec())
     }
-
     fn visit_byte_buf<E: de::Error>(self, v: Vec<u8>) -> Result<Self::Value, E> {
         Ok(v)
     }
-
     fn visit_seq<A: de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
         let mut values = Vec::with_capacity(seq.size_hint().unwrap_or(0));
         while let Some(value) = seq.next_element()? {

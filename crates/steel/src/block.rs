@@ -18,6 +18,7 @@ use crate::{
 };
 use ::serde::{Deserialize, Serialize};
 use alloy_consensus::ReceiptEnvelope;
+use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
 
 /// Input committing to the corresponding execution block hash.
@@ -76,7 +77,9 @@ impl<H: EvmBlockHeader> BlockInput<H> {
 
         // verify the root hash of the included receipts and extract their logs
         let logs = self.receipts.map(|receipts| {
-            let root = alloy_trie::root::ordered_trie_root(&receipts);
+            let root = alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| {
+                r.encode_2718(out)
+            });
             assert_eq!(header.receipts_root(), &root, "Receipts root mismatch");
 
             receipts
@@ -169,9 +172,9 @@ pub mod host {
                 "total storage size: {}",
                 storage_tries.iter().map(|t| t.size()).sum::<usize>()
             );
-            debug!("receipts: {}", receipts.as_ref().map_or(0, Vec::len));
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
+            debug!("receipts: {:?}", receipts.as_ref().map(Vec::len));
 
             let input = BlockInput {
                 header: header.into_inner(),
