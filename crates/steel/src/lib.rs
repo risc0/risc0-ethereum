@@ -174,6 +174,7 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
         self.db.as_ref().unwrap()
     }
 
+    #[cfg(feature = "host")]
     pub(crate) fn db_mut(&mut self) -> &mut D {
         // safe unwrap: self cannot be borrowed without a DB
         self.db.as_mut().unwrap()

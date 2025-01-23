@@ -13,12 +13,11 @@
 // limitations under the License.
 
 use crate::{
-    config::ChainSpec, state::StateDb, BlockHeaderCommit, Commitment, CommitmentVersion,
-    EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
+    config::ChainSpec, serde::Eip2718Wrapper, state::StateDb, BlockHeaderCommit, Commitment,
+    CommitmentVersion, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
 };
 use ::serde::{Deserialize, Serialize};
 use alloy_consensus::ReceiptEnvelope;
-use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
 
 /// Input committing to the corresponding execution block hash.
@@ -29,7 +28,7 @@ pub struct BlockInput<H> {
     storage_tries: Vec<MerkleTrie>,
     contracts: Vec<Bytes>,
     ancestors: Vec<H>,
-    receipts: Option<Vec<ReceiptEnvelope>>,
+    receipts: Option<Vec<Eip2718Wrapper<ReceiptEnvelope>>>,
 }
 
 /// Implement [BlockHeaderCommit] for the unit type.
@@ -77,14 +76,12 @@ impl<H: EvmBlockHeader> BlockInput<H> {
 
         // verify the root hash of the included receipts and extract their logs
         let logs = self.receipts.map(|receipts| {
-            let root = alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, buf| {
-                r.encode_2718(buf);
-            });
+            let root = alloy_trie::root::ordered_trie_root(&receipts);
             assert_eq!(header.receipts_root(), &root, "Receipts root mismatch");
 
             receipts
                 .into_iter()
-                .flat_map(|envelope| match envelope {
+                .flat_map(|wrapper| match wrapper.into_inner() {
                     ReceiptEnvelope::Legacy(t) => t.receipt.logs,
                     ReceiptEnvelope::Eip2930(t) => t.receipt.logs,
                     ReceiptEnvelope::Eip1559(t) => t.receipt.logs,
@@ -117,6 +114,7 @@ pub mod host {
     use super::BlockInput;
     use crate::{
         host::db::{AlloyDb, ProofDb, ProviderDb},
+        serde::Eip2718Wrapper,
         EvmBlockHeader,
     };
     use alloy::{
@@ -161,6 +159,9 @@ pub mod host {
             }
 
             let receipts = db.receipt_proof().await?;
+            // wrap the receipts so that they can be serialized
+            let receipts =
+                receipts.map(|receipts| receipts.into_iter().map(Eip2718Wrapper::new).collect());
 
             debug!("state size: {}", state_trie.size());
             debug!("storage tries: {}", storage_tries.len());

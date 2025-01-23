@@ -207,12 +207,11 @@ impl<H: EvmBlockHeader> EvmDatabase for WrapStateDb<'_, H> {
         };
 
         let params = FilteredParams::new(Some(filter));
-        let mut filtered = Vec::new();
-        for log in logs {
-            if params.filter_address(&log.address) && params.filter_topics(log.topics()) {
-                filtered.push(log.clone());
-            }
-        }
+        let filtered = logs
+            .iter()
+            .filter(|log| params.filter_address(&log.address) && params.filter_topics(log.topics()))
+            .cloned()
+            .collect();
 
         Ok(filtered)
     }

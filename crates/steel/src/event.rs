@@ -26,6 +26,7 @@ use std::marker::PhantomData;
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
 ///   necessary proof, use [Event::preflight].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use [Event::new].
+///
 /// See [Contract] for more details.
 ///
 /// ### Examples
