@@ -141,6 +141,7 @@ pub trait EvmDatabase: RevmDatabase {
 
 /// Checks if a bloom filter matches the given filter parameters.
 // TODO: Move to `event` once no longer unstable
+#[allow(dead_code)]
 #[inline]
 pub(crate) fn matches_filter(bloom: Bloom, filter: &Filter) -> bool {
     FilteredParams::matches_address(bloom, &FilteredParams::address_filter(&filter.address))
