@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1](https://github.com/risc0/risc0-ethereum/releases/tag/v1.3.1)
+
+### 🛠 Fixes
+
+- Bump `create-steel-app` to v1.3.
+
 ## [1.3.0](https://github.com/risc0/risc0-ethereum/releases/tag/v1.3.0)
 
 ### ⚡️ Features
