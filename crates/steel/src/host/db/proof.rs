@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use super::{provider::ProviderDb, AlloyDb};
-use crate::{event, MerkleTrie};
+use crate::MerkleTrie;
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
@@ -40,7 +40,7 @@ pub struct ProofDb<D> {
     accounts: AddressHashMap<B256HashSet>,
     contracts: B256HashMap<Bytes>,
     block_hash_numbers: HashSet<BlockNumber>,
-    logs: Vec<Filter>,
+    log_filters: Vec<Filter>,
     proofs: AddressHashMap<AccountProof>,
     inner: D,
 }
@@ -66,7 +66,7 @@ impl<D> ProofDb<D> {
             accounts: Default::default(),
             contracts: Default::default(),
             block_hash_numbers: Default::default(),
-            logs: Default::default(),
+            log_filters: Default::default(),
             proofs: Default::default(),
             inner: db,
         }
@@ -147,7 +147,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
         ensure!(
             !self.accounts.is_empty()
                 || !self.block_hash_numbers.is_empty()
-                || !self.logs.is_empty(),
+                || !self.log_filters.is_empty(),
             "no accounts accessed: use Contract::preflight"
         );
 
@@ -225,7 +225,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 
     pub async fn receipt_proof(&self) -> Result<Option<Vec<ReceiptEnvelope>>> {
-        if self.logs.is_empty() {
+        if self.log_filters.is_empty() {
             return Ok(None);
         }
 
@@ -241,9 +241,9 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
         // we don't need to include any receipts, if the Bloom filter proves the exclusion
         let bloom_match = self
-            .logs
+            .log_filters
             .iter()
-            .any(|filter| event::matches_filter(header.logs_bloom(), filter));
+            .any(|filter| crate::matches_filter(header.logs_bloom(), filter));
         if !bloom_match {
             return Ok(None);
         }
@@ -314,7 +314,7 @@ impl<DB: crate::EvmDatabase> crate::EvmDatabase for ProofDb<DB> {
         log::trace!("LOGS: filter={:?}", &filter);
         let logs = self.inner.logs(filter.clone())?;
 
-        self.logs.push(filter);
+        self.log_filters.push(filter);
 
         Ok(logs)
     }

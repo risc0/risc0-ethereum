@@ -33,6 +33,7 @@ stability = { workspace = true }
 thiserror = { workspace = true, features = ["default"] }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
+cfg-if = "1.0.0"
 
 [dev-dependencies]
 alloy = { workspace = true, features = ["contract", "node-bindings"] }
@@ -52,5 +53,6 @@ host = [
     "dep:tokio",
     "dep:url",
 ]
+unstable-event = []
 unstable-history = []
 unstable-verifier = []

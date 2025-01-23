@@ -25,7 +25,7 @@ use alloy::{
 use alloy_primitives::{address, b256, bytes, hex, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
-use risc0_steel::{ethereum::EthEvmEnv, Contract, Event};
+use risc0_steel::{ethereum::EthEvmEnv, Contract};
 use sha2::{Digest, Sha256};
 use test_log::test;
 
@@ -135,79 +135,88 @@ async fn test_provider() -> impl Provider<BoxTransport> {
     provider
 }
 
-#[test(tokio::test)]
-async fn event_query_some() {
-    let provider = test_provider().await;
-    let contract = SteelTest::new(STEEL_TEST_CONTRACT, &provider);
+#[cfg(feature = "unstable-event")]
+mod event {
+    use super::*;
+    use risc0_steel::Event;
+    use test_log::test;
 
-    const VALUE: U256 = uint!(42_U256);
-    // send a transaction to emit an event on chain
-    let pending = contract.testEvent(VALUE).send().await.unwrap();
-    pending.watch().await.unwrap();
+    #[test(tokio::test)]
+    async fn event_query_some() {
+        let provider = test_provider().await;
+        let contract = SteelTest::new(STEEL_TEST_CONTRACT, &provider);
 
-    let mut env = EthEvmEnv::builder()
-        .provider(provider)
-        .build()
-        .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        const VALUE: U256 = uint!(42_U256);
+        // send a transaction to emit an event on chain
+        let pending = contract.testEvent(VALUE).send().await.unwrap();
+        pending.watch().await.unwrap();
 
-    let preflight_logs = {
-        let event = Event::preflight::<SteelTest::Event>(&mut env).address(STEEL_TEST_CONTRACT);
-        event.query().await.unwrap()
-    };
+        let mut env = EthEvmEnv::builder()
+            .provider(provider)
+            .build()
+            .await
+            .unwrap()
+            .with_chain_spec(&ANVIL_CHAIN_SPEC);
 
-    let input = env.into_input().await.unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+        let preflight_logs = {
+            let event = risc0_steel::Event::preflight::<SteelTest::Event>(&mut env)
+                .address(STEEL_TEST_CONTRACT);
+            event.query().await.unwrap()
+        };
 
-    let logs = {
-        let event = Event::new::<SteelTest::Event>(&env).address(STEEL_TEST_CONTRACT);
-        event.query()
-    };
-    assert_eq!(logs, preflight_logs, "mismatch in preflight and execution");
-    assert!(
-        matches!(
-            logs.as_slice(),
-            [alloy_primitives::Log {
-                address: STEEL_TEST_CONTRACT,
-                data: SteelTest::Event { value: VALUE, .. },
-            }]
-        ),
-        "Unexpected event logs: {:?}",
-        logs
-    );
-}
+        let input = env.into_input().await.unwrap();
+        let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
 
-#[test(tokio::test)]
-async fn event_query_none() {
-    let provider = test_provider().await;
+        let logs = {
+            let event =
+                risc0_steel::Event::new::<SteelTest::Event>(&env).address(STEEL_TEST_CONTRACT);
+            event.query()
+        };
+        assert_eq!(logs, preflight_logs, "mismatch in preflight and execution");
+        assert!(
+            matches!(
+                logs.as_slice(),
+                [alloy_primitives::Log {
+                    address: STEEL_TEST_CONTRACT,
+                    data: SteelTest::Event { value: VALUE, .. },
+                }]
+            ),
+            "Unexpected event logs: {:?}",
+            logs
+        );
+    }
 
-    // send a transaction to emit an event on chain
-    let contract = SteelTest::deploy(&provider).await.unwrap();
-    let pending = contract.testEvent(U256::ZERO).send().await.unwrap();
-    pending.watch().await.unwrap();
+    #[test(tokio::test)]
+    async fn event_query_none() {
+        let provider = test_provider().await;
 
-    let mut env = EthEvmEnv::builder()
-        .provider(provider)
-        .build()
-        .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        // send a transaction to emit an event on chain
+        let contract = SteelTest::deploy(&provider).await.unwrap();
+        let pending = contract.testEvent(U256::ZERO).send().await.unwrap();
+        pending.watch().await.unwrap();
 
-    let preflight_logs = {
-        let event = Event::preflight::<SteelTest::Event>(&mut env).address(STEEL_TEST_CONTRACT);
-        event.query().await.unwrap()
-    };
+        let mut env = EthEvmEnv::builder()
+            .provider(provider)
+            .build()
+            .await
+            .unwrap()
+            .with_chain_spec(&ANVIL_CHAIN_SPEC);
 
-    let input = env.into_input().await.unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+        let preflight_logs = {
+            let event = Event::preflight::<SteelTest::Event>(&mut env).address(STEEL_TEST_CONTRACT);
+            event.query().await.unwrap()
+        };
 
-    let logs = {
-        let event = Event::new::<SteelTest::Event>(&env).address(STEEL_TEST_CONTRACT);
-        event.query()
-    };
-    assert_eq!(logs, preflight_logs, "mismatch in preflight and execution");
-    assert!(logs.is_empty());
+        let input = env.into_input().await.unwrap();
+        let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+
+        let logs = {
+            let event = Event::new::<SteelTest::Event>(&env).address(STEEL_TEST_CONTRACT);
+            event.query()
+        };
+        assert_eq!(logs, preflight_logs, "mismatch in preflight and execution");
+        assert!(logs.is_empty());
+    }
 }
 
 #[test(tokio::test)]

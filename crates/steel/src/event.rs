@@ -15,8 +15,8 @@
 pub use alloy_rpc_types::{Topic, ValueOrArray};
 
 use crate::{state::WrapStateDb, EvmBlockHeader, EvmDatabase, GuestEvmEnv};
-use alloy_primitives::{Address, Bloom, Log, Sealed};
-use alloy_rpc_types::{Filter, FilteredParams};
+use alloy_primitives::{Address, Log, Sealed};
+use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
 use std::marker::PhantomData;
 
@@ -81,6 +81,7 @@ impl<H: EvmBlockHeader> Event<(), &GuestEvmEnv<H>> {
     }
 }
 
+#[cfg(feature = "unstable-event")]
 impl<S: SolEvent, H: EvmBlockHeader> Event<S, &GuestEvmEnv<H>> {
     /// Executes the query and returns the matching logs and panics on failure.
     ///
@@ -189,11 +190,4 @@ fn event_filter<S: SolEvent, H: EvmBlockHeader>(header: &Sealed<H>) -> Filter {
     Filter::new()
         .event_signature(S::SIGNATURE_HASH)
         .at_block_hash(header.seal())
-}
-
-/// Checks if a bloom filter matches the given filter parameters.
-#[inline]
-pub(crate) fn matches_filter(bloom: Bloom, filter: &Filter) -> bool {
-    FilteredParams::matches_address(bloom, &FilteredParams::address_filter(&filter.address))
-        && FilteredParams::matches_topics(bloom, &FilteredParams::topics_filter(&filter.topics))
 }

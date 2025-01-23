@@ -142,6 +142,7 @@ where
     /// This function is necessary because mutable references to the database cannot be passed
     /// directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken out of
     /// the `HostEvmEnv`, moved into the blocking task, and then restored after the task completes.
+    #[allow(dead_code)]
     pub(crate) async fn spawn_with_db<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut ProofDb<D>) -> R + Send + 'static,
@@ -150,7 +151,7 @@ where
         // as mutable references are not possible, the DB must be moved in and out of the task
         let mut db = self.db.take().unwrap();
 
-        let (result, db) = tokio::task::spawn_blocking(|| (f(&mut db), db))
+        let (result, db) = tokio::task::spawn_blocking(move || (f(&mut db), db))
             .await
             .expect("DB execution panicked");
 

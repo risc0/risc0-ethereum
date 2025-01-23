@@ -18,7 +18,6 @@ use crate::{
 };
 use ::serde::{Deserialize, Serialize};
 use alloy_consensus::ReceiptEnvelope;
-use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
 
 /// Input committing to the corresponding execution block hash.
@@ -75,10 +74,17 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             previous_header = ancestor;
         }
 
+        #[cfg(not(feature = "unstable-event"))]
+        // there must not be any receipts, if events are not supported
+        let logs = {
+            assert!(self.receipts.is_none(), "Receipts not supported");
+            None
+        };
+        #[cfg(feature = "unstable-event")]
         // verify the root hash of the included receipts and extract their logs
         let logs = self.receipts.map(|receipts| {
             let root = alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| {
-                r.encode_2718(out)
+                alloy_eips::eip2718::Encodable2718::encode_2718(r, out)
             });
             assert_eq!(header.receipts_root(), &root, "Receipts root mismatch");
 

@@ -14,13 +14,12 @@
 
 pub use alloy_consensus::Account as StateAccount;
 
-use crate::{event, mpt::MerkleTrie, EvmBlockHeader, EvmDatabase};
+use crate::{mpt::MerkleTrie, EvmBlockHeader};
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
     Address, Bytes, Log, Sealed, B256, U256,
 };
-use alloy_rpc_types::{Filter, FilteredParams};
 use revm::{
     primitives::{AccountInfo, Bytecode},
     Database as RevmDatabase,
@@ -47,7 +46,7 @@ pub struct StateDb {
     contracts: B256HashMap<Bytes>,
     /// Block hashes by their number.
     block_hashes: HashMap<u64, B256>,
-
+    /// All the logs for this block.
     logs: Option<Vec<Log>>,
 }
 
@@ -193,20 +192,24 @@ impl<H> RevmDatabase for WrapStateDb<'_, H> {
     }
 }
 
-impl<H: EvmBlockHeader> EvmDatabase for WrapStateDb<'_, H> {
-    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+#[cfg(feature = "unstable-event")]
+impl<H: EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
+    fn logs(
+        &mut self,
+        filter: alloy_rpc_types::Filter,
+    ) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
         assert_eq!(filter.get_block_hash(), Some(self.header.seal()));
 
         let Some(logs) = self.inner.logs.as_ref() else {
             // if no logs are stored in the DB, check that the Bloom filter proves non-existence
             assert!(
-                !event::matches_filter(*self.header.logs_bloom(), &filter),
+                !crate::matches_filter(*self.header.logs_bloom(), &filter),
                 "No logs for matching filter"
             );
             return Ok(vec![]);
         };
 
-        let params = FilteredParams::new(Some(filter));
+        let params = alloy_rpc_types::FilteredParams::new(Some(filter));
         let filtered = logs
             .iter()
             .filter(|log| params.filter_address(&log.address) && params.filter_topics(log.topics()))
