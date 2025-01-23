@@ -120,26 +120,25 @@ pub mod host {
         serde::Eip2718Wrapper,
         EvmBlockHeader,
     };
-    use alloy::{
-        network::{Ethereum, Network},
-        providers::Provider,
-        transports::Transport,
-    };
+    use alloy::{network::Network, providers::Provider, transports::Transport};
     use alloy_primitives::Sealed;
     use anyhow::{anyhow, ensure};
     use log::debug;
+    use std::fmt::Display;
 
     impl<H> BlockInput<H> {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
-        pub(crate) async fn from_proof_db<T, P>(
-            mut db: ProofDb<AlloyDb<T, Ethereum, P>>,
+        pub(crate) async fn from_proof_db<T, N, P>(
+            mut db: ProofDb<AlloyDb<T, N, P>>,
             header: Sealed<H>,
         ) -> anyhow::Result<Self>
         where
             T: Transport + Clone,
-            P: Provider<T, Ethereum>,
-            H: EvmBlockHeader + From<<Ethereum as Network>::HeaderResponse>,
+            N: Network,
+            P: Provider<T, N>,
+            H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
+            <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
             assert_eq!(db.inner().block_hash(), header.seal(), "DB block mismatch");
 

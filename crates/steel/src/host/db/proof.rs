@@ -17,12 +17,13 @@ use crate::{event, MerkleTrie};
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
-    network::{primitives::BlockTransactionsKind, BlockResponse, Ethereum, Network},
+    network::{primitives::BlockTransactionsKind, BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
     transports::Transport,
 };
 use alloy_consensus::{Receipt, ReceiptEnvelope, ReceiptWithBloom, TxReceipt};
+use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{
     map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashSet},
     Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, B256, U256,
@@ -222,38 +223,40 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
         Ok((state_trie, storage_tries))
     }
-}
 
-impl<T: Transport + Clone, P: Provider<T, Ethereum>> ProofDb<AlloyDb<T, Ethereum, P>> {
     pub async fn receipt_proof(&self) -> Result<Option<Vec<ReceiptEnvelope>>> {
         if self.logs.is_empty() {
             return Ok(None);
         }
 
+        let provider = self.inner.provider();
         let block_hash = self.inner.block_hash();
-        let block = self
-            .inner
-            .provider()
+
+        let block = provider
             .get_block_by_hash(block_hash, BlockTransactionsKind::Hashes)
             .await
             .context("eth_getBlockByNumber failed")?
             .with_context(|| format!("block {} not found", block_hash))?;
+        let header = block.header();
 
+        // we don't need to include any receipts, if the Bloom filter proves the exclusion
         let bloom_match = self
             .logs
             .iter()
-            .any(|filter| event::matches_filter(block.header.logs_bloom, filter));
+            .any(|filter| event::matches_filter(header.logs_bloom(), filter));
         if !bloom_match {
             return Ok(None);
         }
 
-        let tx_receipts = self
-            .inner
-            .provider()
+        let rpc_receipts = provider
             .get_block_receipts(block_hash.into())
-            .await?
+            .await
+            .context("eth_getBlockReceipts failed")?
             .with_context(|| format!("block {} not found", block_hash))?;
-        let receipts = tx_receipts.into_iter().map(simplify_receipt).collect();
+
+        // convert the receipts so that they can be RLP-encoded
+        let receipts = convert_rpc_receipts::<N>(rpc_receipts, header.receipts_root())
+            .context("invalid receipts; inconsistent API response or incompatible response type")?;
 
         Ok(Some(receipts))
     }
@@ -308,7 +311,7 @@ impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
 
 impl<DB: crate::EvmDatabase> crate::EvmDatabase for ProofDb<DB> {
     fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
-        log::trace!("LOGS: signatures={:?}", filter.topics[0]);
+        log::trace!("LOGS: filter={:?}", &filter);
         let logs = self.inner.logs(filter.clone())?;
 
         self.logs.push(filter);
@@ -364,7 +367,36 @@ fn add_proof(
     Ok(())
 }
 
-fn simplify_receipt(tx_receipt: TransactionReceipt) -> ReceiptEnvelope {
+/// Converts an API ReceiptResponse into a vector of ReceiptEnvelope.
+fn convert_rpc_receipts<N: Network>(
+    rpc_receipts: impl IntoIterator<Item = <N as Network>::ReceiptResponse>,
+    receipts_root: B256,
+) -> Result<Vec<ReceiptEnvelope>> {
+    let receipts = rpc_receipts
+        .into_iter()
+        .map(|rpc_receipt| {
+            // Unfortunately ReceiptResponse does not implement ReceiptEnvelope, so we have to
+            // manually convert it. We convert to a TransactionReceipt which is the default and
+            // works for Ethereum-compatible networks.
+            // Use serde here for the conversion as it is much safer than mem::transmute.
+            // TODO(https://github.com/alloy-rs/alloy/issues/854): use ReceiptEnvelope directly
+            let json = serde_json::to_value(rpc_receipt).context("failed to serialize")?;
+            let tx_receipt: TransactionReceipt = serde_json::from_value(json)
+                .context("failed to parse as Ethereum transaction receipt")?;
+
+            Ok(tx_receipt_to_envelope(tx_receipt))
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    // in case the conversion did not work correctly, we check the receipts root in the header
+    let root =
+        alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| r.encode_2718(out));
+    ensure!(root == receipts_root, "receipts root mismatch");
+
+    Ok(receipts)
+}
+
+fn tx_receipt_to_envelope(tx_receipt: TransactionReceipt) -> ReceiptEnvelope {
     fn simplify_receipt(t: ReceiptWithBloom<Receipt<alloy::rpc::types::Log>>) -> ReceiptWithBloom {
         ReceiptWithBloom::new(
             Receipt {
