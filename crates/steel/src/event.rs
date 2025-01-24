@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Types related to event queries.
 pub use alloy_rpc_types::{Topic, ValueOrArray};
 
 use crate::{state::WrapStateDb, EvmBlockHeader, EvmDatabase, GuestEvmEnv};
@@ -20,14 +21,12 @@ use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
 use std::marker::PhantomData;
 
-/// Represents an Ethereum event query.
+/// Represents an EVM event query.
 ///
 /// ### Usage
-/// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Event::preflight].
-/// - **Calls in the Guest:** To initialize the contract in the guest environment, use [Event::new].
-///
-/// See [Contract] for more details.
+/// - **Preflight calls on the Host:** To prepare the event query on the host environment and build
+///   the necessary proof, use [Event::preflight].
+/// - **Calls in the Guest:** To initialize the event query in the guest, use [Event::new].
 ///
 /// ### Examples
 /// ```rust,no_run
@@ -39,7 +38,6 @@ use std::marker::PhantomData;
 /// # async fn main() -> anyhow::Result<()> {
 /// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
 /// sol! {
-/// #     #[derive(Debug)]
 ///     interface IERC20 {
 ///         event Transfer(address indexed from, address indexed to, uint256 value);
 ///     }
@@ -57,7 +55,6 @@ use std::marker::PhantomData;
 /// let env = evm_input.into_env();
 /// let event = Event::new::<IERC20::Transfer>(&env).address(contract_address);
 /// let logs = event.query();
-/// # dbg!(logs);
 ///
 /// # Ok(())
 /// # }
@@ -132,16 +129,16 @@ impl<S, E> Event<S, E> {
 mod host {
     use super::*;
     use crate::host::HostEvmEnv;
-    use anyhow::{anyhow, Result};
+    use anyhow::{Context, Result};
     use revm::Database as RevmDatabase;
-    use std::fmt::Display;
+    use std::error::Error as StdError;
 
     impl<D, H: EvmBlockHeader, C> Event<(), &mut HostEvmEnv<D, H, C>>
     where
         D: EvmDatabase + Send + 'static,
-        <D as RevmDatabase>::Error: Display + Send + 'static,
+        <D as RevmDatabase>::Error: StdError + Send + Sync + 'static,
     {
-        /// Constructor for preflighting an event query for a specific Solidity event.
+        /// Constructor for preflighting an event query for a specific EVM event.
         ///
         /// Initializes the environment for event queries, fetching necessary data via the
         /// [Provider], and generating a storage proof for any accessed elements using
@@ -164,7 +161,7 @@ mod host {
     impl<S: SolEvent, D, H: EvmBlockHeader, C> Event<S, &mut HostEvmEnv<D, H, C>>
     where
         D: EvmDatabase + Send + 'static,
-        <D as RevmDatabase>::Error: Display + Send + 'static,
+        <D as RevmDatabase>::Error: StdError + Send + Sync + 'static,
     {
         /// Executes the event query using an [EvmEnv] constructed with [Event::preflight].
         ///
@@ -172,11 +169,13 @@ mod host {
         ///
         /// [EvmEnv]: crate::EvmEnv
         pub async fn query(self) -> Result<Vec<Log<S>>> {
+            log::info!("Executing preflight querying event '{}'", S::SIGNATURE);
+
             let logs = self
                 .env
                 .spawn_with_db(move |db| db.logs(self.filter))
                 .await
-                .map_err(|err| anyhow!("querying '{}' failed: {}", S::SIGNATURE, err))?;
+                .with_context(|| format!("querying logs for '{}' failed", S::SIGNATURE))?;
             logs.iter()
                 .map(|log| Ok(S::decode_log(log, false)?))
                 .collect()
@@ -184,7 +183,7 @@ mod host {
     }
 }
 
-/// Creates an event filter for a specific Solidity event and block header.
+/// Creates an event filter for a specific event and block header.
 fn event_filter<S: SolEvent, H: EvmBlockHeader>(header: &Sealed<H>) -> Filter {
     assert!(!S::ANONYMOUS, "Anonymous events not supported");
     Filter::new()

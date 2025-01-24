@@ -39,7 +39,7 @@ pub mod config;
 mod contract;
 pub mod ethereum;
 #[cfg(feature = "unstable-event")]
-mod event;
+pub mod event;
 #[cfg(feature = "unstable-history")]
 pub mod history;
 #[cfg(not(feature = "unstable-history"))]
