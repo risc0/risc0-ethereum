@@ -131,6 +131,37 @@ pub struct HostCommit<C> {
     config_id: B256,
 }
 
+impl<D, H, C> HostEvmEnv<D, H, C>
+where
+    D: Send + 'static,
+{
+    /// Runs the provided closure that requires mutable access to the database on a thread where
+    /// blocking is acceptable.
+    ///
+    /// It panics if the closure panics.
+    /// This function is necessary because mutable references to the database cannot be passed
+    /// directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken out of
+    /// the `HostEvmEnv`, moved into the blocking task, and then restored after the task completes.
+    #[allow(dead_code)]
+    pub(crate) async fn spawn_with_db<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut ProofDb<D>) -> R + Send + 'static,
+        R: Send + 'static,
+    {
+        // as mutable references are not possible, the DB must be moved in and out of the task
+        let mut db = self.db.take().unwrap();
+
+        let (result, db) = tokio::task::spawn_blocking(move || (f(&mut db), db))
+            .await
+            .expect("DB execution panicked");
+
+        // restore the DB, so that we never return an env without a DB
+        self.db = Some(db);
+
+        result
+    }
+}
+
 impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///

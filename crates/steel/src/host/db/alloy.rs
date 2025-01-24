@@ -114,7 +114,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T
         let nonce = nonce.map_err(|err| Error::Rpc("eth_getTransactionCount", err))?;
         let balance = balance.map_err(|err| Error::Rpc("eth_getBalance", err))?;
         let code = code.map_err(|err| Error::Rpc("eth_getCode", err))?;
-        let bytecode = Bytecode::new_raw(code.0.into());
+        let bytecode = Bytecode::new_raw(code);
 
         // if the account is empty return None
         // in the EVM, emptiness is treated as equivalent to nonexistence

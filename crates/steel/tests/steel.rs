@@ -22,10 +22,10 @@ use alloy::{
     transports::BoxTransport,
     uint,
 };
-use alloy_primitives::{address, b256, bytes, hex, Address, Bytes, U256};
+use alloy_primitives::{address, b256, bytes, hex, keccak256, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
-use risc0_steel::{ethereum::EthEvmEnv, Contract};
+use risc0_steel::{ethereum::EthEvmEnv, Account, Contract};
 use sha2::{Digest, Sha256};
 use test_log::test;
 
@@ -116,7 +116,7 @@ alloy::sol!(
 );
 
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
-async fn test_provider() -> impl Provider<BoxTransport> {
+async fn test_provider() -> impl Provider<BoxTransport> + Clone {
     let provider = ProviderBuilder::new()
         .with_recommended_fillers()
         .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
@@ -126,6 +126,40 @@ async fn test_provider() -> impl Provider<BoxTransport> {
     assert_eq!(*instance.address(), STEEL_TEST_CONTRACT);
 
     provider
+}
+
+#[test(tokio::test)]
+async fn account_info() {
+    let provider = test_provider().await;
+    let mut env = EthEvmEnv::builder()
+        .provider(provider.clone())
+        .build()
+        .await
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let address = STEEL_TEST_CONTRACT;
+    let preflight_info = {
+        let account = Account::preflight(address, &mut env);
+        account.bytecode(true).info().await.unwrap()
+    };
+
+    let input = env.into_input().await.unwrap();
+    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+
+    let info = {
+        let account = Account::new(address, &env);
+        account.bytecode(true).info()
+    };
+    assert_eq!(info, preflight_info, "mismatch in preflight and execution");
+
+    assert_eq!(info.balance, provider.get_balance(address).await.unwrap());
+    assert_eq!(
+        info.nonce,
+        provider.get_transaction_count(address).await.unwrap()
+    );
+    let code = info.code.unwrap().bytes();
+    assert_eq!(code, provider.get_code_at(address).await.unwrap());
+    assert_eq!(info.code_hash, keccak256(code));
 }
 
 #[test(tokio::test)]
