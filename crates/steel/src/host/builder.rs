@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use super::BlockId;
 use crate::{
     beacon::BeaconCommit,
     config::ChainSpec,
@@ -23,6 +24,7 @@ use crate::{
     },
     EvmBlockHeader, EvmEnv,
 };
+use alloy::eips::BlockId as AlloyBlockId;
 use alloy::{
     network::{
         primitives::{BlockTransactionsKind, HeaderResponse},
@@ -31,7 +33,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder, ReqwestProvider},
     transports::Transport,
 };
-use alloy_primitives::Sealed;
+use alloy_primitives::{Sealed, B256};
 use anyhow::{anyhow, ensure, Context, Result};
 use std::{fmt::Display, marker::PhantomData};
 use url::Url;
@@ -54,7 +56,7 @@ impl<H> EvmEnv<(), H, ()> {
         EvmEnvBuilder {
             provider: (),
             provider_config: ProviderConfig::default(),
-            block: BlockNumberOrTag::Latest,
+            block: BlockId::default(),
             beacon_config: (),
             phantom: PhantomData,
         }
@@ -80,7 +82,7 @@ impl<H> EvmEnv<(), H, ()> {
 pub struct EvmEnvBuilder<P, H, B> {
     provider: P,
     provider_config: ProviderConfig,
-    block: BlockNumberOrTag,
+    block: BlockId,
     beacon_config: B,
     phantom: PhantomData<H>,
 }
@@ -137,7 +139,13 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     /// Sets the block number or block tag ("latest", "earliest", "pending") to be used for the EVM
     /// execution.
     pub fn block_number_or_tag(mut self, block: BlockNumberOrTag) -> Self {
-        self.block = block;
+        self.block = BlockId::Number(block);
+        self
+    }
+
+    /// Sets the block hash to be used for the EVM execution.
+    pub fn block_hash(mut self, hash: B256) -> Self {
+        self.block = BlockId::Hash(hash);
         self
     }
 
@@ -154,7 +162,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     /// Returns the [EvmBlockHeader] of the specified block.
     ///
     /// If `block` is `None`, the block based on the current builder configuration is used instead.
-    async fn get_header<T, N>(&self, block: Option<BlockNumberOrTag>) -> Result<Sealed<H>>
+    async fn get_header<T, N>(&self, number: Option<BlockNumberOrTag>) -> Result<Sealed<H>>
     where
         T: Transport + Clone,
         N: Network,
@@ -162,15 +170,16 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
-        let block = block.unwrap_or(self.block);
-        let number = block.into_rpc_type(&self.provider).await?;
+        let block = number.map_or(self.block, BlockId::Number);
+        let block = block.into_rpc_type(&self.provider).await?;
 
         let rpc_block = self
             .provider
-            .get_block_by_number(number, BlockTransactionsKind::Hashes)
+            .get_block(block, BlockTransactionsKind::Hashes)
             .await
-            .context("eth_getBlockByNumber failed")?
-            .with_context(|| format!("block {} not found", number))?;
+            .context("eth_getBlock1 failed")?
+            .with_context(|| format!("block {} not found", block))?;
+
         let rpc_header = rpc_block.header().clone();
         let header: H = rpc_header
             .try_into()

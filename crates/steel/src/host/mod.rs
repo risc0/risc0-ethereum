@@ -13,11 +13,6 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
-use std::{
-    fmt::{self, Debug, Display},
-    str::FromStr,
-};
-
 use crate::{
     beacon::BeaconCommit,
     block::BlockInput,
@@ -27,6 +22,7 @@ use crate::{
     host::db::ProviderDb,
     BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
+use alloy::eips::BlockId as AlloyBlockId;
 use alloy::{
     eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError},
     network::{Ethereum, Network},
@@ -34,15 +30,70 @@ use alloy::{
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
     transports::Transport,
 };
-use alloy_primitives::B256;
+use alloy_primitives::{BlockHash, B256};
 use anyhow::{ensure, Result};
 use db::{AlloyDb, ProofDb};
+use std::{
+    fmt::{self, Debug, Display},
+    str::FromStr,
+};
 use url::Url;
 
 mod builder;
 pub mod db;
 
 pub use builder::EvmEnvBuilder;
+
+/// A Block Identifier.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum BlockId {
+    /// A block hash
+    Hash(BlockHash),
+    /// A block number
+    Number(BlockNumberOrTag),
+}
+
+impl BlockId {
+    /// Converts the `BlockId` into the corresponding RPC type.
+    async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockId>
+    where
+        T: Transport + Clone,
+        N: Network,
+        P: Provider<T, N>,
+    {
+        let id = match self {
+            BlockId::Hash(hash) => hash.into(),
+            BlockId::Number(number) => match number {
+                BlockNumberOrTag::Latest => AlloyBlockNumberOrTag::Latest,
+                BlockNumberOrTag::Parent => {
+                    let latest = provider.get_block_number().await?;
+                    ensure!(latest > 0, "genesis does not have a parent");
+                    AlloyBlockNumberOrTag::Number(latest - 1)
+                }
+                BlockNumberOrTag::Safe => AlloyBlockNumberOrTag::Safe,
+                BlockNumberOrTag::Finalized => AlloyBlockNumberOrTag::Finalized,
+                BlockNumberOrTag::Number(n) => AlloyBlockNumberOrTag::Number(n),
+            }
+            .into(),
+        };
+        Ok(id)
+    }
+}
+
+impl Default for BlockId {
+    fn default() -> Self {
+        BlockId::Number(BlockNumberOrTag::default())
+    }
+}
+
+impl Display for BlockId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Hash(hash) => Display::fmt(&hash, f),
+            Self::Number(num) => Display::fmt(&num, f),
+        }
+    }
+}
 
 /// A block number (or tag - "latest", "safe", "finalized").
 /// This enum is used to specify which block to query when interacting with the blockchain.
@@ -64,29 +115,6 @@ pub enum BlockNumberOrTag {
     Number(u64),
 }
 
-impl BlockNumberOrTag {
-    /// Converts the `BlockNumberOrTag` into the corresponding RPC type.
-    async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockNumberOrTag>
-    where
-        T: Transport + Clone,
-        N: Network,
-        P: Provider<T, N>,
-    {
-        let number = match self {
-            BlockNumberOrTag::Latest => AlloyBlockNumberOrTag::Latest,
-            BlockNumberOrTag::Parent => {
-                let latest = provider.get_block_number().await?;
-                ensure!(latest > 0, "genesis does not have a parent");
-                AlloyBlockNumberOrTag::Number(latest - 1)
-            }
-            BlockNumberOrTag::Safe => AlloyBlockNumberOrTag::Safe,
-            BlockNumberOrTag::Finalized => AlloyBlockNumberOrTag::Finalized,
-            BlockNumberOrTag::Number(n) => AlloyBlockNumberOrTag::Number(n),
-        };
-        Ok(number)
-    }
-}
-
 impl FromStr for BlockNumberOrTag {
     type Err = ParseBlockNumberError;
 
@@ -96,7 +124,7 @@ impl FromStr for BlockNumberOrTag {
             "parent" => Self::Parent,
             "safe" => Self::Safe,
             "finalized" => Self::Finalized,
-            _number => {
+            _ => {
                 if let Some(hex_val) = s.strip_prefix("0x") {
                     let number = u64::from_str_radix(hex_val, 16);
                     Self::Number(number?)
