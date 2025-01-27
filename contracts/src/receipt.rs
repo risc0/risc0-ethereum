@@ -17,36 +17,36 @@ use risc0_aggregation::{
     decode_set_inclusion_seal, SetInclusionDecodingError, SetInclusionEncodingError,
     SetInclusionReceipt,
 };
-use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt as Risc0Receipt, ReceiptClaim};
+use risc0_zkvm::{sha::Digest, FakeReceipt, InnerReceipt, ReceiptClaim};
 use thiserror::Error;
 
 use crate::{
     encode_seal,
     groth16::decode_groth16_seal,
-    selector::{SelecorType, Selector, SelectorError},
+    selector::{Selector, SelectorError, SelectorType},
 };
 
-/// Wrapper around different types of receipts.
-pub enum ReceiptType {
-    Risc0(Risc0Receipt),
+/// Extension of the base [risc0-zkvm::Receipt] type.
+pub enum Receipt {
+    Base(risc0_zkvm::Receipt),
     SetInclusion(SetInclusionReceipt<ReceiptClaim>),
 }
 
-impl ReceiptType {
+impl Receipt {
     /// Encode the receipt as a seal.
-    pub fn encode_seal(&self) -> Result<Vec<u8>, SetInclusionEncodingError> {
+    pub fn abi_encode_seal(&self) -> Result<Vec<u8>, SetInclusionEncodingError> {
         match self {
-            ReceiptType::Risc0(receipt) => {
-                encode_seal(receipt).map_err(|_| SetInclusionEncodingError::UnsupportedReceiptType)
+            Receipt::Base(receipt) => {
+                encode_seal(receipt).map_err(|_| SetInclusionEncodingError::UnsupportedReceipt)
             }
-            ReceiptType::SetInclusion(receipt) => receipt.abi_encode_seal(),
+            Receipt::SetInclusion(receipt) => receipt.abi_encode_seal(),
         }
     }
 
-    /// Get the receipt if it is a RISC0 receipt.
-    pub fn receipt(&self) -> Option<Risc0Receipt> {
+    /// Get the receipt if it is a base [risc0_zkvm::Receipt].
+    pub fn receipt(&self) -> Option<&risc0_zkvm::Receipt> {
         match self {
-            ReceiptType::Risc0(receipt) => Some(receipt.clone()),
+            Receipt::Base(receipt) => Some(receipt),
             _ => None,
         }
     }
@@ -54,7 +54,7 @@ impl ReceiptType {
     /// Get the receipt if it is a set inclusion receipt.
     pub fn set_inclusion_receipt(&self) -> Option<&SetInclusionReceipt<ReceiptClaim>> {
         match self {
-            ReceiptType::SetInclusion(receipt) => Some(receipt),
+            Receipt::SetInclusion(receipt) => Some(receipt),
             _ => None,
         }
     }
@@ -79,9 +79,20 @@ pub enum DecodingError {
 /// Decode a seal into a receipt.
 pub fn decode_seal(
     seal: Bytes,
+    image_id: impl Into<Digest>,
+    journal: impl Into<Vec<u8>>,
+) -> Result<Receipt, DecodingError> {
+    let journal = journal.into();
+    let claim = ReceiptClaim::ok(image_id, journal.clone());
+    decode_seal_with_claim(seal, claim, journal)
+}
+
+/// Decode a seal into a receipt.
+pub fn decode_seal_with_claim(
+    seal: Bytes,
     claim: ReceiptClaim,
-    journal: impl AsRef<[u8]>,
-) -> Result<ReceiptType, DecodingError> {
+    journal: impl Into<Vec<u8>>,
+) -> Result<Receipt, DecodingError> {
     if seal.len() < 4 {
         return Err(DecodingError::SealTooShort);
     }
@@ -90,20 +101,21 @@ pub fn decode_seal(
         .ok_or_else(|| DecodingError::UnsupportedSelector(selector))?;
     let verifier_parameters = selector.verifier_parameters_digest()?;
     match selector.get_type() {
-        SelecorType::FakeReceipt => {
-            let receipt = Risc0Receipt::new(
+        SelectorType::FakeReceipt => {
+            let receipt = risc0_zkvm::Receipt::new(
                 InnerReceipt::Fake(FakeReceipt::new(claim)),
-                journal.as_ref().to_vec(),
+                journal.into(),
             );
-            Ok(ReceiptType::Risc0(receipt))
+            Ok(Receipt::Base(receipt))
         }
-        SelecorType::Groth16 => {
-            let receipt = decode_groth16_seal(seal, claim, journal, Some(verifier_parameters))?;
-            Ok(ReceiptType::Risc0(receipt))
+        SelectorType::Groth16 => {
+            let receipt =
+                decode_groth16_seal(seal, claim, journal.into(), Some(verifier_parameters))?;
+            Ok(Receipt::Base(receipt))
         }
-        SelecorType::SetVerifier => {
+        SelectorType::SetVerifier => {
             let receipt = decode_set_inclusion_seal(&seal, claim, verifier_parameters)?;
-            Ok(ReceiptType::SetInclusion(receipt))
+            Ok(Receipt::SetInclusion(receipt))
         }
     }
 }

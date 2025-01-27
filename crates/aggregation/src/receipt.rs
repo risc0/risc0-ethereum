@@ -91,13 +91,13 @@ impl From<risc0_zkp::verify::VerificationError> for VerificationError {
 #[derive(thiserror::Error, Debug)]
 pub enum SetInclusionEncodingError {
     #[error("unsupported receipt type")]
-    UnsupportedReceiptType,
+    UnsupportedReceipt,
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum SetInclusionDecodingError {
     #[error("unsupported receipt type")]
-    UnsupportedReceiptType,
+    UnsupportedReceipt,
     #[error("Digest decoding error")]
     Digest,
     #[error("failed to decode aggregation seal from bytes")]
@@ -289,7 +289,7 @@ fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>, SetInclusionEnc
             selector_seal.extend_from_slice(receipt.seal.as_ref());
             Ok(selector_seal)
         }
-        _ => Err(SetInclusionEncodingError::UnsupportedReceiptType),
+        _ => Err(SetInclusionEncodingError::UnsupportedReceipt),
     }
 }
 

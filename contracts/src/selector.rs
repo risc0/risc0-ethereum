@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fmt::{self, Display, Formatter};
+
 use hex::FromHex;
 use risc0_zkvm::sha::Digest;
 use thiserror::Error;
@@ -21,13 +23,13 @@ use thiserror::Error;
 pub enum SelectorError {
     #[error("Unsupported selector")]
     UnsupportedSelector,
-    #[error("Selector (0) does not have verifier parameters")]
+    #[error("Selector {0} does not have verifier parameters")]
     NoVerifierParameters(Selector),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum SelecorType {
+pub enum SelectorType {
     FakeReceipt,
     Groth16,
     SetVerifier,
@@ -41,6 +43,12 @@ pub enum Selector {
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
     SetVerifierV0_1 = 0xbfca9ccb,
+}
+
+impl Display for Selector {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:#010x}", *self as u32)
+    }
 }
 
 impl TryFrom<u32> for Selector {
@@ -78,11 +86,11 @@ impl Selector {
         }
     }
 
-    pub fn get_type(self) -> SelecorType {
+    pub fn get_type(self) -> SelectorType {
         match self {
-            Selector::FakeReceipt => SelecorType::FakeReceipt,
-            Selector::Groth16V1_1 | Selector::Groth16V1_2 => SelecorType::Groth16,
-            Selector::SetVerifierV0_1 => SelecorType::SetVerifier,
+            Selector::FakeReceipt => SelectorType::FakeReceipt,
+            Selector::Groth16V1_1 | Selector::Groth16V1_2 => SelectorType::Groth16,
+            Selector::SetVerifierV0_1 => SelectorType::SetVerifier,
         }
     }
 

@@ -16,7 +16,7 @@ use core::time::Duration;
 
 use crate::{
     event_query::EventQueryConfig,
-    receipt::decode_seal,
+    receipt::{decode_seal, decode_seal_with_claim},
     IRiscZeroSetVerifier::{self, IRiscZeroSetVerifierErrors, IRiscZeroSetVerifierInstance},
     IRiscZeroVerifier,
 };
@@ -200,13 +200,25 @@ where
     }
 
     /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its root.
-    pub async fn get_receipt(
+    pub async fn fetch_receipt(
+        &self,
+        seal: Bytes,
+        image_id: impl Into<Digest>,
+        journal: impl Into<Vec<u8>>,
+    ) -> Result<SetInclusionReceipt<ReceiptClaim>> {
+        let journal = journal.into();
+        let claim = ReceiptClaim::ok(image_id, journal.clone());
+        self.fetch_receipt_with_claim(seal, claim, journal).await
+    }
+
+    /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its root.
+    pub async fn fetch_receipt_with_claim(
         &self,
         seal: Bytes,
         claim: ReceiptClaim,
-        journal: impl AsRef<[u8]>,
+        journal: impl Into<Vec<u8>>,
     ) -> Result<SetInclusionReceipt<ReceiptClaim>> {
-        let receipt = decode_seal(seal, claim.clone(), journal)
+        let receipt = decode_seal_with_claim(seal, claim.clone(), journal)
             .map_err(|e| anyhow::anyhow!("Failed to decode seal: {:?}", e))?;
 
         let set_inclusion_receipt = receipt
@@ -224,16 +236,11 @@ where
             mmr: MerkleMountainRange::new_finalized(root),
         };
         let aggregation_set_journal = state.encode();
-        let aggregation_set_receipt_claim =
-            ReceiptClaim::ok(set_builder_id, aggregation_set_journal.clone());
 
-        let root_receipt = decode_seal(
-            root_seal,
-            aggregation_set_receipt_claim,
-            aggregation_set_journal,
-        )?
-        .receipt()
-        .ok_or_else(|| anyhow::anyhow!("Failed to decode root seal"))?;
+        let root_receipt = decode_seal(root_seal, set_builder_id, aggregation_set_journal)?
+            .receipt()
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("Failed to decode root seal"))?;
 
         let receipt = set_inclusion_receipt.clone().with_root(root_receipt);
 
