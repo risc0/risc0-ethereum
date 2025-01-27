@@ -22,9 +22,11 @@ use crate::{
     host::db::ProviderDb,
     BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
-use alloy::eips::BlockId as AlloyBlockId;
 use alloy::{
-    eips::eip1898::{HexStringMissingPrefixError, ParseBlockNumberError},
+    eips::{
+        eip1898::{HexStringMissingPrefixError, ParseBlockNumberError},
+        BlockId as AlloyBlockId,
+    },
     network::{Ethereum, Network},
     providers::Provider,
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,

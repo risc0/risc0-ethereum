@@ -24,8 +24,8 @@ use crate::{
     },
     EvmBlockHeader, EvmEnv,
 };
-use alloy::eips::BlockId as AlloyBlockId;
 use alloy::{
+    eips::BlockId as AlloyBlockId,
     network::{
         primitives::{BlockTransactionsKind, HeaderResponse},
         BlockResponse, Ethereum, Network,
