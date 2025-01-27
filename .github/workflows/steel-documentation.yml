@@ -3,9 +3,6 @@ name: Deploy Steel Documentation
 on:
   push:
     branches: ["main"]
-  pull_request:
-  # Allow manual trigger
-  workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -31,12 +28,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
-      - uses: risc0/risc0/.github/actions/rustup@main
-      #- uses: foundry-rs/foundry-toolchain@v1
-      #- uses: ./.github/actions/cargo-risczero-install
-      #  with:
-      #    ref: ${{ env.RISC0_MONOREPO_REF }}
-      #    toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}        
+      - uses: risc0/risc0/.github/actions/rustup@main    
 
       - name: Build documentation
         run: cargo doc --no-deps --document-private-items
@@ -52,8 +44,6 @@ jobs:
           path: target/doc
 
   deploy:
-    # Only deploy on push to main, not on PRs
-    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
