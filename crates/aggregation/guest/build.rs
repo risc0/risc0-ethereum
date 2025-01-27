@@ -18,8 +18,8 @@ use risc0_build::{embed_methods_with_options, DockerOptions, GuestOptions};
 use risc0_build_ethereum::generate_solidity_files;
 
 // Paths where the generated Solidity files will be written.
-const SOLIDITY_IMAGE_ID_PATH: &str = "../../contracts/src/SetBuilderImageID.sol";
-const SOLIDITY_ELF_PATH: &str = "../../contracts/test/SetBuilderElf.sol";
+const SOLIDITY_IMAGE_ID_PATH: &str = "../../../contracts/src/SetBuilderImageID.sol";
+const SOLIDITY_ELF_PATH: &str = "../../../contracts/test/SetBuilderElf.sol";
 
 fn main() {
     // Builds can be made deterministic, and thereby reproducible, by using Docker to build the
@@ -28,7 +28,7 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     let manifest_dir = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
     let use_docker = env::var("RISC0_USE_DOCKER").ok().map(|_| DockerOptions {
-        root_dir: Some(manifest_dir.join("../..")),
+        root_dir: Some(manifest_dir.join("../../..")),
     });
 
     // Generate Rust source files for the methods crate.
