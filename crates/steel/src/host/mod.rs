@@ -146,11 +146,19 @@ impl<D: Database, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
         self
     }
 
-    /// Extends the environment with the contents of another compatible environment. It will panic
-    /// if they are inconsistent.
+    /// Extends the environment with the contents of another compatible environment.
     ///
-    /// This method can be used to merge the results of two individual preflights, for example to
-    /// execute multiple preflight calls concurrently.
+    /// ### Panics
+    /// 
+    /// Panics if the environments are inconsistent, specifically if:
+    /// - The configurations don't match
+    /// - The headers don't match
+    /// - The database states conflict
+    ///
+    /// ### Use Cases
+    ///
+    /// This method is particularly useful for combining results from parallel preflights,
+    /// allowing you to execute multiple independent operations and merge their environments.
     ///
     /// ### Example
     /// ```rust
