@@ -104,3 +104,28 @@ impl Selector {
         Self::try_from(u32::from_be_bytes(bytes)).ok()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use hex::FromHex;
+    use risc0_aggregation::SetInclusionReceiptVerifierParameters;
+    use risc0_zkvm::{
+        sha::{Digest, Digestible},
+        Groth16ReceiptVerifierParameters,
+    };
+
+    // SetBuilder image ID v0.2.0 (built using RISC0_USE_DOCKER)
+    const SET_BUILDER_ID: &str = "a0a8e6243e40f65bbf8a5258a88591699df2fa5d6fc6495876992e53de08bbe5";
+
+    #[test]
+    fn print_verifier_parameters() {
+        let digest = Groth16ReceiptVerifierParameters::default().digest();
+        println!("Groth16ReceiptVerifierParameters {}", digest);
+
+        let digest = SetInclusionReceiptVerifierParameters {
+            image_id: Digest::from_hex(SET_BUILDER_ID).unwrap(),
+        }
+        .digest();
+        println!("SetInclusionReceiptVerifierParameters {}", digest);
+    }
+}
