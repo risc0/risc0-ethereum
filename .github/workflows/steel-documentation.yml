@@ -27,18 +27,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: risc0/risc0/.github/actions/rustup@main
-
+      
       - name: Setup Pages
         uses: actions/configure-pages@v4
-
-      - uses: ./.github/actions/cargo-risczero-install
-        with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
-          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}        
+      
+      - uses: risc0/risc0/.github/actions/rustup@main
+      #- uses: foundry-rs/foundry-toolchain@v1
+      #- uses: ./.github/actions/cargo-risczero-install
+      #  with:
+      #    ref: ${{ env.RISC0_MONOREPO_REF }}
+      #    toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}        
 
       - name: Build documentation
         run: cargo doc --no-deps --document-private-items
+        working-directory: crates/steel
 
       - name: Create index.html redirect
         run: |
