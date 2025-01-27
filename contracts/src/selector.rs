@@ -43,6 +43,7 @@ pub enum Selector {
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
     SetVerifierV0_1 = 0xbfca9ccb,
+    SetVerifierV0_2 = 0x16a15cc8,
 }
 
 impl Display for Selector {
@@ -60,6 +61,7 @@ impl TryFrom<u32> for Selector {
             0x50bd1769 => Ok(Selector::Groth16V1_1),
             0xc101b42b => Ok(Selector::Groth16V1_2),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
+            0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             _ => Err(SelectorError::UnsupportedSelector),
         }
     }
@@ -83,6 +85,10 @@ impl Selector {
                 "bfca9ccb59eb38b8c78ddc399a734d8e0e84e8028b7d616fa54fe707a1ff1b3b",
             )
             .unwrap()),
+            Selector::SetVerifierV0_2 => Ok(Digest::from_hex(
+                "16a15cc8c94a59dc3e4e41226bc560ecda596a371a487b7ecc6b65d9516dfbdb",
+            )
+            .unwrap()),
         }
     }
 
@@ -90,7 +96,7 @@ impl Selector {
         match self {
             Selector::FakeReceipt => SelectorType::FakeReceipt,
             Selector::Groth16V1_1 | Selector::Groth16V1_2 => SelectorType::Groth16,
-            Selector::SetVerifierV0_1 => SelectorType::SetVerifier,
+            Selector::SetVerifierV0_1 | Selector::SetVerifierV0_2 => SelectorType::SetVerifier,
         }
     }
 
