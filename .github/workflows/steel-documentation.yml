@@ -18,6 +18,10 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
+env:
+  RISC0_TOOLCHAIN_VERSION: r0.1.81.0
+  RISC0_MONOREPO_REF: "main"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,6 +31,11 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}        
 
       - name: Build documentation
         run: cargo doc --no-deps --document-private-items
@@ -42,7 +51,7 @@ jobs:
 
   deploy:
     # Only deploy on push to main, not on PRs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
