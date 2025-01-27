@@ -421,7 +421,8 @@ mod history {
     use super::*;
     use test_log::test;
 
-    /// Creates `EthEvmInput::History` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
+    /// Creates `EthEvmInput::History` using live RPC nodes preflighting
+    /// `IERC20(USDT).balanceOf(0x0)`.
     async fn rpc_usdt_history_input() -> anyhow::Result<EthEvmInput> {
         let mut env = EthEvmEnv::builder()
             .rpc(RPC_URL.parse()?)

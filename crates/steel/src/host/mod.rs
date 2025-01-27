@@ -37,6 +37,7 @@ use alloy::{
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
 use db::{AlloyDb, ProofDb};
+use revm::Database;
 use url::Url;
 
 mod builder;
@@ -131,7 +132,7 @@ pub struct HostCommit<C> {
     config_id: B256,
 }
 
-impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
+impl<D: Database, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
     /// This will panic when there is no valid specification ID for the current block.
@@ -143,6 +144,58 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
         self.commit.config_id = chain_spec.digest();
 
         self
+    }
+
+    /// Extends the environment with the contents of another compatible environment. It will panic
+    /// if they are inconsistent.
+    ///
+    /// This method can be used to merge the results of two individual preflights, for example to
+    /// execute multiple preflight calls concurrently.
+    ///
+    /// ### Example
+    /// ```rust
+    /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+    /// # use alloy_primitives::address;
+    /// # use alloy_sol_types::sol;
+    ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// # sol! {
+    /// #    interface IERC20 {
+    /// #        function balanceOf(address account) external view returns (uint);
+    /// #    }
+    /// # }
+    /// let call =
+    ///     IERC20::balanceOfCall { account: address!("F977814e90dA44bFA03b6295A0616a897441aceC") };
+    /// # let usdt_addr = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
+    /// # let usdc_addr = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+    ///
+    /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
+    /// let builder = EthEvmEnv::builder().rpc(url);
+    ///
+    /// let mut env1 = builder.clone().build().await?;
+    /// let mut contract1 = Contract::preflight(usdt_addr, &mut env1);
+    /// let mut env2 = builder.clone().build().await?;
+    /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
+    ///
+    /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
+    ///
+    /// env1.extend(env2);
+    /// let evm_input = env1.into_input().await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn extend(&mut self, other: Self) {
+        assert_eq!(self.cfg_env, other.cfg_env, "mismatching configuration");
+        assert_eq!(
+            self.header.seal(),
+            other.header.seal(),
+            "mismatching header"
+        );
+        // the commitments do not need to match as long as the cfg_env is consistent
+
+        self.db_mut().extend(other.db.unwrap());
     }
 }
 
