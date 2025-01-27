@@ -31,7 +31,7 @@ jobs:
       - uses: risc0/risc0/.github/actions/rustup@main    
 
       - name: Build documentation
-        run: cargo doc --no-deps --document-private-items
+        run: cargo doc --no-deps
         working-directory: crates/steel
 
       - name: Create index.html redirect
