@@ -37,7 +37,6 @@ use alloy::{
 use alloy_primitives::B256;
 use anyhow::{ensure, Result};
 use db::{AlloyDb, ProofDb};
-use revm::Database;
 use url::Url;
 
 mod builder;
@@ -132,7 +131,7 @@ pub struct HostCommit<C> {
     config_id: B256,
 }
 
-impl<D: Database, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
+impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
     /// This will panic when there is no valid specification ID for the current block.
@@ -149,7 +148,7 @@ impl<D: Database, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// Extends the environment with the contents of another compatible environment.
     ///
     /// ### Panics
-    /// 
+    ///
     /// Panics if the environments are inconsistent, specifically if:
     /// - The configurations don't match
     /// - The headers don't match

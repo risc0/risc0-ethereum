@@ -58,9 +58,12 @@ struct StorageProof {
     proof: Vec<Bytes>,
 }
 
-impl<D: Database> ProofDb<D> {
+impl<D> ProofDb<D> {
     /// Creates a new ProofDb instance, with a [Database].
-    pub fn new(db: D) -> Self {
+    pub fn new(db: D) -> Self
+    where
+        D: Database,
+    {
         Self {
             accounts: Default::default(),
             contracts: Default::default(),
