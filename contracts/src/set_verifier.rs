@@ -135,7 +135,7 @@ where
     }
 
     /// Returns the seal if of the given verified root.
-    pub async fn get_verified_root_seal(&self, root: B256) -> Result<Bytes> {
+    pub async fn fetch_verified_root_seal(&self, root: B256) -> Result<Bytes> {
         self.query_verified_root_event(root, None, None).await
     }
 
@@ -148,11 +148,12 @@ where
     }
 
     /// Query the VerifiedRoot event based on the root and block options.
+    ///
     /// For each iteration, we query a range of blocks.
     /// If the event is not found, we move the range down and repeat until we find the event.
     /// If the event is not found after the configured max iterations, we return an error.
     /// The default range is set to 100 blocks for each iteration, and the default maximum number of
-    /// iterations is 100. This means that the search will cover a maximum of 10,000 blocks.
+    /// iterations is 1000. This means that the search will cover a maximum of 100,000 blocks (~14 days at 12s block times).
     /// Optionally, you can specify a lower and upper bound to limit the search range.
     async fn query_verified_root_event(
         &self,
@@ -160,15 +161,21 @@ where
         lower_bound: Option<u64>,
         upper_bound: Option<u64>,
     ) -> Result<Bytes> {
-        let mut upper_block = upper_bound.unwrap_or(self.get_latest_block().await?);
-        let start_block = lower_bound.unwrap_or(upper_block.saturating_sub(
-            self.event_query_config.block_range * self.event_query_config.max_iterations,
-        ));
+        let mut upper_block = if let Some(upper_bound) = upper_bound {
+            upper_bound
+        } else {
+            self.get_latest_block().await?
+        };
+        let start_block = lower_bound.unwrap_or_else(|| {
+            upper_block.saturating_sub(
+                self.event_query_config.block_range * self.event_query_config.max_iterations,
+            )
+        });
 
         // Loop to progressively search through blocks
         for _ in 0..self.event_query_config.max_iterations {
-            // If the current end block is less than or equal to the starting block, stop searching
-            if upper_block <= start_block {
+            // If the current end block is less than the starting block, stop searching
+            if upper_block < start_block {
                 break;
             }
 
@@ -227,7 +234,7 @@ where
 
         let root = merkle_path_root(&claim.digest(), &set_inclusion_receipt.merkle_path);
         let root_seal = self
-            .get_verified_root_seal(<[u8; 32]>::from(root).into())
+            .fetch_verified_root_seal(<[u8; 32]>::from(root).into())
             .await?;
 
         let set_builder_id = Digest::from_bytes(self.image_info().await?.0 .0);
