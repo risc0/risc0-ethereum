@@ -26,7 +26,7 @@ use crate::{
     selector::{Selector, SelectorError, SelectorType},
 };
 
-/// Extension of the base [risc0-zkvm::Receipt] type.
+/// Extension of the base [risc0_zkvm::Receipt] type.
 pub enum Receipt {
     Base(risc0_zkvm::Receipt),
     SetInclusion(SetInclusionReceipt<ReceiptClaim>),
