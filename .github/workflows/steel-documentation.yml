@@ -33,10 +33,11 @@ jobs:
       - uses: risc0/risc0/.github/actions/rustup@main    
 
       - name: Build documentation
-        run: cargo doc --all-features --no-deps --workspace
+        run: cargo doc -p risc0-steel --all-features --no-deps
         env:
+          RISC0_SKIP_BUILD: true
+          RISC0_SKIP_BUILD_KERNEL: true
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
-        working-directory: crates/steel
 
       - name: Create index.html redirect
         run: |
