@@ -32,12 +32,12 @@ mod receipt;
 
 #[cfg(feature = "verify")]
 pub use receipt::{
-    EncodingError, RecursionVerifierParamters, SetInclusionReceipt,
-    SetInclusionReceiptVerifierParameters,
-    VerificationError,
+    decode_set_inclusion_seal, RecursionVerifierParamters, SetInclusionDecodingError,
     /* TODO(#353)
     SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH,
     */
+    SetInclusionEncodingError, SetInclusionReceipt, SetInclusionReceiptVerifierParameters,
+    VerificationError,
 };
 
 alloy_sol_types::sol! {
