@@ -61,17 +61,25 @@ runs:
       run: cargo install --locked --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
       shell: bash
       working-directory: tmp/risc0
+    - name: install rust toolchain
+      if: inputs.ref != ''
+      run: cargo run --bin rzup -- install --verbose --force rust ${{ inputs.toolchain-version }}
+      shell: bash
+      working-directory: tmp/risc0
 
     # Only run this step if using version (installing from crates.io)
     - name: install cargo-risczero from crates.io
       if: inputs.version != ''
       run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
       shell: bash
-
-    - name: install rust toolchains
-      run: cargo run --bin rzup -- --verbose install rust ${{ inputs.toolchain-version }}
+    - name: install rzup from git
+      if: inputs.version != ''
+      run: cargo install --git https://github.com/risc0/risc0.git rzup
       shell: bash
-      working-directory: tmp/risc0
+    - name: install rust toolchain
+      if: inputs.version != ''
+      run: rzup install --verbose --force rust ${{ inputs.toolchain-version }}
+      shell: bash
 
     - name: cleanup
       run: rm -rf tmp
