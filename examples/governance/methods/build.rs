@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 use std::{collections::HashMap, env, path::PathBuf};
 
-use risc0_build::{embed_methods_with_options, DockerOptions, GuestOptions};
+use risc0_build::{embed_methods_with_options, DockerOptionsBuilder, GuestOptionsBuilder};
 use risc0_build_ethereum::generate_solidity_files;
 
 // Paths where the generated Solidity files will be written.
@@ -26,19 +26,19 @@ fn main() {
     // guest. Check the RISC0_USE_DOCKER variable and use Docker to build the guest if set.
     println!("cargo:rerun-if-env-changed=RISC0_USE_DOCKER");
     println!("cargo:rerun-if-changed=build.rs");
-    let manifest_dir = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
-    let use_docker = env::var("RISC0_USE_DOCKER").ok().map(|_| DockerOptions {
-        root_dir: Some(manifest_dir.join("..")),
-    });
+    let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap());
+    let mut builder = GuestOptionsBuilder::default();
+    if env::var("RISC0_USE_DOCKER").is_ok() {
+        let docker_options = DockerOptionsBuilder::default()
+            .root_dir(manifest_dir.join(".."))
+            .build()
+            .unwrap();
+        builder.use_docker(docker_options);
+    }
+    let guest_options = builder.build().unwrap();
 
     // Generate Rust source files for the methods crate.
-    let guests = embed_methods_with_options(HashMap::from([(
-        "governance-guest",
-        GuestOptions {
-            features: Vec::new(),
-            use_docker,
-        },
-    )]));
+    let guests = embed_methods_with_options(HashMap::from([("governance-guest", guest_options)]));
 
     // Generate Solidity source files for use with Forge.
     let solidity_opts = risc0_build_ethereum::Options::default()
