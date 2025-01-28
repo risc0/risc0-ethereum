@@ -1,6 +1,7 @@
 name: Deploy Steel Documentation
 
 on:
+  pull_request:
   push:
     tags:
       - 'v[0-9]+.[0-9]+*'  # matches v1.0, v1.1, v2.0, v2.1.0, etc.
@@ -36,11 +37,36 @@ jobs:
           toolchain: nightly-2024-09-04
 
       - name: Build documentation
-        run: cargo +nightly-2024-09-04 doc -p risc0-steel --all-features --no-deps
+        run: |
+          if ! cargo +nightly-2024-09-04 doc -p risc0-steel --all-features --no-deps; then
+            echo "Documentation build failed"
+            exit 1
+          fi
         env:
           RISC0_SKIP_BUILD: true
           RISC0_SKIP_BUILD_KERNEL: true
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+
+      - name: Setup doc directory structure
+        run: |
+          cd target/doc || exit 1
+          
+          # Find all image references in Rust files and create symlinks
+          for img in $(find ../../crates -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.svg" \)); do
+            filename=$(basename $img)
+            ln -s $img $filename
+            # Also create in nested structure for deeper doc pages
+            ln -s ../$img risc0_steel/$filename
+          done
+          
+          # Create symlinks for commonly referenced directories
+          for dir in examples docs images assets; do
+            if [ -d ../../$dir ]; then
+              ln -s ../../$dir $dir
+              # Also create in nested structure
+              ln -s ../../../$dir risc0_steel/$dir
+            fi
+          done
 
       - name: Create index.html redirect
         run: |
