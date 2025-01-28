@@ -63,7 +63,8 @@ jobs:
           for dir in examples docs images assets; do
             if [ -d ../../$dir ]; then
               ln -s ../../$dir $dir
-              # Also create in nested structure
+              # Also create in nested structure for deeper doc pages
+              mkdir -p risc0_steel
               ln -s ../../../$dir risc0_steel/$dir
             fi
           done
