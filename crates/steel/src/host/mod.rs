@@ -51,7 +51,7 @@ pub use builder::EvmEnvBuilder;
 enum BlockId {
     /// A block hash
     Hash(BlockHash),
-    /// A block number
+    /// A block number or tag (e.g. latest)
     Number(BlockNumberOrTag),
 }
 
