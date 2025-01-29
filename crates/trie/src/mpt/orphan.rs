@@ -38,23 +38,28 @@ pub enum Error {
     /// This typically occurs when the removal of a key transforms an `Extension` node into a
     /// `Branch` node, and the proof does not contain sufficient information to reconstruct the
     /// original `Extension` node.
-    #[error("not resolvable from proof")]
+    /// It contains the key prefix that must be resolved for the removal to be valid.
+    #[error("key prefix `{0:?}` not resolved")]
     Unresolvable(Nibbles),
 }
 
 impl Trie {
-    /// Attempts to resolve orphaned branch children caused by removing a key-value pair.
+    /// Attempts to resolve orphaned branch children caused by the removal of a key-value pair.
     ///
-    /// When a key-value pair is removed from the trie, it can leave behind "orphaned" nodes, which
-    /// needs to be transformed into a different type for the trie to remain valid.
+    /// When a key-value pair is removed from the trie, it may leave behind "orphaned" nodes that
+    /// must be transformed into a different type of node for the trie to remain valid.
     /// This method uses an [EIP-1186](https://eips.ethereum.org/EIPS/eip-1186) proof to resolve
     /// these orphans. The proof should represent the state of the trie *after* the removal of the
     /// key-value pair.
     ///
     /// # Errors
     ///
-    /// Returns `Ok(())` if the orphan was successfully resolved. Returns an `Error` if the proof is
-    /// invalid or the orphan cannot be resolved using the provided proof.
+    /// Returns `Ok(())` if the orphan was successfully resolved. Returns `Error` if the proof is
+    /// invalid or the orphan cannot be resolved with the given proof.
+    ///
+    /// # Panics
+    ///
+    /// It panics if the key is not contained in the trie.
     #[inline]
     pub fn resolve_orphan<K, I, T>(&mut self, key: K, proof: I) -> Result<(), Error>
     where
@@ -117,7 +122,15 @@ impl<M: Memoization + Clone> Node<M> {
                 // if this happens, during the removal an Extension got converted into a Branch and
                 // we cannot resolve it with the information of the proof
                 if suffix.is_empty() {
-                    return Err(Error::Unresolvable(matched.join(prefix)));
+                    // we don't know the key corresponding to this orphan, we only know its prefix
+                    let orphan_prefix = matched.join(prefix);
+                    // we could be lucky and that prefix is already contained in the trie
+                    if self.contains_prefix((&orphan_prefix).into()) {
+                        // in this case the removal will not fail and nothing needs to be resolved
+                        return Ok(());
+                    }
+                    // otherwise return error that the given prefix needs to be resolved
+                    return Err(Error::Unresolvable(orphan_prefix));
                 }
 
                 // the original sibling node of `diverging` is an Extension with suffix
@@ -159,6 +172,10 @@ impl<M: Memoization + Clone> Node<M> {
 
             Node::Digest(_) => Some((self, key)),
         }
+    }
+
+    fn contains_prefix<'a>(&'a self, key: NibbleSlice<'a>) -> bool {
+        self.diverging(key).map_or(true, |(_, unmatched)| unmatched.is_empty())
     }
 }
 
