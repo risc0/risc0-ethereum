@@ -51,21 +51,25 @@ jobs:
         run: |
           cd target/doc || exit 1
           
-          # Find all image references in Rust files and create symlinks
+          # Create the risc0_steel directory first
+          mkdir -p risc0_steel
+          
+          # Find all image references and create symlinks with proper relative paths
           for img in $(find ../../crates -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.svg" \)); do
             filename=$(basename $img)
-            ln -s $img $filename
-            # Also create in nested structure for deeper doc pages
-            ln -s ../$img risc0_steel/$filename
+            # Create absolute path symlinks in root doc directory
+            ln -sf $(realpath $img) $filename
+            # Create relative path symlinks in risc0_steel directory
+            ln -sf $(realpath $img) risc0_steel/$filename
           done
           
-          # Create symlinks for commonly referenced directories
+          # Create symlinks for directories with proper relative paths
           for dir in examples docs images assets; do
             if [ -d ../../$dir ]; then
-              ln -s ../../$dir $dir
-              # Also create in nested structure for deeper doc pages
-              mkdir -p risc0_steel
-              ln -s ../../../$dir risc0_steel/$dir
+              # Create absolute path symlinks in root doc directory
+              ln -sf $(realpath ../../$dir) $dir
+              # Create relative path symlinks in risc0_steel directory
+              ln -sf $(realpath ../../$dir) risc0_steel/$dir
             fi
           done
 
