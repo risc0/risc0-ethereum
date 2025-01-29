@@ -32,7 +32,7 @@ use alloy::{
     providers::{Provider, ProviderBuilder, ReqwestProvider},
     transports::Transport,
 };
-use alloy_primitives::{Sealed, B256};
+use alloy_primitives::{BlockHash, BlockNumber, Sealed, B256};
 use anyhow::{anyhow, ensure, Context, Result};
 use std::{fmt::Display, marker::PhantomData};
 use url::Url;
@@ -161,7 +161,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     /// Returns the [EvmBlockHeader] of the specified block.
     ///
     /// If `block` is `None`, the block based on the current builder configuration is used instead.
-    async fn get_header<T, N>(&self, number: Option<BlockNumberOrTag>) -> Result<Sealed<H>>
+    async fn get_header<T, N>(&self, block: Option<BlockId>) -> Result<Sealed<H>>
     where
         T: Transport + Clone,
         N: Network,
@@ -169,7 +169,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
-        let block = number.map_or(self.block, BlockId::Number);
+        let block = block.unwrap_or(self.block);
         let block = block.into_rpc_type(&self.provider).await?;
 
         let rpc_block = self
@@ -229,23 +229,68 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
 #[derive(Clone, Debug)]
 pub struct History {
     beacon_url: Url,
-    commitment_block: BlockNumberOrTag,
+    commitment_block: BlockId,
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
-    /// Sets a dedicated block for the commitment that is different from the execution block.
+    /// Sets the block hash for the commitment block, which can be different from the execution block.
     ///
-    /// The commitment block must be later than the execution block (i.e. the execution block must
-    /// be an ancestor of the commitment block). This allows executing smart contracts with
-    /// historical state (e.g. 30 days ago) and verifying the results against a more recent
-    /// commitment block.
+    /// This allows for historical state execution while maintaining security through a more recent
+    /// commitment. The commitment block must be more recent than the execution block.
     ///
-    /// Note that this feature requires a Beacon chain RPC provider, as it uses EIP-4788.
+    /// Note that this feature requires a Beacon chain RPC provider, as it relies on
+    /// [EIP-4788](https://eips.ethereum.org/EIPS/eip-4788).
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// # use risc0_steel::ethereum::EthEvmEnv;
+    /// # use alloy_primitives::B256;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// let commitment_hash = B256::from_str("0x1234...")?;
+    /// let env = EthEvmEnv::builder()
+    ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
+    ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
+    ///     .block_number(1_000_000) // execute against historical state
+    ///     .commitment_block_hash(commitment_hash) // commit to recent block
+    ///     .build()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     #[stability::unstable(feature = "history")]
-    pub fn commitment_block(
+    pub fn commitment_block_hash(
+        self,
+        hash: BlockHash,
+    ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+        self.commitment_block(BlockId::Hash(hash))
+    }
+
+    /// Sets the block number or block tag ("latest", "earliest", "pending")  for the commitment.
+    ///
+    /// See [EvmEnvBuilder::commitment_block_hash] for detailed documentation.
+    #[stability::unstable(feature = "history")]
+    pub fn commitment_block_number_or_tag(
         self,
         block: BlockNumberOrTag,
     ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+        self.commitment_block(BlockId::Number(block))
+    }
+
+    /// Sets the block number for the commitment.
+    ///
+    /// See [EvmEnvBuilder::commitment_block_hash] for detailed documentation.
+    #[stability::unstable(feature = "history")]
+    pub fn commitment_block_number(
+        self,
+        number: BlockNumber,
+    ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+        self.commitment_block_number_or_tag(BlockNumberOrTag::Number(number))
+    }
+
+    fn commitment_block(self, block: BlockId) -> EvmEnvBuilder<P, EthBlockHeader, History> {
         EvmEnvBuilder {
             provider: self.provider,
             provider_config: self.provider_config,
@@ -393,7 +438,7 @@ mod tests {
             .provider(&provider)
             .block_number_or_tag(BlockNumberOrTag::Number(latest - 100))
             .beacon_api(CL_URL.parse().unwrap())
-            .commitment_block(BlockNumberOrTag::Number(latest - 1));
+            .commitment_block_number(latest - 1);
         let env = builder.clone().build().await.unwrap();
         let commit = env.commit.inner.commit(&env.header, env.commit.config_id);
 
