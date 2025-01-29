@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use guest_set_builder::{SET_BUILDER_ELF, SET_BUILDER_ID};
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use risc0_aggregation::{merkle_root, GuestState};
 use risc0_zkvm::{
     default_executor, sha::Digestible, ExecutorEnv, FakeReceipt, InnerReceipt, MaybePruned,
@@ -145,7 +145,7 @@ fn proves_incremental() {
         let mut state = GuestState::initial(SET_BUILDER_ID);
         let mut set_builder_claim: Option<ReceiptClaim> = None;
         while !claims.is_empty() {
-            let chunk = claims.split_off(thread_rng().gen_range(0..claims.len()));
+            let chunk = claims.split_off(rng().random_range(0..claims.len()));
 
             let mut env_builder = ExecutorEnv::builder();
             env_builder
