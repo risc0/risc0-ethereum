@@ -73,9 +73,8 @@ impl BlockHeaderCommit<OpBlockHeader> for DisputeGameCommit {
 #[cfg(feature = "host")]
 pub mod host {
     use super::*;
-    use alloy::network::primitives::BlockTransactionsKind;
     use alloy::{
-        network::Ethereum,
+        network::{primitives::BlockTransactionsKind, Ethereum},
         providers::Provider,
         rpc::types::state::{AccountOverride, StateOverride},
         transports::Transport,

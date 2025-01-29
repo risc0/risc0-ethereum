@@ -17,21 +17,22 @@ use crate::{
     optimism::{OpBlockHeader, OpEvmInput},
     DisputeGameCommit,
 };
-use alloy::transports::http::{reqwest, Http};
 use alloy::{
     network::Ethereum,
     providers::{Provider, ProviderBuilder, ReqwestProvider},
-    transports::Transport,
+    transports::{
+        http::{reqwest, Http},
+        Transport,
+    },
 };
 use alloy_primitives::{Address, Sealable};
 use anyhow::{Context, Result};
 use op_alloy_network::Optimism;
-use risc0_steel::host::{EvmEnvBuilder, HostCommit};
 use risc0_steel::{
     config::ChainSpec,
     host::{
         db::{AlloyDb, ProofDb},
-        BlockNumberOrTag,
+        BlockNumberOrTag, EvmEnvBuilder, HostCommit,
     },
     ComposeInput, EvmEnv, EvmInput,
 };

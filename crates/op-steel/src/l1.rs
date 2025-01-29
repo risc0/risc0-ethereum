@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::network::primitives::BlockTransactionsKind;
 use alloy::{
     eips::BlockId,
+    network::primitives::BlockTransactionsKind,
     providers::{Provider, ProviderBuilder},
     transports::{Transport, TransportError},
 };
@@ -119,11 +119,11 @@ where
     }
 
     pub async fn latest_number(&self) -> alloy::contract::Result<BlockNumber> {
-        Ok(self.0.number().call().await?._0)
+        Ok(self.0.number().call().block(BlockId::latest()).await?._0)
     }
 
     pub async fn latest_timestamp(&self) -> alloy::contract::Result<u64> {
-        Ok(self.0.timestamp().call().await?._0)
+        Ok(self.0.timestamp().call().block(BlockId::latest()).await?._0)
     }
 
     pub async fn find_l2_block_at_timestamp(
