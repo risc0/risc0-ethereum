@@ -47,6 +47,22 @@ jobs:
           RISC0_SKIP_BUILD_KERNEL: true
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
 
+      - name: Setup doc directory structure
+        run: |
+          cd target/doc || exit 1
+          
+          # Create the risc0_steel directory first
+          mkdir -p risc0_steel
+          
+          # Find all image references and create symlinks with proper relative paths
+          for img in $(find ../../crates -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.gif" -o -name "*.svg" \)); do
+            filename=$(basename $img)
+            # Create absolute path symlinks in root doc directory
+            ln -sf $(realpath $img) $filename
+            # Create relative path symlinks in risc0_steel directory
+            ln -sf $(realpath $img) risc0_steel/$filename
+          done
+
       - name: Create index.html redirect
         run: |
           echo '<meta http-equiv="refresh" content="0; url=risc0_steel/index.html">' > target/doc/index.html
