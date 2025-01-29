@@ -2,9 +2,19 @@ name: cargo risczero install
 description: Install cargo risczero, build toolchains, and r0vm.
 
 inputs:
+  version:
+    description: |
+      crates.io version specifier to use when installing cargo-risczero
+
+      Mutually exclusive with ref.
+    required: false
+    type: string
   ref:
-    description: 'Git reference to pull from risc0/risc0 and build'
-    required: true
+    description: |
+      Git reference to pull from risc0/risc0 and build'
+
+      Mutually exclusive with version.
+    required: false
     type: string
   toolchain-version:
     description: 'Version of the RISC Zero toolchains to install'
@@ -20,24 +30,61 @@ inputs:
 runs:
   using: composite
   steps:
-      - name: checkout risc0
-        uses: actions/checkout@v4
-        with:
-          repository: 'risc0/risc0'
-          path: 'tmp/risc0'
-          ref: ${{ inputs.ref }}
-          lfs: true
-      - name: install cargo-risczero
-        run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
-        working-directory: tmp/risc0
-        shell: bash
-      - name: install r0vm
-        run: cargo install --locked --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
-        shell: bash
-        working-directory: tmp/risc0
-      - name: install toolchains
-        run: cargo risczero install ${{ inputs.toolchain-version != '' && format('--version {0}', inputs.toolchain-version) || '' }}
-        shell: bash
-      - name: cleanup
-        run: rm -rf tmp
-        shell: bash
+    - name: validate inputs
+      shell: bash
+      run: |
+        if [ ! -z "${{ inputs.version }}" ] && [ ! -z "${{ inputs.ref }}" ]; then
+          echo "Error: Cannot specify both 'version' and 'ref' parameters"
+          exit 1
+        fi
+        if [ -z "${{ inputs.version }}" ] && [ -z "${{ inputs.ref }}" ]; then
+          echo "Error: Must specify either 'version' or 'ref' parameter"
+          exit 1
+        fi
+
+    # Only run these steps if using ref (building from source)
+    - name: checkout risc0
+      if: inputs.ref != ''
+      uses: actions/checkout@v4
+      with:
+        repository: 'risc0/risc0'
+        path: 'tmp/risc0'
+        ref: ${{ inputs.ref }}
+        lfs: true
+    - name: install cargo-risczero from git
+      if: inputs.ref != ''
+      run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
+      working-directory: tmp/risc0
+      shell: bash
+    - name: install r0vm from git
+      if: inputs.ref != ''
+      run: cargo install --locked --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
+      shell: bash
+      working-directory: tmp/risc0
+    - name: install toolchains
+      if: inputs.ref != ''
+      run: |
+        cargo run --bin rzup -- install --verbose --force rust ${{ inputs.toolchain-version }}
+        cargo run --bin rzup -- install --verbose cpp
+      shell: bash
+      working-directory: tmp/risc0
+
+    # Only run this step if using version (installing from crates.io)
+    - name: install cargo-risczero from crates.io
+      if: inputs.version != ''
+      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
+      shell: bash
+    - name: install rzup from git
+      if: inputs.version != ''
+      run: cargo install --git https://github.com/risc0/risc0.git rzup
+      shell: bash
+    - name: install toolchains
+      if: inputs.version != ''
+      run: |
+        rzup install --verbose --force rust ${{ inputs.toolchain-version }}
+        rzup install --verbose cpp
+      shell: bash
+
+    - name: cleanup
+      run: rm -rf tmp
+      shell: bash

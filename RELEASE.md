@@ -5,7 +5,16 @@
    Release branches are initialized with a commit from `main`, and named `release-x.y` where `x.y` is the major and minor version.
    Patch version changes are committed to the release branch matching their major and minor version.
 
-2. Create two version bump PRs:
+2. Make sure that the [Selector](./contracts/src/selector.rs) are up-to-date. 
+   If any of the parameters affecting `Groth16ReceiptVerifierParameters` or the `SetInclusionReceiptVerifierParameters` changed, run this command and use the output to update them (this should be done for the main branch and only backport it if necessary):
+   
+   > Before running, make sure the const `SET_BUILDER_ID` in the [selector::tests::print_verifier_parameters](./contracts/src/selector.rs) matches with what you are expecting.
+   >
+   > ```
+   > cargo test -F unstable -p risc0-ethereum-contracts -- selector::tests::print_verifier_parameters --exact --show-output
+   > ```
+
+3. Create two version bump PRs:
 
    * One PR should be to the `release-x.y` branch and do the following:
 
@@ -15,7 +24,7 @@
        > Here is a command to help find all the Cargo.toml files that need to be updated
        >
        > ```
-       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./ffi/guests' --exclude-dir='./target' .
+       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./crates/ffi/guests' --exclude-dir='./target' .
        > ```
 
      * Update the version string in contracts that contain it:
@@ -23,7 +32,7 @@
        * `contracts/src/RiscZeroSetVerifier.sol`
      * Update references to the `main` branch
        * Search for `risc0/risc0-ethereum/refs/heads/main`
-     * Update `steel/CHANGELOG.md` to ensure it details the changes to be released.
+     * Update `crates/steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
 
@@ -45,16 +54,15 @@
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
        * `contracts/src/RiscZeroSetVerifier.sol`
-     * Update `steel/CHANGELOG.md` to start a new section for the next release.
-     * Update the value of `RISC0_MONOREPO_REF` in `.github/workflow` files to the matching monorepo branch.
+     * Update `crates/steel/CHANGELOG.md` to start a new section for the next release.
 
-3. Tag the release as `vX.Y.Z`, and add release on GitHub.
+4. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
-   Also tag the release as `steel-v0.X.Y`, as long as Steel is pre-1.0 and so on a different version than the rest of the crates.
+   Also tag the release as `aggregation-v0.X.Y`, as long as `risc0-aggregation` is pre-1.0 and so on a different version than the rest of the crates.
 
    Include a summary of the changes in the release notes.
 
-4. Publish crates to `crates.io`
+5. Publish crates to `crates.io`
 
    Crates currently published to `crates.io` are:
 
@@ -63,6 +71,7 @@
      > NOTE: risc0-steel currently cannot be published to crates.io.
      > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
 
+   * `risc0-aggregation`
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
 
@@ -81,7 +90,7 @@
 
    See the [Cargo docs](https://doc.rust-lang.org/cargo/reference/publishing.html) for more details.
 
-5. When changes have been made to the verifier contract, deploy a new verifier contract and add it to the verifier router on each supported chain.
+6. When changes have been made to the verifier contract, deploy a new verifier contract and add it to the verifier router on each supported chain.
 
    Refer to [contracts/script/README.md](./contracts/script/README.md) for instructions on the steps involved.
 
@@ -111,4 +120,6 @@
 
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 
-6. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
+7. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
+
+8. Update and test the `create-steel-app` script.

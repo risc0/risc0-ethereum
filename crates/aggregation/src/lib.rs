@@ -32,12 +32,12 @@ mod receipt;
 
 #[cfg(feature = "verify")]
 pub use receipt::{
-    EncodingError, RecursionVerifierParamters, SetInclusionReceipt,
-    SetInclusionReceiptVerifierParameters,
-    VerificationError,
+    decode_set_inclusion_seal, RecursionVerifierParamters, SetInclusionDecodingError,
     /* TODO(#353)
     SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH,
     */
+    SetInclusionEncodingError, SetInclusionReceipt, SetInclusionReceiptVerifierParameters,
+    VerificationError,
 };
 
 alloy_sol_types::sol! {
@@ -306,7 +306,11 @@ impl MerkleMountainRange {
             bitmap.set_bit(peak.max_depth as usize, true);
             peaks.push(peak.digest);
         }
-        [&bitmap.as_le_bytes(), bytemuck::cast_slice(&peaks)].concat()
+        [
+            &bitmap.to_be_bytes::<{ U256::BYTES }>(),
+            bytemuck::cast_slice(&peaks),
+        ]
+        .concat()
     }
 
     /// Decode the specialized journal encoding. See [MerkleMountainRange::encode].
@@ -316,7 +320,7 @@ impl MerkleMountainRange {
             .as_ref()
             .split_at_checked(U256::BYTES)
             .ok_or(DecodingError::UnexpectedEnd)?;
-        let bitmap = U256::from_le_slice(chunk);
+        let bitmap = U256::from_be_slice(chunk);
         if bitmap > (uint!(1_U256 << u8::MAX)) {
             // When the leading bit is set, it must be finalized. Any value above 2^255 is invalid.
             return Err(DecodingError::InvalidBitmap);

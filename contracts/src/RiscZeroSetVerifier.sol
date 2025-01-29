@@ -47,16 +47,15 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     using ReceiptClaimLib for ReceiptClaim;
 
     /// Semantic version of the RISC Zero Set Verifier.
-    string public constant VERSION = "0.2.0-alpha.1";
+    string public constant VERSION = "0.3.0-alpha.1";
 
     IRiscZeroVerifier public immutable VERIFIER;
 
     /// @notice A short key attached to the seal to select the correct verifier implementation.
-    /// @dev The selector is taken from the hash of the verifier parameters including the Groth16
-    ///      verification key and the control IDs that commit to the RISC Zero circuits. If two
-    ///      receipts have different selectors (i.e. different verifier parameters), then it can
-    ///      generally be assumed that they need distinct verifier implementations. This is used as
-    ///      part of the RISC Zero versioning mechanism.
+    /// @dev The selector is taken from the hash of the verifier parameters including the set builder
+    ///      guest image ID. If two receipts have different selectors (i.e. different verifier
+    ///      parameters), then it can generally be assumed that they need distinct verifier
+    ///      implementations. This is used as part of the RISC Zero versioning mechanism.
     ///
     ///      A selector is not intended to be collision resistant, in that it is possible to find
     ///      two preimages that result in the same selector. This is acceptable since it's purpose

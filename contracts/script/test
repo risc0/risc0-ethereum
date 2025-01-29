@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -eo pipefail
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+CONTRACTS_DIR="${SCRIPT_DIR:?}/.."
+
+echo "Loading environment variables from deployment_secrets.toml"
+if [ -z "$RPC_URL" ]; then
+    echo -n 'RPC_URL from deployment_secrets.toml: ' > /dev/stderr
+    export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" $CONTRACTS_DIR/deployment_secrets.toml)
+    [ -n "$ETHERSCAN_URL" ] || exit 1
+else
+    echo -n "RPC_URL from env $RPC_URL"
+fi
+
+# NOTE: forge test only works in the contracts directory right now.
+cd $CONTRACTS_DIR
+
+FOUNDRY_PROFILE=deployment-test \
+forge test -vv --fork-url=${RPC_URL:?}
