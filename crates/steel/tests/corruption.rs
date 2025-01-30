@@ -428,7 +428,7 @@ mod history {
             .rpc(RPC_URL.parse()?)
             .beacon_api(BEACON_API_URL.parse()?)
             .block_number_or_tag(BlockNumberOrTag::Safe)
-            .commitment_block(BlockNumberOrTag::Parent)
+            .commitment_block_number_or_tag(BlockNumberOrTag::Parent)
             .build()
             .await?;
         env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);

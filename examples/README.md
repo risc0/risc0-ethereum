@@ -23,5 +23,5 @@ This example shows how the [Steel] library can be used to call multiple view fun
 This example generates a proof of a [Compound] cToken's APR (Annual Percentage Rate), showcasing the potential for on-chain verification of complex financial metrics.
 
 [coprocessor]: https://risczero.com/blog/a-guide-to-zk-coprocessors-for-scalability
-[Steel]: ../steel
+[Steel]: ../crates/steel
 [Compound]: https://compound.finance/

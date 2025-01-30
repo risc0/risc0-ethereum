@@ -30,8 +30,8 @@ use revm::{
 ///
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Contract::preflight]. The environment can be initialized using the
-///   [EthEvmEnv::builder] or [EvmEnv::builder].
+///   necessary proof, use [Contract::preflight][Contract]. The environment can be initialized using
+///   the [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
@@ -69,8 +69,8 @@ use revm::{
 /// # }
 /// ```
 ///
-/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv::builder
-/// [EvmEnv::builder]: crate::EvmEnv::builder
+/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv
+/// [EvmEnv::builder]: crate::EvmEnv
 /// [EvmInput::into_env]: crate::EvmInput::into_env
 pub struct Contract<E> {
     address: Address,
