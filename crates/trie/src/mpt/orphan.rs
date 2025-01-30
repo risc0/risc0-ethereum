@@ -29,10 +29,14 @@ use std::fmt::Debug;
 /// Error returned by the `resolve_orphan` method.
 #[derive(Clone, Debug, Eq, PartialEq, thiserror::Error)]
 pub enum Error {
-    /// Indicates that the proof is invalid or not a valid post-removal proof for the specified
-    /// key.
-    #[error("invalid proof")]
+    /// Indicates that the proof does not have a valid RLP encoding.
+    #[error("proof RLP encoding error")]
     RlpError(#[from] alloy_rlp::Error),
+
+    /// Indicates that the given proof is an invalid post-removal proof and does not prove the
+    /// non-inclusion of the key.
+    #[error("invalid proof")]
+    InvalidProof,
 
     /// Indicates that the orphan cannot be resolved using only the provided post-removal proof.
     /// This typically occurs when the removal of a key transforms an `Extension` node into a
@@ -101,14 +105,16 @@ impl<M: Memoization + Clone> Node<M> {
         let matched = key.strip_suffix(&unmatched).unwrap();
 
         match diverging {
-            Node::Null => {}
+            Node::Null => {
+                // the entire tree has been removed so trivially there can be no orphans
+            }
             Node::Leaf(prefix, value, _) => {
                 // get the unmatched part of the Leaf-prefix
                 let (_, unmatched, _) = NibbleSlice::from(prefix).split_common_prefix(unmatched);
                 // split the first nibble which used to belong to the Branch
                 let (_, suffix) = unmatched.split_first().expect("empty unmatched key");
 
-                // the original sibling node of `diverging` is a Leaf with suffix
+                // any potential orphan must be a Leaf with the suffix as a prefix
                 let sibling = Node::Leaf(suffix.into(), value.clone(), M::default());
                 let rlp = sibling.rlp_encoded();
                 self.resolve_digests(&B256Map::from_iter([(keccak256(&rlp), rlp)])).unwrap();
@@ -118,28 +124,38 @@ impl<M: Memoization + Clone> Node<M> {
                 let (_, unmatched, _) = NibbleSlice::from(prefix).split_common_prefix(unmatched);
                 // split the first nibble which used to belong to the Branch
                 let (_, suffix) = unmatched.split_first().expect("empty unmatched key");
-                // there must not be an Extension with empty prefix
-                // if this happens, during the removal an Extension got converted into a Branch and
-                // we cannot resolve it with the information of the proof
+
+                // Extensions cannot have an empty prefix. This means that if the suffix is empty,
+                // the orphan is a Branch, and because of the removal, its parent Branch has been
+                // converted to an Extension. So to resolve this orphan, we need to know the
+                // original Branch.
                 if suffix.is_empty() {
-                    // we don't know the key corresponding to this orphan, we only know its prefix
+                    // if we are lucky, the post-removal proof does not stop at the Extension and
+                    // the child still corresponds to the node we are looking for.
+                    if !matches!(**child, Node::Digest(_)) {
+                        let rlp = child.rlp_encoded();
+                        self.resolve_digests(&B256Map::from_iter([(keccak256(&rlp), rlp)]))
+                            .unwrap();
+                    }
+                    // the path to the orphan corresponds exactly to the path of the Extension-child
                     let orphan_prefix = matched.join(prefix);
-                    // we could be lucky and that prefix is already contained in the trie
+                    // maybe the trie already contains a node with this prefix
                     if self.contains_prefix(&orphan_prefix) {
-                        // in this case the removal will not fail and nothing needs to be resolved
+                        // in this case, the removal will not fail and nothing needs to be resolved
                         return Ok(());
                     }
-                    // otherwise return error that the given prefix needs to be resolved
+                    // otherwise return error that the given prefix needs to be resolved externally
                     return Err(Error::Unresolvable(orphan_prefix));
                 }
 
-                // the original sibling node of `diverging` is an Extension with suffix
+                // any potential orphan must be an Extension with the (non-empty) suffix as a prefix
                 let sibling = Node::Extension(suffix.into(), (*child).clone(), M::default());
                 let rlp = sibling.rlp_encoded();
                 self.resolve_digests(&B256Map::from_iter([(keccak256(&rlp), rlp)])).unwrap();
             }
             Node::Digest(_) => {
-                return Err(Error::RlpError(alloy_rlp::Error::Custom("no leaf for key")))
+                // the proof is invalid, as it does not proof the non-inclusion of `key`
+                return Err(Error::InvalidProof);
             }
             Node::Branch(..) => unreachable!("Branch node with value"),
         }
@@ -147,7 +163,7 @@ impl<M: Memoization + Clone> Node<M> {
         Ok(())
     }
 
-    /// Returns the diverging Merkle Patricia Trie (MPT) node for a key.
+    /// Returns the diverging trie node for a key.
     ///
     /// If the key is present in the trie, this method returns `None`. Otherwise, it returns the
     /// node where the search for the key would fail, along with the unmatched portion of the key.

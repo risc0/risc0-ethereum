@@ -212,9 +212,12 @@ impl<M: Memoization> Node<M> {
             Node::Digest(digest) => {
                 if let Some(bytes) = rlp_by_digest.get(digest) {
                     let mut node: Node<M> = alloy_rlp::decode_exact(bytes.as_ref())?;
-                    node.cache_set(RlpNode::from_digest(digest));
-                    *self = node;
-                    self.resolve_digests(rlp_by_digest)?;
+                    // do not try to replace a node by a digest
+                    if !matches!(node, Node::Digest(_)) {
+                        node.cache_set(RlpNode::from_digest(digest));
+                        *self = node;
+                        self.resolve_digests(rlp_by_digest)?;
+                    }
                 }
             }
         }
