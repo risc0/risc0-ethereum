@@ -421,13 +421,14 @@ mod history {
     use super::*;
     use test_log::test;
 
-    /// Creates `EthEvmInput::History` using live RPC nodes preflighting `IERC20(USDT).balanceOf(0x0)`.
+    /// Creates `EthEvmInput::History` using live RPC nodes preflighting
+    /// `IERC20(USDT).balanceOf(0x0)`.
     async fn rpc_usdt_history_input() -> anyhow::Result<EthEvmInput> {
         let mut env = EthEvmEnv::builder()
             .rpc(RPC_URL.parse()?)
             .beacon_api(BEACON_API_URL.parse()?)
             .block_number_or_tag(BlockNumberOrTag::Safe)
-            .commitment_block(BlockNumberOrTag::Parent)
+            .commitment_block_number_or_tag(BlockNumberOrTag::Parent)
             .build()
             .await?;
         env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
