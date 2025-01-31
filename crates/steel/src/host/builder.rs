@@ -253,10 +253,10 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// let env = EthEvmEnv::builder()
     ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
     ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
-    ///     .block_number(1_000_000) // execute against historical state
-    ///     .commitment_block_hash(commitment_hash) // commit to recent block
-    ///     .build()
-    ///     .await?;
+    ///     .block_number(1_000_000);  // execute against historical state
+    /// # #[cfg(feature = "unstable-history")] // required because of the stability crate
+    /// let env = env.commitment_block_hash(commitment_hash); // commit to recent block
+    /// env.build().await?;
     /// # Ok(())
     /// # }
     /// ```
