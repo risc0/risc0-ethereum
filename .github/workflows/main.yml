@@ -159,9 +159,9 @@ jobs:
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: cargo build
-        run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test
+        run: cargo test $CARGO_LOCKED --workspace
+      - name: cargo test (--all-features)
         run: cargo test $CARGO_LOCKED --workspace --all-features --timings
       - name: Upload timings artifacts
         uses: actions/upload-artifact@v4
