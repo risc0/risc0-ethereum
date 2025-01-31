@@ -3,7 +3,7 @@ name: CI
 on:
   merge_group:
   pull_request:
-    branches: [main, "release-*"]
+    branches: [ main, "release-*" ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -19,7 +19,7 @@ env:
   RISC0_TOOLCHAIN_VERSION: 1.81.0
   RISC0_MONOREPO_REF: "main"
   # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.
-  CARGO_LOCKED:  ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
+  CARGO_LOCKED: ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
 
 jobs:
   # see: https://github.com/orgs/community/discussions/26822
@@ -77,7 +77,7 @@ jobs:
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
 
   clippy:
-    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU.
       matrix:
@@ -124,7 +124,7 @@ jobs:
       - run: sccache --show-stats
 
   test-risc0-ethereum:
-    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
@@ -161,7 +161,9 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
       - name: cargo test
         run: cargo test $CARGO_LOCKED --workspace
-      - name: cargo test (--all-features)
+      - name: cargo build with all features
+        run: cargo build $CARGO_LOCKED --workspace --all-features
+      - name: cargo test with all features
         run: cargo test $CARGO_LOCKED --workspace --all-features --timings
       - name: Upload timings artifacts
         uses: actions/upload-artifact@v4
@@ -174,7 +176,7 @@ jobs:
       - run: sccache --show-stats
 
   examples:
-    runs-on: [self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}"]
+    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU. Additional coverage is marginal.
       matrix:
@@ -220,7 +222,7 @@ jobs:
       - run: sccache --show-stats
 
   doc:
-    runs-on: [self-hosted, prod, macOS, cpu]
+    runs-on: [ self-hosted, prod, macOS, cpu ]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -239,7 +241,7 @@ jobs:
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
   docs-rs:
-    runs-on: [self-hosted, prod, macOS, cpu]
+    runs-on: [ self-hosted, prod, macOS, cpu ]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
