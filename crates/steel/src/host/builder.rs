@@ -250,13 +250,13 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() -> anyhow::Result<()> {
     /// let commitment_hash = B256::from_str("0x1234...")?;
-    /// let env = EthEvmEnv::builder()
+    /// let builder = EthEvmEnv::builder()
     ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
     ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
-    ///     .block_number(1_000_000) // execute against historical state
-    ///     .commitment_block_hash(commitment_hash) // commit to recent block
-    ///     .build()
-    ///     .await?;
+    ///     .block_number(1_000_000);  // execute against historical state
+    /// # #[cfg(feature = "unstable-history")] // required because of the stability crate
+    /// let builder = builder.commitment_block_hash(commitment_hash); // commit to recent block
+    /// let env = builder.build().await?;
     /// # Ok(())
     /// # }
     /// ```
