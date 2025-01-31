@@ -92,7 +92,7 @@ impl<D> ProofDb<D> {
 
     /// Extends the `ProofDb` with the contents of another `ProofDb`. It panics if they are not
     /// consistent.
-    pub fn extend(&mut self, other: ProofDb<D>) {
+    pub(crate) fn extend(&mut self, other: ProofDb<D>) {
         extend_checked(&mut self.accounts, other.accounts);
         extend_checked(&mut self.contracts, other.contracts);
         extend_checked(&mut self.proofs, other.proofs);

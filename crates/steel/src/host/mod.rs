@@ -177,12 +177,15 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
 
     /// Extends the environment with the contents of another compatible environment.
     ///
-    /// ### Panics
+    /// ### Errors
     ///
-    /// Panics if the environments are inconsistent, specifically if:
+    /// It returns an error if the environments are inconsistent, specifically if:
     /// - The configurations don't match
     /// - The headers don't match
-    /// - The database states conflict
+    ///
+    /// ### Panics
+    ///
+    /// It panics if the database states conflict.
     ///
     /// ### Use Cases
     ///
@@ -217,22 +220,22 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     ///
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
     ///
-    /// env1.extend(env2);
+    /// env1.extend(env2)?;
     /// let evm_input = env1.into_input().await?;
     ///
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend(&mut self, other: Self) {
-        assert_eq!(self.cfg_env, other.cfg_env, "mismatching configuration");
-        assert_eq!(
-            self.header.seal(),
-            other.header.seal(),
-            "mismatching header"
+    pub fn extend(&mut self, other: Self) -> Result<()> {
+        ensure!(self.cfg_env == other.cfg_env, "configuration mismatch");
+        ensure!(
+            self.header.seal() == other.header.seal(),
+            "execution header mismatch"
         );
         // the commitments do not need to match as long as the cfg_env is consistent
-
         self.db_mut().extend(other.db.unwrap());
+
+        Ok(())
     }
 }
 
