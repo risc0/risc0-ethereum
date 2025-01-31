@@ -12,9 +12,71 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::sol_types::SolValue;
+use alloy_sol_types::SolValue;
 use anyhow::Result;
 use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
+
+#[cfg(feature = "unstable")]
+use alloy_primitives::Bytes;
+#[cfg(feature = "unstable")]
+use risc0_zkvm::{sha::Digest, Groth16Receipt, MaybePruned, Receipt, ReceiptClaim};
+
+#[cfg(feature = "unstable")]
+alloy_sol_types::sol!(
+    #![sol(all_derives)]
+    struct Seal {
+        uint256[2] a;
+        uint256[2][2] b;
+        uint256[2] c;
+    }
+);
+
+#[cfg(feature = "unstable")]
+impl Seal {
+    fn flatten(self) -> Vec<u8> {
+        self.a
+            .iter()
+            .map(|x| x.to_be_bytes_vec())
+            .chain(
+                self.b
+                    .iter()
+                    .flat_map(|x| x.iter().map(|y| y.to_be_bytes_vec())),
+            )
+            .chain(self.c.iter().map(|x| x.to_be_bytes_vec()))
+            .flatten()
+            .collect()
+    }
+
+    /// Convert the [Seal] into a [Receipt] constructed with the given [ReceiptClaim] and
+    /// journal. The verifier parameters are optional and default to the current zkVM version.
+    pub fn to_receipt(
+        self,
+        claim: ReceiptClaim,
+        journal: impl AsRef<[u8]>,
+        verifier_parameters: Option<Digest>,
+    ) -> Receipt {
+        let inner = risc0_zkvm::InnerReceipt::Groth16(Groth16Receipt::new(
+            self.flatten(),
+            MaybePruned::Value(claim),
+            verifier_parameters
+                .unwrap_or_else(|| Groth16ReceiptVerifierParameters::default().digest()),
+        ));
+        Receipt::new(inner, journal.as_ref().to_vec())
+    }
+}
+
+/// Decode a seal with selector as [Bytes] into a [Receipt] constructed with the given [ReceiptClaim]
+/// and journal. The verifier parameters are optional and default to the current zkVM version.
+#[cfg(feature = "unstable")]
+pub fn decode_groth16_seal(
+    seal: Bytes,
+    claim: ReceiptClaim,
+    journal: impl AsRef<[u8]>,
+    verifier_parameters: Option<Digest>,
+) -> Result<Receipt> {
+    let seal = Seal::abi_decode(&seal[4..], true)?;
+    Ok(seal.to_receipt(claim, journal, verifier_parameters))
+}
 
 /// ABI encoding of the seal.
 pub fn abi_encode(seal: impl AsRef<[u8]>) -> Result<Vec<u8>> {
@@ -77,5 +139,33 @@ mod tests {
         let bn254_control_id = parse_digest(CONTROL_ID_PATH, BN254_CONTROL_ID).unwrap();
 
         assert_eq!(bn254_control_id, expected_bn254_control_id);
+    }
+
+    #[test]
+    #[cfg(feature = "unstable")]
+    fn test_decode_seal() {
+        use risc0_zkvm::sha::Digest;
+        const TEST_RECEIPT_PATH: &str = "./test/TestReceipt.sol";
+        const SEAL: &str = "SEAL";
+        const JOURNAL: &str = "JOURNAL";
+        const IMAGE_ID: &str = "IMAGE_ID";
+        let seal_bytes =
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, SEAL).unwrap()).unwrap());
+        let journal =
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, JOURNAL).unwrap()).unwrap())
+                .to_vec();
+        let image_id = Digest::try_from(
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, IMAGE_ID).unwrap()).unwrap())
+                .as_ref(),
+        )
+        .unwrap();
+        let receipt = decode_groth16_seal(
+            seal_bytes,
+            ReceiptClaim::ok(image_id, journal.clone()),
+            &journal,
+            None,
+        )
+        .unwrap();
+        receipt.verify(image_id).unwrap();
     }
 }
