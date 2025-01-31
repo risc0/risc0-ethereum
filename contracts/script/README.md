@@ -16,7 +16,7 @@ Commands in this guide use `yq` to parse the TOML config files.
 
 You can install `yq` by following the [direction on GitHub][yq-install], or using `go install`.
 
-```bash
+```sh
 go install github.com/mikefarah/yq/v4@latest
 ```
 
@@ -44,13 +44,13 @@ In development and to test the operations process, you can use Anvil.
 
 Start Anvil:
 
-```bash
+```sh
 anvil -a 10 --block-time 1 --host 0.0.0.0 --port 8545
 ```
 
 Set your RPC URL, as well as your public and private key:
 
-```bash
+```sh
 export RPC_URL="http://localhost:8545"
 export DEPLOYER_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 export DEPLOYER_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
@@ -62,7 +62,7 @@ export CHAIN_KEY="anvil"
 Set the chain you are operating on by the key from the `deployment.toml` file.
 An example chain key is "ethereum-sepolia", and you can look at `deployment.toml` for the full list.
 
-```zsh
+```sh
 export CHAIN_KEY="xxx-testnet"
 ```
 
@@ -70,7 +70,7 @@ export CHAIN_KEY="xxx-testnet"
 
 If the chain you are deploying to is not in `deployment_secrets.toml`, set your RPC URL, public and private key, and Etherscan API key:
 
-```bash
+```sh
 export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" contracts/deployment_secrets.toml | tee /dev/stderr)
 export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" contracts/deployment.toml | tee /dev/stderr)
 export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" contracts/deployment_secrets.toml | tee /dev/stderr)
@@ -101,7 +101,7 @@ Set your public key, your Etherscan API key, and the necessary parameters for Fi
 > [!NOTE]
 > When this guide says "public key", it's equivalent to "address".
 
-```bash
+```sh
 export FIREBLOCKS_API_KEY="..."
 export FIREBLOCKS_API_PRIVATE_KEY_PATH="..."
 
@@ -130,7 +130,7 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
     > [!IMPORTANT]
     > Adjust the `MIN_DELAY` to a value appropriate for the environment (e.g. 1 second for testnet and 604800 seconds (7 days) for mainnet).
 
-    ```bash
+    ```sh
     MIN_DELAY=1 \
     PROPOSER="${ADMIN_ADDRESS:?}" \
     EXECUTOR="${ADMIN_ADDRESS:?}" \
@@ -160,7 +160,7 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
 
     Load the addresses into your environment.
 
-    ```bash
+    ```sh
     export TIMELOCK_CONTROLLER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].timelock-controller" contracts/deployment.toml | tee /dev/stderr)
     export VERIFIER_ROUTER=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" contracts/deployment.toml | tee /dev/stderr)
     ```
@@ -171,16 +171,16 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
     FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
-## Deploy a verifier with emergency stop mechanism
+## Deploy a Groth16 verifier with emergency stop mechanism
 
 This is a two-step process, guarded by the `TimelockController`.
 
 ### Deploy the verifier
 
-1. Dry run deployment of verifier and estop:
+1. Dry run deployment of Groth16 verifier and estop:
 
-    ```zsh
-    bash contracts/script/manage DeployEstopVerifier
+    ```sh
+    bash contracts/script/manage DeployEstopGroth16Verifier
     ```
 
     > [!IMPORTANT]
@@ -213,7 +213,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 6. Dry run the operation to schedule the operation to add the verifier to the router.
 
-    ```zsh
+    ```sh
     VERIFIER_SELECTOR="0x..." bash contracts/script/manage ScheduleAddVerifier
     ```
 
@@ -230,7 +230,7 @@ After the delay on the timelock controller has pass, the operation to add the ne
 
 1. Dry the transaction to execute the add verifier operation:
 
-    ```zsh
+    ```sh
     VERIFIER_SELECTOR="0x..." bash contracts/script/manage FinishAddVerifier
     ```
 
@@ -256,7 +256,8 @@ This is a two-step process, guarded by the `TimelockController`.
 
    To generate a deterministic image ID run (from the repo root folder):
 
-   ```zsh
+   ```sh
+   cargo risczero --version # First, check you have the expected version of cargo-risczero installed
    cargo risczero build --manifest-path aggregation/guest/set-builder/Cargo.toml
    ```
 
@@ -264,9 +265,16 @@ This is a two-step process, guarded by the `TimelockController`.
    Upload the ELF to some public HTTP location (such as Pinata), and get back a download URL.
    Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
 
+   > [!TIP]
+   > You can use the following command to check that the uploaded ELF has the image ID you expect.
+   >
+   >  ```sh
+   >  r0vm --id --elf <(curl $SET_BUILDER_GUEST_URL)
+   >  ```
+
 2. Dry run deployment of the set verifier and estop:
 
-   ```zsh
+   ```sh
    bash contracts/script/manage DeployEstopSetVerifier
    ```
 
@@ -298,10 +306,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 6. Dry run the operation to schedule the operation to add the verifier to the router.
 
-   Fill in the addresses for the relevant chain below.
-   `ADMIN_ADDRESS` should be set to the Fireblocks admin address.
-
-   ```zsh
+   ```sh
    bash contracts/script/manage ScheduleAddVerifier
    ```
 
@@ -318,19 +323,21 @@ After the delay on the timelock controller has pass, the operation to add the ne
 
 1. Set the verifier selector and estop address for the set verifier:
 
-    ```zsh
+    ```sh
     export VERIFIER_SELECTOR=$(bash contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
     ```
 
 2. Dry the transaction to execute the add verifier operation:
 
-    ```zsh
+    ```sh
     bash contracts/script/manage FinishAddVerifier
     ```
 
 3. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
+
+4. Remove the `unroutable` field from the selected verifier.
 
 5. Test the deployment.
 
@@ -348,13 +355,13 @@ This is a two-step process, guarded by the `TimelockController`.
 
     > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier` or you can run `bash contracts/script/manage SetVerifierSelector` for the `RiscZeroSetVerifier`.
 
-    ```zsh
+    ```sh
     export VERIFIER_SELECTOR="0x..."
     ```
 
 2. Dry the transaction to schedule the remove verifier operation:
 
-    ```bash
+    ```sh
     bash contracts/script/manage ScheduleRemoveVerifier
     ```
 
@@ -368,13 +375,13 @@ This is a two-step process, guarded by the `TimelockController`.
 
     > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier` or you can run `bash contracts/script/manage SetVerifierSelector` for the `RiscZeroSetVerifier`.
 
-    ```zsh
+    ```sh
     export VERIFIER_SELECTOR="0x..."
     ```
 
 2. Dry the transaction to execute the remove verifier operation:
 
-    ```bash
+    ```sh
     bash contracts/script/manage FinishRemoveVerifier
     ```
 
@@ -398,7 +405,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     MIN_DELAY=10 \
     bash contracts/script/manage ScheduleUpdateDelay
     ```
@@ -413,7 +420,7 @@ Execute the action:
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     MIN_DELAY=10 \
     bash contracts/script/manage FinishUpdateDelay
     ```
@@ -437,17 +444,17 @@ Use the following steps to cancel an operation that is pending on the `TimelockC
     > TIP: One way to get the operation ID is to open the contract in Etherscan and look at the events.
     > On the `CallScheduled` event, the ID is labeled as `[topic1]`.
     >
-    > ```zsh
+    > ```sh
     > open ${ETHERSCAN_URL:?}/address/${TIMELOCK_CONTROLLER:?}#events
     > ```
 
-    ```zsh
+    ```sh
     export OPERATION_ID="0x..." \
     ```
 
 2. Dry the transaction to cancel the operation.
 
-    ```zsh
+    ```sh
     bash contracts/script/manage CancelOperation -f
     ```
 
@@ -467,7 +474,7 @@ Three roles are supported:
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     ROLE="executor" \
     ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
     bash contracts/script/manage ScheduleGrantRole
@@ -481,7 +488,7 @@ Three roles are supported:
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     ROLE="executor" \
     ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
     bash contracts/script/manage FinishGrantRole
@@ -493,7 +500,7 @@ Three roles are supported:
 
 3. Confirm the update:
 
-    ```bash
+    ```sh
     # Query the role code.
     cast call --rpc-url ${RPC_URL:?} \
         ${TIMELOCK_CONTROLLER:?} \
@@ -523,7 +530,7 @@ Three roles are supported:
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     ROLE="executor" \
     ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
     bash contracts/script/manage ScheduleRevokeRole
@@ -535,7 +542,7 @@ Three roles are supported:
 
 Confirm the role code:
 
-```bash
+```sh
 cast call --rpc-url ${RPC_URL:?} \
     ${TIMELOCK_CONTROLLER:?} \
     'EXECUTOR_ROLE()(bytes32)'
@@ -546,7 +553,7 @@ cast call --rpc-url ${RPC_URL:?} \
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     ROLE="executor" \
     ACCOUNT="0x00000000000000aabbccddeeff00000000000000" \
     bash contracts/script/manage FinishRevokeRole
@@ -558,7 +565,7 @@ cast call --rpc-url ${RPC_URL:?} \
 
 3. Confirm the update:
 
-    ```bash
+    ```sh
     # Query the role code.
     cast call --rpc-url ${RPC_URL:?} \
         ${TIMELOCK_CONTROLLER:?} \
@@ -587,7 +594,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 
 1. Dry run the transaction:
 
-    ```bash
+    ```sh
     RENOUNCE_ROLE="executor" \
     RENOUNCE_ADDRESS="0x00000000000000aabbccddeeff00000000000000" \
     bash contracts/script/manage RenounceRole
@@ -599,7 +606,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 
 3. Confirm:
 
-    ```bash
+    ```sh
     cast call --rpc-url ${RPC_URL:?} \
         ${TIMELOCK_CONTROLLER:?} \
         'hasRole(bytes32, address)(bool)' \
@@ -619,14 +626,14 @@ Activate the emergency stop:
 
     > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
 
-    ```zsh
+    ```sh
     export VERIFIER_SELECTOR="0x..."
     export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
     ```
 
 2. Dry run the transaction
 
-    ```bash
+    ```sh
     VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
     bash contracts/script/manage ActivateEstop
     ```
@@ -637,7 +644,7 @@ Activate the emergency stop:
 
 4. Test the activation:
 
-    ```bash
+    ```sh
     cast call --rpc-url ${RPC_URL:?} \
         ${VERIFIER_ESTOP:?} \
         'paused()(bool)'
