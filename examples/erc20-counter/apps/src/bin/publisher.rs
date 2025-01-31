@@ -124,7 +124,7 @@ async fn main() -> Result<()> {
     #[cfg(any(feature = "beacon", feature = "history"))]
     let builder = builder.beacon_api(args.beacon_api_url);
     #[cfg(feature = "history")]
-    let builder = builder.commitment_block(args.commitment_block);
+    let builder = builder.commitment_block_number_or_tag(args.commitment_block);
 
     let mut env = builder.build().await?;
     //  The `with_chain_spec` method is used to specify the chain configuration.
