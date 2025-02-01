@@ -32,7 +32,7 @@ mod receipt;
 
 #[cfg(feature = "verify")]
 pub use receipt::{
-    EncodingError, RecursionVerifierParamters, SetInclusionReceipt,
+    EncodingError, RecursionVerifierParameters, SetInclusionReceipt,
     SetInclusionReceiptVerifierParameters,
     VerificationError,
     /* TODO(#353)
