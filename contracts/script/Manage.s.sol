@@ -233,7 +233,7 @@ contract SetVerifierSelector is RiscZeroManagementScript {
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract DeployEstopVerifier is RiscZeroManagementScript {
+contract DeployEstopGroth16Verifier is RiscZeroManagementScript {
     function run() external withConfig {
         string memory chainKey = vm.envString("CHAIN_KEY");
         console2.log("chainKey:", chainKey);
