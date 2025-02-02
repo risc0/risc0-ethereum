@@ -76,7 +76,7 @@ mod sol {
 
 /// Returns an Anvil provider with the deployed `Pair` contract.
 async fn anvil_provider() -> impl Provider {
-    let provider = ProviderBuilder::default()
+    let provider = ProviderBuilder::new()
         .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
         .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();

@@ -344,7 +344,7 @@ pub(crate) mod host {
             const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
             const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
 
-            let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
+            let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
             let cl = BeaconClient::new(CL_URL).unwrap();
 
             let block = el
