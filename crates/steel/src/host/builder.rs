@@ -393,7 +393,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_beacon_env() {
-        let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         let builder = EthEvmEnv::builder()
             .provider(&provider)
@@ -425,7 +425,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_history_env() {
-        let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // initialize the env at latest - 100 while committing to latest - 1
         let latest = provider.get_block_number().await.unwrap();

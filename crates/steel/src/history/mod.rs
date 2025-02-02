@@ -214,7 +214,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "queries actual RPC nodes"]
     async fn from_beacon_commit_and_header() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // get the latest 4 headers
         let headers = get_headers(4).await.unwrap();
@@ -252,7 +252,7 @@ mod tests {
 
     // get the latest n headers, with header[0] being the oldest and header[n-1] being the newest.
     async fn get_headers(n: usize) -> anyhow::Result<Vec<Sealed<EthBlockHeader>>> {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await?;
+        let el = ProviderBuilder::default().on_builtin(EL_URL).await?;
         let latest = el.get_block_number().await?;
 
         let mut headers = Vec::with_capacity(n);

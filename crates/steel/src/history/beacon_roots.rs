@@ -245,7 +245,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn beacon_roots_contract() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // get the latest header
         let latest = el

@@ -213,7 +213,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn verify_block_commitment() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // create block commitment to the previous block
         let latest = el.get_block_number().await.unwrap();
@@ -245,7 +245,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn verify_beacon_commitment() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // create Beacon commitment from latest block
         let block = el

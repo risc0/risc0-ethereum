@@ -28,7 +28,6 @@ pub async fn verify_on_chain(
     let journal = receipt.journal.bytes;
 
     let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
         .on_anvil_with_wallet_and_config(|anvil| anvil.fork(rpc_url));
 
     alloy::sol!(
