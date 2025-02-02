@@ -35,14 +35,14 @@ use risc0_zkvm::{
 const TXN_CONFIRM_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Clone)]
-pub struct SetVerifierService< P> {
+pub struct SetVerifierService<P> {
     instance: IRiscZeroSetVerifierInstance<(), P, Ethereum>,
     caller: Address,
     tx_timeout: Duration,
     event_query_config: EventQueryConfig,
 }
 
-impl<P> SetVerifierService< P>
+impl<P> SetVerifierService<P>
 where
     P: Provider<Ethereum> + 'static + Clone,
 {
