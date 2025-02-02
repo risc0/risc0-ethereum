@@ -27,8 +27,8 @@ pub async fn verify_on_chain(
     let seal = risc0_ethereum_contracts::encode_seal(&receipt).context("encode_seal failed")?;
     let journal = receipt.journal.bytes;
 
-    let provider = ProviderBuilder::new()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.fork(rpc_url))?;
+    let provider =
+        ProviderBuilder::new().on_anvil_with_wallet_and_config(|anvil| anvil.fork(rpc_url))?;
 
     alloy::sol!(
         #[sol(rpc)]
