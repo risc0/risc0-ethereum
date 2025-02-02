@@ -20,7 +20,6 @@ use alloy::{
     network::{primitives::BlockTransactionsKind, BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
-    transports::Transport,
 };
 use alloy_primitives::{
     map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashMap, HashSet},
@@ -100,7 +99,7 @@ impl<D> ProofDb<D> {
     }
 }
 
-impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, P>> {
+impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
     /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
     pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for AccessListItem {

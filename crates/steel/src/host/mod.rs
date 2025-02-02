@@ -30,7 +30,6 @@ use alloy::{
     network::{Ethereum, Network},
     providers::Provider,
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
-    transports::Transport,
 };
 use alloy_primitives::{BlockHash, B256};
 use anyhow::{ensure, Result};
@@ -57,11 +56,10 @@ enum BlockId {
 
 impl BlockId {
     /// Converts the `BlockId` into the corresponding RPC type.
-    async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockId>
+    async fn into_rpc_type<N, P>(self, provider: P) -> Result<AlloyBlockId>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N>,
+        P: Provider<N>,
     {
         let id = match self {
             BlockId::Hash(hash) => hash.into(),
@@ -239,11 +237,10 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     }
 }
 
-impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
+impl<N, P, H> HostEvmEnv<AlloyDb<N, P>, H, ()>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N>,
+    P: Provider<N>,
     H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
     <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
@@ -265,10 +262,9 @@ impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> 
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>
+impl<P> EthHostEvmEnv<AlloyDb<Ethereum, P>, BeaconCommit>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum>,
+    P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
@@ -281,10 +277,9 @@ where
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>
+impl<P> EthHostEvmEnv<AlloyDb<Ethereum, P>, HistoryCommit>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum>,
+    P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
     /// block roots.
@@ -299,10 +294,9 @@ where
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, ()>
+impl<P> EthHostEvmEnv<AlloyDb<Ethereum, P>, ()>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum>,
+    P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
     #[deprecated(

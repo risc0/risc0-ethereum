@@ -19,7 +19,6 @@ use std::fmt::Debug;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
-    transports::BoxTransport,
     uint,
 };
 use alloy_primitives::{address, b256, bytes, hex, Address, Bytes, U256};
@@ -116,10 +115,10 @@ alloy::sol!(
 );
 
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
-async fn test_provider() -> impl Provider<BoxTransport> {
+async fn test_provider() -> impl Provider {
     let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
+        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
+        .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();
     log::info!("Anvil started: {:?}", node_info);
     let instance = SteelTest::deploy(&provider).await.unwrap();
@@ -218,10 +217,7 @@ async fn blockhash() {
     let provider = test_provider().await;
     let block_hash = provider.anvil_node_info().await.unwrap().current_block_hash;
     // mine more blocks to assure that the chain is long enough
-    provider
-        .anvil_mine(Some(U256::from(256)), None)
-        .await
-        .unwrap();
+    provider.anvil_mine(Some(256), None).await.unwrap();
 
     let result = common::eth_call(
         provider,

@@ -24,9 +24,9 @@ use anyhow::{ensure, Context};
 /// The verifier is used to validate Steel commitments representing a historical blockchain state.
 ///
 /// ### Usage
-/// - **Preflight verification on the Host:** To prepare verification on the host environment and build the
-///   necessary proof, use [SteelVerifier::preflight]. The environment can be initialized using the
-///   [EthEvmEnv::builder] or [EvmEnv::builder].
+/// - **Preflight verification on the Host:** To prepare verification on the host environment and
+///   build the necessary proof, use [SteelVerifier::preflight]. The environment can be initialized
+///   using the [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Verification in the Guest:** To initialize the verifier in the guest environment, use
 ///   [SteelVerifier::new]. The environment should be constructed using [EvmInput::into_env].
 ///
@@ -43,9 +43,7 @@ use anyhow::{ensure, Context};
 ///
 /// // Preflight the verification of a commitment
 /// let commitment = Commitment::default(); // Your commitment here
-/// SteelVerifier::preflight(&mut env)
-///     .verify(&commitment)
-///     .await?;
+/// SteelVerifier::preflight(&mut env).verify(&commitment).await?;
 ///
 /// let evm_input = env.into_input().await?;
 ///
