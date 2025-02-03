@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::{
-    network::Network, providers::Provider, rpc::types::EIP1186AccountProofResponse,
-    transports::Transport,
-};
+use alloy::{network::Network, providers::Provider, rpc::types::EIP1186AccountProofResponse};
 use alloy_primitives::{Address, BlockHash, StorageKey};
 use anyhow::{ensure, Result};
 use revm::Database;
@@ -37,11 +34,10 @@ impl Default for ProviderConfig {
 }
 
 /// A [Database] backed by a [Provider].
-pub trait ProviderDb<T, N, P>: Database
+pub trait ProviderDb<N, P>: Database
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N>,
+    P: Provider<N>,
 {
     /// Returns the provider config.
     fn config(&self) -> &ProviderConfig;

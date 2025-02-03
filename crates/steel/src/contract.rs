@@ -30,8 +30,8 @@ use revm::{
 ///
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Contract::preflight][Contract]. The environment can be initialized using the
-///   [EthEvmEnv::builder] or [EvmEnv::builder].
+///   necessary proof, use [Contract::preflight][Contract]. The environment can be initialized using
+///   the [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
@@ -156,7 +156,6 @@ mod host {
         eips::eip2930::AccessList,
         network::{Network, TransactionBuilder},
         providers::Provider,
-        transports::Transport,
     };
     use anyhow::{anyhow, Context, Result};
 
@@ -182,11 +181,10 @@ mod host {
         }
     }
 
-    impl<'a, S, T, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H, C>>
+    impl<'a, S, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<N, P>, H, C>>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Send + 'static,
+        P: Provider<N> + Send + 'static,
         S: SolCall + Send + 'static,
         <S as SolCall>::Return: Send,
         H: EvmBlockHeader + Clone + Send + 'static,

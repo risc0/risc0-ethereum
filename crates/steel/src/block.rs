@@ -98,7 +98,7 @@ pub mod host {
         host::db::{AlloyDb, ProofDb, ProviderDb},
         EvmBlockHeader,
     };
-    use alloy::{network::Network, providers::Provider, transports::Transport};
+    use alloy::{network::Network, providers::Provider};
     use alloy_primitives::Sealed;
     use anyhow::{anyhow, ensure};
     use log::debug;
@@ -106,14 +106,13 @@ pub mod host {
     impl<H: EvmBlockHeader> BlockInput<H> {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
-        pub(crate) async fn from_proof_db<T, N, P>(
-            mut db: ProofDb<AlloyDb<T, N, P>>,
+        pub(crate) async fn from_proof_db<N, P>(
+            mut db: ProofDb<AlloyDb<N, P>>,
             header: Sealed<H>,
         ) -> anyhow::Result<Self>
         where
-            T: Transport + Clone,
             N: Network,
-            P: Provider<T, N>,
+            P: Provider<N>,
             H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
             <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
