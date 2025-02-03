@@ -1,34 +1,36 @@
-# op-steel
+# OP-Steel
 
 A Rust library for integrating Optimism's Layer 2 blockchain with Steel, RISC Zero's production-ready smart contract execution prover.
 
 ## Overview
 
-op-steel extends [Steel](https://github.com/risc0/risc0-ethereum/tree/main/crates/steel) to work with Optimism's Layer 2 blockchain. Steel enables EVM apps to run offchain while preserving onchain security through execution proofs. op-steel brings these capabilities to the Optimism ecosystem.
+OP-Steel extends [Steel](https://github.com/risc0/risc0-ethereum/tree/main/crates/steel) to work with Optimism's Layer 2 blockchain and any OP Stack-compatible chains. Steel provides a generic tool to interact with EVM-compatible chains, enabling offchain execution of EVM apps while preserving onchain security through execution proofs.
 
-The library provides tools and utilities for:
-- Interacting with Optimism's Layer 2 blockchain
-- Validating block headers and state
-- Working with Optimism dispute games
-- Building and verifying proofs for L2 blocks using Steel's proving system
+While you can use Steel directly to query and verify on the same chain (including OP chains), OP-Steel makes this process more convenient by including pre-configured OP network settings. The main advantage of OP-Steel, however, is its ability to perform **cross-chain queries** between Optimism and Ethereum, a feature not available in Steel alone.
 
 ## Features
 
-- **Steel Integration**: 
+- **Steel Integration**:
   - Leverage Steel's execution proving system for Optimism L2 operations
   - Generate verifiable proofs of correct smart contract execution
   - Maintain onchain security while performing computation offchain
-- **Dispute Game Integration**: 
+- **Cross-Chain Queries**:
+  - Perform cross-chain queries between Optimism and Ethereum
+  - Seamlessly verify OP contract execution on Ethereum L1
+- **Dispute Game Integration**:
   - Find and validate dispute games
   - Support for latest, finalized, and specific game indices
-  - Automatic verification against L1 OptimismPortal contract
+  - Automatic verification against the L1 `OptimismPortal` contract
+- **OP Stack Compatibility**:
+  - Use OP-Steel with OP-Mainnet and any OP Stack-compatible chains
 
 ## Usage
 
-Usage of op-steel is very similar to Steel.
-See the [Steel README](https://github.com/risc0/risc0-ethereum/tree/main/crates/steel#readme) for more details.
+Usage of OP-Steel is very similar to Steel. See the [Steel README](https://github.com/risc0/risc0-ethereum/tree/main/crates/steel#readme) for more details.
 
-### Basic Example
+### Querying and Verifying on the Same Chain
+
+If you only need to query and verify on the same chain (e.g., OP-Mainnet), you can use Steel directly. However, OP-Steel simplifies this process by providing pre-configured OP network settings.
 
 ```rust
 // Create an OP environment
@@ -47,9 +49,9 @@ contract.call_builder(&CALL).from(CALLER).call();
 let input = env.into_input().await?;
 ```
 
-### Working with Dispute Games
+### Cross-Chain Queries (OP to Ethereum)
 
-By relying on the existing dispute game functionality it is seamlessly possible to verify OP contract execution on L1. 
+OP-Steel enables cross-chain queries, such as verifying OP contract execution on Ethereum L1. This is a key feature that Steel alone does not provide.
 
 ```rust
 // Create an OP environment referencing a dispute game
