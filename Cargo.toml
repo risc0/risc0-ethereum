@@ -31,7 +31,7 @@ alloy-primitives = { version = "0.8.16" }
 alloy-sol-types = { version = "0.8.16" }
 
 # OP Steel
-op-alloy-network = { version = "0.9" }
+op-alloy-network = { version = "0.10" }
 
 # Alloy host dependencies
 alloy = { version = "0.9" }
