@@ -57,7 +57,7 @@ where
 
     /// A digest of the verifier parameters that can be used to verify this receipt.
     ///
-    /// Acts as a fingerprint to identity differing proof system or circuit versions between a
+    /// Acts as a fingerprint to identify differing proof system or circuit versions between a
     /// prover and a verifier. Is not intended to contain the full verifier parameters, which must
     /// be provided by a trusted source (e.g. packaged with the verifier code).
     pub verifier_parameters: Digest,
@@ -72,7 +72,7 @@ pub enum VerificationError {
         claim_digest: Digest,
         expected: Digest,
     },
-    #[error("failed to confirm the validity the set root: {path_root}")]
+    #[error("failed to confirm the validity of the set root: {path_root}")]
     RootNotVerified { path_root: Digest },
 }
 
@@ -161,7 +161,7 @@ where
         self.verify_integrity_with_context(
             &VerifierContext::default(),
             SetInclusionReceiptVerifierParameters::default(),
-            Some(RecursionVerifierParamters::default()),
+            Some(RecursionVerifierParameters::default()),
         )
     }
     */
@@ -173,7 +173,7 @@ where
         ctx: &VerifierContext,
         set_verifier_params: SetInclusionReceiptVerifierParameters,
         // used when target_os = zkvm
-        _recursion_verifier_params: Option<RecursionVerifierParamters>,
+        _recursion_verifier_params: Option<RecursionVerifierParameters>,
     ) -> Result<(), VerificationError> {
         let path_root = merkle_path_root(&self.claim.digest::<sha::Impl>(), &self.merkle_path);
 
@@ -326,7 +326,7 @@ impl Default for SetInclusionReceiptVerifierParameters {
 // TODO(victor): Move this into risc0-zkvm?
 /// Verifier parameters used for recursive verification (e.g. via env::verify) of receipts.
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub struct RecursionVerifierParamters {
+pub struct RecursionVerifierParameters {
     /// Control root to use for verifying claims via env::verify_assumption. If not provided, the
     /// zero digest will be used, which means the same (zkVM) control root used to verify the guest
     /// execution will be used to verify this claim.

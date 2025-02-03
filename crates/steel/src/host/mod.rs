@@ -174,6 +174,69 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
 
         self
     }
+
+    /// Extends the environment with the contents of another compatible environment.
+    ///
+    /// ### Errors
+    ///
+    /// It returns an error if the environments are inconsistent, specifically if:
+    /// - The configurations don't match
+    /// - The headers don't match
+    ///
+    /// ### Panics
+    ///
+    /// It panics if the database states conflict.
+    ///
+    /// ### Use Cases
+    ///
+    /// This method is particularly useful for combining results from parallel preflights,
+    /// allowing you to execute multiple independent operations and merge their environments.
+    ///
+    /// ### Example
+    /// ```rust
+    /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+    /// # use alloy_primitives::address;
+    /// # use alloy_sol_types::sol;
+    ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// # sol! {
+    /// #    interface IERC20 {
+    /// #        function balanceOf(address account) external view returns (uint);
+    /// #    }
+    /// # }
+    /// let call =
+    ///     IERC20::balanceOfCall { account: address!("F977814e90dA44bFA03b6295A0616a897441aceC") };
+    /// # let usdt_addr = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
+    /// # let usdc_addr = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+    ///
+    /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
+    /// let builder = EthEvmEnv::builder().rpc(url);
+    ///
+    /// let mut env1 = builder.clone().build().await?;
+    /// let mut contract1 = Contract::preflight(usdt_addr, &mut env1);
+    /// let mut env2 = builder.clone().build().await?;
+    /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
+    ///
+    /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
+    ///
+    /// env1.extend(env2)?;
+    /// let evm_input = env1.into_input().await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn extend(&mut self, other: Self) -> Result<()> {
+        ensure!(self.cfg_env == other.cfg_env, "configuration mismatch");
+        ensure!(
+            self.header.seal() == other.header.seal(),
+            "execution header mismatch"
+        );
+        // the commitments do not need to match as long as the cfg_env is consistent
+        self.db_mut().extend(other.db.unwrap());
+
+        Ok(())
+    }
 }
 
 impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>

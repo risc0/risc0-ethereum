@@ -8,7 +8,7 @@ methods = ["guest"]
 
 [build-dependencies]
 hex = { workspace = true }
-risc0-build = { workspace = true }
+risc0-build = { workspace = true, features = ["unstable"] }
 risc0-build-ethereum = { workspace = true }
 risc0-zkp = { workspace = true }
 

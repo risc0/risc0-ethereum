@@ -23,7 +23,7 @@ use alloy::{
     transports::Transport,
 };
 use alloy_primitives::{
-    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashSet},
+    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashMap, HashSet},
     Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256,
 };
 use anyhow::{ensure, Context, Result};
@@ -31,6 +31,7 @@ use revm::{
     primitives::{AccountInfo, Bytecode},
     Database,
 };
+use std::hash::{BuildHasher, Hash};
 
 /// A simple revm [Database] wrapper that records all DB queries.
 pub struct ProofDb<D> {
@@ -41,6 +42,7 @@ pub struct ProofDb<D> {
     inner: D,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct AccountProof {
     /// The inclusion proof for this account.
     account_proof: Vec<Bytes>,
@@ -48,6 +50,7 @@ struct AccountProof {
     storage_proofs: B256HashMap<StorageProof>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct StorageProof {
     /// The value that this key holds.
     value: StorageValue,
@@ -55,9 +58,12 @@ struct StorageProof {
     proof: Vec<Bytes>,
 }
 
-impl<D: Database> ProofDb<D> {
+impl<D> ProofDb<D> {
     /// Creates a new ProofDb instance, with a [Database].
-    pub fn new(db: D) -> Self {
+    pub fn new(db: D) -> Self
+    where
+        D: Database,
+    {
         Self {
             accounts: Default::default(),
             contracts: Default::default(),
@@ -82,6 +88,15 @@ impl<D: Database> ProofDb<D> {
     /// Returns the underlying [Database].
     pub fn inner(&self) -> &D {
         &self.inner
+    }
+
+    /// Extends the `ProofDb` with the contents of another `ProofDb`. It panics if they are not
+    /// consistent.
+    pub(crate) fn extend(&mut self, other: ProofDb<D>) {
+        extend_checked(&mut self.accounts, other.accounts);
+        extend_checked(&mut self.contracts, other.contracts);
+        extend_checked(&mut self.proofs, other.proofs);
+        self.block_hash_numbers.extend(other.block_hash_numbers);
     }
 }
 
@@ -262,6 +277,32 @@ impl<DB: Database> Database for ProofDb<DB> {
         self.block_hash_numbers.insert(number);
 
         self.inner.block_hash(number)
+    }
+}
+
+/// Extends a `HashMap` with the contents of an iterator.
+fn extend_checked<K, V, S, T>(map: &mut HashMap<K, V, S>, iter: T)
+where
+    K: Eq + Hash,
+    V: PartialEq,
+    S: BuildHasher,
+    T: IntoIterator<Item = (K, V)>,
+{
+    let iter = iter.into_iter();
+    let (lower_bound, _) = iter.size_hint();
+    map.reserve(lower_bound);
+
+    for (k, v) in iter {
+        match map.entry(k) {
+            hash_map::Entry::Vacant(entry) => {
+                entry.insert(v);
+            }
+            hash_map::Entry::Occupied(entry) => {
+                if entry.get() != &v {
+                    panic!("mismatching values for key")
+                }
+            }
+        }
     }
 }
 
