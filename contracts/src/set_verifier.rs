@@ -24,7 +24,6 @@ use alloy::{
     network::Ethereum,
     primitives::{Address, Bytes, B256},
     providers::Provider,
-    transports::Transport,
 };
 use anyhow::{bail, Context, Result};
 use risc0_aggregation::{merkle_path_root, GuestState, MerkleMountainRange, SetInclusionReceipt};
@@ -36,17 +35,16 @@ use risc0_zkvm::{
 const TXN_CONFIRM_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Clone)]
-pub struct SetVerifierService<T, P> {
-    instance: IRiscZeroSetVerifierInstance<T, P, Ethereum>,
+pub struct SetVerifierService<P> {
+    instance: IRiscZeroSetVerifierInstance<(), P, Ethereum>,
     caller: Address,
     tx_timeout: Duration,
     event_query_config: EventQueryConfig,
 }
 
-impl<T, P> SetVerifierService<T, P>
+impl<P> SetVerifierService<P>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum> + 'static + Clone,
+    P: Provider<Ethereum> + 'static + Clone,
 {
     pub fn new(address: Address, provider: P, caller: Address) -> Self {
         let instance = IRiscZeroSetVerifier::new(address, provider);
@@ -59,7 +57,7 @@ where
         }
     }
 
-    pub fn instance(&self) -> &IRiscZeroSetVerifierInstance<T, P, Ethereum> {
+    pub fn instance(&self) -> &IRiscZeroSetVerifierInstance<(), P, Ethereum> {
         &self.instance
     }
 

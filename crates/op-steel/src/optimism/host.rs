@@ -17,21 +17,18 @@ use crate::{
     optimism::{OpBlockHeader, OpEvmInput},
     DisputeGameCommit,
 };
-use alloy::transports::http::{reqwest, Http};
 use alloy::{
     network::Ethereum,
-    providers::{Provider, ProviderBuilder, ReqwestProvider},
-    transports::Transport,
+    providers::{Provider, ProviderBuilder, RootProvider},
 };
 use alloy_primitives::{Address, Sealable};
 use anyhow::{Context, Result};
 use op_alloy_network::Optimism;
-use risc0_steel::host::{EvmEnvBuilder, HostCommit};
 use risc0_steel::{
     config::ChainSpec,
     host::{
         db::{AlloyDb, ProofDb},
-        BlockNumberOrTag,
+        BlockNumberOrTag, EvmEnvBuilder, HostCommit,
     },
     ComposeInput, EvmEnv, EvmInput,
 };
@@ -75,7 +72,7 @@ impl OpEvmEnv<(), ()> {
     }
 }
 
-type HostOpEvmEnv<T, P2, C> = OpEvmEnv<ProofDb<AlloyDb<T, Optimism, P2>>, C>;
+type HostOpEvmEnv<P2, C> = OpEvmEnv<ProofDb<AlloyDb<Optimism, P2>>, C>;
 
 impl<D, C> OpEvmEnv<ProofDb<D>, C> {
     pub fn with_chain_spec(self, chain_spec: &ChainSpec) -> Self {
@@ -87,10 +84,9 @@ impl<D, C> OpEvmEnv<ProofDb<D>, C> {
     }
 }
 
-impl<T, P2> HostOpEvmEnv<T, P2, ()>
+impl<P2> HostOpEvmEnv<P2, ()>
 where
-    T: Transport + Clone,
-    P2: Provider<T, Optimism>,
+    P2: Provider<Optimism>,
 {
     pub async fn into_input(self) -> Result<OpEvmInput> {
         // the inner environment has no specific commitment, so it will always return a block input
@@ -102,10 +98,9 @@ where
     }
 }
 
-impl<T, P2> HostOpEvmEnv<T, P2, DisputeGameCommit>
+impl<P2> HostOpEvmEnv<P2, DisputeGameCommit>
 where
-    T: Transport + Clone,
-    P2: Provider<T, Optimism>,
+    P2: Provider<Optimism>,
 {
     pub async fn into_input(self) -> Result<OpEvmInput> {
         // the inner environment has no specific commitment, so it will always return a block input
@@ -144,8 +139,8 @@ pub struct ProviderStage;
 
 /// Configuration to commit to an OP dispute game.
 #[derive(Clone, Debug)]
-pub struct DisputeGameConfig<T, P1> {
-    portal: OptimismPortal2<T, P1>,
+pub struct DisputeGameConfig<P1> {
+    portal: OptimismPortal2<P1>,
     index: DisputeGameIndex,
 }
 
@@ -178,12 +173,8 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
         self,
         portal: Address,
         l1_rpc: Url,
-    ) -> OpEvmEnvBuilder<
-        PreProviderStage,
-        (),
-        DisputeGameConfig<Http<reqwest::Client>, ReqwestProvider<Ethereum>>,
-    > {
-        self.dispute_game(portal, ProviderBuilder::new().on_http(l1_rpc))
+    ) -> OpEvmEnvBuilder<PreProviderStage, (), DisputeGameConfig<RootProvider<Ethereum>>> {
+        self.dispute_game(portal, ProviderBuilder::default().on_http(l1_rpc))
     }
 
     /// Sets a fault dispute game that is feasible wrt the L1 `OptimismPortal` contract deployed at
@@ -191,14 +182,13 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
     ///
     /// This is used to create an [OpEvmInput] which can be validated against an L1 fault dispute
     /// game.
-    pub fn dispute_game<T, P1>(
+    pub fn dispute_game<P1>(
         self,
         portal: Address,
         l1_provider: P1,
-    ) -> OpEvmEnvBuilder<PreProviderStage, (), DisputeGameConfig<T, P1>>
+    ) -> OpEvmEnvBuilder<PreProviderStage, (), DisputeGameConfig<P1>>
     where
-        T: Transport + Clone,
-        P1: Provider<T, Ethereum>,
+        P1: Provider<Ethereum>,
     {
         let Self {
             inner,
@@ -223,15 +213,14 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
 // Callable only without a provider, with or without a game.
 impl<G> OpEvmEnvBuilder<PreProviderStage, (), G> {
     /// Sets the L2 Optimism HTTP RPC endpoint that will be used by the [OpEvmEnv].
-    pub fn rpc(self, url: Url) -> OpEvmEnvBuilder<ProviderStage, ReqwestProvider<Optimism>, G> {
+    pub fn rpc(self, url: Url) -> OpEvmEnvBuilder<ProviderStage, RootProvider<Optimism>, G> {
         self.provider(ProviderBuilder::default().on_http(url))
     }
 
     /// Sets the L2 Optimism [Provider] that will be used by the [OpEvmEnv].
-    pub fn provider<T, P2>(self, provider: P2) -> OpEvmEnvBuilder<ProviderStage, P2, G>
+    pub fn provider<P2>(self, provider: P2) -> OpEvmEnvBuilder<ProviderStage, P2, G>
     where
-        T: Transport + Clone,
-        P2: Provider<T, Optimism> + Clone,
+        P2: Provider<Optimism> + Clone,
     {
         let inner = EvmEnv::builder().provider(provider.clone());
         let dispute_game = self.dispute_game_config;
@@ -276,10 +265,9 @@ impl<P2> OpEvmEnvBuilder<ProviderStage, P2, ()> {
         }
     }
 
-    pub async fn build<T>(self) -> Result<HostOpEvmEnv<T, P2, ()>>
+    pub async fn build(self) -> Result<HostOpEvmEnv<P2, ()>>
     where
-        T: Transport + Clone,
-        P2: Provider<T, Optimism>,
+        P2: Provider<Optimism>,
     {
         Ok(OpEvmEnv {
             inner: self.inner.build().await?,
@@ -289,7 +277,7 @@ impl<P2> OpEvmEnvBuilder<ProviderStage, P2, ()> {
 }
 
 // Callable with or without a provider and only with a game.
-impl<Stage, T, P1, P2> OpEvmEnvBuilder<Stage, P2, DisputeGameConfig<T, P1>> {
+impl<Stage, P1, P2> OpEvmEnvBuilder<Stage, P2, DisputeGameConfig<P1>> {
     pub fn game_index(mut self, index: DisputeGameIndex) -> Self {
         self.dispute_game_config.index = index;
         self
@@ -297,13 +285,12 @@ impl<Stage, T, P1, P2> OpEvmEnvBuilder<Stage, P2, DisputeGameConfig<T, P1>> {
 }
 
 // Callable only with a provider and with a game.
-impl<T, P1, P2> OpEvmEnvBuilder<ProviderStage, P2, DisputeGameConfig<T, P1>>
+impl<P1, P2> OpEvmEnvBuilder<ProviderStage, P2, DisputeGameConfig<P1>>
 where
-    T: Transport + Clone,
-    P1: Provider<T, Ethereum>,
-    P2: Provider<T, Optimism>,
+    P1: Provider<Ethereum>,
+    P2: Provider<Optimism>,
 {
-    pub async fn build(self) -> Result<HostOpEvmEnv<T, P2, DisputeGameCommit>> {
+    pub async fn build(self) -> Result<HostOpEvmEnv<P2, DisputeGameCommit>> {
         let game = self
             .dispute_game_config
             .portal

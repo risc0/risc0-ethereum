@@ -73,12 +73,10 @@ impl BlockHeaderCommit<OpBlockHeader> for DisputeGameCommit {
 #[cfg(feature = "host")]
 pub mod host {
     use super::*;
-    use alloy::network::primitives::BlockTransactionsKind;
     use alloy::{
-        network::Ethereum,
+        network::{primitives::BlockTransactionsKind, Ethereum},
         providers::Provider,
         rpc::types::state::{AccountOverride, StateOverride},
-        transports::Transport,
     };
     use alloy_primitives::{address, uint, Address, BlockNumber, B256, U256};
     use anyhow::{bail, ensure, Context};
@@ -177,13 +175,9 @@ pub mod host {
     }
 
     impl OutputRootProof {
-        async fn from_provider<T, P2>(
-            provider: P2,
-            block_number: BlockNumber,
-        ) -> anyhow::Result<Self>
+        async fn from_provider<P2>(provider: P2, block_number: BlockNumber) -> anyhow::Result<Self>
         where
-            T: Transport + Clone,
-            P2: Provider<T, Optimism>,
+            P2: Provider<Optimism>,
         {
             let block_response = provider
                 .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
@@ -227,18 +221,17 @@ pub mod host {
     }
 
     #[derive(Clone, Debug)]
-    pub struct OptimismPortal2<T, P>(IOptimismPortal2Instance<T, P>);
+    pub struct OptimismPortal2<P>(IOptimismPortal2Instance<(), P>);
 
-    impl<T, P1> OptimismPortal2<T, P1>
+    impl<P1> OptimismPortal2<P1>
     where
-        T: Transport + Clone,
-        P1: Provider<T, Ethereum>,
+        P1: Provider<Ethereum>,
     {
         pub const fn new(address: Address, provider: P1) -> Self {
             Self(IOptimismPortal2Instance::new(address, provider))
         }
 
-        pub async fn dispute_game<P2: Provider<T, Optimism>>(
+        pub async fn dispute_game<P2: Provider<Optimism>>(
             &self,
             index: DisputeGameIndex,
             l2_provider: P2,
@@ -301,17 +294,16 @@ pub mod host {
         }
     }
 
-    async fn find_latest_game<T, P1, P2>(
+    async fn find_latest_game<P1, P2>(
         l2_provider: P2,
         game_type: u32,
         game_type_updated_at: u64,
-        factory: IDisputeGameFactoryInstance<T, P1>,
+        factory: IDisputeGameFactoryInstance<(), P1>,
         start_index: Option<U256>,
     ) -> anyhow::Result<DisputeGame>
     where
-        T: Transport + Clone,
-        P1: Provider<T, Ethereum>,
-        P2: Provider<T, Optimism>,
+        P1: Provider<Ethereum>,
+        P2: Provider<Optimism>,
     {
         let index = match start_index {
             Some(index) => index,

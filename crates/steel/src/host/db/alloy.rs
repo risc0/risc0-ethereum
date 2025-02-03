@@ -21,7 +21,7 @@ use alloy::{
         BlockResponse, Network,
     },
     providers::Provider,
-    transports::{Transport, TransportError},
+    transports::TransportError,
 };
 use alloy_primitives::{map::B256HashMap, Address, BlockHash, B256, U256};
 use revm::{
@@ -37,7 +37,7 @@ use tokio::runtime::Handle;
 /// must *not* be executed inside an async runtime, or it will panic when trying to block. If the
 /// immediate context is only synchronous, but a transitive caller is async, use
 /// [tokio::task::spawn_blocking] around the calls that need to be blocked.
-pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
+pub struct AlloyDb<N: Network, P: Provider<N>> {
     /// Provider to fetch the data from.
     provider: P,
     /// Configuration of the provider.
@@ -49,10 +49,10 @@ pub struct AlloyDb<T: Transport + Clone, N: Network, P: Provider<T, N>> {
     /// Bytecode cache to allow querying bytecode by hash instead of address.
     contracts: B256HashMap<Bytecode>,
 
-    phantom: PhantomData<fn() -> (T, N)>,
+    phantom: PhantomData<N>,
 }
 
-impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
+impl<N: Network, P: Provider<N>> AlloyDb<N, P> {
     /// Creates a new AlloyDb instance, with a [Provider] and a block.
     ///
     /// This will panic if called outside the context of a Tokio runtime.
@@ -68,7 +68,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> AlloyDb<T, N, P> {
     }
 }
 
-impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProviderDb<T, N, P> for AlloyDb<T, N, P> {
+impl<N: Network, P: Provider<N>> ProviderDb<N, P> for AlloyDb<N, P> {
     fn config(&self) -> &ProviderConfig {
         &self.provider_config
     }
@@ -91,7 +91,7 @@ pub enum Error {
     BlockNotFound,
 }
 
-impl<T: Transport + Clone, N: Network, P: Provider<T, N>> Database for AlloyDb<T, N, P> {
+impl<N: Network, P: Provider<N>> Database for AlloyDb<N, P> {
     type Error = Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {

@@ -67,7 +67,7 @@ validating a beacon root is a single call for every 24 hours of history.
 This step takes approximately 1M cycles per 24 hours of history within the Steel guest. 
 
 Ultimately, Steel will check the integrity of the view call data in the execution block by proving that the execution block is a canonical ancestor of the commitment block. 
-Once on-chain, succesfully validating the Steel commitment will prove the integrity of the block root for the commitment block.
+Once on-chain, successfully validating the Steel commitment will prove the integrity of the block root for the commitment block.
 
 ## How far can you go back?
 

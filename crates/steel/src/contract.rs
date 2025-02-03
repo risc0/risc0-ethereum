@@ -156,7 +156,6 @@ mod host {
         eips::eip2930::AccessList,
         network::{Network, TransactionBuilder},
         providers::Provider,
-        transports::Transport,
     };
     use anyhow::{anyhow, Context, Result};
 
@@ -182,11 +181,10 @@ mod host {
         }
     }
 
-    impl<'a, S, T, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H, C>>
+    impl<'a, S, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<N, P>, H, C>>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Send + 'static,
+        P: Provider<N> + Send + 'static,
         S: SolCall + Send + 'static,
         <S as SolCall>::Return: Send,
         H: EvmBlockHeader + Clone + Send + 'static,
