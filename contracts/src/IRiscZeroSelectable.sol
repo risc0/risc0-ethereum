@@ -19,7 +19,7 @@ pragma solidity ^0.8.9;
 /// @notice Selectable interface for RISC Zero verifier.
 interface IRiscZeroSelectable {
     /// @notice A short key attached to the seal to select the correct verifier implementation.
-    /// @dev The selector is taken from the hash of the verifier parameters If two
+    /// @dev The selector is taken from the hash of the verifier parameters. If two
     ///      receipts have different selectors (i.e. different verifier parameters), then it can
     ///      generally be assumed that they need distinct verifier implementations. This is used as
     ///      part of the RISC Zero versioning mechanism.
