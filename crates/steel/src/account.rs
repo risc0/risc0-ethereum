@@ -16,7 +16,6 @@
 use crate::{EvmBlockHeader, GuestEvmEnv, StateAccount};
 use alloy_primitives::{Address, Bytes, B256, U256};
 use anyhow::Result;
-use revm::Database as RevmDatabase;
 
 /// Information about an Ethereum account.
 ///
@@ -149,6 +148,7 @@ mod host {
     use crate::host::{db::ProviderDb, HostEvmEnv};
     use alloy::{network::Network, providers::Provider};
     use anyhow::{ensure, Context};
+    use revm::Database as RevmDatabase;
 
     impl<'a, N, P, H, C> Account<&'a mut HostEvmEnv<ProviderDb<N, P>, H, C>>
     where
