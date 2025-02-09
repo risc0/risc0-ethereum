@@ -95,7 +95,7 @@ pub mod host {
 
     use super::BlockInput;
     use crate::{
-        host::db::{AlloyDb, ProofDb, ProviderDb},
+        host::db::{ProofDb, ProviderDb},
         EvmBlockHeader,
     };
     use alloy::{network::Network, providers::Provider};
@@ -107,7 +107,7 @@ pub mod host {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
         pub(crate) async fn from_proof_db<N, P>(
-            mut db: ProofDb<AlloyDb<N, P>>,
+            mut db: ProofDb<ProviderDb<N, P>>,
             header: Sealed<H>,
         ) -> anyhow::Result<Self>
         where
@@ -116,7 +116,7 @@ pub mod host {
             H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
             <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
-            assert_eq!(db.inner().block_hash(), header.seal(), "DB block mismatch");
+            assert_eq!(db.inner().block(), header.seal(), "DB block mismatch");
 
             let (state_trie, storage_tries) = db.state_proof().await?;
             ensure!(

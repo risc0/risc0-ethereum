@@ -23,6 +23,7 @@ use alloy::{
 };
 use alloy_primitives::{address, b256, bytes, hex, keccak256, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
+use alloy_trie::EMPTY_ROOT_HASH;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
 use risc0_steel::{ethereum::EthEvmEnv, Account, Contract};
 use sha2::{Digest, Sha256};
@@ -151,12 +152,13 @@ async fn account_info() {
     };
     assert_eq!(info, preflight_info, "mismatch in preflight and execution");
 
-    assert_eq!(info.balance, provider.get_balance(address).await.unwrap());
     assert_eq!(
         info.nonce,
         provider.get_transaction_count(address).await.unwrap()
     );
-    let code = info.code.unwrap().bytes();
+    assert_eq!(info.balance, provider.get_balance(address).await.unwrap());
+    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
+    let code = info.code.unwrap();
     assert_eq!(code, provider.get_code_at(address).await.unwrap());
     assert_eq!(info.code_hash, keccak256(code));
 }

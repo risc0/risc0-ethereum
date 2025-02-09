@@ -15,10 +15,9 @@
 //! [Database] implementations.
 //!
 //! [Database]: revm::Database
-pub(crate) mod alloy;
 mod proof;
-mod provider;
+pub(crate) mod provider;
 
-pub use alloy::AlloyDb;
 pub use proof::ProofDb;
-pub(crate) use provider::{ProviderConfig, ProviderDb};
+pub(crate) use provider::ProviderConfig;
+pub use provider::ProviderDb;

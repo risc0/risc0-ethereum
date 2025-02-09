@@ -19,7 +19,6 @@ use crate::{
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
     history::HistoryCommit,
-    host::db::ProviderDb,
     BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
 use alloy::{
@@ -33,7 +32,7 @@ use alloy::{
 };
 use alloy_primitives::{BlockHash, B256};
 use anyhow::{ensure, Result};
-use db::{AlloyDb, ProofDb};
+use db::{ProofDb, ProviderDb};
 use std::{
     fmt::{self, Debug, Display},
     str::FromStr,
@@ -268,7 +267,7 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     }
 }
 
-impl<N, P, H> HostEvmEnv<AlloyDb<N, P>, H, ()>
+impl<N, P, H> HostEvmEnv<ProviderDb<N, P>, H, ()>
 where
     N: Network,
     P: Provider<N>,
@@ -293,7 +292,7 @@ impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> 
     }
 }
 
-impl<P> EthHostEvmEnv<AlloyDb<Ethereum, P>, BeaconCommit>
+impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, BeaconCommit>
 where
     P: Provider<Ethereum>,
 {
@@ -308,7 +307,7 @@ where
     }
 }
 
-impl<P> EthHostEvmEnv<AlloyDb<Ethereum, P>, HistoryCommit>
+impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, HistoryCommit>
 where
     P: Provider<Ethereum>,
 {
@@ -325,7 +324,7 @@ where
     }
 }
 
-impl<P> EthHostEvmEnv<AlloyDb<Ethereum, P>, ()>
+impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, ()>
 where
     P: Provider<Ethereum>,
 {

@@ -81,7 +81,7 @@ impl StateDb {
     }
 
     #[inline]
-    fn code_by_hash(&self, hash: B256) -> &Bytes {
+    pub(crate) fn code_by_hash(&self, hash: B256) -> &Bytes {
         self.contracts
             .get(&hash)
             .unwrap_or_else(|| panic!("No code with hash: {}", hash))

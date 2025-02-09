@@ -148,10 +148,7 @@ impl<S, E> CallBuilder<S, E> {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::host::{
-        db::{AlloyDb, ProviderDb},
-        HostEvmEnv,
-    };
+    use crate::host::{db::ProviderDb, HostEvmEnv};
     use alloy::{
         eips::eip2930::AccessList,
         network::{Network, TransactionBuilder},
@@ -181,7 +178,7 @@ mod host {
         }
     }
 
-    impl<'a, S, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<N, P>, H, C>>
+    impl<'a, S, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<ProviderDb<N, P>, H, C>>
     where
         N: Network,
         P: Provider<N> + Send + 'static,
@@ -256,7 +253,7 @@ mod host {
                 let provider = db.inner().provider();
                 let access_list = provider
                     .create_access_list(&tx)
-                    .hash(db.inner().block_hash())
+                    .hash(db.inner().block())
                     .await
                     .context("eth_createAccessList failed")?;
                 access_list.access_list

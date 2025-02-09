@@ -13,12 +13,51 @@
 // limitations under the License.
 
 //! Types related to account queries.
-pub use revm::primitives::{AccountInfo, Bytecode};
-
-use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
-use alloy_primitives::Address;
+use crate::{EvmBlockHeader, GuestEvmEnv, StateAccount};
+use alloy_primitives::{Address, Bytes, B256, U256};
 use anyhow::Result;
 use revm::Database as RevmDatabase;
+
+/// Information about an Ethereum account.
+///
+/// This struct contains all the essential data that makes up an Ethereum account's state,
+/// including its balance, nonce, storage, and code information.
+#[derive(Debug, Clone, Eq)]
+pub struct AccountInfo {
+    /// The number of transactions sent from this account (also used as replay protection).
+    pub nonce: u64,
+    /// The account's current balance in Wei.
+    pub balance: U256,
+    /// The Keccak-256 hash of the root node of the account's storage trie.
+    pub storage_root: B256,
+    /// The Keccak-256 hash of the account's code.
+    /// For non-contract accounts (EOAs), this will be the hash of empty bytes.
+    pub code_hash: B256,
+    /// The actual bytecode of the account.
+    /// This is `None` when the code hasn't been loaded.
+    pub code: Option<Bytes>,
+}
+
+impl PartialEq for AccountInfo {
+    fn eq(&self, other: &Self) -> bool {
+        self.nonce == other.nonce
+            && self.balance == other.balance
+            && self.storage_root == other.storage_root
+            && self.code_hash == other.code_hash
+    }
+}
+
+impl From<StateAccount> for AccountInfo {
+    fn from(account: StateAccount) -> Self {
+        Self {
+            nonce: account.nonce,
+            balance: account.balance,
+            storage_root: account.storage_root,
+            code_hash: account.code_hash,
+            code: None,
+        }
+    }
+}
 
 /// Represents an EVM account query.
 ///
@@ -84,11 +123,12 @@ impl<'a, H: EvmBlockHeader> Account<&'a GuestEvmEnv<H>> {
     /// In general, it's recommended to use [Account::info] unless explicit error handling is
     /// required.
     pub fn try_info(self) -> Result<AccountInfo> {
-        let mut db = WrapStateDb::new(self.env.db());
-        let mut info = db.basic(self.address)?.unwrap_or_default();
+        let db = self.env.db();
+        let account = db.account(self.address).unwrap_or_default();
+        let mut info = AccountInfo::from(account);
         if self.code && info.code.is_none() {
-            let code = db.code_by_hash(info.code_hash)?;
-            info.code = Some(code);
+            let code = db.code_by_hash(info.code_hash);
+            info.code = Some(code.clone());
         }
 
         Ok(info)
@@ -106,14 +146,16 @@ impl<'a, H: EvmBlockHeader> Account<&'a GuestEvmEnv<H>> {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::host::HostEvmEnv;
-    use anyhow::Context;
-    use std::error::Error as StdError;
+    use crate::host::{db::ProviderDb, HostEvmEnv};
+    use alloy::{network::Network, providers::Provider};
+    use anyhow::{ensure, Context};
 
-    impl<'a, D, H, C> Account<&'a mut HostEvmEnv<D, H, C>>
+    impl<'a, N, P, H, C> Account<&'a mut HostEvmEnv<ProviderDb<N, P>, H, C>>
     where
-        D: RevmDatabase + Send + 'static,
-        <D as RevmDatabase>::Error: StdError + Send + Sync + 'static,
+        N: Network,
+        P: Provider<N>,
+        ProviderDb<N, P>: Send + 'static,
+        H: EvmBlockHeader,
     {
         /// Constructor for preflighting queries to an Ethereum account on the host.
         ///
@@ -123,8 +165,10 @@ mod host {
         ///
         /// [EvmEnv::into_input]: crate::EvmEnv::into_input
         /// [EvmEnv]: crate::EvmEnv
-        /// [Provider]: alloy::providers::Provider
-        pub fn preflight(address: Address, env: &'a mut HostEvmEnv<D, H, C>) -> Self {
+        pub fn preflight(
+            address: Address,
+            env: &'a mut HostEvmEnv<ProviderDb<N, P>, H, C>,
+        ) -> Self {
             Self {
                 address,
                 env,
@@ -139,19 +183,29 @@ mod host {
         pub async fn info(self) -> Result<AccountInfo> {
             log::info!("Executing preflight querying account {}", &self.address);
 
-            let mut info = self
+            let account = self
                 .env
-                .spawn_with_db(move |db| db.basic(self.address))
+                .db_mut()
+                .state_account(self.address)
                 .await
-                .context("failed to get basic account information")?
-                .unwrap_or_default();
+                .context("failed to get state account information")?;
+            let mut info = AccountInfo::from(account);
             if self.code && info.code.is_none() {
+                // basic must always be called first
+                let basic = self
+                    .env
+                    .spawn_with_db(move |db| db.basic(self.address))
+                    .await
+                    .context("failed to get basic account information")?
+                    .unwrap_or_default();
+                ensure!(basic.code_hash == account.code_hash, "code_hash mismatch");
+
                 let code = self
                     .env
                     .spawn_with_db(move |db| db.code_by_hash(info.code_hash))
                     .await
                     .context("failed to get account code by its hash")?;
-                info.code = Some(code);
+                info.code = Some(code.original_bytes());
             }
 
             Ok(info)

@@ -61,8 +61,8 @@ impl From<Infallible> for Error {
 }
 
 #[cfg(feature = "host")]
-impl From<crate::host::db::alloy::Error> for Error {
-    fn from(value: crate::host::db::alloy::Error) -> Self {
+impl From<crate::host::db::provider::Error> for Error {
+    fn from(value: crate::host::db::provider::Error) -> Self {
         anyhow::Error::new(value).into()
     }
 }

@@ -204,7 +204,8 @@ where
         bail!("VerifiedRoot event not found for root {:?}", root);
     }
 
-    /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its root.
+    /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its
+    /// root.
     pub async fn fetch_receipt(
         &self,
         seal: Bytes,
@@ -216,7 +217,8 @@ where
         self.fetch_receipt_with_claim(seal, claim, journal).await
     }
 
-    /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its root.
+    /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its
+    /// root.
     pub async fn fetch_receipt_with_claim(
         &self,
         seal: Bytes,
