@@ -20,7 +20,7 @@ use std::{fs::File, io::BufReader, path::Path};
 use crate::common::ANVIL_CHAIN_SPEC;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
-    transports::{BoxFuture, BoxTransport},
+    transports::BoxFuture,
 };
 use alloy_primitives::{address, Address, Bytes, B256, U256};
 use anyhow::Context;
@@ -75,10 +75,10 @@ mod sol {
 }
 
 /// Returns an Anvil provider with the deployed `Pair` contract.
-async fn anvil_provider() -> impl Provider<BoxTransport> {
+async fn anvil_provider() -> impl Provider {
     let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
+        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
+        .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();
     log::info!("Anvil started: {:?}", node_info);
     sol::Pair::deploy(&provider, U256::from(123456789), U256::from(987654321))
@@ -286,10 +286,7 @@ async fn corrupt_ancestor() {
         let instance = sol::BlockHash::deploy(&provider).await.unwrap();
         *instance.address()
     };
-    provider
-        .anvil_mine(Some(U256::from(256)), None)
-        .await
-        .unwrap();
+    provider.anvil_mine(Some(256), None).await.unwrap();
 
     // create the corresponding input
     let mut env = EthEvmEnv::builder()

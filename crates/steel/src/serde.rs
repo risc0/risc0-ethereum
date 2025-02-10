@@ -13,7 +13,10 @@
 // limitations under the License.
 
 //! Serde related helpers.
-use alloy_eips::eip2718::{Eip2718Envelope, Encodable2718};
+use alloy_eips::{
+    eip2718::{Eip2718Envelope, Encodable2718},
+    Typed2718,
+};
 use alloy_primitives::{bytes::BufMut, hex, keccak256, Sealable, Sealed, B256};
 use alloy_rlp::{Decodable, Encodable};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -162,6 +165,12 @@ impl<T: Eip2718Envelope> Encodable for Eip2718Wrapper<T> {
 
     fn length(&self) -> usize {
         self.encode_2718_len()
+    }
+}
+
+impl<T: Eip2718Envelope> Typed2718 for Eip2718Wrapper<T> {
+    fn ty(&self) -> u8 {
+        self.inner().ty()
     }
 }
 

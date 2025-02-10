@@ -20,6 +20,44 @@ use alloy_primitives::U256;
 use anyhow::{ensure, Context};
 
 /// Represents a verifier for validating Steel commitments within Steel.
+///
+/// The verifier is used to validate Steel commitments representing a historical blockchain state.
+///
+/// ### Usage
+/// - **Preflight verification on the Host:** To prepare verification on the host environment and
+///   build the necessary proof, use [SteelVerifier::preflight]. The environment can be initialized
+///   using the [EthEvmEnv::builder] or [EvmEnv::builder].
+/// - **Verification in the Guest:** To initialize the verifier in the guest environment, use
+///   [SteelVerifier::new]. The environment should be constructed using [EvmInput::into_env].
+///
+/// ### Examples
+/// ```rust,no_run
+/// # use risc0_steel::{ethereum::EthEvmEnv, SteelVerifier, Commitment};
+/// # use url::Url;
+///
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() -> anyhow::Result<()> {
+/// // Host:
+/// let rpc_url = Url::parse("https://ethereum-rpc.publicnode.com")?;
+/// let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+///
+/// // Preflight the verification of a commitment
+/// let commitment = Commitment::default(); // Your commitment here
+/// SteelVerifier::preflight(&mut env).verify(&commitment).await?;
+///
+/// let evm_input = env.into_input().await?;
+///
+/// // Guest:
+/// let evm_env = evm_input.into_env();
+/// let verifier = SteelVerifier::new(&evm_env);
+/// verifier.verify(&commitment); // Panics if verification fails
+/// # Ok(())
+/// # }
+/// ```
+///
+/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv
+/// [EvmEnv::builder]: crate::EvmEnv
+/// [EvmInput::into_env]: crate::EvmInput::into_env
 #[stability::unstable(feature = "verifier")]
 pub struct SteelVerifier<E> {
     env: E,

@@ -33,6 +33,7 @@ use revm::{
     Database as RevmDatabase,
 };
 
+pub mod account;
 pub mod beacon;
 mod block;
 pub mod config;
@@ -53,6 +54,7 @@ mod state;
 #[cfg(feature = "unstable-verifier")]
 mod verifier;
 
+pub use account::Account;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};

@@ -19,13 +19,13 @@ use std::fmt::Debug;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
-    transports::BoxTransport,
     uint,
 };
-use alloy_primitives::{address, b256, bytes, hex, Address, Bytes, U256};
+use alloy_primitives::{address, b256, bytes, hex, keccak256, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
+use alloy_trie::EMPTY_ROOT_HASH;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
-use risc0_steel::{ethereum::EthEvmEnv, Contract};
+use risc0_steel::{ethereum::EthEvmEnv, Account, Contract};
 use sha2::{Digest, Sha256};
 use test_log::test;
 
@@ -123,10 +123,10 @@ alloy::sol!(
 );
 
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
-async fn test_provider() -> impl Provider<BoxTransport> {
+async fn test_provider() -> impl Provider + Clone {
     let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]));
+        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
+        .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();
     log::info!("Anvil started: {:?}", node_info);
     let instance = SteelTest::deploy(&provider).await.unwrap();
@@ -220,6 +220,41 @@ mod event {
 }
 
 #[test(tokio::test)]
+async fn account_info() {
+    let provider = test_provider().await;
+    let mut env = EthEvmEnv::builder()
+        .provider(provider.clone())
+        .build()
+        .await
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let address = STEEL_TEST_CONTRACT;
+    let preflight_info = {
+        let account = Account::preflight(address, &mut env);
+        account.bytecode(true).info().await.unwrap()
+    };
+
+    let input = env.into_input().await.unwrap();
+    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+
+    let info = {
+        let account = Account::new(address, &env);
+        account.bytecode(true).info()
+    };
+    assert_eq!(info, preflight_info, "mismatch in preflight and execution");
+
+    assert_eq!(
+        info.nonce,
+        provider.get_transaction_count(address).await.unwrap()
+    );
+    assert_eq!(info.balance, provider.get_balance(address).await.unwrap());
+    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
+    let code = info.code.unwrap();
+    assert_eq!(code, provider.get_code_at(address).await.unwrap());
+    assert_eq!(info.code_hash, keccak256(code));
+}
+
+#[test(tokio::test)]
 async fn ec_recover() {
     let result = common::eth_call(
         test_provider().await,
@@ -309,10 +344,7 @@ async fn blockhash() {
     let provider = test_provider().await;
     let block_hash = provider.anvil_node_info().await.unwrap().current_block_hash;
     // mine more blocks to assure that the chain is long enough
-    provider
-        .anvil_mine(Some(U256::from(256)), None)
-        .await
-        .unwrap();
+    provider.anvil_mine(Some(256), None).await.unwrap();
 
     let result = common::eth_call(
         provider,

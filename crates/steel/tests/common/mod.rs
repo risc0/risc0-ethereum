@@ -14,9 +14,7 @@
 
 use std::{fmt::Debug, sync::LazyLock};
 
-use alloy::{
-    eips::eip2930::AccessList, network::Ethereum, providers::Provider, transports::Transport,
-};
+use alloy::{eips::eip2930::AccessList, network::Ethereum, providers::Provider};
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use revm::primitives::SpecId;
@@ -26,15 +24,14 @@ pub static ANVIL_CHAIN_SPEC: LazyLock<ChainSpec> =
     LazyLock::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
 
 /// Executes a new [SolCall] using steel.
-pub async fn eth_call<T, P, C>(
+pub async fn eth_call<P, C>(
     provider: P,
     address: Address,
     call: C,
     options: CallOptions,
 ) -> C::Return
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum> + 'static,
+    P: Provider<Ethereum> + 'static,
     C: SolCall + Send + 'static,
     C::Return: PartialEq + Debug + Send,
 {
