@@ -19,7 +19,7 @@ use crate::{
     ethereum::EthBlockHeader,
     history::HistoryCommit,
     host::{
-        db::{AlloyDb, ProofDb, ProviderConfig},
+        db::{ProofDb, ProviderConfig, ProviderDb},
         BlockNumberOrTag, EthHostEvmEnv, HostCommit, HostEvmEnv,
     },
     EvmBlockHeader, EvmEnv,
@@ -192,7 +192,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
 impl<P, H> EvmEnvBuilder<P, H, ()> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a block hash.
-    pub async fn build<N>(self) -> Result<HostEvmEnv<AlloyDb<N, P>, H, ()>>
+    pub async fn build<N>(self) -> Result<HostEvmEnv<ProviderDb<N, P>, H, ()>>
     where
         N: Network,
         P: Provider<N>,
@@ -206,7 +206,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
             header.seal()
         );
 
-        let db = ProofDb::new(AlloyDb::new(
+        let db = ProofDb::new(ProviderDb::new(
             self.provider,
             self.provider_config,
             header.seal(),
@@ -301,7 +301,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     }
 
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a beacon root.
-    pub async fn build(self) -> Result<EthHostEvmEnv<AlloyDb<Ethereum, P>, BeaconCommit>>
+    pub async fn build(self) -> Result<EthHostEvmEnv<ProviderDb<Ethereum, P>, BeaconCommit>>
     where
         P: Provider<Ethereum>,
     {
@@ -316,7 +316,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
             inner: BeaconCommit::from_header(&header, &self.provider, self.beacon_config).await?,
             config_id: ChainSpec::DEFAULT_DIGEST,
         };
-        let db = ProofDb::new(AlloyDb::new(
+        let db = ProofDb::new(ProviderDb::new(
             self.provider,
             self.provider_config,
             header.seal(),
@@ -330,7 +330,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
     /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
     /// block that is different from the execution block.
     #[stability::unstable(feature = "history")]
-    pub async fn build(self) -> Result<EthHostEvmEnv<AlloyDb<Ethereum, P>, HistoryCommit>>
+    pub async fn build(self) -> Result<EthHostEvmEnv<ProviderDb<Ethereum, P>, HistoryCommit>>
     where
         P: Provider<Ethereum>,
     {
@@ -361,7 +361,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
             inner: history_commit,
             config_id: ChainSpec::DEFAULT_DIGEST,
         };
-        let db = ProofDb::new(AlloyDb::new(
+        let db = ProofDb::new(ProviderDb::new(
             self.provider,
             self.provider_config,
             evm_header.seal(),

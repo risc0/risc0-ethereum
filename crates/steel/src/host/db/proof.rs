@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{provider::ProviderDb, AlloyDb};
-use crate::MerkleTrie;
+use crate::{host::db::ProviderDb, mpt::EMPTY_ROOT_HASH, MerkleTrie, StateAccount};
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
@@ -27,7 +26,7 @@ use alloy_primitives::{
 };
 use anyhow::{ensure, Context, Result};
 use revm::{
-    primitives::{AccountInfo, Bytecode},
+    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
     Database,
 };
 use std::hash::{BuildHasher, Hash};
@@ -43,6 +42,8 @@ pub struct ProofDb<D> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct AccountProof {
+    /// The account information as stored in the account trie.
+    account: StateAccount,
     /// The inclusion proof for this account.
     account_proof: Vec<Bytes>,
     /// The MPT inclusion proofs for several storage slots.
@@ -59,7 +60,7 @@ struct StorageProof {
 
 impl<D> ProofDb<D> {
     /// Creates a new ProofDb instance, with a [Database].
-    pub fn new(db: D) -> Self
+    pub(crate) fn new(db: D) -> Self
     where
         D: Database,
     {
@@ -75,17 +76,17 @@ impl<D> ProofDb<D> {
     /// Adds a new response for EIP-1186 account proof `eth_getProof`.
     ///
     /// The proof data will be used for lookups of the referenced storage keys.
-    pub fn add_proof(&mut self, proof: EIP1186AccountProofResponse) -> Result<()> {
+    pub(crate) fn add_proof(&mut self, proof: EIP1186AccountProofResponse) -> Result<()> {
         add_proof(&mut self.proofs, proof)
     }
 
     /// Returns the referenced contracts
-    pub fn contracts(&self) -> &B256HashMap<Bytes> {
+    pub(crate) fn contracts(&self) -> &B256HashMap<Bytes> {
         &self.contracts
     }
 
     /// Returns the underlying [Database].
-    pub fn inner(&self) -> &D {
+    pub(crate) fn inner(&self) -> &D {
         &self.inner
     }
 
@@ -99,9 +100,9 @@ impl<D> ProofDb<D> {
     }
 }
 
-impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
+impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
     /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
-    pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
+    pub(crate) async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for AccessListItem {
             address,
             storage_keys,
@@ -112,23 +113,30 @@ impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
                 .filter(filter_existing_keys(self.proofs.get(&address)))
                 .collect();
 
-            if !storage_keys.is_empty() {
-                log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
-                let proof = self
-                    .inner
-                    .get_eip1186_proof(address, storage_keys)
-                    .await
-                    .context("eth_getProof failed")?;
-                self.add_proof(proof)
-                    .context("invalid eth_getProof response")?;
-            }
+            let proof = self.get_proof(address, storage_keys).await?;
+            self.add_proof(proof)
+                .context("invalid eth_getProof response")?;
         }
 
         Ok(())
     }
 
+    /// Returns the StateAccount information for the given address.
+    pub(crate) async fn state_account(&mut self, address: Address) -> Result<StateAccount> {
+        log::trace!("ACCOUNT: address={}", address);
+
+        if !self.proofs.contains_key(&address) {
+            let proof = self.get_proof(address, vec![]).await?;
+            self.add_proof(proof)
+                .context("invalid eth_getProof response")?;
+        }
+        let proof = self.proofs.get(&address).unwrap();
+
+        Ok(proof.account)
+    }
+
     /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
-    pub async fn ancestor_proof(
+    pub(crate) async fn ancestor_proof(
         &self,
         block_number: BlockNumber,
     ) -> Result<Vec<<N as Network>::HeaderResponse>> {
@@ -152,7 +160,7 @@ impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
     /// recorded by the [Database].
-    pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
+    pub(crate) async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         ensure!(
             !self.accounts.is_empty() || !self.block_hash_numbers.is_empty(),
             "no accounts accessed: use Contract::preflight"
@@ -160,7 +168,7 @@ impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
 
         // if no accounts were accessed, use the state root of the corresponding block as is
         if self.accounts.is_empty() {
-            let hash = self.inner.block_hash();
+            let hash = self.inner.block();
             let block = self
                 .inner
                 .provider()
@@ -188,7 +196,7 @@ impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
                 log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
                 let proof = self
                     .inner
-                    .get_eip1186_proof(*address, storage_keys)
+                    .get_proof(*address, storage_keys)
                     .await
                     .context("eth_getProof failed")?;
                 ensure!(
@@ -230,6 +238,25 @@ impl<N: Network, P: Provider<N>> ProofDb<AlloyDb<N, P>> {
 
         Ok((state_trie, storage_tries))
     }
+
+    async fn get_proof(
+        &self,
+        address: Address,
+        storage_keys: Vec<StorageKey>,
+    ) -> Result<EIP1186AccountProofResponse> {
+        log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
+        let proof = self
+            .inner
+            .get_proof(address, storage_keys)
+            .await
+            .context("eth_getProof failed")?;
+        ensure!(
+            proof.address == address,
+            "eth_getProof response does not match request"
+        );
+
+        Ok(proof)
+    }
 }
 
 impl<DB: Database> Database for ProofDb<DB> {
@@ -239,9 +266,8 @@ impl<DB: Database> Database for ProofDb<DB> {
         log::trace!("BASIC: address={}", address);
         self.accounts.entry(address).or_default();
 
-        // eth_getProof also returns an account object. However, since the returned data is not
-        // always consistent, it is just simpler to forward the query to the underlying DB.
-        // See https://github.com/ethereum/go-ethereum/issues/28441
+        // Because Database requires that basic is always called before code_by_hash, it is just
+        // simpler to forward the query to the underlying DB.
         self.inner.basic(address)
     }
 
@@ -332,17 +358,28 @@ fn add_proof(
         })
         .collect();
 
+    // eth_getProof returns an account object. However, the returned data is not always consistent.
+    // See https://github.com/ethereum/go-ethereum/issues/28441
+    let account = StateAccount {
+        nonce: proof_response.nonce,
+        balance: proof_response.balance,
+        storage_root: default_if_zero(proof_response.storage_hash, EMPTY_ROOT_HASH),
+        code_hash: default_if_zero(proof_response.code_hash, KECCAK_EMPTY),
+    };
+
     match proofs.entry(proof_response.address) {
         hash_map::Entry::Occupied(mut entry) => {
             let account_proof = entry.get_mut();
             ensure!(
-                account_proof.account_proof == proof_response.account_proof,
-                "account_proof does not match"
+                account_proof.account == account
+                    && account_proof.account_proof == proof_response.account_proof,
+                "inconsistent proof response"
             );
-            account_proof.storage_proofs.extend(storage_proofs);
+            extend_checked(&mut account_proof.storage_proofs, storage_proofs);
         }
         hash_map::Entry::Vacant(entry) => {
             entry.insert(AccountProof {
+                account,
                 account_proof: proof_response.account_proof,
                 storage_proofs,
             });
@@ -350,4 +387,12 @@ fn add_proof(
     }
 
     Ok(())
+}
+
+fn default_if_zero(hash: B256, default: B256) -> B256 {
+    if hash.is_zero() {
+        default
+    } else {
+        hash
+    }
 }
