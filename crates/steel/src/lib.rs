@@ -29,6 +29,7 @@ use alloy_sol_types::SolValue;
 use config::ChainSpec;
 use revm::primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId};
 
+pub mod account;
 pub mod beacon;
 mod block;
 pub mod config;
@@ -47,6 +48,7 @@ mod state;
 #[cfg(feature = "unstable-verifier")]
 mod verifier;
 
+pub use account::Account;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
