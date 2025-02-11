@@ -16,6 +16,11 @@ off-chain [Steel] proofs to:
 - Verify ERC20 token ownership (minimum 1 token required) before incrementing.
 - Leverage RISC Zero as a [coprocessor] for efficient proof generation and verification.
 
+### [Event Query](./events/README.md)
+
+This example illustrates how to use [Steel] to query and process events.
+This example computes the total USDT transferred in a block by evaluating the ERC20 `Transfer` event emitted by the corresponding contract.
+
 ### [Compound Token Stats (APR Proof)](./token-stats/README.md)
 
 This example shows how the [Steel] library can be used to call multiple view functions of a contract.

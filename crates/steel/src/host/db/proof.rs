@@ -20,22 +20,26 @@ use alloy::{
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
 };
+use alloy_consensus::ReceiptEnvelope;
+use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{
     map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashMap, HashSet},
-    Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256,
+    Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, B256, U256,
 };
+use alloy_rpc_types::{Filter, TransactionReceipt};
 use anyhow::{ensure, Context, Result};
 use revm::{
     primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
-    Database,
+    Database as RevmDatabase,
 };
 use std::hash::{BuildHasher, Hash};
 
-/// A simple revm [Database] wrapper that records all DB queries.
+/// A simple revm [RevmDatabase] wrapper that records all DB queries.
 pub struct ProofDb<D> {
     accounts: AddressHashMap<B256HashSet>,
     contracts: B256HashMap<Bytes>,
     block_hash_numbers: HashSet<BlockNumber>,
+    log_filters: Vec<Filter>,
     proofs: AddressHashMap<AccountProof>,
     inner: D,
 }
@@ -59,15 +63,16 @@ struct StorageProof {
 }
 
 impl<D> ProofDb<D> {
-    /// Creates a new ProofDb instance, with a [Database].
+    /// Creates a new ProofDb instance, with a [RevmDatabase].
     pub(crate) fn new(db: D) -> Self
     where
-        D: Database,
+        D: RevmDatabase,
     {
         Self {
             accounts: Default::default(),
             contracts: Default::default(),
             block_hash_numbers: Default::default(),
+            log_filters: Default::default(),
             proofs: Default::default(),
             inner: db,
         }
@@ -85,7 +90,7 @@ impl<D> ProofDb<D> {
         &self.contracts
     }
 
-    /// Returns the underlying [Database].
+    /// Returns the underlying [RevmDatabase].
     pub(crate) fn inner(&self) -> &D {
         &self.inner
     }
@@ -135,7 +140,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
         Ok(proof.account)
     }
 
-    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
+    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [RevmDatabase].
     pub(crate) async fn ancestor_proof(
         &self,
         block_number: BlockNumber,
@@ -159,10 +164,12 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
     }
 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
-    /// recorded by the [Database].
+    /// recorded by the [RevmDatabase].
     pub(crate) async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         ensure!(
-            !self.accounts.is_empty() || !self.block_hash_numbers.is_empty(),
+            !self.accounts.is_empty()
+                || !self.block_hash_numbers.is_empty()
+                || !self.log_filters.is_empty(),
             "no accounts accessed: use Contract::preflight"
         );
 
@@ -239,6 +246,43 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
         Ok((state_trie, storage_tries))
     }
 
+    pub async fn receipt_proof(&self) -> Result<Option<Vec<ReceiptEnvelope>>> {
+        if self.log_filters.is_empty() {
+            return Ok(None);
+        }
+
+        let provider = self.inner.provider();
+        let block_hash = self.inner.block();
+
+        let block = provider
+            .get_block_by_hash(block_hash, BlockTransactionsKind::Hashes)
+            .await
+            .context("eth_getBlockByNumber failed")?
+            .with_context(|| format!("block {} not found", block_hash))?;
+        let header = block.header();
+
+        // we don't need to include any receipts, if the Bloom filter proves the exclusion
+        let bloom_match = self
+            .log_filters
+            .iter()
+            .any(|filter| crate::matches_filter(header.logs_bloom(), filter));
+        if !bloom_match {
+            return Ok(None);
+        }
+
+        let rpc_receipts = provider
+            .get_block_receipts(block_hash.into())
+            .await
+            .context("eth_getBlockReceipts failed")?
+            .with_context(|| format!("block {} not found", block_hash))?;
+
+        // convert the receipts so that they can be RLP-encoded
+        let receipts = convert_rpc_receipts::<N>(rpc_receipts, header.receipts_root())
+            .context("invalid receipts; inconsistent API response or incompatible response type")?;
+
+        Ok(Some(receipts))
+    }
+
     async fn get_proof(
         &self,
         address: Address,
@@ -259,14 +303,14 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
     }
 }
 
-impl<DB: Database> Database for ProofDb<DB> {
+impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
     type Error = DB::Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         log::trace!("BASIC: address={}", address);
         self.accounts.entry(address).or_default();
 
-        // Because Database requires that basic is always called before code_by_hash, it is just
+        // Because RevmDatabase requires that basic is always called before code_by_hash, it is just
         // simpler to forward the query to the underlying DB.
         self.inner.basic(address)
     }
@@ -302,6 +346,17 @@ impl<DB: Database> Database for ProofDb<DB> {
         self.block_hash_numbers.insert(number);
 
         self.inner.block_hash(number)
+    }
+}
+
+impl<DB: crate::EvmDatabase> crate::EvmDatabase for ProofDb<DB> {
+    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+        log::trace!("LOGS: filter={:?}", &filter);
+        let logs = self.inner.logs(filter.clone())?;
+
+        self.log_filters.push(filter);
+
+        Ok(logs)
     }
 }
 
@@ -395,4 +450,33 @@ fn default_if_zero(hash: B256, default: B256) -> B256 {
     } else {
         hash
     }
+}
+
+/// Converts an API ReceiptResponse into a vector of ReceiptEnvelope.
+fn convert_rpc_receipts<N: Network>(
+    rpc_receipts: impl IntoIterator<Item = <N as Network>::ReceiptResponse>,
+    receipts_root: B256,
+) -> Result<Vec<ReceiptEnvelope>> {
+    let receipts = rpc_receipts
+        .into_iter()
+        .map(|rpc_receipt| {
+            // Unfortunately ReceiptResponse does not implement ReceiptEnvelope, so we have to
+            // manually convert it. We convert to a TransactionReceipt which is the default and
+            // works for Ethereum-compatible networks.
+            // Use serde here for the conversion as it is much safer than mem::transmute.
+            // TODO(https://github.com/alloy-rs/alloy/issues/854): use ReceiptEnvelope directly
+            let json = serde_json::to_value(rpc_receipt).context("failed to serialize")?;
+            let tx_receipt: TransactionReceipt = serde_json::from_value(json)
+                .context("failed to parse as Ethereum transaction receipt")?;
+
+            Ok(tx_receipt.inner.into_primitives_receipt())
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    // in case the conversion did not work correctly, we check the receipts root in the header
+    let root =
+        alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| r.encode_2718(out));
+    ensure!(root == receipts_root, "receipts root mismatch");
+
+    Ok(receipts)
 }

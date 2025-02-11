@@ -80,7 +80,7 @@ impl<'a, H: EvmBlockHeader> SteelVerifier<&'a GuestEvmEnv<H>> {
                 assert_eq!(block_hash, commitment.digest, "Invalid digest");
             }
             1 => {
-                let db = WrapStateDb::new(self.env.db());
+                let db = WrapStateDb::new(self.env.db(), self.env.header());
                 let beacon_root = BeaconRootsContract::get_from_db(db, id)
                     .expect("calling BeaconRootsContract failed");
                 assert_eq!(beacon_root, commitment.digest, "Invalid digest");
@@ -99,7 +99,7 @@ mod host {
 
     impl<'a, D, H: EvmBlockHeader, C> SteelVerifier<&'a mut HostEvmEnv<D, H, C>>
     where
-        D: Database + Send + 'static,
+        D: crate::EvmDatabase + Send + 'static,
         beacon_roots::Error: From<<D as Database>::Error>,
         anyhow::Error: From<<D as Database>::Error>,
         <D as Database>::Error: Send + 'static,
