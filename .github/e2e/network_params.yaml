@@ -1,0 +1,7 @@
+participants:
+  - el_type: geth
+    cl_type: teku
+additional_services:
+  - tx_spammer
+network_params:
+  preset: mainnet
