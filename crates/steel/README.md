@@ -15,7 +15,7 @@ The recommended place is to start is [Steel examples], specifically the [ERC20 C
 The [create-steel-app] script will allow you to set up the erc20-counter example locally in one command:
 
 ```sh
-sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/crates/steel/docs/create-steel-app/create-steel-app)
+sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/release-1.4/crates/steel/docs/create-steel-app/create-steel-app)
 ```
 
 This example acts as your skeleton project structure for further development. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. The documentation below uses the ERC20-counter example as a guide to explain Steel in detail.
@@ -47,25 +47,25 @@ This documentation covers the core concepts of Steel. After reading, you will un
 
 The RISC Zero [dev docs][dev-docs] are a great place to start to understand the zkVM in detail. If you have any questions, and/or just want to hang out with other builders, please join the [RISC Zero Discord][risczero-discord].
 
-[Steel examples]: https://github.com/risc0/risc0-ethereum/blob/main/examples
-[ERC20 Counter]: https://github.com/risc0/risc0-ethereum/blob/main/examples/erc20-counter
-[create-steel-app]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/create-steel-app
+[Steel examples]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/examples
+[ERC20 Counter]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/examples/erc20-counter
+[create-steel-app]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/create-steel-app
 [video tutorial]: https://www.loom.com/share/0e2ede7b9d50464fb729819a8bd24e05?sid=3009618b-38ea-449a-90dc-9b39ef569c67
 [Introducing Steel 1.0]: https://risczero.com/blog/introducing-steel-1.0
-[What is Steel?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/what-is-steel.md
-[How does Steel work?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/how-does-steel-work.md
-[Proving EVM execution within the zkVM]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/how-does-steel-work.md#proving-evm-execution-within-the-zkvm
-[Verifying the Proof On-Chain]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/how-does-steel-work.md#verifying-the-proof-on-chain
-[Steel Commitments]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-commitments.md
-[Trust Anchor: The Blockhash]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-commitments.md#steels-trust-anchor-the-blockhash
-[What is a Steel Commitment?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-commitments.md#what-is-a-steel-commitment
-[Validation of Steel Commitments]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-commitments.md#validation-of-steel-commitments
-[Steel History]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md
-[Why use Steel history?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md#why-use-steel-history
-[Overview]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md#overview
-[How does Steel history work?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md#how-does-steel-history-work
-[How far can you go back?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md#how-far-can-you-go-back
-[How much does Steel history cost?]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md#how-much-does-steel-history-cost
-[Enabling Steel history]: https://github.com/risc0/risc0-ethereum/blob/main/crates/steel/docs/steel-history.md#enabling-steel-history
+[What is Steel?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/what-is-steel.md
+[How does Steel work?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/how-does-steel-work.md
+[Proving EVM execution within the zkVM]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/how-does-steel-work.md#proving-evm-execution-within-the-zkvm
+[Verifying the Proof On-Chain]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/how-does-steel-work.md#verifying-the-proof-on-chain
+[Steel Commitments]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-commitments.md
+[Trust Anchor: The Blockhash]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-commitments.md#steels-trust-anchor-the-blockhash
+[What is a Steel Commitment?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-commitments.md#what-is-a-steel-commitment
+[Validation of Steel Commitments]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-commitments.md#validation-of-steel-commitments
+[Steel History]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md
+[Why use Steel history?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md#why-use-steel-history
+[Overview]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md#overview
+[How does Steel history work?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md#how-does-steel-history-work
+[How far can you go back?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md#how-far-can-you-go-back
+[How much does Steel history cost?]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md#how-much-does-steel-history-cost
+[Enabling Steel history]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/crates/steel/docs/steel-history.md#enabling-steel-history
 [dev-docs]: https://dev.risczero.com/api/
 [risczero-discord]: https://discord.com/invite/risczero

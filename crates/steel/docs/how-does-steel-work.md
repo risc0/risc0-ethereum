@@ -118,7 +118,7 @@ Aggregation is a key feature of [Boundless][boundless-website]
 <---- [What is Steel?] | [Steel Commitments] ---->
 
 [sol-macro]: https://alloy.rs/examples/sol-macro/index.html
-[here]: https://github.com/risc0/risc0-ethereum/blob/main/examples/erc20-counter
+[here]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/examples/erc20-counter
 [guest program]: https://dev.risczero.com/terminology#guest-program
 [revm]: https://docs.rs/revm/latest/revm/
 [host program]: https://dev.risczero.com/terminology#host-program

@@ -71,7 +71,7 @@ In the `increment` function in the `Counter` contract, we saw this require state
 require(Steel.validateCommitment(journal.commitment), "Invalid commitment");
 ```
 
-The [Steel library](https://github.com/risc0/risc0-ethereum/blob/main/contracts/src/steel/Steel.sol) contains the function `validateCommitment` :
+The [Steel library](https://github.com/risc0/risc0-ethereum/blob/release-1.4/contracts/src/steel/Steel.sol) contains the function `validateCommitment` :
 
 ```solidity
 function validateCommitment(Commitment memory commitment) internal view returns (bool) {
@@ -132,8 +132,8 @@ Note that EIP-4788 only provides access to the parent beacon root, requiring ite
 
 [revm]: https://docs.rs/revm/latest/revm/
 [eth_getProof]: https://docs.alchemy.com/reference/eth-getproof
-[Steel library]: https://github.com/risc0/risc0-ethereum/blob/main/contracts/src/steel/Steel.sol
-[Steel.sol]: https://github.com/risc0/risc0-ethereum/blob/main/contracts/src/steel/Steel.sol
+[Steel library]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/contracts/src/steel/Steel.sol
+[Steel.sol]: https://github.com/risc0/risc0-ethereum/blob/release-1.4/contracts/src/steel/Steel.sol
 [EIP-4788]: https://eips.ethereum.org/EIPS/eip-4788
 [How Does Steel Work?]: ./how-does-steel-work.md
 [Steel README]: ../README.md
