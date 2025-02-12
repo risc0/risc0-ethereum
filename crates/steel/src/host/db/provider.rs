@@ -21,10 +21,11 @@ use alloy::{
     rpc::types::EIP1186AccountProofResponse,
     transports::TransportError,
 };
-use alloy_primitives::{map::B256HashMap, Address, BlockHash, StorageKey, B256, U256};
+use alloy_primitives::{map::B256HashMap, Address, BlockHash, Log, StorageKey, B256, U256};
+use alloy_rpc_types::Filter;
 use revm::{
     primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
-    Database,
+    Database as RevmDatabase,
 };
 use std::{future::IntoFuture, marker::PhantomData};
 use tokio::runtime::Handle;
@@ -40,7 +41,7 @@ pub enum Error {
     InconsistentResponse(&'static str),
 }
 
-/// A revm [Database] backed by an alloy [Provider].
+/// A [RevmDatabase] backed by an alloy [Provider].
 ///
 /// When accessing the database, it'll use the given provider to fetch the corresponding account's
 /// data. It will block the current thread to execute provider calls, Therefore, its methods
@@ -143,7 +144,7 @@ impl<N: Network, P: Provider<N>> ProviderDb<N, P> {
     }
 }
 
-impl<N: Network, P: Provider<N>> Database for ProviderDb<N, P> {
+impl<N: Network, P: Provider<N>> RevmDatabase for ProviderDb<N, P> {
     type Error = Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
@@ -225,5 +226,17 @@ impl<N: Network, P: Provider<N>> Database for ProviderDb<N, P> {
         let block = block_response.ok_or(Error::BlockNotFound)?;
 
         Ok(block.header().hash())
+    }
+}
+
+impl<N: Network, P: Provider<N>> crate::EvmDatabase for ProviderDb<N, P> {
+    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+        assert_eq!(filter.get_block_hash(), Some(self.block()));
+        let rpc_logs = self
+            .handle
+            .block_on(self.provider.get_logs(&filter))
+            .map_err(|err| Error::Rpc("eth_getLogs", err))?;
+
+        Ok(rpc_logs.into_iter().map(|log| log.inner).collect())
     }
 }
