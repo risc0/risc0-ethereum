@@ -20,6 +20,44 @@ use alloy_primitives::U256;
 use anyhow::{ensure, Context};
 
 /// Represents a verifier for validating Steel commitments within Steel.
+///
+/// The verifier is used to validate Steel commitments representing a historical blockchain state.
+///
+/// ### Usage
+/// - **Preflight verification on the Host:** To prepare verification on the host environment and
+///   build the necessary proof, use [SteelVerifier::preflight]. The environment can be initialized
+///   using the [EthEvmEnv::builder] or [EvmEnv::builder].
+/// - **Verification in the Guest:** To initialize the verifier in the guest environment, use
+///   [SteelVerifier::new]. The environment should be constructed using [EvmInput::into_env].
+///
+/// ### Examples
+/// ```rust,no_run
+/// # use risc0_steel::{ethereum::EthEvmEnv, SteelVerifier, Commitment};
+/// # use url::Url;
+///
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() -> anyhow::Result<()> {
+/// // Host:
+/// let rpc_url = Url::parse("https://ethereum-rpc.publicnode.com")?;
+/// let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+///
+/// // Preflight the verification of a commitment
+/// let commitment = Commitment::default(); // Your commitment here
+/// SteelVerifier::preflight(&mut env).verify(&commitment).await?;
+///
+/// let evm_input = env.into_input().await?;
+///
+/// // Guest:
+/// let evm_env = evm_input.into_env();
+/// let verifier = SteelVerifier::new(&evm_env);
+/// verifier.verify(&commitment); // Panics if verification fails
+/// # Ok(())
+/// # }
+/// ```
+///
+/// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv
+/// [EvmEnv::builder]: crate::EvmEnv
+/// [EvmInput::into_env]: crate::EvmInput::into_env
 #[stability::unstable(feature = "verifier")]
 pub struct SteelVerifier<E> {
     env: E,
@@ -42,7 +80,7 @@ impl<'a, H: EvmBlockHeader> SteelVerifier<&'a GuestEvmEnv<H>> {
                 assert_eq!(block_hash, commitment.digest, "Invalid digest");
             }
             1 => {
-                let db = WrapStateDb::new(self.env.db());
+                let db = WrapStateDb::new(self.env.db(), self.env.header());
                 let beacon_root = BeaconRootsContract::get_from_db(db, id)
                     .expect("calling BeaconRootsContract failed");
                 assert_eq!(beacon_root, commitment.digest, "Invalid digest");
@@ -55,16 +93,13 @@ impl<'a, H: EvmBlockHeader> SteelVerifier<&'a GuestEvmEnv<H>> {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::{
-        history::beacon_roots,
-        host::{db::ProofDb, HostEvmEnv},
-    };
+    use crate::{history::beacon_roots, host::HostEvmEnv};
     use anyhow::Context;
     use revm::Database;
 
     impl<'a, D, H: EvmBlockHeader, C> SteelVerifier<&'a mut HostEvmEnv<D, H, C>>
     where
-        D: Database + Send + 'static,
+        D: crate::EvmDatabase + Send + 'static,
         beacon_roots::Error: From<<D as Database>::Error>,
         anyhow::Error: From<<D as Database>::Error>,
         <D as Database>::Error: Send + 'static,
@@ -109,37 +144,6 @@ mod host {
                 }
                 v => unimplemented!("Invalid commitment version {}", v),
             }
-        }
-    }
-
-    impl<D, H, C> HostEvmEnv<D, H, C>
-    where
-        D: Database + Send + 'static,
-    {
-        /// Runs the provided closure that requires mutable access to the database on a thread where
-        /// blocking is acceptable.
-        ///
-        /// It panics if the closure panics.
-        /// This function is necessary because mutable references to the database cannot be passed
-        /// directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken
-        /// out of the `HostEvmEnv`, moved into the blocking task, and then restored after
-        /// the task completes.
-        async fn spawn_with_db<F, R>(&mut self, f: F) -> R
-        where
-            F: FnOnce(&mut ProofDb<D>) -> R + Send + 'static,
-            R: Send + 'static,
-        {
-            // as mutable references are not possible, the DB must be moved in and out of the task
-            let mut db = self.db.take().unwrap();
-
-            let (result, db) = tokio::task::spawn_blocking(|| (f(&mut db), db))
-                .await
-                .expect("DB execution panicked");
-
-            // restore the DB, so that we never return an env without a DB
-            self.db = Some(db);
-
-            result
         }
     }
 }

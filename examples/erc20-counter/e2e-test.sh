@@ -39,7 +39,7 @@ while [[ $(cast rpc --rpc-url "${ETH_RPC_URL:?}" eth_blockNumber | jq -re) -le $
 
 # Publish a new state
 echo "Publishing a new state..."
-RUST_LOG=${RUST_LOG:-info,risc0_steel=debug} cargo run --bin publisher -F "$PUBLISHER_FEATURES" -- \
+RISC0_INFO=1 RUST_LOG=${RUST_LOG:-info,risc0_steel=debug} cargo run --bin publisher -F "$PUBLISHER_FEATURES" -- \
     --eth-wallet-private-key=${ETH_WALLET_PRIVATE_KEY:?} \
     --eth-rpc-url=${ETH_RPC_URL:?} \
     --execution-block=${BLOCK_NUMBER:?} \

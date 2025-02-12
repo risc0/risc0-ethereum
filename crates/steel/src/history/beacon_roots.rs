@@ -61,8 +61,8 @@ impl From<Infallible> for Error {
 }
 
 #[cfg(feature = "host")]
-impl From<crate::host::db::alloy::Error> for Error {
-    fn from(value: crate::host::db::alloy::Error) -> Self {
+impl From<crate::host::db::provider::Error> for Error {
+    fn from(value: crate::host::db::provider::Error) -> Self {
         anyhow::Error::new(value).into()
     }
 }
@@ -90,15 +90,14 @@ impl BeaconRootsState {
     /// It fetches the minimal set of Merkle proofs (for the contract's state and storage) required
     /// to verify and retrieve the beacon root associated with the given `calldata` (timestamp).
     #[cfg(feature = "host")]
-    pub async fn preflight_get<T, N, P>(
+    pub async fn preflight_get<N, P>(
         calldata: U256,
         provider: P,
         block_id: alloy::eips::BlockId,
     ) -> anyhow::Result<(B256, BeaconRootsState)>
     where
-        T: alloy::transports::Transport + Clone,
         N: alloy::network::Network,
-        P: alloy::providers::Provider<T, N>,
+        P: alloy::providers::Provider<N>,
     {
         use anyhow::{anyhow, Context};
 

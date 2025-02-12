@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,9 +27,8 @@ pub async fn verify_on_chain(
     let seal = risc0_ethereum_contracts::encode_seal(&receipt).context("encode_seal failed")?;
     let journal = receipt.journal.bytes;
 
-    let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.fork(rpc_url));
+    let provider =
+        ProviderBuilder::new().on_anvil_with_wallet_and_config(|anvil| anvil.fork(rpc_url))?;
 
     alloy::sol!(
         #[sol(rpc)]

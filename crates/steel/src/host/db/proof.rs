@@ -12,42 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{provider::ProviderDb, AlloyDb};
-use crate::MerkleTrie;
+use crate::{host::db::ProviderDb, mpt::EMPTY_ROOT_HASH, MerkleTrie, StateAccount};
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
     network::{primitives::BlockTransactionsKind, BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
-    transports::Transport,
 };
+use alloy_consensus::ReceiptEnvelope;
+use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{
-    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashSet},
-    Address, BlockNumber, Bytes, StorageKey, StorageValue, B256, U256,
+    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashMap, HashSet},
+    Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, B256, U256,
 };
+use alloy_rpc_types::{Filter, TransactionReceipt};
 use anyhow::{ensure, Context, Result};
 use revm::{
-    primitives::{AccountInfo, Bytecode},
-    Database,
+    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
+    Database as RevmDatabase,
 };
+use std::hash::{BuildHasher, Hash};
 
-/// A simple revm [Database] wrapper that records all DB queries.
+/// A simple revm [RevmDatabase] wrapper that records all DB queries.
 pub struct ProofDb<D> {
     accounts: AddressHashMap<B256HashSet>,
     contracts: B256HashMap<Bytes>,
     block_hash_numbers: HashSet<BlockNumber>,
+    log_filters: Vec<Filter>,
     proofs: AddressHashMap<AccountProof>,
     inner: D,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct AccountProof {
+    /// The account information as stored in the account trie.
+    account: StateAccount,
     /// The inclusion proof for this account.
     account_proof: Vec<Bytes>,
     /// The MPT inclusion proofs for several storage slots.
     storage_proofs: B256HashMap<StorageProof>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct StorageProof {
     /// The value that this key holds.
     value: StorageValue,
@@ -55,13 +62,17 @@ struct StorageProof {
     proof: Vec<Bytes>,
 }
 
-impl<D: Database> ProofDb<D> {
-    /// Creates a new ProofDb instance, with a [Database].
-    pub fn new(db: D) -> Self {
+impl<D> ProofDb<D> {
+    /// Creates a new ProofDb instance, with a [RevmDatabase].
+    pub(crate) fn new(db: D) -> Self
+    where
+        D: RevmDatabase,
+    {
         Self {
             accounts: Default::default(),
             contracts: Default::default(),
             block_hash_numbers: Default::default(),
+            log_filters: Default::default(),
             proofs: Default::default(),
             inner: db,
         }
@@ -70,24 +81,33 @@ impl<D: Database> ProofDb<D> {
     /// Adds a new response for EIP-1186 account proof `eth_getProof`.
     ///
     /// The proof data will be used for lookups of the referenced storage keys.
-    pub fn add_proof(&mut self, proof: EIP1186AccountProofResponse) -> Result<()> {
+    pub(crate) fn add_proof(&mut self, proof: EIP1186AccountProofResponse) -> Result<()> {
         add_proof(&mut self.proofs, proof)
     }
 
     /// Returns the referenced contracts
-    pub fn contracts(&self) -> &B256HashMap<Bytes> {
+    pub(crate) fn contracts(&self) -> &B256HashMap<Bytes> {
         &self.contracts
     }
 
-    /// Returns the underlying [Database].
-    pub fn inner(&self) -> &D {
+    /// Returns the underlying [RevmDatabase].
+    pub(crate) fn inner(&self) -> &D {
         &self.inner
+    }
+
+    /// Extends the `ProofDb` with the contents of another `ProofDb`. It panics if they are not
+    /// consistent.
+    pub(crate) fn extend(&mut self, other: ProofDb<D>) {
+        extend_checked(&mut self.accounts, other.accounts);
+        extend_checked(&mut self.contracts, other.contracts);
+        extend_checked(&mut self.proofs, other.proofs);
+        self.block_hash_numbers.extend(other.block_hash_numbers);
     }
 }
 
-impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, P>> {
+impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
     /// Fetches all the EIP-1186 storage proofs from the `access_list` and stores them in the DB.
-    pub async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
+    pub(crate) async fn add_access_list(&mut self, access_list: AccessList) -> Result<()> {
         for AccessListItem {
             address,
             storage_keys,
@@ -98,23 +118,30 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                 .filter(filter_existing_keys(self.proofs.get(&address)))
                 .collect();
 
-            if !storage_keys.is_empty() {
-                log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
-                let proof = self
-                    .inner
-                    .get_eip1186_proof(address, storage_keys)
-                    .await
-                    .context("eth_getProof failed")?;
-                self.add_proof(proof)
-                    .context("invalid eth_getProof response")?;
-            }
+            let proof = self.get_proof(address, storage_keys).await?;
+            self.add_proof(proof)
+                .context("invalid eth_getProof response")?;
         }
 
         Ok(())
     }
 
-    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [Database].
-    pub async fn ancestor_proof(
+    /// Returns the StateAccount information for the given address.
+    pub(crate) async fn state_account(&mut self, address: Address) -> Result<StateAccount> {
+        log::trace!("ACCOUNT: address={}", address);
+
+        if !self.proofs.contains_key(&address) {
+            let proof = self.get_proof(address, vec![]).await?;
+            self.add_proof(proof)
+                .context("invalid eth_getProof response")?;
+        }
+        let proof = self.proofs.get(&address).unwrap();
+
+        Ok(proof.account)
+    }
+
+    /// Returns the proof (hash chain) of all `blockhash` calls recorded by the [RevmDatabase].
+    pub(crate) async fn ancestor_proof(
         &self,
         block_number: BlockNumber,
     ) -> Result<Vec<<N as Network>::HeaderResponse>> {
@@ -137,16 +164,18 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
     }
 
     /// Returns the merkle proofs (sparse [MerkleTrie]) for the state and all storage queries
-    /// recorded by the [Database].
-    pub async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
+    /// recorded by the [RevmDatabase].
+    pub(crate) async fn state_proof(&mut self) -> Result<(MerkleTrie, Vec<MerkleTrie>)> {
         ensure!(
-            !self.accounts.is_empty() || !self.block_hash_numbers.is_empty(),
+            !self.accounts.is_empty()
+                || !self.block_hash_numbers.is_empty()
+                || !self.log_filters.is_empty(),
             "no accounts accessed: use Contract::preflight"
         );
 
         // if no accounts were accessed, use the state root of the corresponding block as is
         if self.accounts.is_empty() {
-            let hash = self.inner.block_hash();
+            let hash = self.inner.block();
             let block = self
                 .inner
                 .provider()
@@ -174,7 +203,7 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
                 log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
                 let proof = self
                     .inner
-                    .get_eip1186_proof(*address, storage_keys)
+                    .get_proof(*address, storage_keys)
                     .await
                     .context("eth_getProof failed")?;
                 ensure!(
@@ -216,18 +245,73 @@ impl<T: Transport + Clone, N: Network, P: Provider<T, N>> ProofDb<AlloyDb<T, N, 
 
         Ok((state_trie, storage_tries))
     }
+
+    pub async fn receipt_proof(&self) -> Result<Option<Vec<ReceiptEnvelope>>> {
+        if self.log_filters.is_empty() {
+            return Ok(None);
+        }
+
+        let provider = self.inner.provider();
+        let block_hash = self.inner.block();
+
+        let block = provider
+            .get_block_by_hash(block_hash, BlockTransactionsKind::Hashes)
+            .await
+            .context("eth_getBlockByNumber failed")?
+            .with_context(|| format!("block {} not found", block_hash))?;
+        let header = block.header();
+
+        // we don't need to include any receipts, if the Bloom filter proves the exclusion
+        let bloom_match = self
+            .log_filters
+            .iter()
+            .any(|filter| crate::matches_filter(header.logs_bloom(), filter));
+        if !bloom_match {
+            return Ok(None);
+        }
+
+        let rpc_receipts = provider
+            .get_block_receipts(block_hash.into())
+            .await
+            .context("eth_getBlockReceipts failed")?
+            .with_context(|| format!("block {} not found", block_hash))?;
+
+        // convert the receipts so that they can be RLP-encoded
+        let receipts = convert_rpc_receipts::<N>(rpc_receipts, header.receipts_root())
+            .context("invalid receipts; inconsistent API response or incompatible response type")?;
+
+        Ok(Some(receipts))
+    }
+
+    async fn get_proof(
+        &self,
+        address: Address,
+        storage_keys: Vec<StorageKey>,
+    ) -> Result<EIP1186AccountProofResponse> {
+        log::trace!("PROOF: address={}, #keys={}", address, storage_keys.len());
+        let proof = self
+            .inner
+            .get_proof(address, storage_keys)
+            .await
+            .context("eth_getProof failed")?;
+        ensure!(
+            proof.address == address,
+            "eth_getProof response does not match request"
+        );
+
+        Ok(proof)
+    }
 }
 
-impl<DB: Database> Database for ProofDb<DB> {
+impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
     type Error = DB::Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         log::trace!("BASIC: address={}", address);
         self.accounts.entry(address).or_default();
 
-        // eth_getProof also returns an account object. However, since the returned data is not
-        // always consistent, it is just simpler to forward the query to the underlying DB.
-        // See https://github.com/ethereum/go-ethereum/issues/28441
+        // Because RevmDatabase requires that basic is always called before code_by_hash, it is just
+        // simpler to forward the query to the underlying DB.
         self.inner.basic(address)
     }
 
@@ -265,6 +349,43 @@ impl<DB: Database> Database for ProofDb<DB> {
     }
 }
 
+impl<DB: crate::EvmDatabase> crate::EvmDatabase for ProofDb<DB> {
+    fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+        log::trace!("LOGS: filter={:?}", &filter);
+        let logs = self.inner.logs(filter.clone())?;
+
+        self.log_filters.push(filter);
+
+        Ok(logs)
+    }
+}
+
+/// Extends a `HashMap` with the contents of an iterator.
+fn extend_checked<K, V, S, T>(map: &mut HashMap<K, V, S>, iter: T)
+where
+    K: Eq + Hash,
+    V: PartialEq,
+    S: BuildHasher,
+    T: IntoIterator<Item = (K, V)>,
+{
+    let iter = iter.into_iter();
+    let (lower_bound, _) = iter.size_hint();
+    map.reserve(lower_bound);
+
+    for (k, v) in iter {
+        match map.entry(k) {
+            hash_map::Entry::Vacant(entry) => {
+                entry.insert(v);
+            }
+            hash_map::Entry::Occupied(entry) => {
+                if entry.get() != &v {
+                    panic!("mismatching values for key")
+                }
+            }
+        }
+    }
+}
+
 fn filter_existing_keys(account_proof: Option<&AccountProof>) -> impl Fn(&StorageKey) -> bool + '_ {
     move |key| {
         !account_proof
@@ -292,17 +413,28 @@ fn add_proof(
         })
         .collect();
 
+    // eth_getProof returns an account object. However, the returned data is not always consistent.
+    // See https://github.com/ethereum/go-ethereum/issues/28441
+    let account = StateAccount {
+        nonce: proof_response.nonce,
+        balance: proof_response.balance,
+        storage_root: default_if_zero(proof_response.storage_hash, EMPTY_ROOT_HASH),
+        code_hash: default_if_zero(proof_response.code_hash, KECCAK_EMPTY),
+    };
+
     match proofs.entry(proof_response.address) {
         hash_map::Entry::Occupied(mut entry) => {
             let account_proof = entry.get_mut();
             ensure!(
-                account_proof.account_proof == proof_response.account_proof,
-                "account_proof does not match"
+                account_proof.account == account
+                    && account_proof.account_proof == proof_response.account_proof,
+                "inconsistent proof response"
             );
-            account_proof.storage_proofs.extend(storage_proofs);
+            extend_checked(&mut account_proof.storage_proofs, storage_proofs);
         }
         hash_map::Entry::Vacant(entry) => {
             entry.insert(AccountProof {
+                account,
                 account_proof: proof_response.account_proof,
                 storage_proofs,
             });
@@ -310,4 +442,41 @@ fn add_proof(
     }
 
     Ok(())
+}
+
+fn default_if_zero(hash: B256, default: B256) -> B256 {
+    if hash.is_zero() {
+        default
+    } else {
+        hash
+    }
+}
+
+/// Converts an API ReceiptResponse into a vector of ReceiptEnvelope.
+fn convert_rpc_receipts<N: Network>(
+    rpc_receipts: impl IntoIterator<Item = <N as Network>::ReceiptResponse>,
+    receipts_root: B256,
+) -> Result<Vec<ReceiptEnvelope>> {
+    let receipts = rpc_receipts
+        .into_iter()
+        .map(|rpc_receipt| {
+            // Unfortunately ReceiptResponse does not implement ReceiptEnvelope, so we have to
+            // manually convert it. We convert to a TransactionReceipt which is the default and
+            // works for Ethereum-compatible networks.
+            // Use serde here for the conversion as it is much safer than mem::transmute.
+            // TODO(https://github.com/alloy-rs/alloy/issues/854): use ReceiptEnvelope directly
+            let json = serde_json::to_value(rpc_receipt).context("failed to serialize")?;
+            let tx_receipt: TransactionReceipt = serde_json::from_value(json)
+                .context("failed to parse as Ethereum transaction receipt")?;
+
+            Ok(tx_receipt.inner.into_primitives_receipt())
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    // in case the conversion did not work correctly, we check the receipts root in the header
+    let root =
+        alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| r.encode_2718(out));
+    ensure!(root == receipts_root, "receipts root mismatch");
+
+    Ok(receipts)
 }

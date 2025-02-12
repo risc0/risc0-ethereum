@@ -122,7 +122,6 @@ pub(crate) mod host {
     use alloy::{
         network::{primitives::BlockTransactionsKind, Ethereum},
         providers::Provider,
-        transports::Transport,
     };
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
@@ -224,14 +223,13 @@ pub(crate) mod host {
     impl BeaconCommit {
         /// Creates a new `BeaconCommit` for the provided header which proofs the inclusion of the
         /// corresponding block hash in the referenced beacon block.
-        pub(crate) async fn from_header<T, P>(
+        pub(crate) async fn from_header<P>(
             header: &Sealed<EthBlockHeader>,
             rpc_provider: P,
             beacon_url: Url,
         ) -> anyhow::Result<Self>
         where
-            T: Transport + Clone,
-            P: Provider<T, Ethereum>,
+            P: Provider<Ethereum>,
         {
             let client = BeaconClient::new(beacon_url).context("invalid URL")?;
             let (commit, beacon_root) =
@@ -252,15 +250,14 @@ pub(crate) mod host {
 
     /// Creates a beacon commitment that `field` is contained in the `ExecutionPayload` of the
     /// beacon block corresponding to `header`.
-    pub(crate) async fn create_beacon_commit<T, P, H, const LEAF_INDEX: usize>(
+    pub(crate) async fn create_beacon_commit<P, H, const LEAF_INDEX: usize>(
         header: &Sealed<H>,
         field: PathElement,
         rpc_provider: P,
         beacon_client: &BeaconClient,
     ) -> anyhow::Result<(GeneralizedBeaconCommit<LEAF_INDEX>, B256)>
     where
-        T: Transport + Clone,
-        P: Provider<T, Ethereum>,
+        P: Provider<Ethereum>,
         H: EvmBlockHeader,
     {
         let child = {

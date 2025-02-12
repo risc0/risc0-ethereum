@@ -30,8 +30,8 @@ use revm::{
 ///
 /// ### Usage
 /// - **Preflight calls on the Host:** To prepare calls on the host environment and build the
-///   necessary proof, use [Contract::preflight][Contract]. The environment can be initialized using the
-///   [EthEvmEnv::builder] or [EvmEnv::builder].
+///   necessary proof, use [Contract::preflight][Contract]. The environment can be initialized using
+///   the [EthEvmEnv::builder] or [EvmEnv::builder].
 /// - **Calls in the Guest:** To initialize the contract in the guest environment, use
 ///   [Contract::new]. The environment should be constructed using [EvmInput::into_env].
 ///
@@ -148,15 +148,11 @@ impl<S, E> CallBuilder<S, E> {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::host::{
-        db::{AlloyDb, ProviderDb},
-        HostEvmEnv,
-    };
+    use crate::host::{db::ProviderDb, HostEvmEnv};
     use alloy::{
         eips::eip2930::AccessList,
         network::{Network, TransactionBuilder},
         providers::Provider,
-        transports::Transport,
     };
     use anyhow::{anyhow, Context, Result};
 
@@ -182,11 +178,10 @@ mod host {
         }
     }
 
-    impl<'a, S, T, N, P, H, C> CallBuilder<S, &'a mut HostEvmEnv<AlloyDb<T, N, P>, H, C>>
+    impl<S, N, P, H, C> CallBuilder<S, &mut HostEvmEnv<ProviderDb<N, P>, H, C>>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N> + Send + 'static,
+        P: Provider<N> + Send + 'static,
         S: SolCall + Send + 'static,
         <S as SolCall>::Return: Send,
         H: EvmBlockHeader + Clone + Send + 'static,
@@ -258,7 +253,7 @@ mod host {
                 let provider = db.inner().provider();
                 let access_list = provider
                     .create_access_list(&tx)
-                    .hash(db.inner().block_hash())
+                    .hash(db.inner().block())
                     .await
                     .context("eth_createAccessList failed")?;
                 access_list.access_list
@@ -284,7 +279,7 @@ where
     /// required.
     pub fn try_call(self) -> Result<S::Return, String> {
         let mut evm = new_evm::<_, H>(
-            WrapStateDb::new(self.env.db()),
+            WrapStateDb::new(self.env.db(), &self.env.header),
             self.env.cfg_env.clone(),
             self.env.header.inner(),
         );

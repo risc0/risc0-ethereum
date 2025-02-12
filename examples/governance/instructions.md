@@ -58,7 +58,7 @@ Ran 3 test suites in 1.83s (1.83s CPU time): 14 tests passed, 0 failed, 0 skippe
 
 ## Generating data and gas plots
 
-In the `tests/benchmarks` folder, there are two Python files. They both handle data written to a csv from the [BenchmarkGovernorsTest.sol](./tests/benchmarks/BenchmarkGovernorsTest.sol) file using Foundry's writing data cheatcode.
+In the `tests/benchmarks` folder, there are two Python files. They both handle data written to a csv from the [BenchmarkGovernorsTest.sol](./contracts/test/benchmarks/BenchmarkGovernorsTest.sol) file using Foundry's writing data cheatcode.
 
 - [print_gas_data.py]: pretty prints data from `gas_data.csv`
 - [plot_gas_data.py]: generates a matplotlib plot of gas usage in .png format: [gas_data_comparison.png]

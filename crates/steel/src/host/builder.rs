@@ -19,7 +19,7 @@ use crate::{
     ethereum::EthBlockHeader,
     history::HistoryCommit,
     host::{
-        db::{AlloyDb, ProofDb, ProviderConfig},
+        db::{ProofDb, ProviderConfig, ProviderDb},
         BlockNumberOrTag, EthHostEvmEnv, HostCommit, HostEvmEnv,
     },
     EvmBlockHeader, EvmEnv,
@@ -29,8 +29,7 @@ use alloy::{
         primitives::{BlockTransactionsKind, HeaderResponse},
         BlockResponse, Ethereum, Network,
     },
-    providers::{Provider, ProviderBuilder, ReqwestProvider},
-    transports::Transport,
+    providers::{Provider, ProviderBuilder, RootProvider},
 };
 use alloy_primitives::{BlockHash, BlockNumber, Sealed, B256};
 use anyhow::{anyhow, ensure, Context, Result};
@@ -88,18 +87,17 @@ pub struct EvmEnvBuilder<P, H, B> {
 
 impl EvmEnvBuilder<(), EthBlockHeader, ()> {
     /// Sets the Ethereum HTTP RPC endpoint that will be used by the [EvmEnv].
-    pub fn rpc(self, url: Url) -> EvmEnvBuilder<ReqwestProvider<Ethereum>, EthBlockHeader, ()> {
-        self.provider(ProviderBuilder::new().on_http(url))
+    pub fn rpc(self, url: Url) -> EvmEnvBuilder<RootProvider<Ethereum>, EthBlockHeader, ()> {
+        self.provider(ProviderBuilder::default().on_http(url))
     }
 }
 
 impl<H: EvmBlockHeader> EvmEnvBuilder<(), H, ()> {
     /// Sets a custom [Provider] that will be used by the [EvmEnv].
-    pub fn provider<T, N, P>(self, provider: P) -> EvmEnvBuilder<P, H, ()>
+    pub fn provider<N, P>(self, provider: P) -> EvmEnvBuilder<P, H, ()>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N>,
+        P: Provider<N>,
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
@@ -161,11 +159,10 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     /// Returns the [EvmBlockHeader] of the specified block.
     ///
     /// If `block` is `None`, the block based on the current builder configuration is used instead.
-    async fn get_header<T, N>(&self, block: Option<BlockId>) -> Result<Sealed<H>>
+    async fn get_header<N>(&self, block: Option<BlockId>) -> Result<Sealed<H>>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N>,
+        P: Provider<N>,
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
@@ -195,11 +192,10 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
 impl<P, H> EvmEnvBuilder<P, H, ()> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a block hash.
-    pub async fn build<T, N>(self) -> Result<HostEvmEnv<AlloyDb<T, N, P>, H, ()>>
+    pub async fn build<N>(self) -> Result<HostEvmEnv<ProviderDb<N, P>, H, ()>>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N>,
+        P: Provider<N>,
         H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
         <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
@@ -210,7 +206,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
             header.seal()
         );
 
-        let db = ProofDb::new(AlloyDb::new(
+        let db = ProofDb::new(ProviderDb::new(
             self.provider,
             self.provider_config,
             header.seal(),
@@ -233,7 +229,8 @@ pub struct History {
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
-    /// Sets the block hash for the commitment block, which can be different from the execution block.
+    /// Sets the block hash for the commitment block, which can be different from the execution
+    /// block.
     ///
     /// This allows for historical state execution while maintaining security through a more recent
     /// commitment. The commitment block must be more recent than the execution block.
@@ -250,13 +247,13 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() -> anyhow::Result<()> {
     /// let commitment_hash = B256::from_str("0x1234...")?;
-    /// let env = EthEvmEnv::builder()
+    /// let builder = EthEvmEnv::builder()
     ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
     ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
-    ///     .block_number(1_000_000) // execute against historical state
-    ///     .commitment_block_hash(commitment_hash) // commit to recent block
-    ///     .build()
-    ///     .await?;
+    ///     .block_number(1_000_000);  // execute against historical state
+    /// # #[cfg(feature = "unstable-history")] // required because of the stability crate
+    /// let builder = builder.commitment_block_hash(commitment_hash); // commit to recent block
+    /// let env = builder.build().await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -304,10 +301,9 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
     }
 
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a beacon root.
-    pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>>
+    pub async fn build(self) -> Result<EthHostEvmEnv<ProviderDb<Ethereum, P>, BeaconCommit>>
     where
-        T: Transport + Clone,
-        P: Provider<T, Ethereum>,
+        P: Provider<Ethereum>,
     {
         let header = self.get_header(None).await?;
         log::info!(
@@ -320,7 +316,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
             inner: BeaconCommit::from_header(&header, &self.provider, self.beacon_config).await?,
             config_id: ChainSpec::DEFAULT_DIGEST,
         };
-        let db = ProofDb::new(AlloyDb::new(
+        let db = ProofDb::new(ProviderDb::new(
             self.provider,
             self.provider_config,
             header.seal(),
@@ -334,10 +330,9 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
     /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
     /// block that is different from the execution block.
     #[stability::unstable(feature = "history")]
-    pub async fn build<T>(self) -> Result<EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>>
+    pub async fn build(self) -> Result<EthHostEvmEnv<ProviderDb<Ethereum, P>, HistoryCommit>>
     where
-        T: Transport + Clone,
-        P: Provider<T, Ethereum>,
+        P: Provider<Ethereum>,
     {
         let evm_header = self.get_header(None).await?;
         let commitment_header = self
@@ -366,7 +361,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
             inner: history_commit,
             config_id: ChainSpec::DEFAULT_DIGEST,
         };
-        let db = ProofDb::new(AlloyDb::new(
+        let db = ProofDb::new(ProviderDb::new(
             self.provider,
             self.provider_config,
             evm_header.seal(),
@@ -398,7 +393,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_beacon_env() {
-        let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         let builder = EthEvmEnv::builder()
             .provider(&provider)
@@ -430,7 +425,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_history_env() {
-        let provider = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // initialize the env at latest - 100 while committing to latest - 1
         let latest = provider.get_block_number().await.unwrap();

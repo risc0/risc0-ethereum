@@ -19,7 +19,6 @@ use crate::{
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
     history::HistoryCommit,
-    host::db::ProviderDb,
     BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
 };
 use alloy::{
@@ -30,11 +29,10 @@ use alloy::{
     network::{Ethereum, Network},
     providers::Provider,
     rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
-    transports::Transport,
 };
 use alloy_primitives::{BlockHash, B256};
 use anyhow::{ensure, Result};
-use db::{AlloyDb, ProofDb};
+use db::{ProofDb, ProviderDb};
 use std::{
     fmt::{self, Debug, Display},
     str::FromStr,
@@ -57,11 +55,10 @@ enum BlockId {
 
 impl BlockId {
     /// Converts the `BlockId` into the corresponding RPC type.
-    async fn into_rpc_type<T, N, P>(self, provider: P) -> Result<AlloyBlockId>
+    async fn into_rpc_type<N, P>(self, provider: P) -> Result<AlloyBlockId>
     where
-        T: Transport + Clone,
         N: Network,
-        P: Provider<T, N>,
+        P: Provider<N>,
     {
         let id = match self {
             BlockId::Hash(hash) => hash.into(),
@@ -161,6 +158,37 @@ pub struct HostCommit<C> {
     config_id: B256,
 }
 
+impl<D, H, C> HostEvmEnv<D, H, C>
+where
+    D: Send + 'static,
+{
+    /// Runs the provided closure that requires mutable access to the database on a thread where
+    /// blocking is acceptable.
+    ///
+    /// It panics if the closure panics.
+    /// This function is necessary because mutable references to the database cannot be passed
+    /// directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken out of
+    /// the `HostEvmEnv`, moved into the blocking task, and then restored after the task completes.
+    #[allow(dead_code)]
+    pub(crate) async fn spawn_with_db<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut ProofDb<D>) -> R + Send + 'static,
+        R: Send + 'static,
+    {
+        // as mutable references are not possible, the DB must be moved in and out of the task
+        let mut db = self.db.take().unwrap();
+
+        let (result, db) = tokio::task::spawn_blocking(move || (f(&mut db), db))
+            .await
+            .expect("DB execution panicked");
+
+        // restore the DB, so that we never return an env without a DB
+        self.db = Some(db);
+
+        result
+    }
+}
+
 impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
@@ -174,13 +202,75 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
 
         self
     }
+
+    /// Extends the environment with the contents of another compatible environment.
+    ///
+    /// ### Errors
+    ///
+    /// It returns an error if the environments are inconsistent, specifically if:
+    /// - The configurations don't match
+    /// - The headers don't match
+    ///
+    /// ### Panics
+    ///
+    /// It panics if the database states conflict.
+    ///
+    /// ### Use Cases
+    ///
+    /// This method is particularly useful for combining results from parallel preflights,
+    /// allowing you to execute multiple independent operations and merge their environments.
+    ///
+    /// ### Example
+    /// ```rust
+    /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+    /// # use alloy_primitives::address;
+    /// # use alloy_sol_types::sol;
+    ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// # sol! {
+    /// #    interface IERC20 {
+    /// #        function balanceOf(address account) external view returns (uint);
+    /// #    }
+    /// # }
+    /// let call =
+    ///     IERC20::balanceOfCall { account: address!("F977814e90dA44bFA03b6295A0616a897441aceC") };
+    /// # let usdt_addr = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
+    /// # let usdc_addr = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+    ///
+    /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
+    /// let builder = EthEvmEnv::builder().rpc(url);
+    ///
+    /// let mut env1 = builder.clone().build().await?;
+    /// let mut contract1 = Contract::preflight(usdt_addr, &mut env1);
+    /// let mut env2 = builder.clone().build().await?;
+    /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
+    ///
+    /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
+    ///
+    /// env1.extend(env2)?;
+    /// let evm_input = env1.into_input().await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn extend(&mut self, other: Self) -> Result<()> {
+        ensure!(self.cfg_env == other.cfg_env, "configuration mismatch");
+        ensure!(
+            self.header.seal() == other.header.seal(),
+            "execution header mismatch"
+        );
+        // the commitments do not need to match as long as the cfg_env is consistent
+        self.db_mut().extend(other.db.unwrap());
+
+        Ok(())
+    }
 }
 
-impl<T, N, P, H> HostEvmEnv<AlloyDb<T, N, P>, H, ()>
+impl<N, P, H> HostEvmEnv<ProviderDb<N, P>, H, ()>
 where
-    T: Transport + Clone,
     N: Network,
-    P: Provider<T, N>,
+    P: Provider<N>,
     H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
     <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
@@ -202,10 +292,9 @@ impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> 
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, BeaconCommit>
+impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, BeaconCommit>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum>,
+    P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
     pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
@@ -218,10 +307,9 @@ where
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, HistoryCommit>
+impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, HistoryCommit>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum>,
+    P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
     /// block roots.
@@ -236,10 +324,9 @@ where
     }
 }
 
-impl<T, P> EthHostEvmEnv<AlloyDb<T, Ethereum, P>, ()>
+impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, ()>
 where
-    T: Transport + Clone,
-    P: Provider<T, Ethereum>,
+    P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
     #[deprecated(

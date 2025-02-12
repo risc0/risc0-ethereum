@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::network::primitives::BlockTransactionsKind;
 use alloy::{
     eips::BlockId,
+    network::primitives::BlockTransactionsKind,
     providers::{Provider, ProviderBuilder},
-    transports::{Transport, TransportError},
+    transports::TransportError,
 };
 use alloy_primitives::{address, Address, BlockNumber};
 use op_alloy_network::Optimism;
@@ -37,10 +37,9 @@ pub enum Error {
 }
 
 /// Returns the latest L1 block number known in the OP network.
-pub async fn latest_block_number<T, P>(provider: P) -> Result<BlockNumber, Error>
+pub async fn latest_block_number<P>(provider: P) -> Result<BlockNumber, Error>
 where
-    T: Transport + Clone,
-    P: Provider<T, Optimism>,
+    P: Provider<Optimism>,
 {
     Ok(L1Block::new(L1_BLOCK_ADDRESS, provider)
         .latest_number()
@@ -55,13 +54,12 @@ pub async fn into_beacon_input(input: EthEvmInput, url: Url) -> Result<EthEvmInp
 /// Derives the OP verifiable input from an L1 beacon input and an OP RPC provider.
 ///
 /// It panics when `input` is not [EthEvmInput::Beacon].
-pub async fn into_beacon_input_with_provider<T, P>(
+pub async fn into_beacon_input_with_provider<P>(
     input: EthEvmInput,
     provider: P,
 ) -> Result<EthEvmInput, Error>
 where
-    T: Transport + Clone,
-    P: Provider<T, Optimism>,
+    P: Provider<Optimism>,
 {
     let EthEvmInput::Beacon(input) = input else {
         panic!("only EthEvmInput::Beacon is supported");
@@ -107,12 +105,11 @@ mod sol {
     }
 }
 
-struct L1Block<T, P>(sol::IL1Block::IL1BlockInstance<T, P, Optimism>);
+struct L1Block<P>(sol::IL1Block::IL1BlockInstance<(), P, Optimism>);
 
-impl<T, P> L1Block<T, P>
+impl<P> L1Block<P>
 where
-    T: Transport + Clone,
-    P: Provider<T, Optimism>,
+    P: Provider<Optimism>,
 {
     pub const fn new(address: Address, provider: P) -> Self {
         Self(sol::IL1Block::new(address, provider))

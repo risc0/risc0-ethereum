@@ -13,10 +13,11 @@
 // limitations under the License.
 
 use crate::{
-    config::ChainSpec, state::StateDb, BlockHeaderCommit, Commitment, CommitmentVersion,
-    EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
+    config::ChainSpec, serde::Eip2718Wrapper, state::StateDb, BlockHeaderCommit, Commitment,
+    CommitmentVersion, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
 };
 use ::serde::{Deserialize, Serialize};
+use alloy_consensus::ReceiptEnvelope;
 use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
 
 /// Input committing to the corresponding execution block hash.
@@ -27,6 +28,7 @@ pub struct BlockInput<H> {
     storage_tries: Vec<MerkleTrie>,
     contracts: Vec<Bytes>,
     ancestors: Vec<H>,
+    receipts: Option<Vec<Eip2718Wrapper<ReceiptEnvelope>>>,
 }
 
 /// Implement [BlockHeaderCommit] for the unit type.
@@ -72,11 +74,38 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             previous_header = ancestor;
         }
 
+        #[cfg(not(feature = "unstable-event"))]
+        // there must not be any receipts, if events are not supported
+        let logs = {
+            assert!(self.receipts.is_none(), "Receipts not supported");
+            None
+        };
+        #[cfg(feature = "unstable-event")]
+        // verify the root hash of the included receipts and extract their logs
+        let logs = self.receipts.map(|receipts| {
+            let root = alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| {
+                alloy_eips::eip2718::Encodable2718::encode_2718(r, out)
+            });
+            assert_eq!(header.receipts_root(), &root, "Receipts root mismatch");
+
+            receipts
+                .into_iter()
+                .flat_map(|wrapper| match wrapper.into_inner() {
+                    ReceiptEnvelope::Legacy(t) => t.receipt.logs,
+                    ReceiptEnvelope::Eip2930(t) => t.receipt.logs,
+                    ReceiptEnvelope::Eip1559(t) => t.receipt.logs,
+                    ReceiptEnvelope::Eip4844(t) => t.receipt.logs,
+                    ReceiptEnvelope::Eip7702(t) => t.receipt.logs,
+                })
+                .collect()
+        });
+
         let db = StateDb::new(
             self.state_trie,
             self.storage_tries,
             self.contracts,
             block_hashes,
+            logs,
         );
         let commit = Commitment::new(
             CommitmentVersion::Block as u16,
@@ -91,33 +120,32 @@ impl<H: EvmBlockHeader> BlockInput<H> {
 
 #[cfg(feature = "host")]
 pub mod host {
-    use std::fmt::Display;
-
     use super::BlockInput;
     use crate::{
-        host::db::{AlloyDb, ProofDb, ProviderDb},
+        host::db::{ProofDb, ProviderDb},
+        serde::Eip2718Wrapper,
         EvmBlockHeader,
     };
-    use alloy::{network::Network, providers::Provider, transports::Transport};
+    use alloy::{network::Network, providers::Provider};
     use alloy_primitives::Sealed;
     use anyhow::{anyhow, ensure};
     use log::debug;
+    use std::fmt::Display;
 
-    impl<H: EvmBlockHeader> BlockInput<H> {
+    impl<H> BlockInput<H> {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
-        pub(crate) async fn from_proof_db<T, N, P>(
-            mut db: ProofDb<AlloyDb<T, N, P>>,
+        pub(crate) async fn from_proof_db<N, P>(
+            mut db: ProofDb<ProviderDb<N, P>>,
             header: Sealed<H>,
         ) -> anyhow::Result<Self>
         where
-            T: Transport + Clone,
             N: Network,
-            P: Provider<T, N>,
+            P: Provider<N>,
             H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
             <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
-            assert_eq!(db.inner().block_hash(), header.seal(), "DB block mismatch");
+            assert_eq!(db.inner().block(), header.seal(), "DB block mismatch");
 
             let (state_trie, storage_tries) = db.state_proof().await?;
             ensure!(
@@ -137,6 +165,11 @@ pub mod host {
                 ancestors.push(header);
             }
 
+            let receipts = db.receipt_proof().await?;
+            // wrap the receipts so that they can be serialized
+            let receipts =
+                receipts.map(|receipts| receipts.into_iter().map(Eip2718Wrapper::new).collect());
+
             debug!("state size: {}", state_trie.size());
             debug!("storage tries: {}", storage_tries.len());
             debug!(
@@ -145,6 +178,7 @@ pub mod host {
             );
             debug!("contracts: {}", contracts.len());
             debug!("ancestor blocks: {}", ancestors.len());
+            debug!("receipts: {:?}", receipts.as_ref().map(Vec::len));
 
             let input = BlockInput {
                 header: header.into_inner(),
@@ -152,6 +186,7 @@ pub mod host {
                 storage_tries,
                 contracts,
                 ancestors,
+                receipts,
             };
 
             Ok(input)

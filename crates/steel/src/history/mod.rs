@@ -95,7 +95,6 @@ mod host {
     use alloy::{
         network::{primitives::BlockTransactionsKind, Ethereum},
         providers::Provider,
-        transports::Transport,
     };
     use alloy_primitives::{BlockNumber, Sealable};
     use anyhow::{ensure, Context};
@@ -107,15 +106,14 @@ mod host {
         /// This method fetches the necessary data from the Ethereum and Beacon chain to construct a
         /// `HistoryCommit`. It iterates through blocks from the EVM header's number up to
         /// the commitment header's number, generating `StateCommit`s for each block in the range.
-        pub(crate) async fn from_headers<T, P>(
+        pub(crate) async fn from_headers<P>(
             evm_header: &Sealed<EthBlockHeader>,
             commitment_header: &Sealed<EthBlockHeader>,
             rpc_provider: P,
             beacon_url: Url,
         ) -> anyhow::Result<Self>
         where
-            T: Transport + Clone,
-            P: Provider<T, Ethereum>,
+            P: Provider<Ethereum>,
         {
             ensure!(
                 evm_header.number() < commitment_header.number(),
@@ -216,7 +214,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "queries actual RPC nodes"]
     async fn from_beacon_commit_and_header() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
 
         // get the latest 4 headers
         let headers = get_headers(4).await.unwrap();
