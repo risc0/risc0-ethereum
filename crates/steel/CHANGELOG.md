@@ -4,8 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-<!-- TODO: Add link when release is finished -->
-## [1.3.0]
+### ⚡️ Features
+
+- Introduce the capability to query Ethereum events. The new `Event` allows to query events of a specific type in Steel. Its usage is very similar to the existing `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-event` feature.
+
+## [1.3.0](https://github.com/risc0/risc0-ethereum/releases/tag/v1.3.0)
 
 ### ⚡️ Features
 

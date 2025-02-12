@@ -12,12 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! [Database] implementations.
-//!
-//! [Database]: revm::Database
-mod proof;
-pub(crate) mod provider;
-
-pub use proof::ProofDb;
-pub(crate) use provider::ProviderConfig;
-pub use provider::ProviderDb;
+include!(concat!(env!("OUT_DIR"), "/methods.rs"));

@@ -27,7 +27,7 @@ use op_alloy_network::Optimism;
 use risc0_steel::{
     config::ChainSpec,
     host::{
-        db::{AlloyDb, ProofDb},
+        db::{ProofDb, ProviderDb},
         BlockNumberOrTag, EvmEnvBuilder, HostCommit,
     },
     ComposeInput, EvmEnv, EvmInput,
@@ -72,7 +72,7 @@ impl OpEvmEnv<(), ()> {
     }
 }
 
-type HostOpEvmEnv<P2, C> = OpEvmEnv<ProofDb<AlloyDb<Optimism, P2>>, C>;
+type HostOpEvmEnv<P2, C> = OpEvmEnv<ProofDb<ProviderDb<Optimism, P2>>, C>;
 
 impl<D, C> OpEvmEnv<ProofDb<D>, C> {
     pub fn with_chain_spec(self, chain_spec: &ChainSpec) -> Self {

@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{convert::Infallible, rc::Rc};
+pub use alloy_consensus::Account as StateAccount;
 
-use crate::mpt::MerkleTrie;
+use crate::{mpt::MerkleTrie, EvmBlockHeader};
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
-    Address, Bytes, B256, U256,
+    Address, Bytes, Log, Sealed, B256, U256,
 };
 use revm::{
     primitives::{AccountInfo, Bytecode},
-    Database,
+    Database as RevmDatabase,
 };
-
-pub use alloy_consensus::Account as StateAccount;
+use std::{convert::Infallible, rc::Rc};
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
@@ -47,6 +46,9 @@ pub struct StateDb {
     contracts: B256HashMap<Bytes>,
     /// Block hashes by their number.
     block_hashes: HashMap<u64, B256>,
+    /// All the logs for this block.
+    #[allow(dead_code)]
+    logs: Option<Vec<Log>>,
 }
 
 impl StateDb {
@@ -56,6 +58,7 @@ impl StateDb {
         storage_tries: impl IntoIterator<Item = MerkleTrie>,
         contracts: impl IntoIterator<Item = Bytes>,
         block_hashes: HashMap<u64, B256>,
+        logs: Option<Vec<Log>>,
     ) -> Self {
         let contracts = contracts
             .into_iter()
@@ -65,11 +68,13 @@ impl StateDb {
             .into_iter()
             .map(|trie| (trie.hash_slow(), Rc::new(trie)))
             .collect();
+
         Self {
             state_trie,
             contracts,
             storage_tries,
             block_hashes,
+            logs,
         }
     }
 
@@ -81,7 +86,7 @@ impl StateDb {
     }
 
     #[inline]
-    fn code_by_hash(&self, hash: B256) -> &Bytes {
+    pub(crate) fn code_by_hash(&self, hash: B256) -> &Bytes {
         self.contracts
             .get(&hash)
             .unwrap_or_else(|| panic!("No code with hash: {}", hash))
@@ -108,22 +113,25 @@ impl StateDb {
 /// addresses to their respective storage trie when the account is first accessed. This works
 /// because [Database::basic] must always be called before any [Database::storage] calls for that
 /// account.
-pub struct WrapStateDb<'a> {
+pub struct WrapStateDb<'a, H> {
     inner: &'a StateDb,
+    #[allow(dead_code)]
+    header: &'a Sealed<H>,
     account_storage: AddressHashMap<Option<Rc<MerkleTrie>>>,
 }
 
-impl<'a> WrapStateDb<'a> {
+impl<'a, H: EvmBlockHeader> WrapStateDb<'a, H> {
     /// Creates a new [Database] from the given [StateDb].
-    pub fn new(inner: &'a StateDb) -> Self {
+    pub fn new(inner: &'a StateDb, header: &'a Sealed<H>) -> Self {
         Self {
             inner,
+            header,
             account_storage: Default::default(),
         }
     }
 }
 
-impl Database for WrapStateDb<'_> {
+impl<H> RevmDatabase for WrapStateDb<'_, H> {
     /// The [StateDb] does not return any errors.
     type Error = Infallible;
 
@@ -183,6 +191,34 @@ impl Database for WrapStateDb<'_> {
     #[inline]
     fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
         Ok(self.inner.block_hash(number))
+    }
+}
+
+#[cfg(feature = "unstable-event")]
+impl<H: EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
+    fn logs(
+        &mut self,
+        filter: alloy_rpc_types::Filter,
+    ) -> Result<Vec<Log>, <Self as RevmDatabase>::Error> {
+        assert_eq!(filter.get_block_hash(), Some(self.header.seal()));
+
+        let Some(logs) = self.inner.logs.as_ref() else {
+            // if no logs are stored in the DB, check that the Bloom filter proves non-existence
+            assert!(
+                !crate::matches_filter(*self.header.logs_bloom(), &filter),
+                "No logs for matching filter"
+            );
+            return Ok(vec![]);
+        };
+
+        let params = alloy_rpc_types::FilteredParams::new(Some(filter));
+        let filtered = logs
+            .iter()
+            .filter(|log| params.filter_address(&log.address) && params.filter_topics(log.topics()))
+            .cloned()
+            .collect();
+
+        Ok(filtered)
     }
 }
 
