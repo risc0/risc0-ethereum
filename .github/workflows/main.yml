@@ -233,8 +233,8 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
       - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
         env:
-          RISC0_SKIP_BUILD: true,
-          RISC0_SKIP_BUILD_KERNEL: true,
+          RISC0_SKIP_BUILD: true
+          RISC0_SKIP_BUILD_KERNEL: true
       # TODO(#355) Re-enable this check.
       #- run: forge doc
 
