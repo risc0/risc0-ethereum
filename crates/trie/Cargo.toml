@@ -1,0 +1,62 @@
+[package]
+name = "risc0-ethereum-trie"
+version = "0.1.0"
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints.clippy]
+dbg-macro = "warn"
+manual-string-new = "warn"
+uninlined-format-args = "warn"
+redundant-clone = "warn"
+missing-const-for-fn = "warn"
+
+[lints.rust]
+missing-copy-implementations = "warn"
+missing-debug-implementations = "warn"
+missing-docs = "warn"
+rust-2018-idioms = "warn"
+unreachable-pub = "warn"
+unused-must-use = "warn"
+redundant-lifetimes = "warn"
+unnameable-types = "warn"
+
+[lints.rustdoc]
+all = "warn"
+
+[profile.bench]
+codegen-units = 1
+lto = "fat"
+
+[dependencies]
+alloy-primitives = { workspace = true, features = ["map"] }
+alloy-rlp = { workspace = true, features = ["arrayvec"] }
+alloy-trie = { workspace = true }
+arrayvec = { workspace = true }
+bincode = { workspace = true, optional = true }
+itertools = { workspace = true }
+rkyv = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+alloy-trie = { workspace = true, features = ["ethereum"] }
+criterion = { workspace = true }
+serde_json = { workspace = true }
+
+[[bench]]
+name = "mpt"
+harness = false
+
+[features]
+default = []
+rkyv = ["dep:rkyv"]
+serde = ["dep:serde", "dep:bincode", "alloy-primitives/serde", "alloy-trie/serde"]
+rlp_serialize = []
+orphan = []
