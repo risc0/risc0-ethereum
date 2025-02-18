@@ -4083,9 +4083,10 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "1.3.1"
+version = "1.3.2"
 dependencies = [
  "alloy",
+ "alloy-sol-types",
  "anyhow",
  "cfg-if",
  "risc0-zkvm",
@@ -4135,7 +4136,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "1.3.1"
+version = "1.3.2"
 dependencies = [
  "alloy",
  "alloy-consensus",
