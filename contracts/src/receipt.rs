@@ -18,6 +18,7 @@ use risc0_aggregation::{
     SetInclusionReceipt,
 };
 use risc0_zkvm::{sha::Digest, FakeReceipt, InnerReceipt, ReceiptClaim};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -27,6 +28,7 @@ use crate::{
 };
 
 /// Extension of the base [risc0_zkvm::Receipt] type.
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Receipt {
     Base(risc0_zkvm::Receipt),
     SetInclusion(SetInclusionReceipt<ReceiptClaim>),
