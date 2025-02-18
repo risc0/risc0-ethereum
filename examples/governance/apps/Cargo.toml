@@ -14,7 +14,7 @@ governance-methods = { workspace = true }
 hex = { workspace = true }
 log = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
-risc0-zkvm = { workspace = true, default-features = true }
+risc0-zkvm = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tracing-subscriber = { workspace = true }
 url = { workspace = true }

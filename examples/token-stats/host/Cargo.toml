@@ -8,7 +8,7 @@ alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
-risc0-zkvm = { workspace = true, default-features = true }
+risc0-zkvm = { workspace = true }
 token-stats-core = { workspace = true }
 token-stats-methods = { workspace = true }
 tokio = { workspace = true }

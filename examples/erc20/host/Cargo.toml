@@ -10,7 +10,7 @@ anyhow = { workspace = true }
 clap = { workspace = true }
 erc20-methods = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
-risc0-zkvm = { workspace = true, default-features = true }
+risc0-zkvm = { workspace = true }
 tokio = { workspace = true }
 tracing-subscriber = { workspace = true }
 url = { workspace = true }
