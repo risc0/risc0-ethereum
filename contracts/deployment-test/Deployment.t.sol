@@ -132,7 +132,7 @@ contract DeploymentTest is Test {
         for (uint256 i = 0; i < deployment.verifiers.length; i++) {
             VerifierDeployment storage verifierConfig = deployment.verifiers[i];
             console2.log(
-                "Checking for confgiuration of verifier with selector %x and version %s",
+                "Checking for configuration of verifier with selector %x and version %s",
                 uint256(uint32(verifierConfig.selector)),
                 verifierConfig.version
             );

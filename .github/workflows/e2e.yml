@@ -18,7 +18,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.81.0
-  RISC0_MONOREPO_REF: "release-1.4"
+  RISC0_MONOREPO_REF: "release-1.3"
 
 jobs:
   e2e-tests:
@@ -82,9 +82,9 @@ jobs:
         shell: bash
       - name: Start local Ethereum testnet
         run: |
-          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package@4.4.0
-          echo "ETH_TESTNET_EL_URL=http://$(kurtosis port print local-eth-testnet el-1-geth-lighthouse rpc)" >> $GITHUB_ENV
-          echo "ETH_TESTNET_CL_URL=$(kurtosis port print local-eth-testnet cl-1-lighthouse-geth http)" >> $GITHUB_ENV
+          kurtosis --enclave local-eth-testnet run github.com/ethpandaops/ethereum-package@4.5.0 --args-file ./.github/e2e/network_params.yaml
+          echo "ETH_TESTNET_EL_URL=http://$(kurtosis port print local-eth-testnet el-1-geth-teku rpc)" >> $GITHUB_ENV
+          echo "ETH_TESTNET_CL_URL=$(kurtosis port print local-eth-testnet cl-1-teku-geth http)" >> $GITHUB_ENV
       - name: Wait for the local Ethereum testnet to come up
         run: while [ $(cast rpc --rpc-url $ETH_TESTNET_EL_URL eth_blockNumber | jq -re) == "0x0" ]; do sleep 5; done
         shell: bash

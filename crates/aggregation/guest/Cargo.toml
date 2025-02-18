@@ -9,7 +9,7 @@ repository = { workspace = true }
 [dev-dependencies]
 rand = { workspace = true }
 risc0-aggregation = { path = ".." }
-risc0-zkvm = { workspace = true, features = ["client"] }
+risc0-zkvm = { workspace = true, default-features = true }
 
 [build-dependencies]
 risc0-build = { workspace = true }
