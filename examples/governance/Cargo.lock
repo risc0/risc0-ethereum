@@ -3555,7 +3555,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "1.4.0"
+version = "1.4.0-rc.1"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3623,7 +3623,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "1.4.0"
+version = "1.4.0-rc.1"
 dependencies = [
  "alloy",
  "alloy-sol-types",

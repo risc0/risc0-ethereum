@@ -2570,7 +2570,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-op-steel"
-version = "0.2.0"
+version = "0.2.0-rc.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -2586,7 +2586,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "2.0.0"
+version = "2.0.0-rc.1"
 dependencies = [
  "alloy-consensus 0.11.1",
  "alloy-eips 0.11.1",
