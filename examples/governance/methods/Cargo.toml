@@ -15,4 +15,4 @@ risc0-zkp = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 hex = { workspace = true }
-risc0-zkvm = { workspace = true, features = ["client"] }
+risc0-zkvm = { workspace = true }
