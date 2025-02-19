@@ -47,7 +47,7 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     using ReceiptClaimLib for ReceiptClaim;
 
     /// Semantic version of the RISC Zero Set Verifier.
-    string public constant VERSION = "0.3.0";
+    string public constant VERSION = "0.3.0-rc.1";
 
     IRiscZeroVerifier public immutable VERIFIER;
 
