@@ -13,6 +13,7 @@ bytemuck = { workspace = true }
 hex = "0.4" 
 risc0-build = { workspace = true }
 risc0-zkp = { workspace = true }
+risc0-zkvm = { workspace = true }
 
 [features]
 default = []
