@@ -18,7 +18,7 @@ use alloy::sol_types::SolValue;
 use ffi_guests::{ECHO_ID, ECHO_PATH};
 use risc0_ethereum_contracts::encode_seal;
 use risc0_forge_ffi::JournalSeal;
-use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt, ReceiptClaim};
+use risc0_zkvm::{compute_image_id_v2, Digest, FakeReceipt, InnerReceipt, Receipt, ReceiptClaim};
 
 #[test]
 fn basic_usage() {
@@ -44,7 +44,7 @@ fn basic_usage() {
     assert_eq!(journal, hex::decode("deadbeef").unwrap());
     let expected_receipt = Receipt::new(
         InnerReceipt::Fake(FakeReceipt::new(ReceiptClaim::ok(
-            ECHO_ID,
+            compute_image_id_v2(Digest::from(ECHO_ID)).unwrap(),
             journal.to_vec(),
         ))),
         journal.into(),
@@ -80,7 +80,7 @@ fn basic_usage_with_rust_log() {
     assert_eq!(journal, hex::decode("deadbeef").unwrap());
     let expected_receipt = Receipt::new(
         InnerReceipt::Fake(FakeReceipt::new(ReceiptClaim::ok(
-            ECHO_ID,
+            compute_image_id_v2(Digest::from(ECHO_ID)).unwrap(),
             journal.to_vec(),
         ))),
         journal.into(),

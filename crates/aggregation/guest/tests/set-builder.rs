@@ -16,8 +16,8 @@ use guest_set_builder::{SET_BUILDER_ELF, SET_BUILDER_ID};
 use rand::{rng, Rng};
 use risc0_aggregation::{merkle_root, GuestState};
 use risc0_zkvm::{
-    default_executor, sha::Digestible, ExecutorEnv, FakeReceipt, InnerReceipt, MaybePruned,
-    ReceiptClaim,
+    compute_image_id_v2, default_executor, sha::Digestible, Digest, ExecutorEnv, FakeReceipt,
+    InnerReceipt, MaybePruned, ReceiptClaim,
 };
 
 fn random_claim() -> ReceiptClaim {
@@ -55,7 +55,7 @@ fn proves_one_step() {
         let mut env_builder = ExecutorEnv::builder();
         env_builder
             .write(
-                &GuestState::initial(SET_BUILDER_ID)
+                &GuestState::initial(compute_image_id_v2(Digest::from(SET_BUILDER_ID)).unwrap())
                     .into_input(claims.clone(), true)
                     .unwrap(),
             )
@@ -91,7 +91,7 @@ fn proves_two_step() {
         let mut env_builder = ExecutorEnv::builder();
         env_builder
             .write(
-                &GuestState::initial(SET_BUILDER_ID)
+                &GuestState::initial(compute_image_id_v2(Digest::from(SET_BUILDER_ID)).unwrap())
                     .into_input(claims.clone(), false)
                     .unwrap(),
             )
@@ -142,7 +142,8 @@ fn proves_incremental() {
         // Incrementally feed in the claims to build the Merkle tree.
         let mut claims: Vec<ReceiptClaim> = (0..length).map(|_| random_claim()).collect();
         let mut claims_incremental = vec![];
-        let mut state = GuestState::initial(SET_BUILDER_ID);
+        let mut state =
+            GuestState::initial(compute_image_id_v2(Digest::from(SET_BUILDER_ID)).unwrap());
         let mut set_builder_claim: Option<ReceiptClaim> = None;
         while !claims.is_empty() {
             let chunk = claims.split_off(rng().random_range(0..claims.len()));
