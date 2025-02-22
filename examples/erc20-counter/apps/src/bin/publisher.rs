@@ -33,7 +33,9 @@ use risc0_steel::{
     host::BlockNumberOrTag,
     Commitment, Contract,
 };
-use risc0_zkvm::{default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{
+    compute_image_id_v2, default_prover, sha::Digest, ExecutorEnv, ProverOpts, VerifierContext,
+};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
@@ -178,7 +180,9 @@ async fn main() -> Result<()> {
 
     // Call ICounter::imageID() to check that the contract has been deployed correctly.
     let contract_image_id = Digest::from(contract.imageID().call().await?._0.0);
-    ensure!(contract_image_id == Digest::from(BALANCE_OF_ID));
+    let user_id = Digest::from(BALANCE_OF_ID);
+    let image_id = compute_image_id_v2(user_id).context("failed to compute image id")?;
+    ensure!(contract_image_id == image_id);
 
     // Call the increment function of the contract and wait for confirmation.
     log::info!(

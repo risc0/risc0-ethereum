@@ -23,7 +23,7 @@ use risc0_op_steel::{
     Contract, DisputeGameIndex,
 };
 use risc0_zkvm::sha::Digest;
-use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{compute_image_id_v2, default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
@@ -70,7 +70,8 @@ async fn main() -> Result<()> {
 
     let evm_input = env.into_input().await?;
 
-    let image_id = Digest::from(L2_TO_L1_GUEST_ID);
+    let user_id = Digest::from(L2_TO_L1_GUEST_ID);
+    let image_id = compute_image_id_v2(user_id).context("failed to compute image id")?;
     let prove_info = task::spawn_blocking(move || {
         let env = ExecutorEnv::builder().write(&evm_input)?.build().unwrap();
 
