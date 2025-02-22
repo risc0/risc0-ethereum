@@ -138,6 +138,6 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testSelectorIsStable() external view {
-        require(verifier.SELECTOR() == hex"0807fd45");
+        require(verifier.SELECTOR() == hex"14da014b");
     }
 }
