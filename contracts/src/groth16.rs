@@ -145,11 +145,11 @@ mod tests {
     #[test]
     #[cfg(feature = "unstable")]
     fn test_decode_seal() {
-        use risc0_zkvm::sha::Digest;
         const TEST_RECEIPT_PATH: &str = "./test/TestReceipt.sol";
         const SEAL: &str = "SEAL";
         const JOURNAL: &str = "JOURNAL";
         const IMAGE_ID: &str = "IMAGE_ID";
+        const USER_ID: &str = "USER_ID";
         let seal_bytes =
             Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, SEAL).unwrap()).unwrap());
         let journal =
@@ -160,6 +160,11 @@ mod tests {
                 .as_ref(),
         )
         .unwrap();
+        let user_id = Digest::try_from(
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, USER_ID).unwrap()).unwrap())
+                .as_ref(),
+        )
+        .unwrap();
         let receipt = decode_groth16_seal(
             seal_bytes,
             ReceiptClaim::ok(image_id, journal.clone()),
@@ -167,6 +172,6 @@ mod tests {
             None,
         )
         .unwrap();
-        receipt.verify(image_id).unwrap();
+        receipt.verify(user_id).unwrap();
     }
 }
