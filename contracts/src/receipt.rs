@@ -31,7 +31,7 @@ use crate::{
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Receipt {
     Base(risc0_zkvm::Receipt),
-    SetInclusion(SetInclusionReceipt<ReceiptClaim>),
+    SetInclusion(Box<SetInclusionReceipt<ReceiptClaim>>),
 }
 
 impl Receipt {
@@ -117,7 +117,7 @@ pub fn decode_seal_with_claim(
         }
         SelectorType::SetVerifier => {
             let receipt = decode_set_inclusion_seal(&seal, claim, verifier_parameters)?;
-            Ok(Receipt::SetInclusion(receipt))
+            Ok(Receipt::SetInclusion(Box::new(receipt)))
         }
     }
 }
