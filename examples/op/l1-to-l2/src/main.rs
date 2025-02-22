@@ -19,7 +19,6 @@ use l1_to_l2_core::{CALL, CALLER, CONTRACT, IERC20};
 use l1_to_l2_methods::{L1_TO_L2_GUEST_ELF, L1_TO_L2_GUEST_ID};
 use risc0_op_steel::ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC};
 use risc0_op_steel::{host::BlockNumberOrTag, l1, Contract};
-use risc0_zkvm::sha::Digest;
 use risc0_zkvm::{compute_image_id_v2, default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;

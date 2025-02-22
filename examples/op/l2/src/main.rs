@@ -21,7 +21,6 @@ use risc0_op_steel::{
     optimism::{OpEvmEnv, OP_MAINNET_CHAIN_SPEC},
     Contract,
 };
-use risc0_zkvm::sha::Digest;
 use risc0_zkvm::{compute_image_id_v2, default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
