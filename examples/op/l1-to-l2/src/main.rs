@@ -70,8 +70,7 @@ async fn main() -> Result<()> {
     let evm_input = env.into_input().await?;
     let evm_input = l1::into_beacon_input(evm_input, args.l2_rpc_url.clone()).await?;
 
-    let user_id = Digest::from(L1_TO_L2_GUEST_ID);
-    let image_id = compute_image_id_v2(user_id).context("failed to compute image id")?;
+    let image_id = compute_image_id_v2(L1_TO_L2_GUEST_ID).context("failed to compute image id")?;
     let prove_info = task::spawn_blocking(move || {
         let env = ExecutorEnv::builder().write(&evm_input)?.build().unwrap();
 

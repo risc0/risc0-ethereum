@@ -180,8 +180,7 @@ async fn main() -> Result<()> {
 
     // Call ICounter::imageID() to check that the contract has been deployed correctly.
     let contract_image_id = Digest::from(contract.imageID().call().await?._0.0);
-    let user_id = Digest::from(BALANCE_OF_ID);
-    let image_id = compute_image_id_v2(user_id).context("failed to compute image id")?;
+    let image_id = compute_image_id_v2(BALANCE_OF_ID).context("failed to compute image id")?;
     ensure!(contract_image_id == image_id);
 
     // Call the increment function of the contract and wait for confirmation.
