@@ -40,7 +40,7 @@ pub struct StateDb {
     /// State MPT.
     state_trie: MerkleTrie,
     /// Storage MPTs to their root hash.
-    /// [Rc] is used fore MPT deduplication.
+    /// [Rc] is used for MPT deduplication.
     storage_tries: B256HashMap<Rc<MerkleTrie>>,
     /// Contracts by their hash.
     contracts: B256HashMap<Bytes>,

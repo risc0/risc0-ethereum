@@ -263,7 +263,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
    This will output the image ID and file location.
    Upload the ELF to some public HTTP location (such as Pinata), and get back a download URL.
-   Finally export these values in the in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
+   Finally export these values in the `SET_BUILDER_IMAGE_ID` and `SET_BUILDER_GUEST_URL` env variables.
 
    > [!TIP]
    > You can use the following command to check that the uploaded ELF has the image ID you expect.
