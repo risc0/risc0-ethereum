@@ -114,7 +114,6 @@ pub fn generate_image_id_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
                 risc0_build::ImageIdKind::Kernel(digest) => digest,
             };
             let image_id = compute_image_id_v2(user_id).unwrap();
-            let image_id = hex::encode(bytemuck::cast::<_, [u8; 32]>(image_id));
             format!("bytes32 public constant {name}_ID = bytes32(0x{image_id});")
         })
         .collect();
