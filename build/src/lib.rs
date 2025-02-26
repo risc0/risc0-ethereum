@@ -21,6 +21,7 @@ use std::{
 
 use anyhow::{anyhow, bail, Context, Result};
 use risc0_build::GuestListEntry;
+use risc0_zkvm::compute_image_id_v2;
 
 const SOL_HEADER: &str = r#"// Copyright 2024 RISC Zero, Inc.
 //
@@ -108,8 +109,11 @@ pub fn generate_image_id_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
         .iter()
         .map(|guest| {
             let name = guest.name.to_uppercase().replace('-', "_");
-            // NOTE: Works with both risc0-build v1 and v2
-            let image_id = hex::encode(bytemuck::cast::<_, [u8; 32]>(guest.image_id));
+            let user_id = match guest.v2_image_id {
+                risc0_build::ImageIdKind::User(digest) => digest,
+                risc0_build::ImageIdKind::Kernel(digest) => digest,
+            };
+            let image_id = compute_image_id_v2(user_id).unwrap();
             format!("bytes32 public constant {name}_ID = bytes32(0x{image_id});")
         })
         .collect();

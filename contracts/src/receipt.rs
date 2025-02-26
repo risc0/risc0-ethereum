@@ -30,8 +30,8 @@ use crate::{
 /// Extension of the base [risc0_zkvm::Receipt] type.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Receipt {
-    Base(risc0_zkvm::Receipt),
-    SetInclusion(SetInclusionReceipt<ReceiptClaim>),
+    Base(Box<risc0_zkvm::Receipt>),
+    SetInclusion(Box<SetInclusionReceipt<ReceiptClaim>>),
 }
 
 impl Receipt {
@@ -108,16 +108,16 @@ pub fn decode_seal_with_claim(
                 InnerReceipt::Fake(FakeReceipt::new(claim)),
                 journal.into(),
             );
-            Ok(Receipt::Base(receipt))
+            Ok(Receipt::Base(Box::new(receipt)))
         }
         SelectorType::Groth16 => {
             let receipt =
                 decode_groth16_seal(seal, claim, journal.into(), Some(verifier_parameters))?;
-            Ok(Receipt::Base(receipt))
+            Ok(Receipt::Base(Box::new(receipt)))
         }
         SelectorType::SetVerifier => {
             let receipt = decode_set_inclusion_seal(&seal, claim, verifier_parameters)?;
-            Ok(Receipt::SetInclusion(receipt))
+            Ok(Receipt::SetInclusion(Box::new(receipt)))
         }
     }
 }
