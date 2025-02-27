@@ -211,6 +211,8 @@ jobs:
         run: ../.github/scripts/forge-test.sh
         working-directory: examples
       - name: cargo run -F verify all examples
+        # Run the verification only if the PR is not from a fork.
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: ../.github/scripts/run-verify.sh
         working-directory: examples
         env:
