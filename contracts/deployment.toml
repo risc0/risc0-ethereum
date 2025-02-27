@@ -623,6 +623,7 @@ selector = "0xc101b42b"
 verifier = "0x8062Dc6C824F10e62E47FdC55A0ecD54C2641F2d"
 estop = "0x5b188d3d31f7bcfC2e3A22F85c3ca4dD23a77dD1"
 
+# NOTE: Deployed with FOUNDRY_EVM_VERSION=shanghai
 [[chains.polygon-zkevm-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "1.3.0-rc.1"
