@@ -276,15 +276,14 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Url> {
         self.commitment_block(BlockId::Number(block))
     }
 
-    /// Sets the block number for the commitment.
+    /// Sets the block number for the commitment block.
     ///
-    /// See [EvmEnvBuilder::commitment_block_hash] for detailed documentation.
-    #[stability::unstable(feature = "history")]
-    pub fn commitment_block_number(
+    /// This is the block that will be used for the commitment in the history proof.
+    pub fn commitment_block_number_only(
         self,
         number: BlockNumber,
     ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
-        self.commitment_block_number_or_tag(BlockNumberOrTag::Number(number))
+        self.commitment_block(BlockId::Number(BlockNumberOrTag::Number(number)))
     }
 
     fn commitment_block(self, block: BlockId) -> EvmEnvBuilder<P, EthBlockHeader, History> {
@@ -433,7 +432,7 @@ mod tests {
             .provider(&provider)
             .block_number_or_tag(BlockNumberOrTag::Number(latest - 100))
             .beacon_api(CL_URL.parse().unwrap())
-            .commitment_block_number(latest - 1);
+            .commitment_block_number_only(latest - 1);
         let env = builder.clone().build().await.unwrap();
         let commit = env.commit.inner.commit(&env.header, env.commit.config_id);
 
