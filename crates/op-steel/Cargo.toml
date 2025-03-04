@@ -18,6 +18,7 @@ alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
+op-alloy-consensus = { workspace = true }
 op-alloy-network = { workspace = true }
 revm = { workspace = true, features = ["std", "optimism"] }
 risc0-steel = { workspace = true }
