@@ -4525,6 +4525,7 @@ dependencies = [
  "alloy-sol-types",
  "anyhow",
  "log",
+ "op-alloy-consensus",
  "op-alloy-network",
  "revm",
  "risc0-op-steel",
