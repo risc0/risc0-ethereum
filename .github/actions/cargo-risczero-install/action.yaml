@@ -75,6 +75,9 @@ runs:
       working-directory: tmp/risc0
 
     # Only run this step if using version (installing from crates.io)
+    - name: install cargo-risczero from crates.io
+      if: inputs.version != ''
+      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
     - name: install rzup
       if: inputs.version != ''
       run: |
