@@ -78,6 +78,10 @@ runs:
       if: inputs.version != ''
       run: cargo install --git https://github.com/risc0/risc0.git rzup
       shell: bash
+    - name: install r0vm
+      if: inputs.version != ''
+      run: rzup install --verbose r0vm ${{ inputs.version }}
+      shell: bash
     - name: install toolchains
       if: inputs.version != ''
       run: |
