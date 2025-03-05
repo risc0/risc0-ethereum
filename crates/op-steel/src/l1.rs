@@ -36,7 +36,7 @@ pub enum Error {
     Transport(#[from] TransportError),
 }
 
-/// Returns the latest L1 block number known in the OP network.
+/// Returns the latest L1 block number known on the OP network.
 pub async fn latest_block_number<P>(provider: P) -> Result<BlockNumber, Error>
 where
     P: Provider<Optimism>,
