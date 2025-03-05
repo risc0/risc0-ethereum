@@ -16,7 +16,7 @@ risc0-build-ethereum = { version = "1.4.0", default-features = false, path = "bu
 risc0-ethereum-contracts = { version = "1.4.0", default-features = false, path = "contracts" }
 risc0-forge-ffi = { version = "1.4.0", default-features = false, path = "crates/ffi" }
 risc0-op-steel = { version = "0.2.0", default-features = false, path = "crates/op-steel" }
-risc0-steel = { version = "2.0.0", default-features = false, path = "crates/steel" }
+risc0-steel = { version = "2.0.0-rc.2", default-features = false, path = "crates/steel" }
 
 # risc0 monorepo dependencies.
 risc0-build = { version = "1.2", default-features = false }
