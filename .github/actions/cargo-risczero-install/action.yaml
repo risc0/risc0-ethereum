@@ -78,6 +78,7 @@ runs:
     - name: install cargo-risczero from crates.io
       if: inputs.version != ''
       run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
+      shell: bash
     - name: install rzup
       if: inputs.version != ''
       run: |
