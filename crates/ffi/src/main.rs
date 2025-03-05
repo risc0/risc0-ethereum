@@ -34,14 +34,14 @@ enum Command {
         /// The guest binary path
         guest_binary_path: String,
 
-        /// The hex encoded input to provide to the guest binary
+        /// The hex-encoded input to provide to the guest binary
         input: String,
     },
 }
 
 /// Run the CLI.
 pub fn main() -> Result<()> {
-    // Take stdout is ensure no extra data is written to it.
+    // Take stdout to ensure no extra data is written to it.
     let mut stdout = take_stdout()?;
 
     let output = match Command::parse() {
@@ -54,14 +54,14 @@ pub fn main() -> Result<()> {
         )?,
     };
 
-    // Forge test FFI calls expect hex encoded bytes sent to stdout
+    // Forge test FFI calls expect hex-encoded bytes sent to stdout
     write!(&mut stdout, "{}", hex::encode(output)).context("failed to write to stdout")?;
     stdout.flush().context("failed to flush stdout")?;
 
     Ok(())
 }
 
-/// Prints on stdio the Ethereum ABI and hex encoded proof.
+/// Prints on stdio the Ethereum ABI and hex-encoded proof.
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<Vec<u8>> {
     let elf = std::fs::read(elf_path).expect("failed to read guest ELF");
     let (journal, seal) = prove(&elf, &input)?;
