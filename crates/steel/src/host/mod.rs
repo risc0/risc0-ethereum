@@ -242,8 +242,10 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// let builder = EthEvmEnv::builder().rpc(url);
     ///
     /// let mut env1 = builder.clone().build().await?;
+    /// let block_hash = env1.header().seal();
     /// let mut contract1 = Contract::preflight(usdt_addr, &mut env1);
-    /// let mut env2 = builder.clone().build().await?;
+    /// // build second env on the same block
+    /// let mut env2 = builder.block_hash(block_hash).build().await?;
     /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
     ///
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
