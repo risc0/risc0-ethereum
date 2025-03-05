@@ -51,6 +51,11 @@ runs:
         path: 'tmp/risc0'
         ref: ${{ inputs.ref }}
         lfs: true
+    - name: install active Rust toolchain
+      if: inputs.ref != ''
+      run: rustup toolchain install
+      working-directory: tmp/risc0
+      shell: bash
     - name: install cargo-risczero from git
       if: inputs.ref != ''
       run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
