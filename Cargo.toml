@@ -34,7 +34,7 @@ alloy-sol-types = { version = "0.8.18" }
 
 # OP Steel
 op-alloy-consensus = { version = ">=0.10.0, <0.10.7" }
-op-alloy-network = { version = ">=0.10.0, <0.10.7" }
+op-alloy-network = { version = ">=0.10.0, <0.10.8" }
 
 # Alloy host dependencies
 alloy = { version = "0.11" }
