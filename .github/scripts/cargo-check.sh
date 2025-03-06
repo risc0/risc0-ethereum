@@ -9,4 +9,4 @@ fmt_sort(){
   done
 }
 
-grep -rl --include "Cargo.toml" '\[workspace\]' | sort -u | fmt_sort
+grep -rl --include="Cargo.toml" '\[workspace\]' . | sort -u | fmt_sort
