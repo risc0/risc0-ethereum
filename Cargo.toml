@@ -45,7 +45,7 @@ ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.
 
 anyhow = { version = "1.0" }
 arrayvec = "0.7"
-bincode = { version = "1.3" }
+bincode = { version = "2.0" }
 bytemuck = "1.21"
 cfg-if = "1.0"
 clap = { version = "4.5", features = ["derive", "env"] }
