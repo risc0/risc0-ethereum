@@ -1,7 +1,7 @@
 [package]
 name = "risc0-steel"
 description = "Query Ethereum state, or any other EVM-based blockchain state within the RISC Zero zkVM."
-version = { workspace = true }
+version = "2.1.0-alpha.1"
 rust-version = "1.80"
 edition = { workspace = true }
 license = { workspace = true }
@@ -15,8 +15,10 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 alloy = { workspace = true, optional = true, features = ["full"] }
 alloy-consensus = { workspace = true }
+alloy-eips = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
+alloy-rpc-types = { workspace = true }
 alloy-sol-types = { workspace = true }
 alloy-trie = { workspace = true, features = ["serde"] }
 anyhow = { workspace = true }
@@ -50,5 +52,6 @@ host = [
     "dep:tokio",
     "dep:url",
 ]
+unstable-event = []
 unstable-history = []
 unstable-verifier = []

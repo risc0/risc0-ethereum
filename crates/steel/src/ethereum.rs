@@ -79,6 +79,16 @@ impl EvmBlockHeader for EthBlockHeader {
     fn state_root(&self) -> &B256 {
         &self.inner().state_root
     }
+    #[cfg(feature = "unstable-event")]
+    #[inline]
+    fn receipts_root(&self) -> &B256 {
+        &self.inner().receipts_root
+    }
+    #[cfg(feature = "unstable-event")]
+    #[inline]
+    fn logs_bloom(&self) -> &alloy_primitives::Bloom {
+        &self.inner().logs_bloom
+    }
 
     #[inline]
     fn fill_block_env(&self, blk_env: &mut BlockEnv) {

@@ -1,0 +1,17 @@
+[package]
+name = "host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+events-methods = { workspace = true }
+log = { workspace = true }
+risc0-steel = { workspace = true, features = ["host"] }
+risc0-zkvm = { workspace = true }
+tokio = { workspace = true }
+tracing-subscriber = { workspace = true }
+url = { workspace = true }
