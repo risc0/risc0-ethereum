@@ -33,9 +33,7 @@ use risc0_steel::{
     host::BlockNumberOrTag,
     Commitment, Contract,
 };
-use risc0_zkvm::{
-    default_prover, Digest, ExecutorEnv, ProverOpts, VerifierContext,
-};
+use risc0_zkvm::{default_prover, Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
