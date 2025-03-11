@@ -165,10 +165,7 @@ mod tests {
     use crate::{config::ChainSpec, ethereum::EthEvmEnv, CommitmentVersion};
     use alloy::{
         consensus::BlockHeader,
-        network::{
-            primitives::{BlockTransactionsKind, HeaderResponse},
-            BlockResponse,
-        },
+        network::{primitives::HeaderResponse, BlockResponse},
         providers::{Provider, ProviderBuilder},
         rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
     };
@@ -179,12 +176,12 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn verify_block_commitment() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
 
         // create block commitment to the previous block
         let latest = el.get_block_number().await.unwrap();
         let block = el
-            .get_block_by_number((latest - 1).into(), BlockTransactionsKind::Hashes)
+            .get_block_by_number((latest - 1).into())
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();
@@ -211,11 +208,11 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn verify_beacon_commitment() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
 
         // create Beacon commitment from latest block
         let block = el
-            .get_block_by_number(AlloyBlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
+            .get_block_by_number(AlloyBlockNumberOrTag::Latest)
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();

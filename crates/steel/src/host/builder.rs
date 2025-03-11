@@ -25,10 +25,7 @@ use crate::{
     EvmBlockHeader, EvmEnv,
 };
 use alloy::{
-    network::{
-        primitives::{BlockTransactionsKind, HeaderResponse},
-        BlockResponse, Ethereum, Network,
-    },
+    network::{primitives::HeaderResponse, BlockResponse, Ethereum, Network},
     providers::{Provider, ProviderBuilder, RootProvider},
 };
 use alloy_primitives::{BlockHash, BlockNumber, Sealed, B256};
@@ -171,7 +168,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
 
         let rpc_block = self
             .provider
-            .get_block(block, BlockTransactionsKind::Hashes)
+            .get_block(block)
             .await
             .context("eth_getBlock1 failed")?
             .with_context(|| format!("block {} not found", block))?;
@@ -393,7 +390,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_beacon_env() {
-        let provider = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
 
         let builder = EthEvmEnv::builder()
             .provider(&provider)
@@ -404,10 +401,7 @@ mod tests {
 
         // the commitment should verify against the parent_beacon_block_root of the child
         let child_block = provider
-            .get_block_by_number(
-                (env.header.number() + 1).into(),
-                BlockTransactionsKind::Hashes,
-            )
+            .get_block_by_number((env.header.number() + 1).into())
             .await
             .unwrap();
         let header = child_block.unwrap().header;
@@ -425,7 +419,7 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_history_env() {
-        let provider = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
 
         // initialize the env at latest - 100 while committing to latest - 1
         let latest = provider.get_block_number().await.unwrap();
@@ -438,10 +432,7 @@ mod tests {
         let commit = env.commit.inner.commit(&env.header, env.commit.config_id);
 
         // the commitment should verify against the parent_beacon_block_root of the latest block
-        let child_block = provider
-            .get_block_by_number(latest.into(), BlockTransactionsKind::Hashes)
-            .await
-            .unwrap();
+        let child_block = provider.get_block_by_number(latest.into()).await.unwrap();
         let header = child_block.unwrap().header;
         assert_eq!(
             commit,
