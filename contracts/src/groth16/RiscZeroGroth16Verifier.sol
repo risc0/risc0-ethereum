@@ -54,7 +54,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Grot
     using OutputLib for Output;
     using SafeCast for uint256;
 
-    /// Semantic version of the the RISC Zero system of which this contract is part.
+    /// Semantic version of the RISC Zero system of which this contract is part.
     string public constant VERSION = "1.4.0-alpha.1";
 
     /// @notice Control root hash binding the set of circuits in the RISC Zero system.
