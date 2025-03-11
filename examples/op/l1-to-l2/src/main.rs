@@ -33,11 +33,11 @@ struct Args {
     l1_rpc_url: Url,
 
     /// URL of the L2 OP RPC endpoint
-    #[arg(long, env)]
+    #[arg(long, env = "L2_RPC_URL")]
     l2_rpc_url: Url,
 
     /// Beacon API endpoint URL
-    #[clap(long, env)]
+    #[arg(long, env = "BEACON_API_URL")]
     beacon_api_url: Url,
 }
 
