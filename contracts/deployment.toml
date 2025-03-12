@@ -140,7 +140,6 @@ version = "2.0.0"
 selector = "0x14da014b"
 verifier = "0x1f41ee86dA5819eF66583ED3f63B0a98c6d426Af"
 estop = "0x9d4856a8534BB38e768616520504f126Ba911c26"
-unroutable = true # remove when added to the router
 
 ###
 
