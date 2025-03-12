@@ -17,7 +17,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.81.0
-  RISC0_MONOREPO_REF: "main"
+  RISC0_CRATE_VERSION: "2.0.0-rc.1"
   # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.
   CARGO_LOCKED: ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
 
@@ -99,7 +99,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_CRATE_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: foundry-rs/foundry-toolchain@v1
@@ -155,7 +155,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_CRATE_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: foundry-rs/foundry-toolchain@v1
@@ -200,7 +200,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_CRATE_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - uses: foundry-rs/foundry-toolchain@v1

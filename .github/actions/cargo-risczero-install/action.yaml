@@ -42,9 +42,7 @@ runs:
           exit 1
         fi
 
-    # Only run these steps if using ref (building from source)
     - name: checkout risc0
-      if: inputs.ref != ''
       uses: actions/checkout@v4
       with:
         repository: 'risc0/risc0'
@@ -52,10 +50,10 @@ runs:
         ref: ${{ inputs.ref }}
         lfs: true
     - name: install active Rust toolchain
-      if: inputs.ref != ''
       run: rustup toolchain install
       working-directory: tmp/risc0
       shell: bash
+    # Only run these steps if using ref (building from source)
     - name: install cargo-risczero from git
       if: inputs.ref != ''
       run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
@@ -77,17 +75,14 @@ runs:
     # Only run this step if using version (installing from crates.io)
     - name: install cargo-risczero from crates.io
       if: inputs.version != ''
-      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
+      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --features "${{ inputs.features }}"
       shell: bash
+      working-directory: tmp/risc0
     - name: install rzup
       if: inputs.version != ''
       run: |
         curl -L https://risczero.com/install | bash
         echo "$HOME/.risc0/bin" >> $GITHUB_PATH
-      shell: bash
-    - name: install r0vm
-      if: inputs.version != ''
-      run: rzup install --verbose r0vm ${{ inputs.version }}
       shell: bash
     - name: install toolchains
       if: inputs.version != ''
