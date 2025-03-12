@@ -75,17 +75,13 @@ runs:
     # Only run this step if using version (installing from crates.io)
     - name: install cargo-risczero from crates.io
       if: inputs.version != ''
-      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
+      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --features "${{ inputs.features }}"
       shell: bash
     - name: install rzup
       if: inputs.version != ''
       run: |
         curl -L https://risczero.com/install | bash
         echo "$HOME/.risc0/bin" >> $GITHUB_PATH
-      shell: bash
-    - name: install r0vm
-      if: inputs.version != ''
-      run: rzup install --verbose r0vm ${{ inputs.version }}
       shell: bash
     - name: install toolchains
       if: inputs.version != ''
