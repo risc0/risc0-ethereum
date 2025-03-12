@@ -2522,7 +2522,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-op-steel"
-version = "0.3.0"
+version = "0.3.0-rc.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
