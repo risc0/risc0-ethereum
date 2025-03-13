@@ -108,7 +108,7 @@ alloy::sol!(
         }
 
         /// Tests calling multiple contracts with the same and different storage.
-        function testMuliContractCalls() external view returns (uint256) {
+        function testMultiContractCalls() external view returns (uint256) {
             return VALUE0.value() + VALUE42A.value() + VALUE42B.value();
         }
     }
@@ -411,7 +411,7 @@ async fn multi_contract_calls() {
     let result = common::eth_call(
         test_provider().await,
         STEEL_TEST_CONTRACT,
-        SteelTest::testMuliContractCallsCall {},
+        SteelTest::testMultiContractCallsCall {},
         CallOptions::new(),
     )
     .await;
