@@ -30,11 +30,11 @@ use url::Url;
 #[command(about, long_about = None)]
 struct Args {
     /// URL of the RPC endpoint
-    #[arg(long, env)]
+    #[arg(long, env = "RPC_URL")]
     rpc_url: Url,
 
     /// Beacon API endpoint URL
-    #[clap(long, env)]
+    #[arg(long, env = "BEACON_API_URL")]
     beacon_api_url: Url,
 }
 

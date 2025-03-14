@@ -60,40 +60,40 @@ sol!(
 #[derive(Parser)]
 struct Args {
     /// Ethereum private key
-    #[clap(long, env)]
+    #[arg(long, env = "ETH_WALLET_PRIVATE_KEY")]
     eth_wallet_private_key: PrivateKeySigner,
 
     /// Ethereum RPC endpoint URL
-    #[clap(long, env)]
+    #[arg(long, env = "ETH_RPC_URL")]
     eth_rpc_url: Url,
 
     /// Beacon API endpoint URL
     ///
     /// Steel uses a beacon block commitment instead of the execution block.
     /// This allows proofs to be validated using the EIP-4788 beacon roots contract.
-    #[clap(long, env)]
     #[cfg(any(feature = "beacon", feature = "history"))]
+    #[arg(long, env = "BEACON_API_URL")]
     beacon_api_url: Url,
 
     /// Ethereum block to use as the state for the contract call
-    #[clap(long, env, default_value_t = BlockNumberOrTag::Parent)]
+    #[arg(long, env = "EXECUTION_BLOCK", default_value_t = BlockNumberOrTag::Parent)]
     execution_block: BlockNumberOrTag,
 
     /// Ethereum block to use for the beacon block commitment.
-    #[clap(long, env)]
     #[cfg(feature = "history")]
+    #[arg(long, env = "COMMITMENT_BLOCK")]
     commitment_block: BlockNumberOrTag,
 
     /// Address of the Counter verifier contract
-    #[clap(long)]
+    #[arg(long)]
     counter_address: Address,
 
     /// Address of the ERC20 token contract
-    #[clap(long)]
+    #[arg(long)]
     token_contract: Address,
 
     /// Address to query the token balance of
-    #[clap(long)]
+    #[arg(long)]
     account: Address,
 }
 
