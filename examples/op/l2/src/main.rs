@@ -21,7 +21,7 @@ use risc0_op_steel::{
     optimism::{OpEvmEnv, OP_MAINNET_CHAIN_SPEC},
     Contract,
 };
-use risc0_zkvm::{compute_image_id_v2, default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{default_prover, Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
 
     let evm_input = env.into_input().await?;
 
-    let image_id = compute_image_id_v2(L2_GUEST_ID).context("failed to compute image id")?;
+    let image_id: Digest = L2_GUEST_ID.into();
     let prove_info = task::spawn_blocking(move || {
         let env = ExecutorEnv::builder().write(&evm_input)?.build().unwrap();
 

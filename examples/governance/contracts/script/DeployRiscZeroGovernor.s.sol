@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import {VoteToken} from "../src/VoteToken.sol";
 ///         Must be unlocked on the RPC provider node.
 ///     * DEPLOYER_PRIVATE_KEY private key of the wallet to be used for deployment.
 ///         Alternative to using DEPLOYER_ADDRESS.
-///     * DEPLOY_VERFIER_ADDRESS address of a predeployed IRiscZeroVerifier contract.
+///     * DEPLOY_VERIFIER_ADDRESS address of a predeployed IRiscZeroVerifier contract.
 ///         If not specified and also DEPLOY_BONSAI_RELAY_ADDRESS is not specified,
 ///         a new RiscZeroGroth16Verifier will be deployed.
 ///     * DEPLOY_VOTE_TOKEN_ADDRESS address of a predeployed IVotes contract.
@@ -66,7 +66,7 @@ contract DeployRiscZeroGovernor is Script, RiscZeroCheats {
 
         // Deploy an IRiscZeroVerifier contract.
         IRiscZeroVerifier verifier;
-        address verifierAddr = vm.envOr("DEPLOY_VERFIER_ADDRESS", address(0));
+        address verifierAddr = vm.envOr("DEPLOY_VERIFIER_ADDRESS", address(0));
         if (verifierAddr != address(0)) {
             console2.log("Using IRiscZeroVerifier at ", address(verifierAddr));
             verifier = IRiscZeroVerifier(verifierAddr);
