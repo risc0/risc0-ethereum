@@ -19,7 +19,7 @@ use l1_to_l2_core::{CALL, CALLER, CONTRACT, IERC20};
 use l1_to_l2_methods::{L1_TO_L2_GUEST_ELF, L1_TO_L2_GUEST_ID};
 use risc0_op_steel::ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC};
 use risc0_op_steel::{host::BlockNumberOrTag, l1, Contract};
-use risc0_zkvm::{compute_image_id_v2, default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::{default_prover, Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
 use url::Url;
@@ -69,7 +69,7 @@ async fn main() -> Result<()> {
     let evm_input = env.into_input().await?;
     let evm_input = l1::into_beacon_input(evm_input, args.l2_rpc_url.clone()).await?;
 
-    let image_id = compute_image_id_v2(L1_TO_L2_GUEST_ID).context("failed to compute image id")?;
+    let image_id: Digest = L1_TO_L2_GUEST_ID.into();
     let prove_info = task::spawn_blocking(move || {
         let env = ExecutorEnv::builder().write(&evm_input)?.build().unwrap();
 
