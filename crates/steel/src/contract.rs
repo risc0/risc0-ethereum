@@ -268,7 +268,7 @@ mod host {
         ///
         /// As the number of `SLOAD` operations in a call grows, the preflight time
         /// with Steel can become quite long due to the large number of RPC calls needed for
-        /// individual storage proofs. This method uses `eth_createAccessList` to greatly
+        /// individual storage queries. This method uses `eth_createAccessList` to greatly
         /// reduce the number of RPC calls and improve pre-flight time.
         ///
         /// ### How it works
