@@ -198,9 +198,10 @@ mod host {
         /// EIP-2930), and thus can only be specified during preflight on the host.
         ///
         /// ### Usage
-        /// This method is typically used when you have a pre-computed access list and want to optimize
-        /// preflight time. For automatic access list generation, consider using [CallBuilder::call_with_prefetch]
-        /// which combines this method with `eth_createAccessList` RPC.
+        /// This method is typically used when you have a pre-computed access list and want to
+        /// optimize preflight time. For automatic access list generation, consider using
+        /// [CallBuilder::call_with_prefetch] which combines this method with
+        /// `eth_createAccessList` RPC.
         ///
         /// ### Example
         /// ```rust,no_run
@@ -208,19 +209,17 @@ mod host {
         /// # use alloy_primitives::address;
         /// # use alloy_sol_types::sol;
         /// # use alloy::eips::eip2930::AccessList;
+        /// # use url::Url;
         /// # async fn example() -> anyhow::Result<()> {
-        /// # let mut env = EthEvmEnv::builder().build().await?;
+        /// # let url = Url::parse("https://ethereum-rpc.publicnode.com")?;
+        /// # let mut env = EthEvmEnv::builder().rpc(url).build().await?;
         /// # let contract_address = address!("0x0000000000000000000000000000000000000000");
         /// # sol! { interface Test { function test() external view returns (uint); } }
         /// # let call = Test::testCall {};
         /// # let access_list = AccessList::default();
         /// let mut contract = Contract::preflight(contract_address, &mut env);
-        /// let result = contract
-        ///     .call_builder(&call)
-        ///     .prefetch_access_list(access_list)
-        ///     .await?
-        ///     .call()
-        ///     .await?;
+        /// let result =
+        ///     contract.call_builder(&call).prefetch_access_list(access_list).await?.call().await?;
         /// # Ok(())
         /// # }
         /// ```
@@ -267,40 +266,42 @@ mod host {
         /// Automatically prefetches the access list before executing the call using an [EvmEnv]
         /// constructed with [Contract::preflight].
         ///
-        /// As the number of `SLOAD` and `SSTORE` operations in a call grows, the preflight time with Steel
-        /// can become quite long due to the large number of RPC calls needed for individual storage proofs.
-        /// This method uses `eth_createAccessList` to greatly reduce the number of RPC calls and improve
-        /// pre-flight time.
+        /// As the number of `SLOAD` operations in a call grows, the preflight time
+        /// with Steel can become quite long due to the large number of RPC calls needed for
+        /// individual storage proofs. This method uses `eth_createAccessList` to greatly
+        /// reduce the number of RPC calls and improve pre-flight time.
         ///
         /// ### How it works
-        /// This method is equivalent to calling [CallBuilder::prefetch_access_list] with the EIP-2930
-        /// access list as returned by the corresponding `eth_createAccessList` RPC, followed by
-        /// [CallBuilder::call]. The access list contains all storage slots that would be accessed during
-        /// the execution of the call, allowing them to be fetched in a single RPC call.
+        /// This method is equivalent to calling [CallBuilder::prefetch_access_list] with the
+        /// EIP-2930 access list as returned by the corresponding `eth_createAccessList`
+        /// RPC, followed by [CallBuilder::call]. The access list contains all storage slots
+        /// that would be accessed during the execution of the call, allowing them to be
+        /// fetched in a single RPC call.
         ///
         /// ### Trade-offs
-        /// - **On certain node software** (e.g., Geth, but not Reth), the underlying `eth_createAccessList` RPC
-        ///   actually checks to see if there are enough funds for the gas cost (in most cases, this can be
-        ///   fixed with a simple `.from("0x00000000000219ab540356cBB839Cbe05303d7705a")`, but this is rather
+        /// - On certain node software, the underlying `eth_createAccessList` RPC actually checks to
+        ///   see if there are enough funds for the gas cost (in most cases, this can be fixed by
+        ///   using [CallBuilder::from] to set the caller to the deposit contract, e.g.
+        ///   `0x00000000219ab540356cBB839Cbe05303d7705Fa` on mainnet. However, this is rather
         ///   arbitrary and ugly).
-        /// - This `eth_createAccessList` RPC is not available on all node software versions or chains.
+        /// - This `eth_createAccessList` RPC is not available on all node software versions or
+        ///   chains.
         ///
         /// ### Example
         /// ```rust,no_run
         /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
         /// # use alloy_primitives::address;
         /// # use alloy_sol_types::sol;
+        /// # use url::Url;
         /// # async fn example() -> anyhow::Result<()> {
-        /// # let mut env = EthEvmEnv::builder().build().await?;
+        /// # let url = Url::parse("https://ethereum-rpc.publicnode.com")?;
+        /// # let mut env = EthEvmEnv::builder().rpc(url).build().await?;
         /// # let contract_address = address!("0x0000000000000000000000000000000000000000");
         /// # sol! { interface Test { function test() external view returns (uint); } }
         /// # let call = Test::testCall {};
         /// let mut contract = Contract::preflight(contract_address, &mut env);
         /// // This will automatically fetch the access list and execute the call
-        /// let result = contract
-        ///     .call_builder(&call)
-        ///     .call_with_prefetch()
-        ///     .await?;
+        /// let result = contract.call_builder(&call).call_with_prefetch().await?;
         /// # Ok(())
         /// # }
         /// ```
