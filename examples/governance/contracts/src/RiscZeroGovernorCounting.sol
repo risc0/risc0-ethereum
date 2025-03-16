@@ -119,7 +119,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
 
         (bytes32 r, bytes32 s, uint8 v) = abi.decode(signature, (bytes32, bytes32, uint8));
 
-        // Hash into the ballot bx the 68-byte encoded ballot with signature.
+        // Hash into the ballot box the 68-byte encoded ballot with signature.
         // NOTE: Fields are aligned with 4 and 32 bytes boundaries.
         bytes memory encoded = abi.encodePacked(uint16(1), support, v, r, s, sigDigest);
 
@@ -131,7 +131,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
     function _commitVote(uint256 proposalId, uint8 support, address account) internal {
         ProposalVote storage proposalVote = _proposalVotes[proposalId];
 
-        // Hash into the ballot bx the 24-byte encoded ballot without a signature.
+        // Hash into the ballot box the 24-byte encoded ballot without a signature.
         bytes memory encoded = abi.encodePacked(uint16(0), support, uint8(0), account);
 
         emit CommittedBallot(proposalId, encoded);
