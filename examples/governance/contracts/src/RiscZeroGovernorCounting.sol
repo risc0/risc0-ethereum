@@ -19,7 +19,7 @@ pragma solidity ^0.8.9;
 import {Governor} from "openzeppelin/contracts/governance/Governor.sol";
 
 /**
- * @dev Implementation of of vote counting for the BonsaiGovernor, based on GovernorCountingSimple.
+ * @dev Implementation of vote counting for the BonsaiGovernor, based on GovernorCountingSimple.
  */
 abstract contract RiscZeroGovernorCounting is Governor {
     /// @notice Emitted when a ballot is committed to the ballot box.
