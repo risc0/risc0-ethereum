@@ -27,7 +27,7 @@ use risc0_forge_ffi::JournalSeal;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 enum Command {
     /// Prove the RISC-V ELF binary.
     Prove {
