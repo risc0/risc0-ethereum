@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // The RiscZeroGroth16Verifier is a free software: you can redistribute it
 // and/or modify it under the terms of the GNU General Public License as
@@ -77,11 +77,11 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Grot
     ///      generally be assumed that they need distinct verifier implementations. This is used as
     ///      part of the RISC Zero versioning mechanism.
     ///
-    ///      A selector is not intended to be collision resistant, in that it is possible to find
-    ///      two preimages that result in the same selector. This is acceptable since it's purpose
-    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
-    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
-    ///      function selectors.
+    ///      A selector is not intended to be collision resistant in the sense that it is possible
+    ///      to find two preimages that result in the same selector. This is acceptable since its 
+    ///      purpose is to a route a request among a set of trusted verifiers, and to make errors of
+    ///      sending a receipt to a mismatching verifier easier to debug. It is analogous to the
+    ///      ABI function selectors.
     bytes4 public immutable SELECTOR;
 
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
