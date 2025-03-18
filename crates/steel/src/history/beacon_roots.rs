@@ -234,7 +234,7 @@ where
 mod tests {
     use super::*;
     use alloy::{
-        network::{primitives::BlockTransactionsKind, BlockResponse},
+        network::BlockResponse,
         providers::{Provider, ProviderBuilder},
         rpc::types::BlockNumberOrTag as AlloyBlockNumberOrTag,
     };
@@ -245,11 +245,11 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn beacon_roots_contract() {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
 
         // get the latest header
         let latest = el
-            .get_block_by_number(AlloyBlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
+            .get_block_by_number(AlloyBlockNumberOrTag::Latest)
             .await
             .expect("eth_getBlockByNumber failed")
             .unwrap();

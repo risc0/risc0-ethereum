@@ -119,10 +119,7 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 pub(crate) mod host {
     use super::*;
     use crate::ethereum::EthBlockHeader;
-    use alloy::{
-        network::{primitives::BlockTransactionsKind, Ethereum},
-        providers::Provider,
-    };
+    use alloy::{network::Ethereum, providers::Provider};
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
     use client::BeaconClient;
@@ -263,7 +260,7 @@ pub(crate) mod host {
         let child = {
             let child_number = header.number() + 1;
             let block_res = rpc_provider
-                .get_block_by_number(child_number.into(), BlockTransactionsKind::Hashes)
+                .get_block_by_number(child_number.into())
                 .await
                 .context("eth_getBlockByNumber failed")?;
             let block = block_res.with_context(|| {
@@ -344,11 +341,11 @@ pub(crate) mod host {
             const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
             const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
 
-            let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+            let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
             let cl = BeaconClient::new(CL_URL).unwrap();
 
             let block = el
-                .get_block_by_number(BlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
+                .get_block_by_number(BlockNumberOrTag::Latest)
                 .await
                 .expect("eth_getBlockByNumber failed")
                 .unwrap();

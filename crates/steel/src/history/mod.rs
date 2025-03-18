@@ -92,10 +92,7 @@ mod host {
         ethereum::EthBlockHeader,
         history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH},
     };
-    use alloy::{
-        network::{primitives::BlockTransactionsKind, Ethereum},
-        providers::Provider,
-    };
+    use alloy::{network::Ethereum, providers::Provider};
     use alloy_primitives::{BlockNumber, Sealable};
     use anyhow::{ensure, Context};
     use url::Url;
@@ -141,7 +138,7 @@ mod host {
 
                 // get the header of the state block
                 let rpc_block = rpc_provider
-                    .get_block_by_number(state_block.into(), BlockTransactionsKind::Hashes)
+                    .get_block_by_number(state_block.into())
                     .await
                     .context("eth_getBlockByNumber failed")?
                     .with_context(|| format!("block {} not found", state_block))?;
@@ -202,10 +199,7 @@ mod host {
 mod tests {
     use super::*;
     use crate::ethereum::EthBlockHeader;
-    use alloy::{
-        network::primitives::BlockTransactionsKind,
-        providers::{Provider, ProviderBuilder},
-    };
+    use alloy::providers::{Provider, ProviderBuilder};
     use alloy_primitives::Sealable;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
@@ -214,7 +208,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "queries actual RPC nodes"]
     async fn from_beacon_commit_and_header() {
-        let el = ProviderBuilder::default().on_builtin(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().connect(EL_URL).await.unwrap();
 
         // get the latest 4 headers
         let headers = get_headers(4).await.unwrap();
@@ -252,15 +246,12 @@ mod tests {
 
     // get the latest n headers, with header[0] being the oldest and header[n-1] being the newest.
     async fn get_headers(n: usize) -> anyhow::Result<Vec<Sealed<EthBlockHeader>>> {
-        let el = ProviderBuilder::new().on_builtin(EL_URL).await?;
+        let el = ProviderBuilder::new().connect(EL_URL).await?;
         let latest = el.get_block_number().await?;
 
         let mut headers = Vec::with_capacity(n);
         for number in latest + 1 - (n as u64)..=latest {
-            let block = el
-                .get_block_by_number(number.into(), BlockTransactionsKind::Hashes)
-                .await?
-                .unwrap();
+            let block = el.get_block_by_number(number.into()).await?.unwrap();
             let header: EthBlockHeader = block.header.try_into()?;
             headers.push(header.seal_slow());
         }
