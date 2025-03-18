@@ -272,6 +272,9 @@ impl<M: Memoization> Decodable for Node<M> {
                     if is_leaf {
                         Ok(Node::Leaf(path, Bytes::decode(&mut v)?, M::default()))
                     } else {
+                        if path.is_empty() {
+                            return Err(alloy_rlp::Error::Custom("extension node with empty path"));
+                        };
                         let node = Node::decode(&mut v)?;
                         if !matches!(node, Node::Branch(..) | Node::Digest(..)) {
                             return Err(alloy_rlp::Error::Custom(

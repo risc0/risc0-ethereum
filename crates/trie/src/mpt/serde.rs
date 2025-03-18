@@ -12,43 +12,77 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// RLP-encodes a cached trie during serialization.
-///
-/// This has several advantages:
-/// - The serialized bytes are fully verified at deserialization.
-/// - The trie nodes already have an RLP-encoding when the hash is computed.
-#[cfg(feature = "rlp_serialize")]
-pub(crate) mod rlp_nodes {
-    use crate::mpt::{memoize::Memoization, node::Node};
-    use alloy_primitives::Bytes;
-    use itertools::Itertools;
-    use serde::{de, ser::SerializeSeq, Deserialize, Deserializer, Serializer};
+use super::Node;
+use crate::mpt::memoize::Memoization;
+use serde::de;
+use serde::{Deserialize, Deserializer};
+
+#[inline]
+pub(crate) fn deserialize_and_validate<'de, D, M>(deserializer: D) -> Result<Node<M>, D::Error>
+where
+    D: Deserializer<'de>,
+    M: Memoization,
+{
+    let node = Node::<M>::deserialize(deserializer)?;
+    if !node.is_valid() {
+        return Err(de::Error::custom("invalid trie structure"));
+    }
+
+    Ok(node)
+}
+
+pub(crate) mod nibbles {
+    use crate::Nibbles;
+    use serde::de::{SeqAccess, Visitor};
+    use serde::{ser::SerializeSeq, Deserializer, Serializer};
+    use std::fmt;
 
     #[inline]
-    pub(crate) fn serialize<S, M>(trie: &Node<M>, serializer: S) -> Result<S::Ok, S::Error>
+    pub(crate) fn serialize<S>(nibbles: &Nibbles, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        M: Memoization,
     {
-        // deduplicate the RLP nodes
-        let nodes: Vec<Bytes> = trie.rlp_nodes().into_iter().unique().collect();
-
-        let mut seq = serializer.serialize_seq(Some(nodes.len()))?;
-        for node in &nodes {
-            seq.serialize_element(&node[..])?;
+        let mut seq = serializer.serialize_seq(Some(nibbles.len()))?;
+        for node in &nibbles.pack() {
+            seq.serialize_element(node)?;
         }
         seq.end()
     }
 
     #[inline]
-    pub(crate) fn deserialize<'de, D, M>(deserializer: D) -> Result<Node<M>, D::Error>
+    pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<Nibbles, D::Error>
     where
         D: Deserializer<'de>,
-        M: Memoization,
     {
-        let nodes: Vec<&[u8]> = Vec::deserialize(deserializer)?;
+        struct NibblesVisitor;
 
-        Node::from_rlp(nodes).map_err(de::Error::custom)
+        impl<'de> Visitor<'de> for NibblesVisitor {
+            type Value = Nibbles;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a sequence")
+            }
+
+            #[inline]
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let size = seq.size_hint().unwrap();
+                let mut nibbles = Nibbles::with_capacity(size);
+                for i in (0..size).step_by(2) {
+                    let byte: u8 = seq.next_element()?.unwrap();
+                    nibbles.push_unchecked(byte >> 4);
+                    if i < size - 1 {
+                        nibbles.push_unchecked(byte & 0x0F);
+                    }
+                }
+
+                Ok(nibbles)
+            }
+        }
+
+        deserializer.deserialize_seq(NibblesVisitor)
     }
 }
 

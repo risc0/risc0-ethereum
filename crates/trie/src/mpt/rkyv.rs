@@ -12,13 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{
-    memoize::{Cache, Memoization},
-    node::Node,
-};
 use alloy_primitives::{Bytes, B256};
 use alloy_trie::nybbles::Nibbles;
-use itertools::Itertools;
 use rkyv::{
     rancor::{Fallible, Source},
     ser::{Allocator, Writer},
@@ -94,26 +89,6 @@ where
     fn deserialize_with(f: &ArchivedVec<u8>, deserializer: &mut D) -> Result<Nibbles, D::Error> {
         let vec = <ArchivedVec<u8> as Deserialize<Vec<u8>, D>>::deserialize(f, deserializer)?;
         Ok(Nibbles::from_vec_unchecked(vec))
-    }
-}
-
-/// RLP-encodes a cached trie during serialization.
-///
-/// This has several advantages:
-/// - The serialized bytes are fully verified at deserialization.
-/// - The trie nodes already have an RLP-encoding when the hash is computed.
-#[derive(Archive, Serialize, Deserialize)]
-#[rkyv(remote = Node<Cache>)]
-pub(super) struct RlpNodes(#[rkyv(getter = rlp_nodes)] Vec<Vec<u8>>);
-
-fn rlp_nodes<M: Memoization>(node: &Node<M>) -> Vec<Vec<u8>> {
-    node.rlp_nodes().into_iter().unique().map(Vec::from).collect()
-}
-
-impl<M: Memoization> From<RlpNodes> for Node<M> {
-    #[inline]
-    fn from(RlpNodes(nodes): RlpNodes) -> Self {
-        Node::from_rlp(nodes).unwrap()
     }
 }
 

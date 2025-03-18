@@ -41,7 +41,10 @@ pub use alloy_trie::EMPTY_ROOT_HASH;
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[cfg_attr(feature = "rkyv", derive(::rkyv::Archive, ::rkyv::Serialize, ::rkyv::Deserialize))]
-pub struct Trie(Node<NoCache>);
+pub struct Trie(
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "serde::deserialize_and_validate"))]
+    Node<NoCache>,
+);
 
 impl Trie {
     /// Retrieves the value associated with a given key.
@@ -200,13 +203,9 @@ impl<K: AsRef<[u8]>> FromIterator<(K, Bytes)> for Trie {
 /// the user, automatically updating cached hashes as the trie is modified.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-#[cfg_attr(feature = "rkyv", derive(::rkyv::Archive, ::rkyv::Serialize, ::rkyv::Deserialize))]
+#[cfg_attr(feature = "rkyv", derive(::rkyv::Archive, ::rkyv::Serialize))]
 pub struct CachedTrie {
-    #[cfg_attr(
-        all(feature = "serde", feature = "rlp_serialize"),
-        serde(with = "serde::rlp_nodes")
-    )]
-    #[cfg_attr(all(feature = "rkyv", feature = "rlp_serialize"), rkyv(with = rkyv::RlpNodes))]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "serde::deserialize_and_validate"))]
     inner: Node<Cache>,
     #[cfg_attr(feature = "serde", serde(skip))]
     #[cfg_attr(feature = "rkyv", rkyv(with = ::rkyv::with::Skip))]
@@ -217,6 +216,22 @@ impl Default for CachedTrie {
     #[inline]
     fn default() -> Self {
         Self { inner: Node::Null, hash: Some(EMPTY_ROOT_HASH) }
+    }
+}
+
+// Custom implementation of rkyv::Deserialize to validate the trie
+#[cfg(feature = "rkyv")]
+impl<D: ::rkyv::rancor::Fallible> ::rkyv::Deserialize<CachedTrie, D> for ArchivedCachedTrie
+where
+    <Node<Cache> as ::rkyv::Archive>::Archived: ::rkyv::Deserialize<Node<Cache>, D>,
+{
+    fn deserialize(&self, deserializer: &mut D) -> Result<CachedTrie, D::Error> {
+        let inner = ::rkyv::Deserialize::deserialize(&self.inner, deserializer)?;
+        if !inner.is_valid() {
+            panic!("Invalid trie structure");
+        }
+
+        Ok(CachedTrie { inner, hash: None })
     }
 }
 

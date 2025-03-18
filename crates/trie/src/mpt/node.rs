@@ -40,14 +40,18 @@ pub(super) enum Node<M> {
     #[default]
     Null,
     Leaf(
-        #[cfg_attr(feature = "rkyv", rkyv(with = super::rkyv::NibblesDef))] Nibbles,
+        #[cfg_attr(feature = "serde", serde(with = "super::serde::nibbles"))]
+        #[cfg_attr(feature = "rkyv", rkyv(with = super::rkyv::NibblesDef))]
+        Nibbles,
         #[cfg_attr(feature = "rkyv", rkyv(with = super::rkyv::BytesDef))] Bytes,
         #[cfg_attr(feature = "serde", serde(skip))]
         #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
         M,
     ),
     Extension(
-        #[cfg_attr(feature = "rkyv", rkyv(with = super::rkyv::NibblesDef))] Nibbles,
+        #[cfg_attr(feature = "serde", serde(with = "super::serde::nibbles"))]
+        #[cfg_attr(feature = "rkyv", rkyv(with = super::rkyv::NibblesDef))]
+        Nibbles,
         #[cfg_attr(feature = "rkyv", rkyv(omit_bounds))] Child<M>,
         #[cfg_attr(feature = "serde", serde(skip))]
         #[cfg_attr(feature = "rkyv", rkyv(with = rkyv::with::Skip))]
@@ -279,6 +283,43 @@ impl<M: Memoization> Node<M> {
             Node::Branch(children, ..) => {
                 1 + children.iter().filter_map(Option::as_deref).map(Node::size).sum::<usize>()
             }
+        }
+    }
+
+    /// Checks if the MPT structure is valid according to the following rules:
+    /// - All nibbles must be valid (0-15)
+    /// - Extensions must not have Null or Extension as direct children
+    /// - Branch nodes must have >= 2 non-empty children and all these children must not be Null
+    pub(crate) fn is_valid(&self) -> bool {
+        match self {
+            Node::Leaf(nibbles, value, _) => {
+                // check that all nibbles are valid
+                !value.is_empty() // && nibbles.iter().all(|&nibble| nibble <= 0xf)
+            }
+            Node::Extension(nibbles, child, _) => {
+                // check that all nibbles are valid and the path is not empty
+                if nibbles.is_empty()
+                /*|| !nibbles.iter().all(|&nibble| nibble <= 0xf) */
+                {
+                    return false;
+                }
+
+                // extension nodes must not have Null or Extension as direct children
+                !matches!(child.as_ref(), Node::Null | Node::Extension(..)) && child.is_valid()
+            }
+            Node::Branch(children, _) => {
+                // branch nodes must have at least 2 non-empty children
+                if children.len() < 2 {
+                    return false;
+                }
+
+                // all children must be valid
+                children.iter().flatten().all(|child| {
+                    // child nodes must not be Null
+                    !matches!(child.as_ref(), Node::Null) && child.is_valid()
+                })
+            }
+            _ => true,
         }
     }
 }
