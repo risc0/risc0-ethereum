@@ -17,10 +17,10 @@ risc0-steel = { version = "1.2.0", default-features = false, path = "steel" }
 risc0-forge-ffi = { version = "1.2.0", default-features = false, path = "ffi" }
 
 # risc0 monorepo dependencies.
-risc0-build = { version = "1.2.0", default-features = false }
-risc0-zkp = { version = "1.2.0", default-features = false }
-risc0-zkvm = { version = "1.2.0", default-features = false }
-risc0-binfmt = { version = "1.2.0", default-features = false }
+risc0-build = { git = "https://github.com/vlayer-xyz/risc0.git", rev = "45465177d126f38ccb0096682de164af8520951a", default-features = false }
+risc0-zkp = { git = "https://github.com/vlayer-xyz/risc0.git", rev = "45465177d126f38ccb0096682de164af8520951a", default-features = false }
+risc0-zkvm = { git = "https://github.com/vlayer-xyz/risc0.git", rev = "45465177d126f38ccb0096682de164af8520951a", default-features = false }
+risc0-binfmt = { git = "https://github.com/vlayer-xyz/risc0.git", rev = "45465177d126f38ccb0096682de164af8520951a", default-features = false }
 
 # Alloy guest dependencies
 alloy-consensus = { version = "0.6.1" }

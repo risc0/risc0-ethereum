@@ -3551,8 +3551,7 @@ dependencies = [
 [[package]]
 name = "risc0-binfmt"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "901fb75d62d70320adc7adae2abad354a3b7565603115dfb3134465227846475"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "borsh",
@@ -3566,8 +3565,7 @@ dependencies = [
 [[package]]
 name = "risc0-build"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f99fb40aeeaf59dddd6b6c3a177c95e8b3c7f0fb6de7d25a0687d12398323292"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -3596,8 +3594,7 @@ dependencies = [
 [[package]]
 name = "risc0-circuit-recursion"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8b0736401dd72a60a775e675bd0adba2e0e0e2ce2b73b63fda2899d9d7889b0"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3611,8 +3608,7 @@ dependencies = [
 [[package]]
 name = "risc0-circuit-rv32im"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b6d7eb9ae600c2df004bf8849db2df870fd56bd5911a2ad756fb8701350b3c6"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "metal",
@@ -3627,8 +3623,7 @@ dependencies = [
 [[package]]
 name = "risc0-core"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "733491635d50b742d1f30a923aa3b83d62f35cef724bbf402dfc02e6f10f587a"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "bytemuck",
  "rand_core",
@@ -3666,8 +3661,7 @@ dependencies = [
 [[package]]
 name = "risc0-groth16"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5babc69b0db6906a6ff4011641109ca2ba06636096356b32208b0dfb26b3809"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "ark-bn254",
@@ -3715,8 +3709,7 @@ dependencies = [
 [[package]]
 name = "risc0-zkp"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21eadc5099bf0d8ecaed718810dc5deaf237ae39a2fcb66e542e8f9660132617"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "blake2",
@@ -3739,8 +3732,7 @@ dependencies = [
 [[package]]
 name = "risc0-zkvm"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b619085d02d57dcafc41eb74714682797ed666621ced1814c55bbe7ae7762ba"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "anyhow",
  "bincode",
@@ -3772,8 +3764,7 @@ dependencies = [
 [[package]]
 name = "risc0-zkvm-platform"
 version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26bbcc486222a0086d36244ae1f388cac1318270bca2dd23d77af2005d679edf"
+source = "git+https://github.com/vlayer-xyz/risc0.git?rev=45465177d126f38ccb0096682de164af8520951a#45465177d126f38ccb0096682de164af8520951a"
 dependencies = [
  "bytemuck",
  "getrandom",
