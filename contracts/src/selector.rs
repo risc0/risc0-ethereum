@@ -42,6 +42,7 @@ pub enum Selector {
     FakeReceipt = 0x00000000,
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
+    Groth16V2_0 = 0x14da014b,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
 }
@@ -81,6 +82,10 @@ impl Selector {
                 "c101b42bcacd62e35222b1207223250814d05dd41d41f8cadc1f16f86707ae15",
             )
             .unwrap()),
+            Selector::Groth16V2_0 => Ok(Digest::from_hex(
+                "14da014b1157c2ac9bf00afa1d93b076245b22c5a50b5cb13307ae0a49890d11",
+            )
+            .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
                 "bfca9ccb59eb38b8c78ddc399a734d8e0e84e8028b7d616fa54fe707a1ff1b3b",
             )
@@ -95,7 +100,9 @@ impl Selector {
     pub fn get_type(self) -> SelectorType {
         match self {
             Selector::FakeReceipt => SelectorType::FakeReceipt,
-            Selector::Groth16V1_1 | Selector::Groth16V1_2 => SelectorType::Groth16,
+            Selector::Groth16V1_1 | Selector::Groth16V1_2 | Selector::Groth16V2_0 => {
+                SelectorType::Groth16
+            }
             Selector::SetVerifierV0_1 | Selector::SetVerifierV0_2 => SelectorType::SetVerifier,
         }
     }
