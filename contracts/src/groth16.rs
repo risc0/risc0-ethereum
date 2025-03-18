@@ -169,4 +169,17 @@ mod tests {
         .unwrap();
         receipt.verify(image_id).unwrap();
     }
+
+    #[test]
+    #[cfg(feature = "unstable")]
+    fn test_decode_fake_seal() {
+        use crate::receipt::decode_seal;
+        use risc0_zkvm::ReceiptClaim;
+
+        let fake_claim = ReceiptClaim::ok(Digest::default(), vec![]).digest();
+        let mut seal = vec![];
+        seal.extend_from_slice(&[0u8; 4]);
+        seal.extend_from_slice(fake_claim.as_bytes());
+        decode_seal(seal.into(), fake_claim, vec![]).unwrap();
+    }
 }
