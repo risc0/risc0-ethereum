@@ -5,7 +5,7 @@ on:
   pull_request:
     branches:
       - main
-    types: ["opened", "edited", "reopened", "synchronize"]
+    types: [ "opened", "edited", "reopened", "synchronize" ]
 
 permissions:
   pull-requests: write
@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   create-linear-issue-pr:
+    # Skip if the PR is not from a fork.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - name: Find or create a Linear Issue
