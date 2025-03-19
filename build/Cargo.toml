@@ -10,6 +10,7 @@ repository = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 bytemuck = { workspace = true }
+bytemuck_derive = { workspace = true }
 hex = "0.4" 
 risc0-build = { workspace = true }
 risc0-zkp = { workspace = true }

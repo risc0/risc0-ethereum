@@ -19,6 +19,7 @@ alloy = { workspace = true, features = ["contract"] }
 alloy-primitives = { workspace = true, optional = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
+bytemuck_derive = { workspace = true }
 cfg-if = { workspace = true }
 hex = { workspace = true, optional = true }
 risc0-aggregation = { workspace = true, optional = true }
