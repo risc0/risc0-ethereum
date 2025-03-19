@@ -3431,10 +3431,11 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "anyhow",
  "bytemuck",
+ "bytemuck_derive",
  "hex",
  "risc0-build",
  "risc0-zkp",
@@ -3499,11 +3500,12 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "1.4.1"
+version = "1.4.2"
 dependencies = [
  "alloy",
  "alloy-sol-types",
  "anyhow",
+ "bytemuck_derive",
  "cfg-if",
  "risc0-zkvm",
  "thiserror 2.0.11",
