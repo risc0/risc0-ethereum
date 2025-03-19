@@ -1386,7 +1386,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-aggregation"
-version = "0.3.0"
+version = "0.3.2"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
@@ -1748,7 +1748,7 @@ dependencies = [
 
 [[package]]
 name = "set-builder"
-version = "0.3.0"
+version = "0.3.2"
 dependencies = [
  "risc0-aggregation",
  "risc0-zkvm",
