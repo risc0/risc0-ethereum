@@ -177,7 +177,7 @@ mod tests {
 
         let fake_claim = ReceiptClaim::ok(Digest::default(), vec![]).digest();
         let mut seal = vec![];
-        seal.extend_from_slice(&[0u8; 4]);
+        seal.extend_from_slice(&[0xFFu8; 4]);
         seal.extend_from_slice(fake_claim.as_bytes());
         decode_seal(seal.into(), fake_claim, vec![]).unwrap();
     }
