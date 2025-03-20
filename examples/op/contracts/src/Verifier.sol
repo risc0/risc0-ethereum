@@ -34,7 +34,7 @@ contract Verifier is OpCommitmentValidator {
             new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         router.addVerifier(verifier.SELECTOR(), verifier);
 
-        RiscZeroMockVerifier mock = new RiscZeroMockVerifier(bytes4(0));
+        RiscZeroMockVerifier mock = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         router.addVerifier(mock.SELECTOR(), mock);
 
         riscZeroVerifier = router;
