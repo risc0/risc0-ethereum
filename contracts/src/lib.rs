@@ -89,7 +89,7 @@ pub fn encode_seal(receipt: &risc0_zkvm::Receipt) -> Result<Vec<u8>> {
     let seal = match receipt.inner.clone() {
         InnerReceipt::Fake(receipt) => {
             let seal = receipt.claim.digest().as_bytes().to_vec();
-            let selector = &[0u8; 4];
+            let selector = &[0xFFu8; 4];
             // Create a new vector with the capacity to hold both selector and seal
             let mut selector_seal = Vec::with_capacity(selector.len() + seal.len());
             selector_seal.extend_from_slice(selector);

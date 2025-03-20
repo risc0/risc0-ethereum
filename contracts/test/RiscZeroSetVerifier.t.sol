@@ -51,7 +51,7 @@ contract RiscZeroSetVerifierTest is Test {
     }
 
     function setUp() public {
-        verifier = new RiscZeroMockVerifier(bytes4(0));
+        verifier = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         setVerifier = new RiscZeroSetVerifier(verifier, SET_BUILDER_IMAGE_ID, "https://dev.null");
     }
 

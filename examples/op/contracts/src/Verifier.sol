@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ contract Verifier is OpCommitmentValidator {
             new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
         router.addVerifier(verifier.SELECTOR(), verifier);
 
-        RiscZeroMockVerifier mock = new RiscZeroMockVerifier(bytes4(0));
+        RiscZeroMockVerifier mock = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         router.addVerifier(mock.SELECTOR(), mock);
 
         riscZeroVerifier = router;
