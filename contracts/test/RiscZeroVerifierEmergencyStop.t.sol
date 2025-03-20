@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
     RiscZeroReceipt internal TEST_RECEIPT;
 
     function setUp() external {
-        verifierMock = new RiscZeroMockVerifier(bytes4(0));
+        verifierMock = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         verifierEstop = new RiscZeroVerifierEmergencyStop(verifierMock, address(this));
 
         TEST_RECEIPT = verifierMock.mockProve(TEST_RECEIPT_CLAIM.digest());

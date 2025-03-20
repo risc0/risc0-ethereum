@@ -39,7 +39,7 @@ pub enum SelectorType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Selector {
-    FakeReceipt = 0x00000000,
+    FakeReceipt = 0xFFFFFFFF,
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
     Groth16V2_0 = 0xff146928,
@@ -58,7 +58,7 @@ impl TryFrom<u32> for Selector {
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
-            0x00000000 => Ok(Selector::FakeReceipt),
+            0xFFFFFFFF => Ok(Selector::FakeReceipt),
             0x50bd1769 => Ok(Selector::Groth16V1_1),
             0xc101b42b => Ok(Selector::Groth16V1_2),
             0xff146928 => Ok(Selector::Groth16V2_0),
