@@ -13,7 +13,7 @@ path = "src/bin/balance_of.rs"
 alloy-primitives = { version = "0.8" }
 alloy-sol-types = { version = "0.8" }
 risc0-steel = { path = "../../../../crates/steel" }
-risc0-zkvm = { version = "2.0.0-rc.2", default-features = false, features = ["std", "unstable"] }
+risc0-zkvm = { version = "2.0.0-rc.3", default-features = false, features = ["std", "unstable"] }
 
 [patch.crates-io]
 # enable RISC Zero's precompiles
