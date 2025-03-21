@@ -1,7 +1,7 @@
 [package]
 name = "risc0-op-steel"
 description = "Optimism abstraction for Steel."
-version = "0.3.0-rc.1"
+version = "0.3.0-rc.2"
 rust-version = "1.81"
 edition = { workspace = true }
 license = { workspace = true }

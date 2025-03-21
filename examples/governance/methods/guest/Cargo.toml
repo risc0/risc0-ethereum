@@ -17,7 +17,7 @@ k256 = { version = "=0.13.4", features = [
     "std",
     "ecdsa",
 ], default-features = false }
-risc0-zkvm = { version = "2.0.0-rc.2", default-features = false, features = ["std", "unstable"] }
+risc0-zkvm = { version = "2.0.0-rc.3", default-features = false, features = ["std", "unstable"] }
 tiny-keccak = { version = "=2.0.2", features = ["keccak"] }
 
 [patch.crates-io]

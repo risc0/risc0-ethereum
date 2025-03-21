@@ -7,8 +7,8 @@ debug = 1
 lto = true
 
 [workspace.dependencies]
-risc0-zkvm = { version = "2.0.0-rc.2" }
-risc0-build = { version = "2.0.1-rc.2" }
+risc0-zkvm = { version = "2.0.0-rc.3" }
+risc0-build = { version = "2.0.1-rc.3" }
 risc0-op-steel = { path = "../../crates/op-steel" }
 risc0-steel = { path = "../../crates/steel" }
 risc0-ethereum-contracts =  { path = "../../contracts" }
