@@ -85,7 +85,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
-unroutable = true # remove when added to the router
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -141,7 +140,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -231,7 +229,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -323,7 +320,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -413,7 +409,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -505,7 +500,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -599,7 +593,6 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x2Bde5B9308AAC6bA374C0D13b0Cf1ec6088F870A"
 estop = "0x6d196602586FC411c3551a3cDDC05EAA70bd09b5"
-unroutable = true # remove when added to the router
 
 ###
 
