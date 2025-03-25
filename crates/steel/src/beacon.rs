@@ -13,11 +13,13 @@
 // limitations under the License.
 
 //! Types related to commitments to the beacon block root.
+
 use crate::{
     merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
 };
 use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// The generalized Merkle tree index of the `state_root` field in the `BeaconBlock`.
 pub const STATE_ROOT_LEAF_INDEX: usize = 6434;
@@ -45,7 +47,41 @@ pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
 /// this library.
 pub type BeaconCommit = GeneralizedBeaconCommit<BLOCK_HASH_LEAF_INDEX>;
 
-/// A commitment to a field of the Beacon block at a specific index in a Merkle tree, along with a
+/// A beacon block identifier.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub enum BeaconBlockId {
+    /// Timestamp of the child execution block, to query the beacon block root using the EIP-4788
+    /// beacon roots contract.
+    Eip4788(u64),
+    /// Slot of the beacon block.
+    Slot(u64),
+}
+
+impl Display for BeaconBlockId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BeaconBlockId::Eip4788(ts) => write!(f, "child_ts={}", ts),
+            BeaconBlockId::Slot(slot) => write!(f, "slot={}", slot),
+        }
+    }
+}
+
+impl BeaconBlockId {
+    pub const fn as_version(&self) -> u16 {
+        match self {
+            BeaconBlockId::Eip4788(_) => CommitmentVersion::Beacon as u16,
+            BeaconBlockId::Slot(_) => CommitmentVersion::Consensus as u16,
+        }
+    }
+    pub const fn as_id(&self) -> u64 {
+        match self {
+            BeaconBlockId::Eip4788(ts) => *ts,
+            BeaconBlockId::Slot(slot) => *slot,
+        }
+    }
+}
+
+/// A commitment to a field of the beacon block at a specific index in a Merkle tree, along with a
 /// timestamp.
 ///
 /// The constant generic parameter `LEAF_INDEX` specifies the generalized Merkle tree index of the
@@ -53,7 +89,7 @@ pub type BeaconCommit = GeneralizedBeaconCommit<BLOCK_HASH_LEAF_INDEX>;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GeneralizedBeaconCommit<const LEAF_INDEX: usize> {
     proof: Vec<B256>,
-    timestamp: u64,
+    block_id: BeaconBlockId,
 }
 
 impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
@@ -62,16 +98,16 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
     /// It panics if `LEAF_INDEX` is zero, because a Merkle tree cannot have a leaf at index 0.
     #[must_use]
     #[inline]
-    pub const fn new(proof: Vec<B256>, timestamp: u64) -> Self {
+    pub const fn new(proof: Vec<B256>, block_id: BeaconBlockId) -> Self {
         assert!(LEAF_INDEX > 0);
-        Self { proof, timestamp }
+        Self { proof, block_id }
     }
 
-    /// Disassembles this `GeneralizedBeaconCommit`, returning the underlying Merkle proof and block
-    /// timestamp.
+    /// Disassembles this `GeneralizedBeaconCommit`, returning the underlying Merkle proof and
+    /// beacon block identifier.
     #[inline]
-    pub fn into_parts(self) -> (Vec<B256>, u64) {
-        (self.proof, self.timestamp)
+    pub fn into_parts(self) -> (Vec<B256>, BeaconBlockId) {
+        (self.proof, self.block_id)
     }
 
     /// Calculates the root of the Merkle tree containing the given `leaf` hash at `LEAF_INDEX`,
@@ -88,15 +124,16 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
         merkle::verify(leaf, &self.proof, LEAF_INDEX, root)
     }
 
-    pub(crate) fn timestamp(&self) -> u64 {
-        self.timestamp
+    /// Returns the beacon block identifier (slot or timestamp).
+    pub(crate) fn block_id(&self) -> BeaconBlockId {
+        self.block_id
     }
 
-    pub(crate) fn into_commit(self, leaf: B256) -> (u64, B256) {
+    pub(crate) fn into_commit(self, leaf: B256) -> (BeaconBlockId, B256) {
         let beacon_root = self
             .process_proof(leaf)
             .expect("Invalid beacon inclusion proof");
-        (self.timestamp(), beacon_root)
+        (self.block_id, beacon_root)
     }
 }
 
@@ -105,10 +142,10 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 {
     #[inline]
     fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
-        let (timestamp, beacon_root) = self.into_commit(header.seal());
+        let (block_id, beacon_root) = self.into_commit(header.seal());
         Commitment::new(
-            CommitmentVersion::Beacon as u16,
-            timestamp,
+            block_id.as_version(),
+            block_id.as_id(),
             beacon_root,
             config_id,
         )
@@ -135,6 +172,7 @@ pub(crate) mod host {
     use url::Url;
 
     pub(crate) mod client {
+        use alloy_primitives::B256;
         use ethereum_consensus::{
             phase0::SignedBeaconBlockHeader, primitives::Root, types::mainnet::SignedBeaconBlock,
             Fork,
@@ -153,18 +191,20 @@ pub(crate) mod host {
             Http(#[from] reqwest::Error),
             #[error("version field does not match data version")]
             VersionMismatch,
+            #[error("response is emtpy")]
+            EmptyResponse,
         }
 
         /// Response returned by the `get_block_header` API.
         #[derive(Debug, Serialize, Deserialize)]
-        pub struct GetBlockHeaderResponse {
+        pub struct BlockHeaderResponse {
             pub root: Root,
             pub canonical: bool,
             pub header: SignedBeaconBlockHeader,
         }
 
         /// Wrapper returned by the API calls.
-        #[derive(Serialize, Deserialize)]
+        #[derive(Debug, Serialize, Deserialize)]
         struct Response<T> {
             data: T,
             #[serde(flatten)]
@@ -217,6 +257,19 @@ pub(crate) mod host {
                 }
                 Ok(result.inner.data)
             }
+
+            /// Retrieves block headers with the given parent root.
+            pub async fn get_header_for_parent_root(
+                &self,
+                parent_root: B256,
+            ) -> Result<BlockHeaderResponse, Error> {
+                let target = self.endpoint.join("eth/v1/beacon/headers")?;
+                let params = [("parent_root", parent_root)];
+                let resp = self.http.get(target).query(&params).send().await?;
+                let mut result: Response<Vec<BlockHeaderResponse>> =
+                    resp.error_for_status()?.json().await?;
+                result.data.pop().ok_or(Error::EmptyResponse)
+            }
         }
     }
 
@@ -225,6 +278,7 @@ pub(crate) mod host {
         /// corresponding block hash in the referenced beacon block.
         pub(crate) async fn from_header<P>(
             header: &Sealed<EthBlockHeader>,
+            commitment_version: CommitmentVersion,
             rpc_provider: P,
             beacon_url: Url,
         ) -> anyhow::Result<Self>
@@ -232,16 +286,22 @@ pub(crate) mod host {
             P: Provider<Ethereum>,
         {
             let client = BeaconClient::new(beacon_url).context("invalid URL")?;
-            let (commit, beacon_root) =
-                create_beacon_commit(header, "block_hash".into(), rpc_provider, &client).await?;
+            let (commit, beacon_root) = create_beacon_commit(
+                header,
+                "block_hash".into(),
+                commitment_version,
+                rpc_provider,
+                &client,
+            )
+            .await?;
             commit
                 .verify(header.seal(), beacon_root)
                 .context("proof derived from API does not verify")?;
 
             log::info!(
-                "Committing to parent beacon block: root={},timestamp={}",
+                "Committing to parent beacon block: root={},{}",
                 beacon_root,
-                commit.timestamp()
+                commit.block_id()
             );
 
             Ok(commit)
@@ -249,8 +309,8 @@ pub(crate) mod host {
     }
 
     /// Creates a beacon commitment that `field` is contained in the `ExecutionPayload` of the
-    /// beacon block corresponding to `header`.
-    pub(crate) async fn create_beacon_commit<P, H, const LEAF_INDEX: usize>(
+    /// beacon block corresponding to `header` creating a [CommitmentVersion::Beacon] commitment.
+    pub(crate) async fn create_eip4788_beacon_commit<P, H, const LEAF_INDEX: usize>(
         header: &Sealed<H>,
         field: PathElement,
         rpc_provider: P,
@@ -288,10 +348,75 @@ pub(crate) mod host {
 
         let commit = GeneralizedBeaconCommit::new(
             proof.branch.iter().map(|n| n.0.into()).collect(),
-            child.timestamp,
+            BeaconBlockId::Eip4788(child.timestamp),
         );
 
         Ok((commit, beacon_root))
+    }
+
+    /// Creates a beacon commitment that `field` is contained in the `ExecutionPayload` of the
+    /// beacon block corresponding to `header` creating a [CommitmentVersion::Consensus] commitment.
+    pub(crate) async fn create_slot_beacon_commit<P, H, const LEAF_INDEX: usize>(
+        header: &Sealed<H>,
+        field: PathElement,
+        rpc_provider: P,
+        beacon_client: &BeaconClient,
+    ) -> anyhow::Result<(GeneralizedBeaconCommit<LEAF_INDEX>, B256)>
+    where
+        P: Provider<Ethereum>,
+        H: EvmBlockHeader,
+    {
+        let (beacon_root, beacon_header) = {
+            let execution_header = rpc_provider
+                .get_block_by_hash(header.seal(), BlockTransactionsKind::Hashes)
+                .await
+                .context("eth_getBlockByHash failed")?
+                .unwrap()
+                .header;
+            let parent_root = execution_header
+                .parent_beacon_block_root
+                .context("parent_beacon_block_root missing in execution header")?;
+            let response = beacon_client
+                .get_header_for_parent_root(parent_root)
+                .await
+                .with_context(|| format!("failed to get header for parent root {}", parent_root))?;
+            ensure!(
+                response.header.message.parent_root.0 == parent_root.0,
+                "API returned invalid beacon header"
+            );
+            (B256::from(response.root.0), response.header.message)
+        };
+        let proof = create_execution_payload_proof(field, beacon_root, beacon_client).await?;
+        ensure!(proof.index == LEAF_INDEX, "field has the wrong leaf index");
+
+        let commit = GeneralizedBeaconCommit::new(
+            proof.branch.iter().map(|n| n.0.into()).collect(),
+            BeaconBlockId::Slot(beacon_header.slot),
+        );
+
+        Ok((commit, beacon_root))
+    }
+
+    pub(crate) async fn create_beacon_commit<P, H, const LEAF_INDEX: usize>(
+        header: &Sealed<H>,
+        field: PathElement,
+        commitment_version: CommitmentVersion,
+        rpc_provider: P,
+        beacon_client: &BeaconClient,
+    ) -> anyhow::Result<(GeneralizedBeaconCommit<LEAF_INDEX>, B256)>
+    where
+        P: Provider<Ethereum>,
+        H: EvmBlockHeader,
+    {
+        match commitment_version {
+            CommitmentVersion::Beacon => {
+                create_eip4788_beacon_commit(header, field, rpc_provider, beacon_client).await
+            }
+            CommitmentVersion::Consensus => {
+                create_slot_beacon_commit(header, field, rpc_provider, beacon_client).await
+            }
+            _ => bail!("invalid commitment version"),
+        }
     }
 
     /// Creates the Merkle inclusion proof of the element `field` in the `ExecutionPayload` of the
@@ -338,12 +463,12 @@ pub(crate) mod host {
         use super::*;
         use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
+        const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
+        const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
+
         #[tokio::test]
         #[ignore = "queries actual RPC nodes"]
         async fn create_execution_payload_proof() {
-            const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
-            const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
-
             let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
             let cl = BeaconClient::new(CL_URL).unwrap();
 
@@ -361,6 +486,33 @@ pub(crate) mod host {
                     .expect("proving 'block_hash' failed");
             let branch: Vec<B256> = proof.branch.iter().map(|n| n.0.into()).collect();
             merkle::verify(block_hash, &branch, BLOCK_HASH_LEAF_INDEX, beacon_root).unwrap();
+        }
+
+        #[tokio::test]
+        #[ignore = "queries actual RPC nodes"]
+        async fn create_slot_beacon_commit() {
+            let el = ProviderBuilder::new().on_builtin(EL_URL).await.unwrap();
+            let cl = BeaconClient::new(CL_URL).unwrap();
+
+            let block = el
+                .get_block_by_number(BlockNumberOrTag::Latest, BlockTransactionsKind::Hashes)
+                .await
+                .expect("eth_getBlockByNumber failed")
+                .unwrap();
+            let header: Sealed<EthBlockHeader> = Sealed::new(block.header.try_into().unwrap());
+
+            let (commit, _): (BeaconCommit, B256) =
+                super::create_slot_beacon_commit(&header, "block_hash".into(), &el, &cl)
+                    .await
+                    .unwrap();
+
+            // verify the commitment by querying the beacon client
+            let (block_id, block_root) = dbg!(commit.into_commit(header.seal()));
+            let beacon_block = cl.get_block(block_id.as_id()).await.unwrap();
+            assert_eq!(
+                block_root.to_string(),
+                beacon_block.message().hash_tree_root().unwrap().to_string()
+            );
         }
     }
 }

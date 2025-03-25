@@ -15,3 +15,4 @@ risc0-zkvm = { workspace = true }
 tokio = { workspace = true }
 tracing-subscriber = { workspace = true }
 url = { workspace = true }
+bytemuck_derive = { workspace = true }

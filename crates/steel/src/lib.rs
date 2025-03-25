@@ -274,12 +274,15 @@ pub use private::Commitment;
 
 /// Version of a [`Commitment`].
 #[repr(u16)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+
 pub enum CommitmentVersion {
     /// Commitment to an execution block.
     Block,
-    /// Commitment to a beacon chain state.
+    /// Commitment to a beacon chain block root indexed by the EIP-4788 child timestamp.
     Beacon,
+    /// Commitment to a beacon chain block root indexed by its slot.
+    Consensus,
 }
 
 impl Commitment {
