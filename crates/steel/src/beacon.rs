@@ -19,7 +19,7 @@ use crate::{
 };
 use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::fmt;
 
 /// The generalized Merkle tree index of the `state_root` field in the `BeaconBlock`.
 pub const STATE_ROOT_LEAF_INDEX: usize = 6434;
@@ -57,11 +57,13 @@ pub enum BeaconBlockId {
     Slot(u64),
 }
 
-impl Display for BeaconBlockId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for BeaconBlockId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BeaconBlockId::Eip4788(ts) => write!(f, "child_ts={}", ts),
-            BeaconBlockId::Slot(slot) => write!(f, "slot={}", slot),
+            BeaconBlockId::Eip4788(timestamp) => {
+                write!(f, "eip4788-timestamp: {}", timestamp)
+            }
+            BeaconBlockId::Slot(slot) => write!(f, "slot: {}", slot),
         }
     }
 }
@@ -299,9 +301,9 @@ pub(crate) mod host {
                 .context("proof derived from API does not verify")?;
 
             log::info!(
-                "Committing to parent beacon block: root={},{}",
+                "Committing to beacon block: {{ {}, root: {} }}",
+                commit.block_id(),
                 beacon_root,
-                commit.block_id()
             );
 
             Ok(commit)
