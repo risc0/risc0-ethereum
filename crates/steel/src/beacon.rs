@@ -133,7 +133,7 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
         let beacon_root = self
             .process_proof(leaf)
             .expect("Invalid beacon inclusion proof");
-        (self.block_id, beacon_root)
+        (self.block_id(), beacon_root)
     }
 }
 
