@@ -1,10 +1,10 @@
 [package]
 name = "set-builder"
-version = "0.4.0-rc.2"
+version = "0.4.0"
 edition = "2021"
 
 [workspace]
 
 [dependencies]
-risc0-aggregation = { version = "0.4.0-rc.2", path = "../..", default-features = false }
-risc0-zkvm = { version = "2.0.0-rc.3", default-features = false, features = ["std"] }
+risc0-aggregation = { version = "0.4.0", path = "../..", default-features = false }
+risc0-zkvm = { version = "2.0", default-features = false, features = ["std"] }
