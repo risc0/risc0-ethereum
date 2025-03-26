@@ -17,8 +17,8 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: 1.81.0
-  RISC0_CRATE_VERSION: "2.0.0-rc.3"
+  RISC0_TOOLCHAIN_VERSION: 1.85.0
+  RISC0_CRATE_VERSION: "2.0.0"
 
 jobs:
   e2e-tests:
