@@ -283,9 +283,7 @@ impl MerkleMountainRange {
         // `finalize` since it is computationally infeasible to push 2^256 nodes onto the MMR,
         // although it is theoretically consistent that if an MMR reached a state of being a
         // single peak with max depth value of 255, it would be naturally finalized.
-        self.0
-            .first()
-            .map_or(false, |peak| peak.max_depth == u8::MAX)
+        self.0.first().is_some_and(|peak| peak.max_depth == u8::MAX)
     }
 
     /// Returns true if the [MerkleMountainRange] is empty.
