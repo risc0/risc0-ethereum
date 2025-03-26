@@ -101,7 +101,6 @@ pub fn decode_seal_with_claim(
     let selector = [seal[0], seal[1], seal[2], seal[3]];
     let selector = Selector::from_bytes(selector)
         .ok_or_else(|| DecodingError::UnsupportedSelector(selector))?;
-    let verifier_parameters = selector.verifier_parameters_digest()?;
     match selector.get_type() {
         SelectorType::FakeReceipt => {
             let receipt = risc0_zkvm::Receipt::new(
@@ -111,11 +110,13 @@ pub fn decode_seal_with_claim(
             Ok(Receipt::Base(Box::new(receipt)))
         }
         SelectorType::Groth16 => {
+            let verifier_parameters = selector.verifier_parameters_digest()?;
             let receipt =
                 decode_groth16_seal(seal, claim, journal.into(), Some(verifier_parameters))?;
             Ok(Receipt::Base(Box::new(receipt)))
         }
         SelectorType::SetVerifier => {
+            let verifier_parameters = selector.verifier_parameters_digest()?;
             let receipt = decode_set_inclusion_seal(&seal, claim, verifier_parameters)?;
             Ok(Receipt::SetInclusion(Box::new(receipt)))
         }

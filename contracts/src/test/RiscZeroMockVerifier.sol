@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,11 +39,11 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
     using OutputLib for Output;
 
     /// @notice A short key attached to the seal to select the correct verifier implementation.
-    /// @dev A selector is not intended to be collision resistant, in that it is possible to find
-    ///      two preimages that result in the same selector. This is acceptable since it's purpose
-    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
-    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
-    ///      function selectors.
+    /// @dev A selector is not intended to be collision resistant in the sense that it is possible
+    ///      to find two preimages that result in the same selector. This is acceptable since its
+    ///      purpose is to route a request among a set of trusted verifiers, and to make errors of
+    ///      sending a receipt to a mismatching verifier easier to debug. It is analogous to the
+    ///      ABI function selectors.
     bytes4 public immutable SELECTOR;
 
     constructor(bytes4 selector) {
@@ -62,7 +62,7 @@ contract RiscZeroMockVerifier is IRiscZeroVerifier {
 
     /// @notice internal implementation of verifyIntegrity, factored to avoid copying calldata bytes to memory.
     function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view {
-        // Check that the seal has a matching selector. Mismatch generally  indicates that the
+        // Check that the seal has a matching selector. Mismatch generally indicates that the
         // prover and this verifier are using different parameters, and so the verification
         // will not succeed.
         if (SELECTOR != bytes4(seal[:4])) {
