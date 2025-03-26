@@ -92,10 +92,9 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
 #[cfg(feature = "host")]
 mod host {
     use super::*;
-    use crate::beacon::host::create_beacon_commit;
     use crate::{
         beacon::{
-            host::{client::BeaconClient, create_eip4788_beacon_commit},
+            host::{client::BeaconClient, create_beacon_commit, create_eip4788_beacon_commit},
             BeaconBlockId,
         },
         ethereum::EthBlockHeader,

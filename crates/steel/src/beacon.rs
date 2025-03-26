@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //! Types related to commitments to the beacon block root.
-
 use crate::{
     merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
 };
@@ -206,7 +205,7 @@ pub(crate) mod host {
         }
 
         /// Wrapper returned by the API calls.
-        #[derive(Debug, Serialize, Deserialize)]
+        #[derive(Serialize, Deserialize)]
         struct Response<T> {
             data: T,
             #[serde(flatten)]
@@ -368,16 +367,19 @@ pub(crate) mod host {
         P: Provider<Ethereum>,
         H: EvmBlockHeader,
     {
+        // query the beacon block corresponding to the given execution header
         let (beacon_root, beacon_header) = {
+            // first, retrieve the corresponding full execution header
             let execution_header = rpc_provider
                 .get_block_by_hash(header.seal(), BlockTransactionsKind::Hashes)
                 .await
                 .context("eth_getBlockByHash failed")?
-                .unwrap()
+                .with_context(|| format!("block {} not found", header.seal()))?
                 .header;
             let parent_root = execution_header
                 .parent_beacon_block_root
                 .context("parent_beacon_block_root missing in execution header")?;
+            // then, retrieve the beacon header that contains the same parent root
             let response = beacon_client
                 .get_header_for_parent_root(parent_root)
                 .await

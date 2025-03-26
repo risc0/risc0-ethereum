@@ -239,12 +239,15 @@ pub struct History {
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
-    /// Creates a consensus commitment instead of a beacon commitment that can be verified using the
-    /// EIP-4788 beacon root contract.
+    /// Configures the environment builder to generate consensus commitments.
     ///
-    /// In a plain consensus commitment, the beacon block root is indexed by the slot. This makes it
-    /// possible to verify the steel commitment when access to the state of the beacon root chain is
-    /// available, such as when using a light client.
+    /// A consensus commitment contains the beacon block root indexed directly by its slot number.
+    /// This is in contrast to the default mechanism, which relies on timestamps for lookups, for
+    /// verification using the EIP-4788 beacon root contract deployed at the execution layer.
+    ///
+    /// The use of slot-based indexing is particularly beneficial for verification methods that have
+    /// direct access to the state of the beacon chain, such as systems using beacon light clients.
+    /// This allows the commitment to be verified directly against the state of the consensus layer.
     ///
     /// # Example
     /// ```rust,no_run
@@ -257,7 +260,11 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
     /// let builder = EthEvmEnv::builder()
     ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
     ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
+    ///     // Configure the builder to use slot-indexed consensus commitments.
     ///     .consensus_commitment();
+    ///
+    /// // The resulting 'env' will be configured to generate a consensus commitment
+    /// // (beacon root indexed by slot) when processing blocks or state.
     /// let env = builder.build().await?;
     /// # Ok(())
     /// # }
@@ -367,8 +374,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
 }
 
 impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
-    /// Creates a consensus commitment instead of a beacon commitment that can be verified using the
-    /// EIP-4788 beacon root contract.
+    /// Configures the environment builder to generate consensus commitments.
     ///
     /// See [EvmEnvBuilder<P, EthBlockHeader, Beacon>::consensus_commitment] for more info.
     pub fn consensus_commitment(mut self) -> Self {
