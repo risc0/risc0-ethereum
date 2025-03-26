@@ -341,7 +341,7 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
+    #[ignore = "queries actual RPC nodes"]
     async fn build_op_block_env() {
         let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
         // the builder should be cloneable
