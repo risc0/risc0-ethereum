@@ -7,7 +7,6 @@ edition = "2021"
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
-bytemuck_derive = { workspace = true }
 clap = { workspace = true }
 events-methods = { workspace = true }
 log = { workspace = true }

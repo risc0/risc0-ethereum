@@ -20,7 +20,6 @@ tokio = { version = "1.39", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5" }
 log = { version = "0.4" }
-bytemuck_derive = { version = "=1.8.1" }
 
 # Always optimize; building and running the guest takes much longer without optimization.
 [profile.dev]
