@@ -106,9 +106,9 @@ contract RiscZeroSetVerifierTest is Test {
         RiscZeroReceipt memory receipt = mockProveRoot(root);
 
         // Check that submitRoot initially passes.
-        uint256 snapshot = vm.snapshotState();
+        uint256 snapshot = vm.snapshot();
         setVerifier.submitMerkleRoot(root, receipt.seal);
-        vm.revertToState(snapshot);
+        vm.revertTo(snapshot);
 
         bytes memory revertReason = bytes("mock verification failure");
         vm.mockCallRevert(address(verifier), abi.encodePacked(IRiscZeroVerifier.verify.selector), revertReason);
@@ -128,9 +128,9 @@ contract RiscZeroSetVerifierTest is Test {
 
         // Check that submitRoot initially passes.
         bytes memory seal = setVerifier.encodeSeal(proofs[1], receipt.seal);
-        uint256 snapshot = vm.snapshotState();
+        uint256 snapshot = vm.snapshot();
         setVerifier.verifyIntegrity(RiscZeroReceipt({seal: seal, claimDigest: claimDigests[1]}));
-        vm.revertToState(snapshot);
+        vm.revertTo(snapshot);
 
         bytes memory revertReason = bytes("mock verification failure");
         vm.mockCallRevert(address(verifier), abi.encodePacked(IRiscZeroVerifier.verify.selector), revertReason);
@@ -150,10 +150,10 @@ contract RiscZeroSetVerifierTest is Test {
 
         // Check that submitRoot initially passes.
         bytes memory seal = setVerifier.encodeSeal(proofs[1]);
-        uint256 snapshot = vm.snapshotState();
+        uint256 snapshot = vm.snapshot();
         setVerifier.submitMerkleRoot(root, receipt.seal);
         setVerifier.verifyIntegrity(RiscZeroReceipt({seal: seal, claimDigest: claimDigests[1]}));
-        vm.revertToState(snapshot);
+        vm.revertTo(snapshot);
 
         // Run it again, skipping the step to submit the root.
         vm.expectRevert();

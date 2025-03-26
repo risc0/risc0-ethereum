@@ -164,11 +164,11 @@ contract RiscZeroManagementScript is Script {
     function simulate(address dest, bytes memory data) internal {
         console2.log("Simulating call to", dest);
         console2.logBytes(data);
-        uint256 snapshot = vm.snapshotState();
+        uint256 snapshot = vm.snapshot();
         vm.prank(address(timelockController()));
         (bool success,) = dest.call(data);
         require(success, "simulation of transaction to schedule failed");
-        vm.revertToState(snapshot);
+        vm.revertTo(snapshot);
         console2.log("Simulation successful");
     }
 }
