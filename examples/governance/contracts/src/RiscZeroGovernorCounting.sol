@@ -109,7 +109,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
     /**
      * @dev See {Governor-_countVote}. In this module, the support follows the `VoteType` enum (from Governor Bravo).
      */
-    function _countVote(uint256, address, uint8, uint256, bytes memory) internal pure override {
+    function _countVote(uint256, address, uint8, uint256, bytes memory) internal pure override returns (uint256) {
         revert("_countVote is not supported");
     }
 
