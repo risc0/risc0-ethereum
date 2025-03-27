@@ -25,19 +25,19 @@ risc0-zkp = { version = "2.0", default-features = false }
 risc0-zkvm = { version = "2.0", default-features = false }
 
 # Alloy guest dependencies
-alloy-consensus = { version = "0.11" }
-alloy-eips = { version = "0.11" }
+alloy-consensus = { version = "0.12" }
+alloy-eips = { version = "0.12" }
 alloy-rlp = { version = "0.3.8" }
 alloy-primitives = { version = "0.8.18" }
-alloy-rpc-types = { version = "0.11" }
+alloy-rpc-types = { version = "0.12" }
 alloy-sol-types = { version = "0.8.18" }
 
 # OP Steel
-op-alloy-consensus = { version = ">=0.10.0, <0.10.7" }
-op-alloy-network = { version = ">=0.10.0, <0.10.7" }
+op-alloy-consensus = { version = "0.11" }
+op-alloy-network = { version = "0.11" }
 
 # Alloy host dependencies
-alloy = { version = "0.11" }
+alloy = { version = "0.12" }
 alloy-trie = { version = "0.7.7" }
 
 # Beacon chain support

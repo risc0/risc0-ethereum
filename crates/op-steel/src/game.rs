@@ -74,7 +74,7 @@ impl BlockHeaderCommit<OpBlockHeader> for DisputeGameCommit {
 pub mod host {
     use super::*;
     use alloy::{
-        network::{primitives::BlockTransactionsKind, Ethereum},
+        network::Ethereum,
         providers::Provider,
         rpc::types::state::{AccountOverride, StateOverride},
     };
@@ -180,7 +180,8 @@ pub mod host {
             P2: Provider<Optimism>,
         {
             let block_response = provider
-                .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
+                .get_block_by_number(block_number.into())
+                .hashes()
                 .await
                 .context("eth_getBlockByNumber failed")?;
             let block =
@@ -261,7 +262,7 @@ pub mod host {
                     let index = finder
                         .findFinalizedIndex(*self.0.address())
                         .call()
-                        .overrides(&overrides)
+                        .overrides(overrides)
                         .await?
                         ._0;
                     // get the actual game of this index
