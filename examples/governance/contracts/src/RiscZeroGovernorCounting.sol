@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ pragma solidity ^0.8.9;
 import {Governor} from "openzeppelin/contracts/governance/Governor.sol";
 
 /**
- * @dev Implementation of of vote counting for the BonsaiGovernor, based on GovernorCountingSimple.
+ * @dev Implementation of vote counting for the BonsaiGovernor, based on GovernorCountingSimple.
  */
 abstract contract RiscZeroGovernorCounting is Governor {
     /// @notice Emitted when a ballot is committed to the ballot box.
@@ -109,7 +109,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
     /**
      * @dev See {Governor-_countVote}. In this module, the support follows the `VoteType` enum (from Governor Bravo).
      */
-    function _countVote(uint256, address, uint8, uint256, bytes memory) internal pure override {
+    function _countVote(uint256, address, uint8, uint256, bytes memory) internal pure override returns (uint256) {
         revert("_countVote is not supported");
     }
 
@@ -119,7 +119,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
 
         (bytes32 r, bytes32 s, uint8 v) = abi.decode(signature, (bytes32, bytes32, uint8));
 
-        // Hash into the ballot bx the 68-byte encoded ballot with signature.
+        // Hash into the ballot box the 68-byte encoded ballot with signature.
         // NOTE: Fields are aligned with 4 and 32 bytes boundaries.
         bytes memory encoded = abi.encodePacked(uint16(1), support, v, r, s, sigDigest);
 
@@ -131,7 +131,7 @@ abstract contract RiscZeroGovernorCounting is Governor {
     function _commitVote(uint256 proposalId, uint8 support, address account) internal {
         ProposalVote storage proposalVote = _proposalVotes[proposalId];
 
-        // Hash into the ballot bx the 24-byte encoded ballot without a signature.
+        // Hash into the ballot box the 24-byte encoded ballot without a signature.
         bytes memory encoded = abi.encodePacked(uint16(0), support, uint8(0), account);
 
         emit CommittedBallot(proposalId, encoded);

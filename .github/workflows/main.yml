@@ -16,7 +16,7 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: 1.81.0
+  RISC0_TOOLCHAIN_VERSION: 1.85.0
   RISC0_MONOREPO_REF: "main"
   # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.
   CARGO_LOCKED: ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
@@ -211,6 +211,8 @@ jobs:
         run: ../.github/scripts/forge-test.sh
         working-directory: examples
       - name: cargo run -F verify all examples
+        # Run the verification only if the PR is not from a fork.
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: ../.github/scripts/run-verify.sh
         working-directory: examples
         env:

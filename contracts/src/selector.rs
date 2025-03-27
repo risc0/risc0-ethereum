@@ -39,9 +39,10 @@ pub enum SelectorType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Selector {
-    FakeReceipt = 0x00000000,
+    FakeReceipt = 0xFFFFFFFF,
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
+    Groth16V2_0 = 0x9f39696c,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
 }
@@ -57,9 +58,10 @@ impl TryFrom<u32> for Selector {
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
-            0x00000000 => Ok(Selector::FakeReceipt),
+            0xFFFFFFFF => Ok(Selector::FakeReceipt),
             0x50bd1769 => Ok(Selector::Groth16V1_1),
             0xc101b42b => Ok(Selector::Groth16V1_2),
+            0x9f39696c => Ok(Selector::Groth16V2_0),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             _ => Err(SelectorError::UnsupportedSelector),
@@ -81,6 +83,10 @@ impl Selector {
                 "c101b42bcacd62e35222b1207223250814d05dd41d41f8cadc1f16f86707ae15",
             )
             .unwrap()),
+            Selector::Groth16V2_0 => Ok(Digest::from_hex(
+                "9f39696cb3ae9d6038d6b7a55c09017f0cf35e226ad7582b82dbabb0dae53385",
+            )
+            .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
                 "bfca9ccb59eb38b8c78ddc399a734d8e0e84e8028b7d616fa54fe707a1ff1b3b",
             )
@@ -95,7 +101,9 @@ impl Selector {
     pub fn get_type(self) -> SelectorType {
         match self {
             Selector::FakeReceipt => SelectorType::FakeReceipt,
-            Selector::Groth16V1_1 | Selector::Groth16V1_2 => SelectorType::Groth16,
+            Selector::Groth16V1_1 | Selector::Groth16V1_2 | Selector::Groth16V2_0 => {
+                SelectorType::Groth16
+            }
             Selector::SetVerifierV0_1 | Selector::SetVerifierV0_2 => SelectorType::SetVerifier,
         }
     }
