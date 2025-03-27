@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
 
     let mut env = EthEvmEnv::builder()
         .rpc(args.l1_rpc_url)
-        .block_number_or_tag(BlockNumberOrTag::Safe)
+        .block_number_or_tag(BlockNumberOrTag::Finalized)
         .beacon_api(args.beacon_api_url)
         .build()
         .await?;
