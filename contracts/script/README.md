@@ -258,7 +258,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
    ```sh
    cargo risczero --version # First, check you have the expected version of cargo-risczero installed
-   cargo risczero build --manifest-path aggregation/guest/set-builder/Cargo.toml
+   cargo risczero build --manifest-path crates/aggregation/guest/set-builder/Cargo.toml
    ```
 
    This will output the image ID and file location.
