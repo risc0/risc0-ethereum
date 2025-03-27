@@ -19,7 +19,8 @@ use crate::{
     config::ChainSpec,
     ethereum::{EthBlockHeader, EthEvmEnv},
     history::HistoryCommit,
-    BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
+    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv,
+    EvmInput,
 };
 use alloy::{
     eips::{
@@ -336,8 +337,13 @@ where
         note = "use `EvmEnv::builder().beacon_api()` instead"
     )]
     pub async fn into_beacon_input(self, url: Url) -> Result<EvmInput<EthBlockHeader>> {
-        let commit =
-            BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
+        let commit = BeaconCommit::from_header(
+            self.header(),
+            CommitmentVersion::Beacon,
+            self.db().inner().provider(),
+            url,
+        )
+        .await?;
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))
