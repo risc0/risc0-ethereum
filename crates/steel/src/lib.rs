@@ -94,6 +94,26 @@ impl<H: EvmBlockHeader> EvmInput<H> {
             EvmInput::History(input) => input.into_env(),
         }
     }
+
+    /// Returns the beacon block root at the height/slot the input was created
+    ///
+    /// This can only be trusted after the input has been verified by calling `input.into_env()`
+    /// Note there is only an associated beacon block root for Beacon and History inputs.
+    pub fn beacon_block_root(&self) -> Option<B256> {
+        match self {
+            EvmInput::Block(_) => None,
+            EvmInput::Beacon(input) => {
+                let leaf = input.input.block_hash();
+                // safe to unwrap as long as commit is internally consistent
+                Some(input.commit.process_proof(leaf).unwrap())
+            }
+            EvmInput::History(input) => {
+                let leaf = input.input.block_hash();
+                // safe to unwrap as long as commit is internally consistent
+                Some(input.commit.evm_commit.process_proof(leaf).unwrap())
+            }
+        }
+    }
 }
 
 /// A trait linking the block header to a commitment.

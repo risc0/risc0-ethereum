@@ -34,7 +34,7 @@ pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct HistoryCommit {
     /// Commit of the Steel EVM execution block hash to its beacon block hash.
-    evm_commit: BeaconCommit,
+    pub(crate) evm_commit: BeaconCommit,
     /// Iterative commits for verifying `evm_commit` as an ancestor of some valid Beacon block.
     state_commits: Vec<StateCommit>,
 }
