@@ -117,7 +117,7 @@ impl<H: EvmBlockHeader> BlockInput<H> {
         EvmEnv::new(db, header, commit)
     }
 
-    pub fn block_hash(&self) -> B256 {
+    pub(crate) fn block_hash(&self) -> B256 {
         self.header.seal_ref_slow().seal()
     }
 }
