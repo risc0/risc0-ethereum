@@ -413,6 +413,32 @@ async fn corrupt_beacon_proof_length() {
     mock_usdt_guest(from_value(input_value).unwrap());
 }
 
+#[test(tokio::test)]
+#[should_panic(expected = "Incorrect beacon block root")]
+async fn corrupt_beacon_block_root_calculation() {
+    let input = load_or_create("testdata/beacon_input.json", || {
+        Box::pin(rpc_usdt_beacon_input())
+    })
+    .await
+    .unwrap();
+
+    let original_beacon_block_root = input.beacon_block_root().unwrap();
+
+    // get the JSON representation of the block header for the state
+    let mut input_value = to_value(&input).unwrap();
+    let proof_value = &mut input_value["Beacon"]["commit"]["proof"];
+
+    // corrupt the first element in the Merkle path to something non-zero
+    proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
+
+    let input: EthEvmInput = from_value(input_value).unwrap();
+    assert_eq!(
+        input.beacon_block_root(),
+        Some(original_beacon_block_root),
+        "Incorrect beacon block root"
+    );
+}
+
 #[cfg(feature = "unstable-history")]
 mod history {
     use super::*;
@@ -550,5 +576,31 @@ mod history {
 
         // converting this into an environment should panic
         mock_usdt_guest(from_value(input_value).unwrap());
+    }
+
+    #[test(tokio::test)]
+    #[should_panic(expected = "Incorrect beacon block root")]
+    async fn corrupt_beacon_block_root_calculation() {
+        let input = load_or_create("testdata/history_input.json", || {
+            Box::pin(rpc_usdt_beacon_input())
+        })
+        .await
+        .unwrap();
+
+        let original_beacon_block_root = input.beacon_block_root().unwrap();
+
+        // get the JSON representation of the block header for the state
+        let mut input_value = to_value(&input).unwrap();
+        let proof_value = &mut input_value["History"]["commit"]["evm_commit"]["proof"];
+
+        // corrupt the first element in the Merkle path to something non-zero
+        proof_value[0] = to_value(B256::with_last_byte(0x01)).unwrap();
+
+        let input: EthEvmInput = from_value(input_value).unwrap();
+        assert_eq!(
+            input.beacon_block_root(),
+            Some(original_beacon_block_root),
+            "Incorrect beacon block root"
+        );
     }
 }
