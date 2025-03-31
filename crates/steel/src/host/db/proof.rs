@@ -16,7 +16,7 @@ use crate::{host::db::ProviderDb, mpt::EMPTY_ROOT_HASH, MerkleTrie, StateAccount
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
-    network::{primitives::BlockTransactionsKind, BlockResponse, Network},
+    network::{BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
 };
@@ -152,7 +152,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             let provider = self.inner.provider();
             for number in (block_hash_min_number..block_number).rev() {
                 let rpc_block = provider
-                    .get_block_by_number(number.into(), BlockTransactionsKind::Hashes)
+                    .get_block_by_number(number.into())
                     .await
                     .context("eth_getBlockByNumber failed")?
                     .with_context(|| format!("block {} not found", number))?;
@@ -179,7 +179,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             let block = self
                 .inner
                 .provider()
-                .get_block_by_hash(hash, BlockTransactionsKind::Hashes)
+                .get_block_by_hash(hash)
                 .await
                 .context("eth_getBlockByHash failed")?
                 .with_context(|| format!("block {} not found", hash))?;
@@ -255,7 +255,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
         let block_hash = self.inner.block();
 
         let block = provider
-            .get_block_by_hash(block_hash, BlockTransactionsKind::Hashes)
+            .get_block_by_hash(block_hash)
             .await
             .context("eth_getBlockByHash failed")?
             .with_context(|| format!("block {} not found", block_hash))?;

@@ -13,10 +13,7 @@
 // limitations under the License.
 
 use alloy::{
-    network::{
-        primitives::{BlockTransactionsKind, HeaderResponse},
-        BlockResponse, Network,
-    },
+    network::{primitives::HeaderResponse, BlockResponse, Network},
     providers::Provider,
     rpc::types::EIP1186AccountProofResponse,
     transports::TransportError,
@@ -220,7 +217,8 @@ impl<N: Network, P: Provider<N>> RevmDatabase for ProviderDb<N, P> {
             .handle
             .block_on(
                 self.provider
-                    .get_block_by_number(number.into(), BlockTransactionsKind::Hashes),
+                    .get_block_by_number(number.into())
+                    .into_future(),
             )
             .map_err(|err| Error::Rpc("eth_getBlockByNumber", err))?;
         let block = block_response.ok_or(Error::BlockNotFound)?;
