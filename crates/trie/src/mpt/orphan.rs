@@ -110,20 +110,30 @@ impl<M: Memoization + Clone> Node<M> {
             }
             Node::Leaf(prefix, value, _) => {
                 // get the unmatched part of the Leaf-prefix
-                let (_, unmatched, _) = NibbleSlice::from(prefix).split_common_prefix(unmatched);
+                let (common, unmatched, _) =
+                    NibbleSlice::from(prefix).split_common_prefix(unmatched);
                 // split the first nibble which used to belong to the Branch
-                let (_, suffix) = unmatched.split_first().expect("empty unmatched key");
+                let (idx, suffix) = unmatched.split_first().expect("empty unmatched key");
+                // this can only be an orphan, if it is currently a Digest child of a Branch
+                if !self.is_branch_with_digest(&matched.join(common), idx) {
+                    return Ok(());
+                }
 
-                // any potential orphan must be a Leaf with the suffix as a prefix
+                // any orphan must be a Leaf with the suffix as a prefix
                 let sibling = Node::Leaf(suffix.into(), value.clone(), M::default());
                 let rlp = sibling.rlp_encoded();
                 self.resolve_digests(&B256Map::from_iter([(keccak256(&rlp), rlp)])).unwrap();
             }
             Node::Extension(prefix, child, _) => {
                 // get the unmatched part of the Extension-prefix
-                let (_, unmatched, _) = NibbleSlice::from(prefix).split_common_prefix(unmatched);
+                let (common, unmatched, _) =
+                    NibbleSlice::from(prefix).split_common_prefix(unmatched);
                 // split the first nibble which used to belong to the Branch
-                let (_, suffix) = unmatched.split_first().expect("empty unmatched key");
+                let (idx, suffix) = unmatched.split_first().expect("empty unmatched key");
+                // this can only be an orphan, if it is currently a Digest child of a Branch
+                if !self.is_branch_with_digest(&matched.join(common), idx) {
+                    return Ok(());
+                }
 
                 // Extensions cannot have an empty prefix. This means that if the suffix is empty,
                 // the orphan is a Branch, and because of the removal, its parent Branch has been
@@ -195,6 +205,18 @@ impl<M: Memoization + Clone> Node<M> {
             None => true,                                 // contains the prefix as a key
             Some((Node::Digest(_), _)) => false,          // prefix not resolved
             Some((_, unmatched)) => unmatched.is_empty(), // prefix contained or not
+        }
+    }
+
+    /// Returns whether the node at key is a Branch which has a Digest child at idx.
+    fn is_branch_with_digest<'a>(&'a self, key: impl Into<NibbleSlice<'a>>, idx: u8) -> bool {
+        match self.diverging(key.into()) {
+            // match only if, the node found is a `Node::Branch` and the *entire* key was consumed
+            Some((Node::Branch(children, ..), unmatched)) if unmatched.is_empty() => {
+                // if all the above conditions are met, check the specific child
+                matches!(children.get(idx), Some(Node::Digest(_)))
+            }
+            _ => false,
         }
     }
 }
