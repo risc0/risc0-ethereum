@@ -273,16 +273,21 @@ mod private {
 pub use private::Commitment;
 
 /// Version of a [`Commitment`].
+///
+/// The version numbers are assigned as follows:
+/// - **0**: Commitment to an execution block.
+/// - **1**: Commitment to a beacon chain block root indexed by the EIP-4788 child timestamp.
+/// - **2**: Commitment to a beacon chain block root indexed by its slot (consensus commitment).
+#[non_exhaustive]
 #[repr(u16)]
-#[derive(Clone, Debug, PartialEq, Eq)]
-
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CommitmentVersion {
-    /// Commitment to an execution block.
-    Block,
-    /// Commitment to a beacon chain block root indexed by the EIP-4788 child timestamp.
-    Beacon,
-    /// Commitment to a beacon chain block root indexed by its slot.
-    Consensus,
+    /// Version 0: Commitment to an execution block indexed by its block number.
+    Block = 0,
+    /// Version 1: Commitment to a beacon block root indexed by the EIP-4788 child timestamp.
+    Beacon = 1,
+    /// Version 2: Commitment to a beacon chain root indexed by its slot.
+    Consensus = 2,
 }
 
 impl Commitment {
