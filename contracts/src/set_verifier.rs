@@ -232,7 +232,7 @@ where
             .set_inclusion_receipt()
             .ok_or_else(|| anyhow::anyhow!("Seal is not a SetInclusionReceipt"))?;
 
-        let root = merkle_path_root(&claim.digest(), &set_inclusion_receipt.merkle_path);
+        let root = merkle_path_root(claim.digest(), &set_inclusion_receipt.merkle_path);
         let root_seal = self
             .fetch_verified_root_seal(<[u8; 32]>::from(root).into())
             .await?;
