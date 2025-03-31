@@ -35,6 +35,9 @@ library Steel {
     /// @notice The Commitment is too old and can no longer be validated.
     error CommitmentTooOld();
 
+    /// @notice The consensus slot (version 2) commitment is not supported.
+    error ConsensusSlotCommitmentNotSupported();
+
     /// @notice Validates if the provided Commitment matches the block hash of the given block number.
     /// @param commitment The Commitment struct to validate.
     /// @return True if the commitment's block hash matches the block hash of the block number, false otherwise.
@@ -44,6 +47,9 @@ library Steel {
             return validateBlockCommitment(claimID, commitment.digest);
         } else if (version == 1) {
             return validateBeaconCommitment(claimID, commitment.digest);
+        } else if (version == 2) {
+            // Stateless SteelVerifier does not support consensus slot commitments.
+            revert ConsensusSlotCommitmentNotSupported();
         } else {
             revert InvalidCommitmentVersion();
         }
