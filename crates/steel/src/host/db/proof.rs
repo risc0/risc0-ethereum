@@ -129,6 +129,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
     /// Returns the StateAccount information for the given address.
     pub(crate) async fn state_account(&mut self, address: Address) -> Result<StateAccount> {
         log::trace!("ACCOUNT: address={}", address);
+        self.accounts.entry(address).or_default();
 
         if !self.proofs.contains_key(&address) {
             let proof = self.get_proof(address, vec![]).await?;
