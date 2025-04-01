@@ -21,6 +21,66 @@ A powerful library for querying and generating verifiable proofs over Ethereum o
 
 You can install [Steel] with `cargo add risc0-steel`, check out the examples in the [examples directory].
 
+## Examples
+
+Several example applications showcasing different use cases are provided in the [examples directory].
+
+### ERC20 Example
+
+Here's an example using Steel to verify the balance of an ERC20 token:
+
+```rust
+/// Specify the function to call using the `sol!` macro.
+sol! {
+    /// ERC-20 balance function signature.
+    interface IERC20 {
+        function balanceOf(address account) external view returns (uint);
+    }
+}
+
+/// Function to call, implements the `SolCall` trait.
+const CALL: IERC20::balanceOfCall = IERC20::balanceOfCall {
+    account: address!("9737100D2F42a196DE56ED0d1f6fF598a250E7E4"),
+};
+
+/// Address of the deployed contract to call the function on (USDT contract on Sepolia).
+const CONTRACT: Address = address!("aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0");
+/// Address of the caller.
+const CALLER: Address = address!("f08A50178dfcDe18524640EA6618a1f965821715");
+
+fn main() {
+    // Read the input from the guest environment.
+    let input: EthEvmInput = env::read();
+
+    // Converts the input into a `EvmEnv` for execution.
+    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    // Commit the block hash and number
+    env::commit_slice(&env.commitment().abi_encode());
+
+    // Execute the view call
+    let contract = Contract::new(CONTRACT, &env);
+    let returns = contract.call_builder(&CALL).from(CALLER).call();
+    println!("View call result: {}", returns._0);
+}
+```
+
+On the host side:
+
+```rust
+// Create an EVM environment from an RPC endpoint
+let mut env = EthEvmEnv::from_rpc(args.rpc_url, BlockNumberOrTag::Latest).await?;
+env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+
+// Preflight the call to prepare the input
+let mut contract = Contract::preflight(CONTRACT, &mut env);
+let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+
+// Construct the input from the environment
+let input = env.into_input().await?;
+```
+
+For more examples, check the [examples directory].
+
 [RISC Zero]: https://github.com/risc0/risc0
 [Ethereum]: https://ethereum.org/
 [contracts]: ./contracts
