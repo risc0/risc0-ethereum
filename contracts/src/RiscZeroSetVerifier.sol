@@ -49,6 +49,9 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     /// Semantic version of the RISC Zero Set Verifier.
     string public constant VERSION = "0.4.0";
 
+    /// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
+    bytes32 internal constant LEAF_TAG = bytes32("_____risc0_aggregation::LEAF_TAG");
+
     IRiscZeroVerifier public immutable VERIFIER;
 
     /// @notice A short key attached to the seal to select the correct verifier implementation.
@@ -104,11 +107,14 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
             setVerifierSeal = abi.decode(seal[4:], (Seal));
         }
 
+        // Hash the claim digest, prepending a leaf tag as a domain separator.
+        bytes32 leaf = keccak256(abi.encodePacked(LEAF_TAG, claimDigest));
+
         // Compute the root and verify it against the stored Merkle roots if a
         // root seal was not provided, or validate the root seal.
         // NOTE: If an invalid root seal was provided, the verify will fail
         // even if the root was already verified earlier and stored in state.
-        bytes32 root = MerkleProof.processProof(setVerifierSeal.path, claimDigest);
+        bytes32 root = MerkleProof.processProof(setVerifierSeal.path, leaf);
         if (setVerifierSeal.rootSeal.length > 0) {
             VERIFIER.verify(setVerifierSeal.rootSeal, IMAGE_ID, sha256(_encodeJournal(root)));
         } else if (!merkleRoots[root]) {
