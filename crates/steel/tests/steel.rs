@@ -25,8 +25,7 @@ use alloy_primitives::{address, b256, bytes, hex, keccak256, Address, Bytes, U25
 use alloy_sol_types::SolCall;
 use alloy_trie::EMPTY_ROOT_HASH;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
-use risc0_steel::account::AccountInfo;
-use risc0_steel::{ethereum::EthEvmEnv, Account, Contract};
+use risc0_steel::{account::AccountInfo, ethereum::EthEvmEnv, Account, Contract};
 use sha2::{Digest, Sha256};
 use test_log::test;
 
