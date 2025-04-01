@@ -16,7 +16,6 @@
 
 use std::fmt::Debug;
 
-use alloy::network::Ethereum;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
@@ -139,7 +138,7 @@ async fn test_provider() -> impl Provider + Clone {
 
 async fn account_query<P>(provider: P, address: Address, bytecode: bool) -> AccountInfo
 where
-    P: Provider<Ethereum> + 'static,
+    P: Provider + 'static,
 {
     let mut env = EthEvmEnv::builder()
         .provider(provider)
