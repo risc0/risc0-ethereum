@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import {ReceiptClaim, ReceiptClaimLib} from "../src/IRiscZeroVerifier.sol";
 import {Seal, RiscZeroSetVerifier} from "../src/RiscZeroSetVerifier.sol";
 
 library TestUtils {
+    /// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
+    ///
+    /// Copied from RiscZeroSetVerifier.sol, as this value is not part of the public interface.
+    bytes32 internal constant LEAF_TAG = bytes32("_____risc0_aggregation::LEAF_TAG");
+
     using ReceiptClaimLib for ReceiptClaim;
 
     struct Proof {
@@ -27,19 +32,23 @@ library TestUtils {
     }
 
     // Build the Merkle Tree and return the root and the entire tree structure
-    function computeMerkleTree(bytes32[] memory leaves) internal pure returns (bytes32 root, bytes32[][] memory tree) {
-        require(leaves.length > 0, "Leaves list is empty, cannot compute Merkle root");
+    function computeMerkleTree(bytes32[] memory values) internal pure returns (bytes32 root, bytes32[][] memory tree) {
+        require(values.length > 0, "Values list is empty, cannot compute Merkle root");
 
         // Calculate the height of the tree (number of levels)
-        uint256 numLevels = log2Ceil(leaves.length) + 1;
+        uint256 numLevels = log2Ceil(values.length) + 1;
 
         // Initialize the tree structure
         tree = new bytes32[][](numLevels);
-        tree[0] = leaves;
 
-        uint256 currentLevelSize = leaves.length;
+        // Hash the values with the leaf tag to form the leaf nodes.
+        tree[0] = new bytes32[](values.length);
+        for (uint256 i = 0; i < values.length; i++) {
+            tree[0][i] = hashLeaf(values[i]);
+        }
 
         // Build the tree level by level
+        uint256 currentLevelSize = values.length;
         for (uint256 level = 0; currentLevelSize > 1; level++) {
             uint256 nextLevelSize = (currentLevelSize + 1) / 2;
             tree[level + 1] = new bytes32[](nextLevelSize);
@@ -94,6 +103,10 @@ library TestUtils {
                 proofs[leafIndex].siblings[i] = tempSiblings[i];
             }
         }
+    }
+
+    function hashLeaf(bytes32 value) internal pure returns (bytes32 leaf) {
+        return keccak256(abi.encodePacked(LEAF_TAG, value));
     }
 
     function encodeSeal(RiscZeroSetVerifier setVerifier, TestUtils.Proof memory merkleProof, bytes memory rootSeal)
