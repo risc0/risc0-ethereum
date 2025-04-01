@@ -16,6 +16,7 @@
 
 use std::fmt::Debug;
 
+use alloy::network::Ethereum;
 use alloy::{
     providers::{ext::AnvilApi, Provider, ProviderBuilder},
     rpc::types::TransactionRequest,
@@ -25,6 +26,7 @@ use alloy_primitives::{address, b256, bytes, hex, keccak256, Address, Bytes, U25
 use alloy_sol_types::SolCall;
 use alloy_trie::EMPTY_ROOT_HASH;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
+use risc0_steel::account::AccountInfo;
 use risc0_steel::{ethereum::EthEvmEnv, Account, Contract};
 use sha2::{Digest, Sha256};
 use test_log::test;
@@ -135,6 +137,71 @@ async fn test_provider() -> impl Provider + Clone {
     provider
 }
 
+async fn account_query<P>(provider: P, address: Address, bytecode: bool) -> AccountInfo
+where
+    P: Provider<Ethereum> + 'static,
+{
+    let mut env = EthEvmEnv::builder()
+        .provider(provider)
+        .build()
+        .await
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let block_hash = env.header().seal();
+    let block_number = env.header().number;
+
+    let preflight_info = {
+        let account = Account::preflight(address, &mut env).bytecode(bytecode);
+        account.info().await.unwrap()
+    };
+
+    let input = env.into_input().await.unwrap();
+    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let commitment = env.commitment();
+    assert_eq!(commitment.digest, block_hash, "invalid commitment");
+    assert_eq!(
+        commitment.id,
+        U256::from(block_number),
+        "invalid commitment"
+    );
+
+    let info = {
+        let account = Account::new(address, &env).bytecode(bytecode);
+        account.info()
+    };
+    assert_eq!(info, preflight_info, "mismatch in preflight and execution");
+
+    info
+}
+
+#[test(tokio::test)]
+async fn account_info() {
+    let p = test_provider().await;
+    let address = STEEL_TEST_CONTRACT;
+    let info = account_query(p.clone(), address, false).await;
+
+    assert_eq!(info.nonce, p.get_transaction_count(address).await.unwrap());
+    assert_eq!(info.balance, p.get_balance(address).await.unwrap());
+    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
+    let code = p.get_code_at(address).await.unwrap();
+    assert_eq!(info.code_hash, keccak256(&code));
+    assert_eq!(info.code, None);
+}
+
+#[test(tokio::test)]
+async fn account_info_with_bytecode() {
+    let p = test_provider().await;
+    let address = STEEL_TEST_CONTRACT;
+    let info = account_query(p.clone(), address, true).await;
+
+    assert_eq!(info.nonce, p.get_transaction_count(address).await.unwrap());
+    assert_eq!(info.balance, p.get_balance(address).await.unwrap());
+    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
+    let code = p.get_code_at(address).await.unwrap();
+    assert_eq!(info.code_hash, keccak256(&code));
+    assert_eq!(info.code, Some(code));
+}
+
 #[cfg(feature = "unstable-event")]
 mod event {
     use super::*;
@@ -217,41 +284,6 @@ mod event {
         assert_eq!(logs, preflight_logs, "mismatch in preflight and execution");
         assert!(logs.is_empty());
     }
-}
-
-#[test(tokio::test)]
-async fn account_info() {
-    let provider = test_provider().await;
-    let mut env = EthEvmEnv::builder()
-        .provider(provider.clone())
-        .build()
-        .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
-    let address = STEEL_TEST_CONTRACT;
-    let preflight_info = {
-        let account = Account::preflight(address, &mut env);
-        account.bytecode(true).info().await.unwrap()
-    };
-
-    let input = env.into_input().await.unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
-
-    let info = {
-        let account = Account::new(address, &env);
-        account.bytecode(true).info()
-    };
-    assert_eq!(info, preflight_info, "mismatch in preflight and execution");
-
-    assert_eq!(
-        info.nonce,
-        provider.get_transaction_count(address).await.unwrap()
-    );
-    assert_eq!(info.balance, provider.get_balance(address).await.unwrap());
-    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
-    let code = info.code.unwrap();
-    assert_eq!(code, provider.get_code_at(address).await.unwrap());
-    assert_eq!(info.code_hash, keccak256(code));
 }
 
 #[test(tokio::test)]
