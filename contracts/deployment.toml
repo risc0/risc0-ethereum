@@ -107,6 +107,17 @@ set-builder-commit = "8eadd4812fe44ba266a0565725c4fa654e4770e5"
 set-builder-image-id = "8888bf20b2be0ca935e166325578c336cc16355f9b63e7e5279c71a0a97f4df9"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreih46jdbjosixps7l3obrmfh4xlusnunohva6pfhqqdcyobaac4w4a"
 
+[[chains.ethereum-sepolia.verifiers]]
+name = "RiscZeroSetVerifier"
+version = "0.5.0"
+selector = "0xf2e6e6dc"
+verifier = "0x02f4D3E76876E5262f8D07Bc2258caE593e95013"
+estop = "0xb1216C4ECA3E3D69f9542Ae9b20b03c69693CC80"
+# Build info for the set-builder guest
+set-builder-commit = "45a77235021f21ddc023d4655db0d6fd914de402"
+set-builder-image-id = "79fd473a707e7c064af3edabf63cad6c7ab9205766fd8d8160bdef97fdd15c74"
+set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreiggmfeaohdbdwmhhsferpnrrjrd37h43hgwmu6yobwcd3qaavut6q"
+
 ###
 
 [chains.ethereum-holesky]
