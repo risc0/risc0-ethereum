@@ -47,7 +47,7 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     using ReceiptClaimLib for ReceiptClaim;
 
     /// Semantic version of the RISC Zero Set Verifier.
-    string public constant VERSION = "0.4.0";
+    string public constant VERSION = "0.5.0";
 
     /// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
     bytes32 internal constant LEAF_TAG = bytes32("_____risc0_aggregation::LEAF_TAG");
