@@ -46,6 +46,7 @@ pub enum Selector {
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
     SetVerifierV0_4 = 0xf443ad7b,
+    SetVerifierV0_5 = 0xf2e6e6dc,
 }
 
 impl Display for Selector {
@@ -66,6 +67,7 @@ impl TryFrom<u32> for Selector {
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
+            0xf2e6e6dc => Ok(Selector::SetVerifierV0_5),
             _ => Err(SelectorError::UnsupportedSelector),
         }
     }
@@ -101,6 +103,10 @@ impl Selector {
                 "f443ad7bfe538ec90fa38498afd30b27b7d06336f20249b620a6d85ab3c615b6",
             )
             .unwrap()),
+            Selector::SetVerifierV0_5 => Ok(Digest::from_hex(
+                "f2e6e6dc660ed3ec9d8abb666cd481509c74990fc4d599f3f4a34b9df151f3fd",
+            )
+            .unwrap()),
         }
     }
 
@@ -110,9 +116,10 @@ impl Selector {
             Selector::Groth16V1_1 | Selector::Groth16V1_2 | Selector::Groth16V2_0 => {
                 SelectorType::Groth16
             }
-            Selector::SetVerifierV0_1 | Selector::SetVerifierV0_2 | Selector::SetVerifierV0_4 => {
-                SelectorType::SetVerifier
-            }
+            Selector::SetVerifierV0_1
+            | Selector::SetVerifierV0_2
+            | Selector::SetVerifierV0_4
+            | Selector::SetVerifierV0_5 => SelectorType::SetVerifier,
         }
     }
 
@@ -130,8 +137,8 @@ mod tests {
         Groth16ReceiptVerifierParameters,
     };
 
-    // SetBuilder image ID v0.4.0 (built using cargo risczero build v2.0.0)
-    const SET_BUILDER_ID: &str = "8888bf20b2be0ca935e166325578c336cc16355f9b63e7e5279c71a0a97f4df9";
+    // SetBuilder image ID v0.5.0 (built using cargo risczero build v2.0.1)
+    const SET_BUILDER_ID: &str = "79fd473a707e7c064af3edabf63cad6c7ab9205766fd8d8160bdef97fdd15c74";
 
     #[test]
     fn print_verifier_parameters() {
