@@ -114,7 +114,6 @@ version = "0.5.0"
 selector = "0xf2e6e6dc"
 verifier = "0x02f4D3E76876E5262f8D07Bc2258caE593e95013"
 estop = "0xb1216C4ECA3E3D69f9542Ae9b20b03c69693CC80"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest
 set-builder-commit = "45a77235021f21ddc023d4655db0d6fd914de402"
 set-builder-image-id = "79fd473a707e7c064af3edabf63cad6c7ab9205766fd8d8160bdef97fdd15c74"
