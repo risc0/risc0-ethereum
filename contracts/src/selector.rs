@@ -103,7 +103,7 @@ impl Selector {
                 "f443ad7bfe538ec90fa38498afd30b27b7d06336f20249b620a6d85ab3c615b6",
             )
             .unwrap()),
-            Selector::SetVerifierV0_4 => Ok(Digest::from_hex(
+            Selector::SetVerifierV0_5 => Ok(Digest::from_hex(
                 "f2e6e6dc660ed3ec9d8abb666cd481509c74990fc4d599f3f4a34b9df151f3fd",
             )
             .unwrap()),
