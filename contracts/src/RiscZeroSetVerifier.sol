@@ -50,7 +50,9 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     string public constant VERSION = "0.3.0-alpha.1";
 
     /// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
-    bytes32 internal constant LEAF_TAG = bytes32("_____risc0_aggregation::LEAF_TAG");
+    ///
+    /// NOTE: It is explicitly not 32 bytes to avoid any chance of collision with a node value.
+    bytes8 internal constant LEAF_TAG = bytes8("LEAF_TAG");
 
     IRiscZeroVerifier public immutable VERIFIER;
 
