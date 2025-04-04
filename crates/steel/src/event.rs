@@ -28,7 +28,7 @@ use std::marker::PhantomData;
 ///
 /// ### Filtering Capabilities
 /// This `Event` query builder is intentionally designed to mirror the structure and capabilities of
-/// the [`alloy_rpc_types::Filter`] type used in standard Ethereum RPC calls, adapted for the
+/// the [alloy_rpc_types::Filter] type used in standard Ethereum RPC calls, adapted for the
 /// constraints of the RISC Zero zkVM environment.
 ///
 /// You can filter events based on:
@@ -46,18 +46,18 @@ use std::marker::PhantomData;
 ///   - Wildcard (default): If `.topicX()` is not called or if an empty `Vec` is provided, it
 ///     matches *any* value for that topic position.
 ///
-/// Certain filtering options available in [`alloy_rpc_types::Filter`] are not applicable or are
+/// Certain filtering options available in [alloy_rpc_types::Filter] are not applicable or are
 /// fixed within the Steel environment:
 /// - **Block Specification:** The block context for the query is determined by the `EvmEnv`
 ///   (retrieved via `env.header()`) used to create the `Event` query. You cannot specify a block
 ///   range or a different block hash.
 /// - **Topic 0 (Event Signature):** This topic is automatically set based on the `SolEvent` type
-///   parameter (`S`) provided to [`Event::new`] or [`Event::preflight`] (using
+///   parameter (`S`) provided to [Event::new] or [Event::preflight] (using
 ///   `S::SIGNATURE_HASH`). It cannot be altered or set to a wildcard/list. Anonymous events (where
 ///   `S::ANONYMOUS` is true) are not supported.
 ///
 /// ### Usage
-/// The usage pattern mirrors other Steel interactions like [`Contract`]:
+/// The usage pattern mirrors other Steel interactions like [Contract]:
 /// - **Preflight calls on the Host:** To prepare the event query on the host environment and build
 /// the necessary proof, use [Event::preflight].
 /// - **Calls in the Guest:** To initialize the event query in the guest, use [Event::new].
