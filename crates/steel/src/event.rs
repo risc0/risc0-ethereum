@@ -16,8 +16,8 @@
 pub use alloy_rpc_types::{Topic, ValueOrArray};
 
 use crate::{state::WrapStateDb, EvmBlockHeader, EvmDatabase, GuestEvmEnv};
-use alloy_primitives::{Address, Log, Sealed, B256};
-use alloy_rpc_types::{Filter, FilterSet};
+use alloy_primitives::{Address, Log, Sealed};
+use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
 use std::marker::PhantomData;
 
@@ -175,25 +175,25 @@ impl<S, E> Event<S, E> {
     /// Sets the address to query with this filter.
     ///
     /// See [`Filter::address`].
-    pub fn address<A: Into<FilterSet<Address>>>(mut self, address: A) -> Self {
-        self.filter.address = address.into();
+    pub fn address<T: Into<ValueOrArray<Address>>>(mut self, address: T) -> Self {
+        self.filter.address = address.into().into();
         self
     }
 
     /// Sets the 1st indexed topic.
-    pub fn topic1<TO: Into<FilterSet<B256>>>(mut self, topic: TO) -> Self {
+    pub fn topic1<TO: Into<Topic>>(mut self, topic: TO) -> Self {
         self.filter.topics[1] = topic.into();
         self
     }
 
     /// Sets the 2nd indexed topic.
-    pub fn topic2<TO: Into<FilterSet<B256>>>(mut self, topic: TO) -> Self {
+    pub fn topic2<TO: Into<Topic>>(mut self, topic: TO) -> Self {
         self.filter.topics[2] = topic.into();
         self
     }
 
     /// Sets the 3rd indexed topic.
-    pub fn topic3<TO: Into<FilterSet<B256>>>(mut self, topic: TO) -> Self {
+    pub fn topic3<TO: Into<Topic>>(mut self, topic: TO) -> Self {
         self.filter.topics[3] = topic.into();
         self
     }
