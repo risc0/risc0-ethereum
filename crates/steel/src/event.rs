@@ -59,7 +59,7 @@ use std::marker::PhantomData;
 /// ### Usage
 /// The usage pattern mirrors other Steel interactions like [Contract]:
 /// - **Preflight calls on the Host:** To prepare the event query on the host environment and build
-/// the necessary proof, use [Event::preflight].
+///   the necessary proof, use [Event::preflight].
 /// - **Calls in the Guest:** To initialize the event query in the guest, use [Event::new].
 ///
 /// ### Examples
