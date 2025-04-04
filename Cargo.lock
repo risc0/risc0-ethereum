@@ -2777,7 +2777,7 @@ dependencies = [
 
 [[package]]
 name = "guest-set-builder"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "rand 0.9.0",
  "risc0-aggregation",
@@ -4726,7 +4726,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-aggregation"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "alloy-primitives 0.8.25",
  "alloy-sol-types",
@@ -4786,7 +4786,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4859,7 +4859,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "alloy",
  "alloy-primitives 0.8.25",
@@ -4895,7 +4895,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-forge-ffi"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "alloy",
  "anyhow",
@@ -4930,7 +4930,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-op-steel"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "alloy",
  "alloy-primitives 0.8.25",
@@ -4950,7 +4950,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "2.0.0-rc.6"
+version = "2.0.0-rc.7"
 dependencies = [
  "alloy",
  "alloy-consensus",
