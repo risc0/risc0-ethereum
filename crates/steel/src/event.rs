@@ -181,19 +181,19 @@ impl<S, E> Event<S, E> {
     }
 
     /// Sets the 1st indexed topic.
-    pub fn topic1<TO: Into<Topic>>(mut self, topic: TO) -> Self {
+    pub fn topic1<T: Into<Topic>>(mut self, topic: T) -> Self {
         self.filter.topics[1] = topic.into();
         self
     }
 
     /// Sets the 2nd indexed topic.
-    pub fn topic2<TO: Into<Topic>>(mut self, topic: TO) -> Self {
+    pub fn topic2<T: Into<Topic>>(mut self, topic: T) -> Self {
         self.filter.topics[2] = topic.into();
         self
     }
 
     /// Sets the 3rd indexed topic.
-    pub fn topic3<TO: Into<Topic>>(mut self, topic: TO) -> Self {
+    pub fn topic3<T: Into<Topic>>(mut self, topic: T) -> Self {
         self.filter.topics[3] = topic.into();
         self
     }
