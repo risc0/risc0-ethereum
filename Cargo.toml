@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/*", "crates/aggregation/guest", "crates/ffi/guests"]
 
 [workspace.package]
-version = "2.0.1"
+version = "2.0.2"
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://risczero.com/"
@@ -11,12 +11,12 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
-risc0-aggregation = { version = "0.5.0", default-features = false, path = "crates/aggregation" }
-risc0-build-ethereum = { version = "2.0.1", default-features = false, path = "build" }
-risc0-ethereum-contracts = { version = "2.0.1", default-features = false, path = "contracts" }
-risc0-forge-ffi = { version = "2.0.1", default-features = false, path = "crates/ffi" }
-risc0-op-steel = { version = "0.4.0", default-features = false, path = "crates/op-steel" }
-risc0-steel = { version = "2.0.0-rc.6", default-features = false, path = "crates/steel" }
+risc0-aggregation = { version = "0.6.0", default-features = false, path = "crates/aggregation" }
+risc0-build-ethereum = { version = "2.0.2", default-features = false, path = "build" }
+risc0-ethereum-contracts = { version = "2.0.2", default-features = false, path = "contracts" }
+risc0-forge-ffi = { version = "2.0.2", default-features = false, path = "crates/ffi" }
+risc0-op-steel = { version = "0.5.0", default-features = false, path = "crates/op-steel" }
+risc0-steel = { version = "2.0.0-rc.7", default-features = false, path = "crates/steel" }
 
 # risc0 monorepo dependencies.
 risc0-binfmt = { version = "2.0", default-features = false }
