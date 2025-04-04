@@ -27,7 +27,7 @@ security@risczero.com
 If the issue is sensitive, please encrypt your email using the provided GPG key:
 
 ```text
-----BEGIN PGP PUBLIC KEY BLOCK-----
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 mDMEZliTRxYJKwYBBAHaRw8BAQdAQgoOhjMWzZEPw+rXzQif8l3HVo64OaLv53rU
 CfRpc20KlJJU0MgWmVybyBTZWN1cml0eSA8c2VjdXJpdHlAcmlzY3plcm8uY29t
 PoiZBBMWCgBBFiEEO6xZqcHWQYsOpJDgdbABWzarPhwFAmZYk0cCGwMFCQWjmoAF
