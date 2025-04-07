@@ -9,7 +9,7 @@ echo "Loading environment variables from deployment_secrets.toml"
 if [ -z "$RPC_URL" ]; then
     echo -n 'RPC_URL from deployment_secrets.toml: ' > /dev/stderr
     export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" $CONTRACTS_DIR/deployment_secrets.toml)
-    [ -n "$ETHERSCAN_URL" ] || exit 1
+    [ -n "$RPC_URL" ] || exit 1
 else
     echo -n "RPC_URL from env $RPC_URL"
 fi
