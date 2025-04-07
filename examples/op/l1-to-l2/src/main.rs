@@ -17,8 +17,11 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use l1_to_l2_core::{CALL, CALLER, CONTRACT, IERC20};
 use l1_to_l2_methods::{L1_TO_L2_GUEST_ELF, L1_TO_L2_GUEST_ID};
-use risc0_op_steel::ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC};
-use risc0_op_steel::{host::BlockNumberOrTag, l1, Contract};
+use risc0_op_steel::{
+    ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+    host::BlockNumberOrTag,
+    l1, Contract,
+};
 use risc0_zkvm::{default_prover, Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
@@ -50,7 +53,7 @@ async fn main() -> Result<()> {
 
     let mut env = EthEvmEnv::builder()
         .rpc(args.l1_rpc_url)
-        .block_number_or_tag(BlockNumberOrTag::Safe)
+        .block_number_or_tag(BlockNumberOrTag::Finalized)
         .beacon_api(args.beacon_api_url)
         .build()
         .await?;

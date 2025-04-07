@@ -14,7 +14,6 @@
 
 use alloy::{
     eips::BlockId,
-    network::primitives::BlockTransactionsKind,
     providers::{Provider, ProviderBuilder},
     transports::TransportError,
 };
@@ -78,7 +77,8 @@ where
         .ok_or(Error::NoBlockForTimestamp(timestamp))?;
 
     let block_response = provider
-        .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
+        .get_block_by_number(block_number.into())
+        .hashes()
         .await?;
     let timestamp = block_response.unwrap().header.timestamp;
 

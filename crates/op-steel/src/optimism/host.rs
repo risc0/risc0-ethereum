@@ -30,7 +30,7 @@ use risc0_steel::{
         db::{ProofDb, ProviderDb},
         BlockNumberOrTag, EvmEnvBuilder, HostCommit,
     },
-    ComposeInput, EvmEnv, EvmInput,
+    BlockHeaderCommit, Commitment, ComposeInput, EvmEnv, EvmInput,
 };
 use std::{
     marker::PhantomData,
@@ -95,6 +95,19 @@ where
         };
 
         Ok(OpEvmInput::Block(input))
+    }
+}
+
+impl<P2, C> HostOpEvmEnv<P2, C>
+where
+    P2: Provider<Optimism>,
+    C: Clone + BlockHeaderCommit<OpBlockHeader>,
+{
+    /// Returns the [Commitment] used to validate the environment.
+    pub fn commitment(&self) -> Commitment {
+        self.commit
+            .clone()
+            .commit(self.inner.header(), self.inner.commitment().configID)
     }
 }
 
@@ -322,13 +335,34 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::OutputRootProof;
     use alloy_primitives::address;
+    use risc0_steel::Account;
     use test_log::test;
 
     const L1_URL: &str = "https://ethereum-rpc.publicnode.com";
     const L2_URL: &str = "https://optimism-rpc.publicnode.com";
 
     const OP_PORTAL_ADDRESS: Address = address!("bEb5Fc579115071764c7423A4f12eDde41f106Ed");
+
+    #[test(tokio::test)]
+    async fn clone_op_block_builder() {
+        let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
+        // the builder should be cloneable
+        let _ = builder.clone();
+    }
+
+    #[test(tokio::test)]
+    #[ignore = "queries actual RPC nodes"]
+    async fn build_op_block_env() {
+        let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
+        let mut env = builder.build().await.unwrap();
+        let _ = Account::preflight(Address::ZERO, &mut env).info().await;
+
+        let host_commit = env.commitment();
+        let input = env.into_input().await.unwrap();
+        assert_eq!(input.into_env().into_commitment(), host_commit);
+    }
 
     #[test(tokio::test)]
     async fn clone_op_dispute_game_builder() {
@@ -341,10 +375,28 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[ignore] // This queries actual RPC nodes, running only on demand.
-    async fn build_op_block_env() {
+    #[ignore = "queries actual RPC nodes"]
+    async fn build_op_dispute_game_env() {
         let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
-        // the builder should be cloneable
-        builder.clone().build().await.unwrap();
+        let env = builder.build().await.unwrap();
+        // mock an env with a dispute game commit, since building one requires an archive node
+        let block_hash = env.header().seal();
+        let mut env = HostOpEvmEnv {
+            inner: env.inner,
+            commit: DisputeGameCommit::new(
+                u64::MAX,
+                OutputRootProof {
+                    version: Default::default(),
+                    stateRoot: Default::default(),
+                    messagePasserStorageRoot: Default::default(),
+                    latestBlockhash: block_hash,
+                },
+            ),
+        };
+        let _ = Account::preflight(Address::ZERO, &mut env).info().await;
+
+        let host_commit = env.commitment();
+        let input = env.into_input().await.unwrap();
+        assert_eq!(input.into_env().into_commitment(), host_commit);
     }
 }
