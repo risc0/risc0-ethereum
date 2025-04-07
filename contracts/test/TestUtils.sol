@@ -23,7 +23,7 @@ library TestUtils {
     /// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
     ///
     /// Copied from RiscZeroSetVerifier.sol, as this value is not part of the public interface.
-    bytes32 internal constant LEAF_TAG = bytes32("_____risc0_aggregation::LEAF_TAG");
+    bytes8 internal constant LEAF_TAG = bytes8("LEAF_TAG");
 
     using ReceiptClaimLib for ReceiptClaim;
 

@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::primitives::{address, Address};
-use alloy::sol_types::SolCall;
+use alloy::{
+    primitives::{address, Address},
+    sol_types::SolCall,
+};
 use anyhow::{Context, Result};
 use clap::Parser;
 use l2_to_l1_core::{CALL, CALLER, CONTRACT, IERC20};
@@ -66,6 +68,7 @@ async fn main() -> Result<()> {
         CONTRACT,
         returns._0
     );
+    log::debug!("{:?}", env.commitment());
 
     let evm_input = env.into_input().await?;
 
