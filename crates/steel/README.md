@@ -8,7 +8,6 @@ Steel lets Solidity developers effortlessly scale their applications by moving c
 
 Steel pulls state from any EVM chain, performs verifiable computation across multiple blocks offchain, and generates concise execution proofs. Developers simply verify these proofs onchain to access boundless compute, without worrying about gas limits.
 
-> [!NOTE]
 > ** Example **
 >
 > A single Steel proof has verified a computation equivalent to 30 Ethereum blocks—saving 1.2 billion gas—generated for under $10 and verified onchain for under 300k gas.
