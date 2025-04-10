@@ -24,8 +24,8 @@ import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
+import {TestReceipt} from "../test/TestReceipt.sol";
 
-// TODO: Actually send a known good receipt to test each verifier implementation.
 // TODO: Check the image ID and ELF URL on the set verifier contract.
 
 /// Test designed to be run against a chain with an active deployment of the RISC Zero contracts.
@@ -152,6 +152,21 @@ contract DeploymentTest is Test {
 
             IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(address(verifierImpl));
             require(verifierConfig.selector == verifierSelectable.SELECTOR(), "selector mismatch");
+
+            // Check that the verifier works
+            // TODO: Keep a test receipt for each supported verifier for regression testing.
+            // Ensure that stopped and unroutable verifiers _cannot_ be used to verify a receipt.
+            bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
+            if (verifierConfig.selector == selector) {
+                console2.log(
+                    "Running verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
+                );
+                verifierImpl.verify(TestReceipt.SEAL, TestReceipt.IMAGE_ID, sha256(TestReceipt.JOURNAL));
+            } else {
+                console2.log(
+                    "Skipping verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
+                );
+            }
         }
     }
 }
