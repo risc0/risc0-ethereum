@@ -20,7 +20,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 
-use alloy_primitives::{uint, Keccak256, B256, U256};
+use alloy_primitives::{uint, Keccak256, U256};
 use risc0_zkvm::{
     sha::{Digest, DIGEST_BYTES},
     ReceiptClaim,
@@ -432,10 +432,8 @@ pub fn merkle_path_root(
 
 /// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
 ///
-/// This tag is a 32-bytes to optimize for calculation in the EVM. This does not signficantly
-/// degrade performance in other architectures relative to a shorter tag since 64 bytes fits
-/// well-within a single keccak absorb operation.
-const LEAF_TAG: &B256 = &B256::new(*b"_____risc0_aggregation::LEAF_TAG");
+/// NOTE: It is explicitly not 32 bytes to avoid any chance of collision with a node value.
+const LEAF_TAG: &[u8; 8] = b"LEAF_TAG";
 
 /// Hash the given digest to form a leaf node.
 ///
@@ -484,7 +482,7 @@ mod tests {
 
         assert_merkle_root(
             &digests,
-            Digest::from_hex("3f2e35a90d37758f734b62f5ea87c8b02ecea4b7a43f09413cab9e7a972793e2")
+            Digest::from_hex("bd792a6858270b233a6b399c1cbc60c5b1046a5b43758b9abc46ba32d23c7352")
                 .unwrap(),
         );
     }
