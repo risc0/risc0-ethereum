@@ -372,8 +372,10 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
 mod tests {
     use super::*;
     use crate::{
-        config::ChainSpec, ethereum::EthEvmEnv, BlockHeaderCommit, Commitment, CommitmentVersion,
+        config::ChainSpec, ethereum::EthEvmEnv, Account, BlockHeaderCommit, Commitment,
+        CommitmentVersion,
     };
+    use alloy_primitives::Address;
     use test_log::test;
 
     const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
@@ -418,6 +420,35 @@ mod tests {
 
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
+    async fn build_beacon_env_check_beacon_block_root() {
+        let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
+
+        let builder = EthEvmEnv::builder()
+            .provider(provider.clone())
+            .beacon_api(CL_URL.parse().unwrap())
+            .block_number_or_tag(BlockNumberOrTag::Parent);
+        let mut env = builder.clone().build().await.unwrap();
+        let slot = env.header.number();
+        Account::preflight(Address::ZERO, &mut env)
+            .bytecode(true)
+            .info()
+            .await
+            .unwrap(); // preflight to avoid the 'no accounts accessed' error
+
+        let beacon_block_root = env.into_input().await.unwrap().beacon_block_root().unwrap();
+
+        // the commitment should verify against the parent_beacon_block_root of the child
+        let child_block = provider
+            .get_block_by_number((slot + 1).into())
+            .await
+            .unwrap();
+        let header = child_block.unwrap().header;
+
+        assert_eq!(beacon_block_root, header.parent_beacon_block_root.unwrap(),);
+    }
+
+    #[test(tokio::test)]
+    #[ignore = "queries actual RPC nodes"]
     async fn build_history_env() {
         let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
 
@@ -443,5 +474,37 @@ mod tests {
                 ChainSpec::DEFAULT_DIGEST,
             )
         );
+    }
+
+    #[test(tokio::test)]
+    #[ignore = "queries actual RPC nodes"]
+    async fn build_history_env_check_beacon_block_root() {
+        let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
+
+        let latest = provider.get_block_number().await.unwrap();
+        let builder = EthEvmEnv::builder()
+            .provider(provider.clone())
+            .block_number_or_tag(BlockNumberOrTag::Number(latest - 100))
+            .beacon_api(CL_URL.parse().unwrap())
+            .commitment_block_number(latest - 1);
+
+        let mut env = builder.clone().build().await.unwrap();
+        let slot = env.header.number();
+        Account::preflight(Address::ZERO, &mut env)
+            .bytecode(true)
+            .info()
+            .await
+            .unwrap(); // preflight to avoid the 'no accounts accessed' error
+
+        let beacon_block_root = env.into_input().await.unwrap().beacon_block_root().unwrap();
+
+        // the commitment should verify against the parent_beacon_block_root of the child
+        let child_block = provider
+            .get_block_by_number((slot + 1).into())
+            .await
+            .unwrap();
+        let header = child_block.unwrap().header;
+
+        assert_eq!(beacon_block_root, header.parent_beacon_block_root.unwrap(),);
     }
 }
