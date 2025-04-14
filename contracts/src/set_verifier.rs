@@ -36,7 +36,7 @@ const TXN_CONFIRM_TIMEOUT: Duration = Duration::from_secs(45);
 
 #[derive(Clone)]
 pub struct SetVerifierService<P> {
-    instance: IRiscZeroSetVerifierInstance<(), P, Ethereum>,
+    instance: IRiscZeroSetVerifierInstance<P, Ethereum>,
     caller: Address,
     tx_timeout: Duration,
     event_query_config: EventQueryConfig,
@@ -57,7 +57,7 @@ where
         }
     }
 
-    pub fn instance(&self) -> &IRiscZeroSetVerifierInstance<(), P, Ethereum> {
+    pub fn instance(&self) -> &IRiscZeroSetVerifierInstance<P, Ethereum> {
         &self.instance
     }
 
@@ -77,7 +77,7 @@ where
         tracing::debug!("Calling containsRoot({:?})", root);
         let call = self.instance.containsRoot(root);
 
-        Ok(call.call().await.context("call failed")?._0)
+        call.call().await.context("call failed")?
     }
 
     pub async fn submit_merkle_root(&self, root: B256, seal: Bytes) -> Result<()> {

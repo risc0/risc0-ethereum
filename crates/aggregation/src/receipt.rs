@@ -245,7 +245,7 @@ fn extract_path(seal: &[u8]) -> Result<Vec<Digest>, SetInclusionDecodingError> {
     }
 
     // Skip the first 4 bytes (selector) and decode the seal
-    let aggregation_seal = <Seal>::abi_decode(&seal[4..], true)?;
+    let aggregation_seal = <Seal>::abi_decode(&seal[4..])?;
 
     // Convert each path element to a Digest
     aggregation_seal
