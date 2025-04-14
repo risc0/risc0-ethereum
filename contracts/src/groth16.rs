@@ -75,7 +75,7 @@ pub fn decode_groth16_seal(
     journal: impl AsRef<[u8]>,
     verifier_parameters: Option<Digest>,
 ) -> Result<Receipt> {
-    let seal = Seal::abi_decode(&seal[4..], true)?;
+    let seal = Seal::abi_decode(&seal[4..])?;
     Ok(seal.to_receipt(claim, journal, verifier_parameters))
 }
 

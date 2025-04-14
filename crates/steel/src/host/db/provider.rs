@@ -21,7 +21,9 @@ use alloy::{
 use alloy_primitives::{map::B256HashMap, Address, BlockHash, Log, StorageKey, B256, U256};
 use alloy_rpc_types::Filter;
 use revm::{
-    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
+    database::DBErrorMarker,
+    primitives::KECCAK_EMPTY,
+    state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
 use std::{future::IntoFuture, marker::PhantomData};
@@ -37,6 +39,8 @@ pub enum Error {
     #[error("inconsistent RPC response: {0}")]
     InconsistentResponse(&'static str),
 }
+
+impl DBErrorMarker for Error {}
 
 /// A [RevmDatabase] backed by an alloy [Provider].
 ///

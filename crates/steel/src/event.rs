@@ -91,9 +91,7 @@ impl<S: SolEvent, H: EvmBlockHeader> Event<S, &GuestEvmEnv<H>> {
     /// Attempts to execute the query and returns the matching logs or an error.
     pub fn try_query(self) -> anyhow::Result<Vec<Log<S>>> {
         let logs = WrapStateDb::new(self.env.db(), &self.env.header).logs(self.filter)?;
-        logs.iter()
-            .map(|log| Ok(S::decode_log(log, false)?))
-            .collect()
+        logs.iter().map(|log| Ok(S::decode_log(log)?)).collect()
     }
 }
 
@@ -176,9 +174,7 @@ mod host {
                 .spawn_with_db(move |db| db.logs(self.filter))
                 .await
                 .with_context(|| format!("querying logs for '{}' failed", S::SIGNATURE))?;
-            logs.iter()
-                .map(|log| Ok(S::decode_log(log, false)?))
-                .collect()
+            logs.iter().map(|log| Ok(S::decode_log(log)?)).collect()
         }
     }
 }

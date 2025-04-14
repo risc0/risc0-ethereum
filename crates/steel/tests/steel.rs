@@ -298,10 +298,7 @@ async fn ec_recover() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(
-        result._0,
-        address!("328809Bc894f92807417D2dAD6b7C998c1aFdac6")
-    );
+    assert_eq!(result, address!("328809Bc894f92807417D2dAD6b7C998c1aFdac6"));
 }
 
 #[test(tokio::test)]
@@ -314,7 +311,7 @@ async fn sha256() {
     )
     .await;
     assert_eq!(
-        result._0,
+        result,
         b256!("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
     );
 }
@@ -340,7 +337,7 @@ async fn point_evaluation_precompile() {
     )
     .await;
     assert_eq!(
-        result._0,
+        result,
         bytes!("000000000000000000000000000000000000000000000000000000000000100073eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
     );
 }
@@ -354,7 +351,7 @@ async fn nonexistent_account() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.size, uint!(0_U256));
+    assert_eq!(result, uint!(0_U256));
 }
 
 #[test(tokio::test)]
@@ -366,7 +363,7 @@ async fn eoa_account() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.size, uint!(0_U256));
+    assert_eq!(result, uint!(0_U256));
 }
 
 #[test(tokio::test)]
@@ -383,7 +380,7 @@ async fn blockhash() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.h, block_hash);
+    assert_eq!(result, block_hash);
 }
 
 #[test(tokio::test)]
@@ -395,7 +392,7 @@ async fn chainid() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result._0, uint!(31337_U256));
+    assert_eq!(result, uint!(31337_U256));
 }
 
 #[test(tokio::test)]
@@ -408,12 +405,12 @@ async fn origin() {
         CallOptions::with_from(from),
     )
     .await;
-    assert_eq!(result._0, from);
+    assert_eq!(result, from);
 }
 
 #[test(tokio::test)]
 async fn gasprice() {
-    let gas_price = uint!(42_U256);
+    let gas_price = 42;
     let result = common::eth_call(
         test_provider().await,
         STEEL_TEST_CONTRACT,
@@ -421,7 +418,7 @@ async fn gasprice() {
         CallOptions::with_gas_price(gas_price),
     )
     .await;
-    assert_eq!(result._0, gas_price);
+    assert_eq!(result, U256::from(gas_price));
 }
 
 #[test(tokio::test)]
@@ -433,7 +430,7 @@ async fn load_empty_storage() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.val, uint!(0_U256));
+    assert_eq!(result, uint!(0_U256));
 }
 
 #[test(tokio::test)]
@@ -445,7 +442,7 @@ async fn multi_contract_calls() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result._0, uint!(84_U256));
+    assert_eq!(result, uint!(84_U256));
 }
 
 #[test(tokio::test)]

@@ -20,8 +20,8 @@ use crate::{
     serde::RlpHeader,
     EvmBlockHeader, EvmEnv, EvmInput,
 };
-use alloy_primitives::{BlockNumber, B256, U256};
-use revm::primitives::{BlockEnv, SpecId};
+use alloy_primitives::{BlockNumber, B256};
+use revm::{context::BlockEnv, primitives::hardfork::SpecId};
 
 /// The Ethereum Sepolia [ChainSpec].
 pub static ETH_SEPOLIA_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
@@ -94,11 +94,11 @@ impl EvmBlockHeader for EthBlockHeader {
     fn fill_block_env(&self, blk_env: &mut BlockEnv) {
         let header = self.inner();
 
-        blk_env.number = U256::from(header.number);
-        blk_env.coinbase = header.beneficiary;
-        blk_env.timestamp = U256::from(header.timestamp);
-        blk_env.gas_limit = U256::from(header.gas_limit);
-        blk_env.basefee = U256::from(header.base_fee_per_gas.unwrap_or_default());
+        blk_env.number = header.number;
+        blk_env.beneficiary = header.beneficiary;
+        blk_env.timestamp = header.timestamp;
+        blk_env.gas_limit = header.gas_limit;
+        blk_env.basefee = header.base_fee_per_gas.unwrap_or_default();
         blk_env.difficulty = header.difficulty;
         // technically, this is only valid after EIP-4399 but revm makes sure it is not used before
         blk_env.prevrandao = Some(header.mix_hash);

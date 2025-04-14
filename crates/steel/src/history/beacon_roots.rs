@@ -15,7 +15,8 @@
 use crate::{MerkleTrie, StateAccount};
 use alloy_primitives::{address, b256, keccak256, uint, Address, B256, U256};
 use revm::{
-    primitives::{AccountInfo, Bytecode},
+    database::DBErrorMarker,
+    state::{AccountInfo, Bytecode},
     Database,
 };
 use serde::{Deserialize, Serialize};
@@ -53,6 +54,8 @@ pub enum Error {
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
+
+impl DBErrorMarker for Error {}
 
 impl From<Infallible> for Error {
     fn from(_: Infallible) -> Self {

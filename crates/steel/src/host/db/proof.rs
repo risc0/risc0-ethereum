@@ -29,7 +29,8 @@ use alloy_primitives::{
 use alloy_rpc_types::{Filter, TransactionReceipt};
 use anyhow::{ensure, Context, Result};
 use revm::{
-    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
+    primitives::KECCAK_EMPTY,
+    state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
 use std::hash::{BuildHasher, Hash};

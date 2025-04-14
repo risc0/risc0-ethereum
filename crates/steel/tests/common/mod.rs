@@ -17,7 +17,7 @@ use std::{fmt::Debug, sync::LazyLock};
 use alloy::{eips::eip2930::AccessList, network::Ethereum, providers::Provider};
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
-use revm::primitives::SpecId;
+use revm::primitives::hardfork::SpecId;
 use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract};
 
 pub static ANVIL_CHAIN_SPEC: LazyLock<ChainSpec> =
@@ -81,7 +81,7 @@ where
 pub struct CallOptions {
     from: Option<Address>,
     gas: Option<u64>,
-    gas_price: Option<U256>,
+    gas_price: Option<u128>,
     access_list: Option<AccessList>,
 }
 
@@ -102,7 +102,7 @@ impl CallOptions {
             ..Default::default()
         }
     }
-    pub fn with_gas_price(gas_price: U256) -> Self {
+    pub fn with_gas_price(gas_price: u128) -> Self {
         Self {
             gas_price: Some(gas_price),
             ..Default::default()
