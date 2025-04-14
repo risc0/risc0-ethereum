@@ -21,7 +21,7 @@ use alloy_primitives::{
     Address, Bytes, Log, Sealed, B256, U256,
 };
 use revm::{
-    primitives::{AccountInfo, Bytecode},
+    state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
 use std::{convert::Infallible, rc::Rc};

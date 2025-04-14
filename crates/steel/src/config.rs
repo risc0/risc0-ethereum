@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 
 use alloy_primitives::{b256, BlockNumber, BlockTimestamp, ChainId, B256};
 use anyhow::bail;
-use revm::primitives::SpecId;
+use revm::primitives::hardfork::SpecId;
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Output, Digest, Sha256};
 
@@ -54,20 +54,20 @@ impl Default for ChainSpec {
     /// Defaults to Ethereum Chain ID using the latest specification.
     #[inline]
     fn default() -> Self {
-        Self::new_single(1, SpecId::LATEST)
+        Self::new_single(1, SpecId::default())
     }
 }
 
 impl ChainSpec {
     /// Digest of the default configuration, i.e. `ChainSpec::default().digest()`.
     pub const DEFAULT_DIGEST: B256 =
-        b256!("0e0fe3926625a8ffdd4123ad55bf3a419918885daa2e506df18c0e3d6b6c5009");
+        b256!("b9614bfa86785170c4c3facd5c7e1d5e0b9ff0cea6111fe058988b8865f61ff9");
 
     /// Creates a new configuration consisting of only one specification ID.
     ///
     /// For example, this can be used to create a [ChainSpec] for an anvil instance:
     /// ```rust
-    /// # use revm::primitives::SpecId;
+    /// # use revm::primitives::hardfork::SpecId;
     /// # use risc0_steel::config::ChainSpec;
     /// let spec = ChainSpec::new_single(31337, SpecId::CANCUN);
     /// ```
@@ -181,13 +181,13 @@ mod tests {
         let exp: [u8; 32] = {
             let mut h = Sha256::new();
             h.update(Sha256::digest(b"ChainSpec(chain_id,forks)"));
-            h.update((&SpecId::LATEST, &ForkCondition::Block(0)).digest::<Sha256>());
+            h.update((&SpecId::default(), &ForkCondition::Block(0)).digest::<Sha256>());
             h.update((1u64 as u32).to_le_bytes());
             h.update(((1u64 >> 32) as u32).to_le_bytes());
             h.update(1u16.to_le_bytes());
             h.finalize().into()
         };
-        assert_eq!(ChainSpec::DEFAULT_DIGEST.0, exp);
-        assert_eq!(ChainSpec::default().digest().0, exp);
+        assert_eq!(ChainSpec::DEFAULT_DIGEST, B256::from(exp));
+        assert_eq!(ChainSpec::default().digest(), B256::from(exp));
     }
 }

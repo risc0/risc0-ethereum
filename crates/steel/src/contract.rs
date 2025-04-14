@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, mem};
-
 use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
-use alloy_primitives::{Address, TxKind, U256};
+use alloy_evm::{EthEvmFactory, Evm, EvmFactory};
+use alloy_primitives::{Address, ChainId, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
 use anyhow::anyhow;
 use revm::{
-    primitives::{CfgEnvWithHandlerCfg, ExecutionResult, ResultAndState, SuccessReason},
-    Database, Evm,
+    context::{
+        result::{ExecutionResult, ResultAndState, SuccessReason},
+        BlockEnv, CfgEnv, TxEnv,
+    },
+    inspector::NoOpInspector,
+    primitives::hardfork::SpecId,
+    Database,
 };
+use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, mem};
 
 /// Represents a contract that is initialized with a specific environment and contract address.
 ///
@@ -116,7 +121,7 @@ impl<S, E> CallBuilder<S, E> {
         let tx = CallTxData {
             caller: address, // by default the contract calls itself
             gas_limit: Self::DEFAULT_GAS_LIMIT,
-            gas_price: U256::ZERO,
+            gas_price: 0,
             to: address,
             value: U256::ZERO,
             data: call.abi_encode(),
@@ -138,7 +143,7 @@ impl<S, E> CallBuilder<S, E> {
     }
 
     /// Sets the gas price of the function call.
-    pub fn gas_price(mut self, gas_price: U256) -> Self {
+    pub fn gas_price(mut self, gas_price: u128) -> Self {
         self.tx.gas_price = gas_price;
         self
     }
@@ -243,14 +248,14 @@ mod host {
             );
 
             // as mutable references are not possible, the DB must be moved in and out of the task
-            let db = self.env.db.take().unwrap();
+            let mut db = self.env.db.take().unwrap();
 
-            let cfg = self.env.cfg_env.clone();
+            let chain_id = self.env.chain_id;
+            let spec = self.env.spec;
             let header = self.env.header.inner().clone();
             let (result, db) = tokio::task::spawn_blocking(move || {
-                let mut evm = new_evm(db, cfg, header);
+                let mut evm = new_evm(&mut db, chain_id, spec, header);
                 let result = self.tx.transact(&mut evm);
-                let (db, _) = evm.into_db_and_env_with_handler_cfg();
 
                 (result, db)
             })
@@ -312,7 +317,7 @@ mod host {
                 let tx = <N as Network>::TransactionRequest::default()
                     .with_from(self.tx.caller)
                     .with_gas_limit(self.tx.gas_limit)
-                    .with_gas_price(self.tx.gas_price.to())
+                    .with_gas_price(self.tx.gas_price)
                     .with_to(self.tx.to)
                     .with_value(self.tx.value)
                     .with_input(self.tx.data.clone());
@@ -348,7 +353,8 @@ where
     pub fn try_call(self) -> Result<S::Return, String> {
         let mut evm = new_evm::<_, H>(
             WrapStateDb::new(self.env.db(), &self.env.header),
-            self.env.cfg_env.clone(),
+            self.env.chain_id,
+            self.env.spec,
             self.env.header.inner(),
         );
         self.tx.transact(&mut evm)
@@ -368,7 +374,7 @@ where
 struct CallTxData<S> {
     caller: Address,
     gas_limit: u64,
-    gas_price: U256,
+    gas_price: u128,
     to: Address,
     value: U256,
     data: Vec<u8>,
@@ -383,24 +389,29 @@ impl<S: SolCall> CallTxData<S> {
     );
 
     /// Executes the call in the provided [Evm].
-    fn transact<EXT, DB>(self, evm: &mut Evm<'_, EXT, DB>) -> Result<S::Return, String>
+    fn transact<DB>(
+        self,
+        evm: &mut alloy_evm::EthEvm<DB, NoOpInspector>,
+    ) -> Result<S::Return, String>
     where
-        DB: Database,
-        <DB as Database>::Error: std::error::Error + Send + Sync + 'static,
+        DB: alloy_evm::Database,
     {
         #[allow(clippy::let_unit_value)]
         let _ = Self::RETURNS;
 
-        let tx_env = evm.tx_mut();
-        tx_env.caller = self.caller;
-        tx_env.gas_limit = self.gas_limit;
-        tx_env.gas_price = self.gas_price;
-        tx_env.transact_to = TxKind::Call(self.to);
-        tx_env.value = self.value;
-        tx_env.data = self.data.into();
+        let tx_env = TxEnv {
+            caller: self.caller,
+            gas_limit: self.gas_limit,
+            gas_price: self.gas_price,
+            kind: TxKind::Call(self.to),
+            value: self.value,
+            data: self.data.into(),
+            chain_id: None,
+            ..Default::default()
+        };
 
         let ResultAndState { result, .. } = evm
-            .transact_preverified()
+            .transact_raw(tx_env)
             .map_err(|err| format!("EVM error: {:#}", anyhow!(err)))?;
         let output = match result {
             ExecutionResult::Success { reason, output, .. } => {
@@ -414,7 +425,7 @@ impl<S: SolCall> CallTxData<S> {
             ExecutionResult::Revert { output, .. } => Err(format!("reverted: {}", output)),
             ExecutionResult::Halt { reason, .. } => Err(format!("halted: {:?}", reason)),
         }?;
-        let returns = S::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+        let returns = S::abi_decode_returns(&output.into_data()).map_err(|err| {
             format!(
                 "return type invalid; expected '{}': {}",
                 <S::ReturnTuple<'_> as SolType>::SOL_NAME,
@@ -426,14 +437,26 @@ impl<S: SolCall> CallTxData<S> {
     }
 }
 
-fn new_evm<'a, D, H>(db: D, cfg: CfgEnvWithHandlerCfg, header: impl Borrow<H>) -> Evm<'a, (), D>
+fn new_evm<D, H>(
+    db: D,
+    chain_id: ChainId,
+    spec: SpecId,
+    header: impl Borrow<H>,
+) -> alloy_evm::EthEvm<D, NoOpInspector>
 where
-    D: Database,
+    D: alloy_evm::Database,
     H: EvmBlockHeader,
 {
-    Evm::builder()
-        .with_db(db)
-        .with_cfg_env_with_handler_cfg(cfg)
-        .modify_block_env(|blk_env| header.borrow().fill_block_env(blk_env))
-        .build()
+    let mut cfg_env = CfgEnv::new_with_spec(spec).with_chain_id(chain_id);
+    cfg_env.disable_nonce_check = true;
+    cfg_env.disable_balance_check = true;
+    // Disabled because eth_call is sometimes used with eoa senders
+    cfg_env.disable_eip3607 = true;
+    // The basefee should be ignored for eth_call
+    cfg_env.disable_base_fee = true;
+
+    let mut block_env = BlockEnv::default();
+    header.borrow().fill_block_env(&mut block_env);
+
+    EthEvmFactory::default().create_evm(db, (cfg_env, block_env).into())
 }

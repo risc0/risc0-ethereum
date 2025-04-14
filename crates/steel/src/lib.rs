@@ -28,10 +28,7 @@ use alloy_primitives::{uint, BlockNumber, Bloom, Log, Sealable, Sealed, B256, U2
 use alloy_rpc_types::{Filter, FilteredParams};
 use alloy_sol_types::SolValue;
 use config::ChainSpec;
-use revm::{
-    primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId},
-    Database as RevmDatabase,
-};
+use revm::{context::BlockEnv, primitives::hardfork::SpecId, Database as RevmDatabase};
 
 pub mod account;
 pub mod beacon;
@@ -156,7 +153,10 @@ pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H, Commitment>;
 /// The environment to execute the contract calls in.
 pub struct EvmEnv<D, H, C> {
     db: Option<D>,
-    cfg_env: CfgEnvWithHandlerCfg,
+    /// Chain ID of the EVM
+    chain_id: u64,
+    /// Specification for EVM represent the hardfork
+    spec: SpecId,
     header: Sealed<H>,
     commit: C,
 }
@@ -166,11 +166,10 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
     ///
     /// It uses the default configuration for the latest specification.
     pub(crate) fn new(db: D, header: Sealed<H>, commit: C) -> Self {
-        let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-
         Self {
             db: Some(db),
-            cfg_env,
+            chain_id: 1,
+            spec: SpecId::default(),
             header,
             commit,
         }
@@ -199,8 +198,8 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H, Commitment> {
     ///
     /// This will panic when there is no valid specification ID for the current block.
     pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
-        self.cfg_env.chain_id = chain_spec.chain_id();
-        self.cfg_env.handler_cfg.spec_id = chain_spec
+        self.chain_id = chain_spec.chain_id();
+        self.spec = chain_spec
             .active_fork(self.header.number(), self.header.timestamp())
             .unwrap();
         self.commit.configID = chain_spec.digest();

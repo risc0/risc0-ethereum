@@ -194,8 +194,8 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     ///
     /// This will panic when there is no valid specification ID for the current block.
     pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
-        self.cfg_env.chain_id = chain_spec.chain_id();
-        self.cfg_env.handler_cfg.spec_id = chain_spec
+        self.chain_id = chain_spec.chain_id;
+        self.spec = chain_spec
             .active_fork(self.header.number(), self.header.timestamp())
             .unwrap();
         self.commit.config_id = chain_spec.digest();
@@ -257,7 +257,8 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// # }
     /// ```
     pub fn extend(&mut self, other: Self) -> Result<()> {
-        ensure!(self.cfg_env == other.cfg_env, "configuration mismatch");
+        ensure!(self.chain_id == other.chain_id, "configuration mismatch");
+        ensure!(self.spec == other.spec, "configuration mismatch");
         ensure!(
             self.header.seal() == other.header.seal(),
             "execution header mismatch"
