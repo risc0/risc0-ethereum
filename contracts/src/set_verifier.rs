@@ -77,7 +77,7 @@ where
         tracing::debug!("Calling containsRoot({:?})", root);
         let call = self.instance.containsRoot(root);
 
-        call.call().await.context("call failed")?
+        call.call().await.context("call failed")
     }
 
     pub async fn submit_merkle_root(&self, root: B256, seal: Bytes) -> Result<()> {
