@@ -30,7 +30,7 @@ alloy-eips = { version = "0.12" }
 alloy-rlp = { version = "0.3.8" }
 alloy-primitives = { version = "0.8.18" }
 alloy-rpc-types = { version = "0.12" }
-alloy-sol-types = { version = "0.8.18" }
+alloy-sol-types = { version = "1.0.0" }
 
 # OP Steel
 op-alloy-consensus = { version = "0.11" }
