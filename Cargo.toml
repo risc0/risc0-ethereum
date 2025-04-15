@@ -38,7 +38,7 @@ op-alloy-network = { version = "0.11" }
 
 # Alloy host dependencies
 alloy = { version = "0.12" }
-alloy-trie = { version = "0.7.7" }
+alloy-trie = { version = "0.8.1" }
 
 # Beacon chain support
 ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "cf3c404043230559660810bc0c9d6d5a8498d819" }
