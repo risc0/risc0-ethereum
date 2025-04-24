@@ -116,11 +116,11 @@ where
     }
 
     pub async fn latest_number(&self) -> alloy::contract::Result<BlockNumber> {
-        Ok(self.0.number().call().await?)
+        self.0.number().call().await
     }
 
     pub async fn latest_timestamp(&self) -> alloy::contract::Result<u64> {
-        Ok(self.0.timestamp().call().await?)
+        self.0.timestamp().call().await
     }
 
     pub async fn find_l2_block_at_timestamp(
