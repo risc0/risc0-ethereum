@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::game::DisputeGameInput;
-use alloy_primitives::{BlockNumber, Sealable, B256, U256};
+use alloy_primitives::{BlockNumber, Sealable, B256};
 use op_alloy_network::{Network, Optimism};
 use op_revm::spec::OpSpecId;
 use revm::context::BlockEnv;
@@ -23,7 +23,7 @@ use risc0_steel::{
     BlockInput, Commitment, EvmBlockHeader, EvmEnv, StateDb,
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, sync::LazyLock};
+use std::sync::LazyLock;
 
 #[cfg(feature = "host")]
 mod host;
@@ -115,11 +115,11 @@ impl EvmBlockHeader for OpBlockHeader {
     fn fill_block_env(&self, blk_env: &mut BlockEnv) {
         let header = self.0.inner();
 
-        blk_env.number = U256::from(header.number);
-        blk_env.coinbase = header.beneficiary;
-        blk_env.timestamp = U256::from(header.timestamp);
-        blk_env.gas_limit = U256::from(header.gas_limit);
-        blk_env.basefee = U256::from(header.base_fee_per_gas.unwrap_or_default());
+        blk_env.number = header.number;
+        blk_env.beneficiary = header.beneficiary;
+        blk_env.timestamp = header.timestamp;
+        blk_env.gas_limit = header.gas_limit;
+        blk_env.basefee = header.base_fee_per_gas.unwrap_or_default();
         blk_env.difficulty = header.difficulty;
         // technically, this is only valid after EIP-4399 but revm makes sure it is not used before
         blk_env.prevrandao = Some(header.mix_hash);

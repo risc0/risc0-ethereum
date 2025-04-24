@@ -24,7 +24,6 @@ use revm::{
     },
     inspector::NoOpInspector,
     primitives::hardfork::SpecId,
-    Database,
 };
 use std::{borrow::Borrow, fmt::Debug, marker::PhantomData, mem};
 
