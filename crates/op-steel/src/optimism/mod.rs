@@ -13,14 +13,10 @@
 // limitations under the License.
 
 use crate::game::DisputeGameInput;
+use alloy_primitives::{BlockNumber, Sealable, B256, U256};
 use op_alloy_network::{Network, Optimism};
-use revm::{
-    precompile::B256,
-    primitives::{
-        alloy_primitives::{BlockNumber, Sealable},
-        BlockEnv, SpecId, U256,
-    },
-};
+use op_revm::spec::OpSpecId;
+use revm::context::BlockEnv;
 use risc0_steel::{
     config::{ChainSpec, ForkCondition},
     serde::RlpHeader,
@@ -38,27 +34,33 @@ pub use host::*;
 /// The OP Mainnet [ChainSpec].
 pub static OP_MAINNET_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 10,
-    forks: BTreeMap::from([
-        (SpecId::BEDROCK, ForkCondition::Timestamp(1679079600)),
-        (SpecId::REGOLITH, ForkCondition::Timestamp(1679079600)),
-        (SpecId::CANYON, ForkCondition::Timestamp(1704992401)),
-        (SpecId::ECOTONE, ForkCondition::Timestamp(1710374401)),
-        (SpecId::FJORD, ForkCondition::Timestamp(1720627201)),
-        (SpecId::GRANITE, ForkCondition::Timestamp(1726070401)),
-    ]),
+    forks: [
+        (OpSpecId::BEDROCK, ForkCondition::Timestamp(1679079600)),
+        (OpSpecId::REGOLITH, ForkCondition::Timestamp(1679079600)),
+        (OpSpecId::CANYON, ForkCondition::Timestamp(1704992401)),
+        (OpSpecId::ECOTONE, ForkCondition::Timestamp(1710374401)),
+        (OpSpecId::FJORD, ForkCondition::Timestamp(1720627201)),
+        (OpSpecId::GRANITE, ForkCondition::Timestamp(1726070401)),
+    ]
+    .into_iter()
+    .map(|(id, c)| (id.into(), c))
+    .collect(),
 });
 
 /// The OP Sepolia [ChainSpec].
 pub static OP_SEPOLIA_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 11155420,
-    forks: BTreeMap::from([
-        (SpecId::BEDROCK, ForkCondition::Block(0)),
-        (SpecId::REGOLITH, ForkCondition::Timestamp(0)),
-        (SpecId::CANYON, ForkCondition::Timestamp(1699981200)),
-        (SpecId::ECOTONE, ForkCondition::Timestamp(1708534800)),
-        (SpecId::FJORD, ForkCondition::Timestamp(1716998400)),
-        (SpecId::GRANITE, ForkCondition::Timestamp(1723478400)),
-    ]),
+    forks: [
+        (OpSpecId::BEDROCK, ForkCondition::Block(0)),
+        (OpSpecId::REGOLITH, ForkCondition::Timestamp(0)),
+        (OpSpecId::CANYON, ForkCondition::Timestamp(1699981200)),
+        (OpSpecId::ECOTONE, ForkCondition::Timestamp(1708534800)),
+        (OpSpecId::FJORD, ForkCondition::Timestamp(1716998400)),
+        (OpSpecId::GRANITE, ForkCondition::Timestamp(1723478400)),
+    ]
+    .into_iter()
+    .map(|(id, c)| (id.into(), c))
+    .collect(),
 });
 
 type OpHeader = <Optimism as Network>::Header;

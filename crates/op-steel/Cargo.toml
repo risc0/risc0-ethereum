@@ -19,6 +19,7 @@ alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 op-alloy-network = { workspace = true }
+op-revm = { workspace = true, features = ["std"] }
 revm = { workspace = true, features = ["std"] }
 risc0-steel = { workspace = true }
 serde = { workspace = true }
