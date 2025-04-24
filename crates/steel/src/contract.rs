@@ -164,6 +164,7 @@ mod host {
         providers::Provider,
     };
     use anyhow::{anyhow, Context, Result};
+    use revm::Database;
 
     impl<'a, D: Database, H, C> Contract<&'a mut HostEvmEnv<D, H, C>> {
         /// Constructor for preflighting calls to an Ethereum contract on the host.
