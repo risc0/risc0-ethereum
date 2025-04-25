@@ -58,7 +58,7 @@ fn main() {
     let returns = Contract::new(contract, &env).call_builder(&call).call();
 
     // Check that the given account holds at least 1 token.
-    assert!(returns._0 >= U256::from(1));
+    assert!(returns >= U256::from(1));
 
     // Commit the block hash and number used when deriving `view_call_env` to the journal.
     let journal = Journal {

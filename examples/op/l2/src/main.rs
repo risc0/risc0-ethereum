@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
 
     let evm_input = env.into_input().await?;

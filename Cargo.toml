@@ -34,8 +34,8 @@ alloy-rpc-types = { version = "0.14" }
 alloy-sol-types = { version = "1.0" }
 
 # OP Steel
-op-alloy-consensus = { version = "0.13" }
-op-alloy-network = { version = "0.13" }
+op-alloy-consensus = { version = "0.14" }
+op-alloy-network = { version = "0.14" }
 
 # Alloy host dependencies
 alloy = { version = "0.14" }

@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
 
     // Finally, construct the input from the environment.
@@ -94,7 +94,7 @@ async fn main() -> Result<()> {
     };
 
     // The journal should be the ABI encoded commitment.
-    let commitment = Commitment::abi_decode(session_info.journal.as_ref(), true)
+    let commitment = Commitment::abi_decode(session_info.journal.as_ref())
         .context("failed to decode journal")?;
     println!("{:?}", commitment);
 

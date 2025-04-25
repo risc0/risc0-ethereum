@@ -67,8 +67,7 @@ async fn main() -> Result<()> {
     let utilization = contract
         .call_builder(&CometMainInterface::getUtilizationCall {})
         .call()
-        .await?
-        ._0;
+        .await?;
     println!(
         "Call {} Function on {:#} returns: {}",
         CometMainInterface::getUtilizationCall::SIGNATURE,
@@ -78,8 +77,7 @@ async fn main() -> Result<()> {
     let rate = contract
         .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
         .call()
-        .await?
-        ._0;
+        .await?;
     println!(
         "Call {} Function on {:#} returns: {}",
         CometMainInterface::getSupplyRateCall::SIGNATURE,
@@ -105,8 +103,7 @@ async fn main() -> Result<()> {
     let utilization = contract
         .call_builder(&CometMainInterface::getUtilizationCall {})
         .call()
-        .await?
-        ._0;
+        .await?;
     println!(
         "Call {} Function on {:#} returns: {}",
         CometMainInterface::getUtilizationCall::SIGNATURE,
@@ -116,8 +113,7 @@ async fn main() -> Result<()> {
     let rate = contract
         .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
         .call()
-        .await?
-        ._0;
+        .await?;
     println!(
         "Call {} Function on {:#} returns: {}",
         CometMainInterface::getSupplyRateCall::SIGNATURE,

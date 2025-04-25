@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy-primitives = "0.8"
-alloy-sol-types = "0.8"
+alloy-primitives = "1.0"
+alloy-sol-types = "1.0"

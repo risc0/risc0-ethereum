@@ -37,5 +37,5 @@ fn main() {
     let returns = contract.call_builder(&CALL).from(CALLER).call();
 
     // Commit the result.
-    env::commit(&returns._0)
+    env::commit(&returns)
 }
