@@ -139,7 +139,7 @@ async fn main() -> Result<()> {
     };
 
     // The journal should be the ABI encoded commitment.
-    let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes, true)
+    let apr_commit = APRCommitment::abi_decode(&session_info.journal.bytes)
         .context("failed to decode journal")?;
     println!("{:?}", apr_commit.commitment);
 
