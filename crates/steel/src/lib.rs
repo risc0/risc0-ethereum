@@ -28,10 +28,7 @@ use alloy_primitives::{uint, BlockNumber, Bloom, Log, Sealable, Sealed, B256, U2
 use alloy_rpc_types::{Filter, FilteredParams};
 use alloy_sol_types::SolValue;
 use config::ChainSpec;
-use revm::{
-    primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId},
-    Database as RevmDatabase,
-};
+use revm::{context::BlockEnv, primitives::hardfork::SpecId, Database as RevmDatabase};
 
 pub mod account;
 pub mod beacon;

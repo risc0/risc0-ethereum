@@ -14,10 +14,7 @@
 
 use crate::{MerkleTrie, StateAccount};
 use alloy_primitives::{address, b256, keccak256, uint, Address, B256, U256};
-use revm::{
-    primitives::{AccountInfo, Bytecode},
-    Database,
-};
+use revm::{state::{AccountInfo, Bytecode}, Database};
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 

@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 
 use alloy_primitives::{b256, BlockNumber, BlockTimestamp, ChainId, B256};
 use anyhow::bail;
-use revm::primitives::SpecId;
+use revm::primitives::hardfork::SpecId;
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Output, Digest, Sha256};
 

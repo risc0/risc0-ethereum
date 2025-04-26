@@ -18,10 +18,7 @@ use crate::{state::WrapStateDb, EvmBlockHeader, GuestEvmEnv};
 use alloy_primitives::{Address, TxKind, U256};
 use alloy_sol_types::{SolCall, SolType};
 use anyhow::anyhow;
-use revm::{
-    primitives::{CfgEnvWithHandlerCfg, ExecutionResult, ResultAndState, SuccessReason},
-    Database, Evm,
-};
+use revm::{context::{result::{ExecutionResult, ResultAndState, SuccessReason}, Evm}, Database};
 
 /// Represents a contract that is initialized with a specific environment and contract address.
 ///
@@ -160,6 +157,7 @@ mod host {
         providers::Provider,
     };
     use anyhow::{anyhow, Context, Result};
+    use revm::Database;
 
     impl<'a, D: Database, H, C> Contract<&'a mut HostEvmEnv<D, H, C>> {
         /// Constructor for preflighting calls to an Ethereum contract on the host.
@@ -401,7 +399,7 @@ impl<S: SolCall> CallTxData<S> {
 
         let ResultAndState { result, .. } = evm
             .transact_preverified()
-            .map_err(|err| format!("EVM error: {:#}", anyhow!(err)))?;
+            .map_err(|err: anyhow::Error| format!("EVM error: {:#}", anyhow!(err)))?;
         let output = match result {
             ExecutionResult::Success { reason, output, .. } => {
                 // there must be a return value to decode
@@ -414,7 +412,7 @@ impl<S: SolCall> CallTxData<S> {
             ExecutionResult::Revert { output, .. } => Err(format!("reverted: {}", output)),
             ExecutionResult::Halt { reason, .. } => Err(format!("halted: {:?}", reason)),
         }?;
-        let returns = S::abi_decode_returns(&output.into_data(), true).map_err(|err| {
+        let returns = S::abi_decode_returns(&output.into_data()).map_err(|err| {
             format!(
                 "return type invalid; expected '{}': {}",
                 <S::ReturnTuple<'_> as SolType>::SOL_NAME,
