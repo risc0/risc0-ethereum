@@ -17,12 +17,6 @@
 
 pub mod groth16;
 
-/// Re-export of [alloy], provided to ensure that the correct version of the types used in the
-/// public API are available in case multiple versions of [alloy] are in use.
-///
-/// Because [alloy] is a v0.x crate, it is not covered under the semver policy of this crate.
-pub use alloy;
-
 // NOTE: Placing the cfg directly on the `pub mod` statement doesn't work when tried with Rust 1.81
 cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {
@@ -126,7 +120,7 @@ fn decode_contract_err<T: SolInterface>(err: alloy::contract::Error) -> Result<T
                 return Err(DecodingError::BytesFromStrError.into());
             };
 
-            let decoded_error = match T::abi_decode(&data, true) {
+            let decoded_error = match T::abi_decode(&data) {
                 Ok(res) => res,
                 Err(err) => {
                     return Err(DecodingError::Abi(err, data).into());
