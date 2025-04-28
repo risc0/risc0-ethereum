@@ -437,7 +437,7 @@ const LEAF_TAG: &[u8; 8] = b"LEAF_TAG";
 
 /// Hash the given digest to form a leaf node.
 ///
-/// This adds a tag to the given value and hashes it to ensure it is domain seperated from any
+/// This adds a tag to the given value and hashes it to ensure it is domain separated from any
 /// internal nodes in the tree.
 fn hash_leaf(value: &Digest) -> Digest {
     let mut hasher = Keccak256::new();
