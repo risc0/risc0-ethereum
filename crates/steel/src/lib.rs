@@ -173,8 +173,6 @@ pub trait EvmFactory {
         Spec = Self::Spec,
     >;
     /// The transaction environment type compatible with `Self::Evm`.
-    ///
-    /// Must implement [`FromCallData`] to allow construction from basic call info (address, data).
     type Tx: IntoTxEnv<Self::Tx> + Send + Sync + 'static;
     /// The error type returned by `Self::Evm` during execution.
     type Error<DBError: Error + Send + Sync + 'static>: EvmError;
