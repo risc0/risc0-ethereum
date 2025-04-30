@@ -14,7 +14,6 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 risc0-aggregation = { version = "0.5.0-alpha.1", default-features = false, path = "crates/aggregation" }
 risc0-build-ethereum = { version = "2.1.0-alpha.1", default-features = false, path = "build" }
 risc0-ethereum-contracts = { version = "2.1.0-alpha.1", default-features = false, path = "contracts" }
-risc0-forge-ffi = { version = "2.1.0-alpha.1", default-features = false, path = "crates/ffi" }
 risc0-op-steel = { version = "0.4.0-alpha.1", default-features = false, path = "crates/op-steel" }
 risc0-steel = { version = "2.1.0-alpha.1", default-features = false, path = "crates/steel" }
 
@@ -34,7 +33,7 @@ alloy-rpc-types = { version = "0.14" }
 alloy-sol-types = { version = "1.0" }
 
 # OP Steel
-op-alloy-consensus = { version = "0.14" }
+alloy-op-evm = { version = "0.5" }
 op-alloy-network = { version = "0.14" }
 
 # Alloy host dependencies
@@ -67,7 +66,6 @@ test-log = "0.2.15"
 thiserror = { version = "2.0" }
 tokio = { version = "1.35" }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2.5" }
 
 [profile.bench]

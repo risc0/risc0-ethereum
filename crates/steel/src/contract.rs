@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{state::WrapStateDb, EvmFactory, FromCallData, GuestEvmEnv};
+use crate::{state::WrapStateDb, EvmFactory, GuestEvmEnv};
 use alloy_evm::Evm;
 use alloy_primitives::Address;
 use alloy_sol_types::{SolCall, SolType};
@@ -87,7 +87,7 @@ use std::{fmt::Debug, marker::PhantomData};
 ///       state loading (requires `host` feature).
 ///
 /// See the [`CallBuilder`] documentation for more details on execution methods.
-
+///
 /// ### Examples
 ///
 /// ```rust,no_run
@@ -160,7 +160,7 @@ impl<'a, F: EvmFactory> Contract<&'a GuestEvmEnv<F>> {
 
     /// Initializes a builder for executing a specific contract call (`S`) in the guest.
     pub fn call_builder<S: SolCall>(&self, call: &S) -> CallBuilder<F::Tx, S, &GuestEvmEnv<F>> {
-        CallBuilder::new(F::Tx::new(self.address, call.abi_encode().into()), self.env)
+        CallBuilder::new(F::new_tx(self.address, call.abi_encode().into()), self.env)
     }
 }
 
@@ -240,7 +240,7 @@ mod host {
             &mut self,
             call: &S,
         ) -> CallBuilder<F::Tx, S, &mut HostEvmEnv<D, F, C>> {
-            CallBuilder::new(F::Tx::new(self.address, call.abi_encode().into()), self.env)
+            CallBuilder::new(F::new_tx(self.address, call.abi_encode().into()), self.env)
         }
     }
 

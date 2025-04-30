@@ -34,7 +34,9 @@ fn main() {
 
     // Execute the call.
     let contract = Contract::new(CONTRACT, &env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call();
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.caller = CALLER;
+    let returns = builder.call();
 
     // Commit the result.
     env::commit(&returns)

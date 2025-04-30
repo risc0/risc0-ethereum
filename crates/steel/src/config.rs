@@ -20,7 +20,7 @@ use sha2::{digest::Output, Digest, Sha256};
 use std::collections::BTreeMap;
 
 /// The condition at which a fork is activated.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
 pub enum ForkCondition {
     /// The fork is activated with a certain block.
     Block(BlockNumber),
@@ -40,15 +40,15 @@ impl ForkCondition {
 }
 
 /// Specification of a specific chain.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChainSpec<S: ToString + Ord> {
+#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+pub struct ChainSpec<S: Ord> {
     /// Chain identifier.
     pub chain_id: ChainId,
     /// Map revm specification IDs to their respective activation condition.
     pub forks: BTreeMap<S, ForkCondition>,
 }
 
-impl<S: ToString + std::cmp::Ord + Default> Default for ChainSpec<S> {
+impl<S: Ord + Serialize + Default> Default for ChainSpec<S> {
     /// Defaults to Ethereum Chain ID using the latest specification.
     #[inline]
     fn default() -> Self {
@@ -56,7 +56,7 @@ impl<S: ToString + std::cmp::Ord + Default> Default for ChainSpec<S> {
     }
 }
 
-impl<S: ToString + std::cmp::Ord> ChainSpec<S> {
+impl<S: Ord + Serialize> ChainSpec<S> {
     /// Creates a new configuration consisting of only one specification ID.
     ///
     /// For example, this can be used to create a [ChainSpec] for an anvil instance:
@@ -102,12 +102,14 @@ trait StructHash {
     fn digest<D: Digest>(&self) -> Output<D>;
 }
 
-impl<S: ToString> StructHash for (&S, &ForkCondition) {
+impl<S: Serialize> StructHash for (&S, &ForkCondition) {
     /// Computes the cryptographic digest of a fork.
-    /// The hash is H(SpecName || ForkCondition::name || ForkCondition::value )
+    /// The hash is H(SpecID || ForkCondition::name || ForkCondition::value )
     fn digest<D: Digest>(&self) -> Output<D> {
         let mut hasher = D::new();
-        hasher.update(self.0.to_string());
+        // for enums this is essentially equivalent to (self.0 as u32).to_le_bytes()
+        let s_bytes = bincode::serialize(&self.0).unwrap();
+        hasher.update(&s_bytes);
         match self.1 {
             ForkCondition::Block(n) => {
                 hasher.update(b"Block");
@@ -122,7 +124,7 @@ impl<S: ToString> StructHash for (&S, &ForkCondition) {
     }
 }
 
-impl<S: ToString + std::cmp::Ord> StructHash for ChainSpec<S> {
+impl<S: Ord + Serialize> StructHash for ChainSpec<S> {
     /// Computes the cryptographic digest of a chain spec.
     ///
     /// This is equivalent to the `tagged_struct` structural hashing routines used for RISC Zero

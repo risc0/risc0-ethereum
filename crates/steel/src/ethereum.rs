@@ -16,7 +16,7 @@
 use crate::{
     config::{ChainSpec, ForkCondition},
     serde::RlpHeader,
-    EvmBlockHeader, EvmEnv, EvmFactory, EvmInput, FromCallData,
+    EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy_evm::{Database, EthEvmFactory as AlloyEthEvmFactory, EvmFactory as AlloyEvmFactory};
 use alloy_primitives::{b256, Address, BlockNumber, Bytes, TxKind, B256};
@@ -62,29 +62,10 @@ pub static ETH_MAINNET_CHAIN_SPEC: LazyLock<EthChainSpec> = LazyLock::new(|| Cha
     ]),
 });
 
-/// [ChainSpec] for Ethereum.
-pub type EthChainSpec = ChainSpec<<AlloyEthEvmFactory as AlloyEvmFactory>::Spec>;
-
-impl EthChainSpec {
-    pub const DEFAULT_DIGEST: B256 =
-        b256!("42c4ce5e8ad7e8415a631d90d7b10fe1db3b33d51cbb374138a73b9ea2be2314");
-}
-
+/// [EvmFactory] for Ethereum.
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct EthEvmFactory;
-
-impl FromCallData for TxEnv {
-    fn new(address: Address, data: Bytes) -> Self {
-        TxEnv {
-            caller: address,
-            kind: TxKind::Call(address),
-            data,
-            chain_id: None,
-            ..Default::default()
-        }
-    }
-}
 
 impl EvmFactory for EthEvmFactory {
     type Evm<DB: Database> = <AlloyEthEvmFactory as AlloyEvmFactory>::Evm<DB, NoOpInspector>;
@@ -95,11 +76,21 @@ impl EvmFactory for EthEvmFactory {
     type Spec = <AlloyEthEvmFactory as AlloyEvmFactory>::Spec;
     type Header = EthBlockHeader;
 
+    fn new_tx(address: Address, data: Bytes) -> Self::Tx {
+        TxEnv {
+            caller: address,
+            kind: TxKind::Call(address),
+            data,
+            chain_id: None,
+            ..Default::default()
+        }
+    }
+
     fn create_evm<DB: Database>(
         db: DB,
         chain_id: u64,
         spec: Self::Spec,
-        block: &Self::Header,
+        header: &Self::Header,
     ) -> Self::Evm<DB> {
         let mut cfg_env = CfgEnv::new_with_spec(spec).with_chain_id(chain_id);
         cfg_env.disable_nonce_check = true;
@@ -110,10 +101,18 @@ impl EvmFactory for EthEvmFactory {
         // The basefee should be ignored for eth_call
         cfg_env.disable_base_fee = true;
 
-        let block_env = block.to_block_env(spec);
+        let block_env = header.to_block_env(spec);
 
         AlloyEthEvmFactory::default().create_evm(db, (cfg_env, block_env).into())
     }
+}
+
+/// [ChainSpec] for Ethereum.
+pub type EthChainSpec = ChainSpec<SpecId>;
+
+impl EthChainSpec {
+    pub const DEFAULT_DIGEST: B256 =
+        b256!("42c4ce5e8ad7e8415a631d90d7b10fe1db3b33d51cbb374138a73b9ea2be2314");
 }
 
 /// [EvmEnv] for Ethereum.

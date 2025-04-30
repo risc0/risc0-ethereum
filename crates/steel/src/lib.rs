@@ -157,14 +157,6 @@ pub(crate) fn matches_filter(bloom: Bloom, filter: &Filter) -> bool {
 /// Alias for readability, do not make public.
 pub(crate) type GuestEvmEnv<F> = EvmEnv<StateDb, F, Commitment>;
 
-/// Represents types constructible from basic call data
-pub trait FromCallData: Sized {
-    /// Creates a new instance from a target address and input data.
-    /// This typically initializes a transaction environment with the minimum
-    /// required fields for a simple contract call.
-    fn new(address: Address, data: Bytes) -> Self;
-}
-
 /// Abstracts the creation and configuration of a specific EVM implementation.
 ///
 /// This trait acts as a factory pattern, allowing generic code (like `Contract` and `CallBuilder`)
@@ -183,13 +175,13 @@ pub trait EvmFactory {
     /// The transaction environment type compatible with `Self::Evm`.
     ///
     /// Must implement [`FromCallData`] to allow construction from basic call info (address, data).
-    type Tx: IntoTxEnv<Self::Tx> + FromCallData + Send + Sync + 'static;
+    type Tx: IntoTxEnv<Self::Tx> + Send + Sync + 'static;
     /// The error type returned by `Self::Evm` during execution.
     type Error<DBError: Error + Send + Sync + 'static>: EvmError;
     /// The type representing reasons why `Self::Evm` might halt execution.
     type HaltReason: HaltReasonTr + Send + Sync + 'static;
     /// The EVM specification identifier (e.g., Shanghai, Cancun) used by `Self::Evm`.
-    type Spec: Default + Ord + ToString + Debug + Copy + Send + Sync + 'static;
+    type Spec: Ord + Default + Serialize + Debug + Copy + Send + Sync + 'static;
     /// The block header type providing execution context (e.g., timestamp, number, basefee).
     type Header: EvmBlockHeader<Spec = Self::Spec>
         + Clone
@@ -198,6 +190,14 @@ pub trait EvmFactory {
         + Send
         + Sync
         + 'static;
+
+    /// Creates a new transaction environment instance for a basic call.
+    ///
+    /// Implementors should create an instance of `Self::Tx`,
+    /// populate it with the target `address` and input `data`, and apply appropriate
+    /// defaults for other transaction fields (like caller, value, gas limit, etc.)
+    /// required by the specific EVM implementation.
+    fn new_tx(address: Address, data: Bytes) -> Self::Tx;
 
     /// Creates a new instance of the EVM defined by `Self::Evm`.
     fn create_evm<DB: Database>(

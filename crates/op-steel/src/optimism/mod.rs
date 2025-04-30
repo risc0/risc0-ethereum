@@ -13,17 +13,23 @@
 // limitations under the License.
 
 use crate::game::DisputeGameInput;
-use alloy_primitives::{BlockNumber, Sealable, B256};
+use alloy_evm::{Database, EvmFactory as AlloyEvmFactory};
+use alloy_op_evm::OpEvmFactory as AlloyOpEvmFactory;
+use alloy_primitives::{Address, BlockNumber, Bytes, ChainId, Sealable, TxKind, B256};
 use op_alloy_network::{Network, Optimism};
-use op_revm::spec::OpSpecId;
-use revm::context::BlockEnv;
+use op_revm::{spec::OpSpecId, OpTransaction};
+use revm::{
+    context::{BlockEnv, CfgEnv, TxEnv},
+    context_interface::block::BlobExcessGasAndPrice,
+    inspector::NoOpInspector,
+};
 use risc0_steel::{
     config::{ChainSpec, ForkCondition},
     serde::RlpHeader,
-    BlockInput, Commitment, EvmBlockHeader, EvmEnv, StateDb,
+    BlockInput, Commitment, EvmBlockHeader, EvmEnv, EvmFactory, StateDb,
 };
 use serde::{Deserialize, Serialize};
-use std::sync::LazyLock;
+use std::{collections::BTreeMap, convert::Into, error::Error, sync::LazyLock};
 
 #[cfg(feature = "host")]
 mod host;
@@ -32,36 +38,82 @@ mod host;
 pub use host::*;
 
 /// The OP Mainnet [ChainSpec].
-pub static OP_MAINNET_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
+pub static OP_MAINNET_CHAIN_SPEC: LazyLock<OpChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 10,
-    forks: [
+    forks: BTreeMap::from([
         (OpSpecId::BEDROCK, ForkCondition::Timestamp(1679079600)),
         (OpSpecId::REGOLITH, ForkCondition::Timestamp(1679079600)),
         (OpSpecId::CANYON, ForkCondition::Timestamp(1704992401)),
         (OpSpecId::ECOTONE, ForkCondition::Timestamp(1710374401)),
         (OpSpecId::FJORD, ForkCondition::Timestamp(1720627201)),
         (OpSpecId::GRANITE, ForkCondition::Timestamp(1726070401)),
-    ]
-    .into_iter()
-    .map(|(id, c)| (id.into(), c))
-    .collect(),
+    ]),
 });
 
 /// The OP Sepolia [ChainSpec].
-pub static OP_SEPOLIA_CHAIN_SPEC: LazyLock<ChainSpec> = LazyLock::new(|| ChainSpec {
+pub static OP_SEPOLIA_CHAIN_SPEC: LazyLock<OpChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 11155420,
-    forks: [
+    forks: BTreeMap::from([
         (OpSpecId::BEDROCK, ForkCondition::Block(0)),
         (OpSpecId::REGOLITH, ForkCondition::Timestamp(0)),
         (OpSpecId::CANYON, ForkCondition::Timestamp(1699981200)),
         (OpSpecId::ECOTONE, ForkCondition::Timestamp(1708534800)),
         (OpSpecId::FJORD, ForkCondition::Timestamp(1716998400)),
         (OpSpecId::GRANITE, ForkCondition::Timestamp(1723478400)),
-    ]
-    .into_iter()
-    .map(|(id, c)| (id.into(), c))
-    .collect(),
+    ]),
 });
+
+/// [EvmFactory] for Optimism.
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct OpEvmFactory;
+
+impl EvmFactory for OpEvmFactory {
+    type Evm<DB: Database> = <AlloyOpEvmFactory as AlloyEvmFactory>::Evm<DB, NoOpInspector>;
+    type Tx = <AlloyOpEvmFactory as AlloyEvmFactory>::Tx;
+    type Error<DBError: Error + Send + Sync + 'static> =
+        <AlloyOpEvmFactory as AlloyEvmFactory>::Error<DBError>;
+    type HaltReason = <AlloyOpEvmFactory as AlloyEvmFactory>::HaltReason;
+    type Spec = <AlloyOpEvmFactory as AlloyEvmFactory>::Spec;
+    type Header = OpBlockHeader;
+
+    fn new_tx(address: Address, data: Bytes) -> Self::Tx {
+        OpTransaction {
+            base: TxEnv {
+                caller: address,
+                kind: TxKind::Call(address),
+                data,
+                chain_id: None,
+                ..Default::default()
+            },
+            enveloped_tx: Some(Bytes::new()),
+            ..Default::default()
+        }
+    }
+
+    fn create_evm<DB: Database>(
+        db: DB,
+        chain_id: ChainId,
+        spec: Self::Spec,
+        header: &Self::Header,
+    ) -> Self::Evm<DB> {
+        let mut cfg_env = CfgEnv::new_with_spec(spec).with_chain_id(chain_id);
+        cfg_env.disable_nonce_check = true;
+        cfg_env.disable_balance_check = true;
+        cfg_env.disable_block_gas_limit = true;
+        // Disabled because eth_call is sometimes used with eoa senders
+        cfg_env.disable_eip3607 = true;
+        // The basefee should be ignored for eth_call
+        cfg_env.disable_base_fee = true;
+
+        let block_env = header.to_block_env(spec);
+
+        AlloyOpEvmFactory::default().create_evm(db, (cfg_env, block_env).into())
+    }
+}
+
+/// [ChainSpec] for Optimism.
+pub type OpChainSpec = ChainSpec<OpSpecId>;
 
 type OpHeader = <Optimism as Network>::Header;
 
@@ -84,6 +136,8 @@ impl Sealable for OpBlockHeader {
 }
 
 impl EvmBlockHeader for OpBlockHeader {
+    type Spec = OpSpecId;
+
     #[inline]
     fn parent_hash(&self) -> &B256 {
         &self.0.inner().parent_hash
@@ -112,20 +166,21 @@ impl EvmBlockHeader for OpBlockHeader {
     }
 
     #[inline]
-    fn fill_block_env(&self, blk_env: &mut BlockEnv) {
+    fn to_block_env(&self, spec: OpSpecId) -> BlockEnv {
         let header = self.0.inner();
 
-        blk_env.number = header.number;
-        blk_env.beneficiary = header.beneficiary;
-        blk_env.timestamp = header.timestamp;
-        blk_env.gas_limit = header.gas_limit;
-        blk_env.basefee = header.base_fee_per_gas.unwrap_or_default();
-        blk_env.difficulty = header.difficulty;
-        // technically, this is only valid after EIP-4399 but revm makes sure it is not used before
-        blk_env.prevrandao = Some(header.mix_hash);
-        if let Some(excess_blob_gas) = header.excess_blob_gas {
-            blk_env.set_blob_excess_gas_and_price(excess_blob_gas, false)
-        };
+        BlockEnv {
+            number: header.number,
+            beneficiary: header.beneficiary,
+            timestamp: header.timestamp,
+            gas_limit: header.gas_limit,
+            basefee: header.base_fee_per_gas.unwrap_or_default(),
+            difficulty: header.difficulty,
+            prevrandao: (spec >= OpSpecId::BEDROCK).then_some(header.mix_hash),
+            blob_excess_gas_and_price: header.excess_blob_gas.map(|excess_blob_gas| {
+                BlobExcessGasAndPrice::new(excess_blob_gas, spec >= OpSpecId::ISTHMUS)
+            }),
+        }
     }
 }
 
@@ -146,13 +201,13 @@ where
 #[non_exhaustive]
 #[derive(Clone, Serialize, Deserialize)]
 pub enum OpEvmInput {
-    Block(BlockInput<OpBlockHeader>),
+    Block(BlockInput<OpEvmFactory>),
     DisputeGame(DisputeGameInput),
 }
 
 impl OpEvmInput {
     #[inline]
-    pub fn into_env(self) -> EvmEnv<StateDb, OpBlockHeader, Commitment> {
+    pub fn into_env(self) -> EvmEnv<StateDb, OpEvmFactory, Commitment> {
         match self {
             OpEvmInput::Block(input) => input.into_env(),
             OpEvmInput::DisputeGame(input) => input.into_env(),

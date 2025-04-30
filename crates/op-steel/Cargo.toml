@@ -14,13 +14,15 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 alloy = { workspace = true, optional = true, features = ["contract", "providers"] }
+alloy-evm = { workspace = true }
+alloy-op-evm = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 log = { workspace = true }
 op-alloy-network = { workspace = true }
-op-revm = { workspace = true, features = ["std"] }
-revm = { workspace = true, features = ["std"] }
+op-revm = { workspace = true, features = ["serde"] }
+revm = { workspace = true, features = ["serde", "optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee"] }
 risc0-steel = { workspace = true }
 serde = { workspace = true }
 test-log = { workspace = true }

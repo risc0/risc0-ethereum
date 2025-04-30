@@ -80,7 +80,6 @@ impl StateDb {
 
     #[inline]
     pub(crate) fn account(&self, address: Address) -> Option<StateAccount> {
-        dbg!(address);
         self.state_trie
             .get_rlp(keccak256(address))
             .expect("Invalid encoded state trie value")

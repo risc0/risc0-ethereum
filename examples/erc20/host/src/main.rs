@@ -69,7 +69,9 @@ async fn main() -> Result<()> {
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
     let mut contract = Contract::preflight(CONTRACT, &mut env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.caller = CALLER;
+    let returns = builder.call().await?;
     println!(
         "Call {} Function by {:#} on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,

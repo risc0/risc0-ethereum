@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::optimism::OpBlockHeader;
+use crate::optimism::{OpBlockHeader, OpEvmFactory};
 use alloy_primitives::{keccak256, Sealed, B256};
 use alloy_sol_types::SolValue;
 use risc0_steel::{BlockHeaderCommit, Commitment, ComposeInput};
@@ -44,7 +44,7 @@ impl OutputRootProof {
 }
 
 /// Input committing to the root claim of an OP dispute game.
-pub type DisputeGameInput = ComposeInput<OpBlockHeader, DisputeGameCommit>;
+pub type DisputeGameInput = ComposeInput<OpEvmFactory, DisputeGameCommit>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DisputeGameCommit {
