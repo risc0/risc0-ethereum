@@ -160,11 +160,7 @@ impl<'a, F: EvmFactory> Contract<&'a GuestEvmEnv<F>> {
 
     /// Initializes a builder for executing a specific contract call (`S`) in the guest.
     pub fn call_builder<S: SolCall>(&self, call: &S) -> CallBuilder<F::Tx, S, &GuestEvmEnv<F>> {
-        CallBuilder {
-            tx: F::Tx::new(self.address, call.abi_encode().into()),
-            env: self.env,
-            phantom: PhantomData,
-        }
+        CallBuilder::new(F::Tx::new(self.address, call.abi_encode().into()), self.env)
     }
 }
 
@@ -191,6 +187,25 @@ pub struct CallBuilder<T, S, E> {
     env: E,
     /// Phantom data for the `SolCall` type `S`.
     phantom: PhantomData<S>,
+}
+
+impl<T, S: SolCall, E> CallBuilder<T, S, E> {
+    /// Compile-time assertion that the call has a return value.
+    const RETURNS: () = assert!(
+        std::mem::size_of::<S::Return>() > 0,
+        "Function call must have a return value"
+    );
+
+    fn new(tx: T, env: E) -> Self {
+        #[allow(clippy::let_unit_value)]
+        let _ = Self::RETURNS;
+
+        Self {
+            tx,
+            env,
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[cfg(feature = "host")]
@@ -225,11 +240,7 @@ mod host {
             &mut self,
             call: &S,
         ) -> CallBuilder<F::Tx, S, &mut HostEvmEnv<D, F, C>> {
-            CallBuilder {
-                tx: F::Tx::new(self.address, call.abi_encode().into()),
-                env: self.env,
-                phantom: PhantomData,
-            }
+            CallBuilder::new(F::Tx::new(self.address, call.abi_encode().into()), self.env)
         }
     }
 
@@ -454,7 +465,7 @@ where
         .map_err(|err| format!("EVM error: {:#}", anyhow!(err)))?;
     let output_bytes = match result {
         ExecutionResult::Success { reason, output, .. } => {
-            // Ensure the transaction returned, not stopped or other success reason
+            // ensure the transaction returned, not stopped or other success reason
             if reason == SuccessReason::Return {
                 Ok(output)
             } else {
