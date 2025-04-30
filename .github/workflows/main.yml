@@ -61,7 +61,10 @@ jobs:
       - name: cargo check examples
         run: ../.github/scripts/cargo-check.sh
         working-directory: examples
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: "v1.0.0"
       - name: forge check risc0-ethereum
         run: forge fmt --check
         working-directory: contracts
@@ -102,7 +105,10 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: "v1.0.0"
       - name: cargo clippy risc0-ethereum
         run: cargo clippy $CARGO_LOCKED --workspace --all-targets --all-features
         env:
@@ -158,7 +164,10 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: "v1.0.0"
       - name: cargo test
         run: cargo test $CARGO_LOCKED --workspace
       - name: cargo build with all features
@@ -203,7 +212,10 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: "v1.0.0"
       - name: cargo test all examples
         run: ../.github/scripts/cargo-test.sh
         working-directory: examples
@@ -232,7 +244,10 @@ jobs:
         with:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: "v1.0.0"
       - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
         env:
           RISC0_SKIP_BUILD: true,
