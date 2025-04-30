@@ -177,7 +177,7 @@ mod tests {
     fn digest() {
         let chain_id = 0xF1E2D3C4B5A69788;
         let forks = [
-            (SpecId::FRONTIER_THAWING, ForkCondition::Block(0xF1E2D3C4B5A69788)),
+            (SpecId::FRONTIER, ForkCondition::Block(0xF1E2D3C4B5A69788)),
             (SpecId::PRAGUE, ForkCondition::Timestamp(0xF1E2D3C4B5A69788)),
         ];
         let chain_spec = ChainSpec {

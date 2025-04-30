@@ -15,7 +15,7 @@
 use crate::game::DisputeGameInput;
 use alloy_evm::{Database, EvmFactory as AlloyEvmFactory};
 use alloy_op_evm::OpEvmFactory as AlloyOpEvmFactory;
-use alloy_primitives::{b256, Address, BlockNumber, Bytes, ChainId, Sealable, TxKind, B256};
+use alloy_primitives::{Address, BlockNumber, Bytes, ChainId, Sealable, TxKind, B256};
 use op_alloy_network::{Network, Optimism};
 use op_revm::{spec::OpSpecId, OpTransaction};
 use revm::{
@@ -36,7 +36,6 @@ mod host;
 
 #[cfg(feature = "host")]
 pub use host::*;
-use risc0_steel::ethereum::EthChainSpec;
 
 /// The OP Mainnet [ChainSpec].
 pub static OP_MAINNET_CHAIN_SPEC: LazyLock<OpChainSpec> = LazyLock::new(|| ChainSpec {
