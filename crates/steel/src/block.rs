@@ -14,21 +14,24 @@
 
 use crate::{
     config::ChainSpec, serde::Eip2718Wrapper, state::StateDb, BlockHeaderCommit, Commitment,
-    CommitmentVersion, EvmBlockHeader, EvmEnv, GuestEvmEnv, MerkleTrie,
+    CommitmentVersion, EvmBlockHeader, EvmEnv, EvmFactory, GuestEvmEnv, MerkleTrie,
 };
 use ::serde::{Deserialize, Serialize};
 use alloy_consensus::ReceiptEnvelope;
-use alloy_primitives::{map::HashMap, Bytes, Sealed, B256};
+use alloy_primitives::{map::HashMap, Bytes, Sealable, Sealed, B256};
+use std::marker::PhantomData;
 
 /// Input committing to the corresponding execution block hash.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct BlockInput<H> {
-    header: H,
+pub struct BlockInput<F: EvmFactory> {
+    header: F::Header,
     state_trie: MerkleTrie,
     storage_tries: Vec<MerkleTrie>,
     contracts: Vec<Bytes>,
-    ancestors: Vec<H>,
+    ancestors: Vec<F::Header>,
     receipts: Option<Vec<Eip2718Wrapper<ReceiptEnvelope>>>,
+    #[serde(skip)]
+    phantom: PhantomData<F>,
 }
 
 /// Implement [BlockHeaderCommit] for the unit type.
@@ -45,9 +48,9 @@ impl<H: EvmBlockHeader> BlockHeaderCommit<H> for () {
     }
 }
 
-impl<H: EvmBlockHeader> BlockInput<H> {
+impl<F: EvmFactory> BlockInput<F> {
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    pub fn into_env(self) -> GuestEvmEnv<H> {
+    pub fn into_env(self) -> GuestEvmEnv<F> {
         // verify that the state root matches the state trie
         let state_root = self.state_trie.hash_slow();
         assert_eq!(self.header.state_root(), &state_root, "State root mismatch");
@@ -111,7 +114,7 @@ impl<H: EvmBlockHeader> BlockInput<H> {
             CommitmentVersion::Block as u16,
             header.number(),
             header.seal(),
-            ChainSpec::DEFAULT_DIGEST,
+            ChainSpec::<F::Spec>::default().digest(),
         );
 
         EvmEnv::new(db, header, commit)
@@ -124,26 +127,26 @@ pub mod host {
     use crate::{
         host::db::{ProofDb, ProviderDb},
         serde::Eip2718Wrapper,
-        EvmBlockHeader,
+        EvmBlockHeader, EvmFactory,
     };
     use alloy::{network::Network, providers::Provider};
     use alloy_primitives::Sealed;
     use anyhow::{anyhow, ensure};
     use log::debug;
-    use std::fmt::Display;
+    use std::{fmt::Display, marker::PhantomData};
 
-    impl<H> BlockInput<H> {
+    impl<F: EvmFactory> BlockInput<F> {
         /// Creates the `BlockInput` containing the necessary EVM state that can be verified against
         /// the block hash.
         pub(crate) async fn from_proof_db<N, P>(
             mut db: ProofDb<ProviderDb<N, P>>,
-            header: Sealed<H>,
+            header: Sealed<F::Header>,
         ) -> anyhow::Result<Self>
         where
             N: Network,
             P: Provider<N>,
-            H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-            <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+            F::Header: TryFrom<<N as Network>::HeaderResponse>,
+            <F::Header as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
         {
             assert_eq!(db.inner().block(), header.seal(), "DB block mismatch");
 
@@ -159,7 +162,7 @@ pub mod host {
             // retrieve ancestor block headers
             let mut ancestors = Vec::new();
             for rlp_header in db.ancestor_proof(header.number()).await? {
-                let header: H = rlp_header
+                let header: F::Header = rlp_header
                     .try_into()
                     .map_err(|err| anyhow!("header invalid: {}", err))?;
                 ancestors.push(header);
@@ -187,6 +190,7 @@ pub mod host {
                 contracts,
                 ancestors,
                 receipts,
+                phantom: PhantomData,
             };
 
             Ok(input)

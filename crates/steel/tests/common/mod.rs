@@ -17,23 +17,23 @@ use std::{fmt::Debug, sync::LazyLock};
 use alloy::{eips::eip2930::AccessList, network::Ethereum, providers::Provider};
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
-use revm::primitives::hardfork::SpecId;
+use revm::{context::TxEnv, primitives::hardfork::SpecId};
 use risc0_steel::{config::ChainSpec, ethereum::EthEvmEnv, CallBuilder, Contract};
 
-pub static ANVIL_CHAIN_SPEC: LazyLock<ChainSpec> =
+pub static ANVIL_CHAIN_SPEC: LazyLock<ChainSpec<SpecId>> =
     LazyLock::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
 
 /// Executes a new [SolCall] using steel.
-pub async fn eth_call<P, C>(
+pub async fn eth_call<P, S>(
     provider: P,
     address: Address,
-    call: C,
+    call: S,
     options: CallOptions,
-) -> C::Return
+) -> S::Return
 where
     P: Provider<Ethereum> + 'static,
-    C: SolCall + Send + 'static,
-    C::Return: PartialEq + Debug + Send,
+    S: SolCall + Send + Sync + 'static,
+    S::Return: PartialEq + Debug + Send,
 {
     let mut env = EthEvmEnv::builder()
         .provider(provider)
@@ -115,15 +115,15 @@ impl CallOptions {
         }
     }
 
-    fn apply<E, C>(&self, mut builder: CallBuilder<E, C>) -> CallBuilder<E, C> {
+    fn apply<E, C>(&self, mut builder: CallBuilder<TxEnv, E, C>) -> CallBuilder<TxEnv, E, C> {
         if let Some(from) = self.from {
-            builder = builder.from(from);
+            builder.tx.caller = from;
         }
         if let Some(gas) = self.gas {
-            builder = builder.gas(gas);
+            builder.tx.gas_limit = gas;
         }
         if let Some(gas_price) = self.gas_price {
-            builder = builder.gas_price(gas_price);
+            builder.tx.gas_price = gas_price;
         }
         builder
     }

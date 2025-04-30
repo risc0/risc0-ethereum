@@ -26,7 +26,7 @@ anyhow = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
-revm = { workspace = true, features = ["serde", "optional_balance_check", "optional_eip3607", "optional_no_base_fee"] }
+revm = { workspace = true, features = ["serde", "optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true }

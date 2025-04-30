@@ -14,7 +14,7 @@
 
 use crate::{
     history::beacon_roots::BeaconRootsContract, state::WrapStateDb, Commitment, EvmBlockHeader,
-    GuestEvmEnv,
+    EvmFactory, GuestEvmEnv,
 };
 use alloy_primitives::U256;
 use anyhow::{ensure, Context};
@@ -63,9 +63,9 @@ pub struct SteelVerifier<E> {
     env: E,
 }
 
-impl<'a, H: EvmBlockHeader> SteelVerifier<&'a GuestEvmEnv<H>> {
+impl<'a, F: EvmFactory> SteelVerifier<&'a GuestEvmEnv<F>> {
     /// Constructor for verifying Steel commitments in the guest.
-    pub fn new(env: &'a GuestEvmEnv<H>) -> Self {
+    pub fn new(env: &'a GuestEvmEnv<F>) -> Self {
         Self { env }
     }
 
@@ -97,7 +97,7 @@ mod host {
     use anyhow::Context;
     use revm::Database;
 
-    impl<'a, D, H: EvmBlockHeader, C> SteelVerifier<&'a mut HostEvmEnv<D, H, C>>
+    impl<'a, D, F: EvmFactory, C> SteelVerifier<&'a mut HostEvmEnv<D, F, C>>
     where
         D: crate::EvmDatabase + Send + 'static,
         beacon_roots::Error: From<<D as Database>::Error>,
@@ -111,7 +111,7 @@ mod host {
         /// [EvmEnv::into_input].
         ///
         /// [EvmEnv::into_input]: crate::EvmEnv::into_input
-        pub fn preflight(env: &'a mut HostEvmEnv<D, H, C>) -> Self {
+        pub fn preflight(env: &'a mut HostEvmEnv<D, F, C>) -> Self {
             Self { env }
         }
 
