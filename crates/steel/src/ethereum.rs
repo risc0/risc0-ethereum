@@ -112,7 +112,7 @@ pub type EthChainSpec = ChainSpec<SpecId>;
 
 impl EthChainSpec {
     pub const DEFAULT_DIGEST: B256 =
-        b256!("42c4ce5e8ad7e8415a631d90d7b10fe1db3b33d51cbb374138a73b9ea2be2314");
+        b256!("93fa9331a672fad1b84b892f841dcc9609d81b2ab408a1de847899f9b8743e10");
 }
 
 /// [EvmEnv] for Ethereum.
@@ -170,5 +170,18 @@ impl EvmBlockHeader for EthBlockHeader {
                 BlobExcessGasAndPrice::new(excess_blob_gas, spec >= SpecId::PRAGUE)
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_digest() {
+        assert_eq!(
+            EthChainSpec::DEFAULT_DIGEST,
+            EthChainSpec::default().digest()
+        );
     }
 }

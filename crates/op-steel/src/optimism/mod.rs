@@ -15,7 +15,7 @@
 use crate::game::DisputeGameInput;
 use alloy_evm::{Database, EvmFactory as AlloyEvmFactory};
 use alloy_op_evm::OpEvmFactory as AlloyOpEvmFactory;
-use alloy_primitives::{Address, BlockNumber, Bytes, ChainId, Sealable, TxKind, B256};
+use alloy_primitives::{b256, Address, BlockNumber, Bytes, ChainId, Sealable, TxKind, B256};
 use op_alloy_network::{Network, Optimism};
 use op_revm::{spec::OpSpecId, OpTransaction};
 use revm::{
@@ -36,17 +36,20 @@ mod host;
 
 #[cfg(feature = "host")]
 pub use host::*;
+use risc0_steel::ethereum::EthChainSpec;
 
 /// The OP Mainnet [ChainSpec].
 pub static OP_MAINNET_CHAIN_SPEC: LazyLock<OpChainSpec> = LazyLock::new(|| ChainSpec {
     chain_id: 10,
     forks: BTreeMap::from([
-        (OpSpecId::BEDROCK, ForkCondition::Timestamp(1679079600)),
-        (OpSpecId::REGOLITH, ForkCondition::Timestamp(1679079600)),
+        (OpSpecId::BEDROCK, ForkCondition::Block(105235063)),
+        (OpSpecId::REGOLITH, ForkCondition::Timestamp(0)),
         (OpSpecId::CANYON, ForkCondition::Timestamp(1704992401)),
         (OpSpecId::ECOTONE, ForkCondition::Timestamp(1710374401)),
         (OpSpecId::FJORD, ForkCondition::Timestamp(1720627201)),
         (OpSpecId::GRANITE, ForkCondition::Timestamp(1726070401)),
+        (OpSpecId::HOLOCENE, ForkCondition::Timestamp(1736445601)),
+        (OpSpecId::ISTHMUS, ForkCondition::Timestamp(1746806401)),
     ]),
 });
 
@@ -60,6 +63,8 @@ pub static OP_SEPOLIA_CHAIN_SPEC: LazyLock<OpChainSpec> = LazyLock::new(|| Chain
         (OpSpecId::ECOTONE, ForkCondition::Timestamp(1708534800)),
         (OpSpecId::FJORD, ForkCondition::Timestamp(1716998400)),
         (OpSpecId::GRANITE, ForkCondition::Timestamp(1723478400)),
+        (OpSpecId::HOLOCENE, ForkCondition::Timestamp(1732633200)),
+        (OpSpecId::ISTHMUS, ForkCondition::Timestamp(1744905600)),
     ]),
 });
 

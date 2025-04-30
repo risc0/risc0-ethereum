@@ -151,7 +151,6 @@ impl<S: Ord + Serialize> StructHash for ChainSpec<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ethereum::EthChainSpec;
     use revm::primitives::hardfork::SpecId;
 
     #[test]
@@ -175,17 +174,53 @@ mod tests {
     }
 
     #[test]
-    fn default_digest() {
+    fn digest() {
+        let chain_id = 0xF1E2D3C4B5A69788;
+        let forks = [
+            (SpecId::FRONTIER_THAWING, ForkCondition::Block(0xF1E2D3C4B5A69788)),
+            (SpecId::PRAGUE, ForkCondition::Timestamp(0xF1E2D3C4B5A69788)),
+        ];
+        let chain_spec = ChainSpec {
+            chain_id,
+            forks: BTreeMap::from(forks.clone()),
+        };
+
         let exp: [u8; 32] = {
             let mut h = Sha256::new();
+            // tag digest
             h.update(Sha256::digest(b"ChainSpec(chain_id,forks)"));
-            h.update((&SpecId::default(), &ForkCondition::Block(0)).digest::<Sha256>());
-            h.update((1u64 as u32).to_le_bytes());
-            h.update(((1u64 >> 32) as u32).to_le_bytes());
-            h.update(1u16.to_le_bytes());
+            // fork digests
+            let fork_digest = {
+                let (spec, ForkCondition::Block(n)) = forks[0] else {
+                    unreachable!()
+                };
+                let mut h = Sha256::new();
+                h.update((spec as u32).to_le_bytes());
+                h.update(b"Block");
+                h.update(n.to_le_bytes());
+                h.finalize()
+            };
+            h.update(fork_digest);
+            let fork_digest = {
+                let (spec, ForkCondition::Timestamp(ts)) = forks[1] else {
+                    unreachable!()
+                };
+                let mut h = Sha256::new();
+                h.update((spec as u32).to_le_bytes());
+                h.update(b"Timestamp");
+                h.update(ts.to_le_bytes());
+                h.finalize()
+            };
+            h.update(fork_digest);
+            // chain_id
+            h.update((chain_id as u32).to_le_bytes());
+            h.update(((chain_id >> 32) as u32).to_le_bytes());
+            // len(forks)
+            h.update(2u16.to_le_bytes());
+
             h.finalize().into()
         };
-        assert_eq!(EthChainSpec::DEFAULT_DIGEST, B256::from(exp));
-        assert_eq!(EthChainSpec::default().digest(), B256::from(exp));
+
+        assert_eq!(chain_spec.digest(), B256::from(exp));
     }
 }
