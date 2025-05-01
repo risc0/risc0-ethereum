@@ -69,7 +69,7 @@ pub struct EthEvmFactory;
 
 impl EvmFactory for EthEvmFactory {
     type Evm<DB: Database> = <AlloyEthEvmFactory as AlloyEvmFactory>::Evm<DB, NoOpInspector>;
-    type Tx = TxEnv;
+    type Tx = <AlloyEthEvmFactory as AlloyEvmFactory>::Tx;
     type Error<DBError: Error + Send + Sync + 'static> =
         <AlloyEthEvmFactory as AlloyEvmFactory>::Error<DBError>;
     type HaltReason = <AlloyEthEvmFactory as AlloyEvmFactory>::HaltReason;

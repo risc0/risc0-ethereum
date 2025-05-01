@@ -384,8 +384,7 @@ mod host {
                     .with_gas_price(self.tx.gas_price)
                     .with_kind(self.tx.kind)
                     .with_value(self.tx.value)
-                    .with_input(self.tx.data.clone())
-                    .with_access_list(self.tx.access_list.clone());
+                    .with_input(self.tx.data.clone());
 
                 let db = self.env.db_mut();
                 let provider = db.inner().provider();
