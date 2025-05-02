@@ -246,15 +246,17 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// let mut env2 = builder.block_hash(block_hash).build().await?;
     /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
     ///
+    /// // Perform parallel operations (these would typically modify the state within env1/env2's dbs)
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
     ///
+    /// // Incorporate env2's state into env1. env2 is consumed. env1's db is replaced.
     /// env1.extend(env2)?;
     /// let evm_input = env1.into_input().await?;
     ///
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend(&mut self, other: Self) -> Result<()> {
+    pub fn extend(&mut self, mut other: Self) -> Result<()> {
         ensure!(self.chain_id == other.chain_id, "configuration mismatch");
         ensure!(self.spec == other.spec, "configuration mismatch");
         ensure!(
@@ -262,7 +264,14 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
             "execution header mismatch"
         );
         // the commitments do not need to match as long as the cfg_env is consistent
-        self.db_mut().extend(other.db.unwrap());
+
+        // safe unwrap: EvmEnv cannot be borrowed without a DB
+        let db_self = self.db.take().unwrap();
+        let db_other = other.db.take().unwrap();
+
+        let merged_db = db_self.merge(db_other);
+        // place the merged database back into self
+        self.db = Some(merged_db);
 
         Ok(())
     }
