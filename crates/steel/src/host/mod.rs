@@ -201,7 +201,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
         self
     }
 
-    /// Extends the environment with the contents of another compatible environment.
+    /// Merges this environment with another, consuming both and returning a new one.
     ///
     /// ### Errors
     ///
@@ -249,31 +249,40 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// // Perform parallel operations (these would typically modify the state within env1/env2's dbs)
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
     ///
-    /// // Incorporate env2's state into env1. env2 is consumed. env1's db is replaced.
-    /// env1.extend(env2)?;
-    /// let evm_input = env1.into_input().await?;
+    /// let env = env1.merge(env2)?;
+    /// let evm_input = env.into_input().await?;
     ///
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend(&mut self, mut other: Self) -> Result<()> {
-        ensure!(self.chain_id == other.chain_id, "configuration mismatch");
-        ensure!(self.spec == other.spec, "configuration mismatch");
+    pub fn merge(self, mut other: Self) -> Result<Self> {
+        let Self {
+            mut db,
+            chain_id,
+            spec,
+            header,
+            commit,
+        } = self;
+
+        ensure!(chain_id == other.chain_id, "configuration mismatch");
+        ensure!(spec == other.spec, "configuration mismatch");
         ensure!(
-            self.header.seal() == other.header.seal(),
+            header.seal() == other.header.seal(),
             "execution header mismatch"
         );
         // the commitments do not need to match as long as the cfg_env is consistent
 
-        // safe unwrap: EvmEnv cannot be borrowed without a DB
-        let db_self = self.db.take().unwrap();
+        // safe unwrap: EvmEnv is never returned without a DB
+        let db = db.take().unwrap();
         let db_other = other.db.take().unwrap();
 
-        let merged_db = db_self.merge(db_other);
-        // place the merged database back into self
-        self.db = Some(merged_db);
-
-        Ok(())
+        Ok(Self {
+            db: Some(db.merge(db_other)),
+            chain_id,
+            spec,
+            header,
+            commit,
+        })
     }
 }
 
