@@ -89,8 +89,11 @@ async fn main() -> Result<()> {
     let input1 = env.into_input().await?;
 
     // Create another EVM environment for that provider defaulting to the latest block.
-    let mut env = EthEvmEnv::builder().provider(provider).build().await?;
-    env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    let mut env = EthEvmEnv::builder()
+        .provider(provider)
+        .chain_spec(&ETH_MAINNET_CHAIN_SPEC)
+        .build()
+        .await?;
 
     // Preflight the verification of the commitment of the previous input.
     SteelVerifier::preflight(&mut env)
