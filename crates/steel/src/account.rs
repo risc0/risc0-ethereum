@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //! Types related to account queries.
-use crate::{EvmBlockHeader, GuestEvmEnv, StateAccount};
+use crate::{EvmFactory, GuestEvmEnv, StateAccount};
 use alloy_primitives::{Address, Bytes, B256, U256};
 use anyhow::Result;
 
@@ -106,9 +106,9 @@ impl<E> Account<E> {
     }
 }
 
-impl<'a, H: EvmBlockHeader> Account<&'a GuestEvmEnv<H>> {
+impl<'a, F: EvmFactory> Account<&'a GuestEvmEnv<F>> {
     /// Constructor for querying an Ethereum account in the guest.
-    pub fn new(address: Address, env: &'a GuestEvmEnv<H>) -> Self {
+    pub fn new(address: Address, env: &'a GuestEvmEnv<F>) -> Self {
         Self {
             address,
             env,
@@ -150,12 +150,12 @@ mod host {
     use anyhow::{ensure, Context};
     use revm::Database as RevmDatabase;
 
-    impl<'a, N, P, H, C> Account<&'a mut HostEvmEnv<ProviderDb<N, P>, H, C>>
+    impl<'a, N, P, F, C> Account<&'a mut HostEvmEnv<ProviderDb<N, P>, F, C>>
     where
         N: Network,
         P: Provider<N>,
         ProviderDb<N, P>: Send + 'static,
-        H: EvmBlockHeader,
+        F: EvmFactory,
     {
         /// Constructor for preflighting queries to an Ethereum account on the host.
         ///
@@ -167,7 +167,7 @@ mod host {
         /// [EvmEnv]: crate::EvmEnv
         pub fn preflight(
             address: Address,
-            env: &'a mut HostEvmEnv<ProviderDb<N, P>, H, C>,
+            env: &'a mut HostEvmEnv<ProviderDb<N, P>, F, C>,
         ) -> Self {
             Self {
                 address,

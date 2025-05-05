@@ -15,7 +15,7 @@
 //! Types related to event queries.
 pub use alloy_rpc_types::{Topic, ValueOrArray};
 
-use crate::{state::WrapStateDb, EvmBlockHeader, EvmDatabase, GuestEvmEnv};
+use crate::{state::WrapStateDb, EvmBlockHeader, EvmDatabase, EvmFactory, GuestEvmEnv};
 use alloy_primitives::{Address, Log, Sealed};
 use alloy_rpc_types::Filter;
 use alloy_sol_types::SolEvent;
@@ -141,11 +141,11 @@ pub struct Event<S, E> {
     phantom: PhantomData<S>,
 }
 
-impl<H: EvmBlockHeader> Event<(), &GuestEvmEnv<H>> {
+impl<F: EvmFactory> Event<(), &GuestEvmEnv<F>> {
     /// Constructor for executing an event query for a specific Solidity event.
-    pub fn new<S: SolEvent>(env: &GuestEvmEnv<H>) -> Event<S, &GuestEvmEnv<H>> {
+    pub fn new<S: SolEvent>(env: &GuestEvmEnv<F>) -> Event<S, &GuestEvmEnv<F>> {
         Event {
-            filter: event_filter::<S, H>(env.header()),
+            filter: event_filter::<S, F::Header>(env.header()),
             env,
             phantom: PhantomData,
         }
@@ -153,7 +153,7 @@ impl<H: EvmBlockHeader> Event<(), &GuestEvmEnv<H>> {
 }
 
 #[cfg(feature = "unstable-event")]
-impl<S: SolEvent, H: EvmBlockHeader> Event<S, &GuestEvmEnv<H>> {
+impl<S: SolEvent, F: EvmFactory> Event<S, &GuestEvmEnv<F>> {
     /// Executes the query and returns the matching logs and panics on failure.
     ///
     /// A convenience wrapper for [Event::try_query], panicking if the call fails. Useful when
@@ -165,9 +165,7 @@ impl<S: SolEvent, H: EvmBlockHeader> Event<S, &GuestEvmEnv<H>> {
     /// Attempts to execute the query and returns the matching logs or an error.
     pub fn try_query(self) -> anyhow::Result<Vec<Log<S>>> {
         let logs = WrapStateDb::new(self.env.db(), &self.env.header).logs(self.filter)?;
-        logs.iter()
-            .map(|log| Ok(S::decode_log(log, false)?))
-            .collect()
+        logs.iter().map(|log| Ok(S::decode_log(log)?)).collect()
     }
 }
 
@@ -207,7 +205,7 @@ mod host {
     use revm::Database as RevmDatabase;
     use std::error::Error as StdError;
 
-    impl<D, H: EvmBlockHeader, C> Event<(), &mut HostEvmEnv<D, H, C>>
+    impl<D, F: EvmFactory, C> Event<(), &mut HostEvmEnv<D, F, C>>
     where
         D: EvmDatabase + Send + 'static,
         <D as RevmDatabase>::Error: StdError + Send + Sync + 'static,
@@ -222,17 +220,17 @@ mod host {
         /// [EvmEnv]: crate::EvmEnv
         /// [Provider]: alloy::providers::Provider
         pub fn preflight<S: SolEvent>(
-            env: &mut HostEvmEnv<D, H, C>,
-        ) -> Event<S, &mut HostEvmEnv<D, H, C>> {
+            env: &mut HostEvmEnv<D, F, C>,
+        ) -> Event<S, &mut HostEvmEnv<D, F, C>> {
             Event {
-                filter: event_filter::<S, H>(env.header()),
+                filter: event_filter::<S, F::Header>(env.header()),
                 env,
                 phantom: PhantomData,
             }
         }
     }
 
-    impl<S: SolEvent, D, H: EvmBlockHeader, C> Event<S, &mut HostEvmEnv<D, H, C>>
+    impl<S: SolEvent, D, F: EvmFactory, C> Event<S, &mut HostEvmEnv<D, F, C>>
     where
         D: EvmDatabase + Send + 'static,
         <D as RevmDatabase>::Error: StdError + Send + Sync + 'static,
@@ -250,9 +248,7 @@ mod host {
                 .spawn_with_db(move |db| db.logs(self.filter))
                 .await
                 .with_context(|| format!("querying logs for '{}' failed", S::SIGNATURE))?;
-            logs.iter()
-                .map(|log| Ok(S::decode_log(log, false)?))
-                .collect()
+            logs.iter().map(|log| Ok(S::decode_log(log)?)).collect()
         }
     }
 }

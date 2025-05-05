@@ -13,9 +13,7 @@
 // limitations under the License.
 
 //! Types related to commitments to a historical state.
-use crate::{
-    beacon, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
-};
+use crate::{beacon, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput};
 use alloy_primitives::{Sealed, B256, U256};
 use beacon::{BeaconCommit, GeneralizedBeaconCommit, STATE_ROOT_LEAF_INDEX};
 use beacon_roots::{BeaconRootsContract, BeaconRootsState};
@@ -24,7 +22,7 @@ use serde::{Deserialize, Serialize};
 pub(crate) mod beacon_roots;
 
 /// Input committing a previous block hash to the corresponding Beacon Chain block root.
-pub type HistoryInput<H> = ComposeInput<H, HistoryCommit>;
+pub type HistoryInput<F> = ComposeInput<F, HistoryCommit>;
 
 /// A commitment that an execution block is included as an ancestor of a specific beacon block on
 /// the Ethereum blockchain.
@@ -48,7 +46,7 @@ struct StateCommit {
     state_commit: GeneralizedBeaconCommit<STATE_ROOT_LEAF_INDEX>,
 }
 
-impl<H: EvmBlockHeader> BlockHeaderCommit<H> for HistoryCommit {
+impl<H> BlockHeaderCommit<H> for HistoryCommit {
     /// Generates a commitment that proves the given block header is included in the Beacon Chain's
     /// history. Panics if the provided [HistoryCommit] data is invalid or inconsistent.
     #[inline]
@@ -91,6 +89,7 @@ mod host {
         beacon::host::{client::BeaconClient, create_beacon_commit},
         ethereum::EthBlockHeader,
         history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH},
+        EvmBlockHeader,
     };
     use alloy::{network::Ethereum, providers::Provider};
     use alloy_primitives::{BlockNumber, Sealable};
