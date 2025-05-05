@@ -141,10 +141,10 @@ where
 {
     let mut env = EthEvmEnv::builder()
         .provider(provider)
+        .chain_spec(&ANVIL_CHAIN_SPEC)
         .build()
         .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .unwrap();
     let block_hash = env.header().seal();
     let block_number = env.header().number;
 
@@ -154,7 +154,7 @@ where
     };
 
     let input = env.into_input().await.unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let env = input.into_env(&ANVIL_CHAIN_SPEC);
     let commitment = env.commitment();
     assert_eq!(commitment.digest, block_hash, "invalid commitment");
     assert_eq!(
@@ -218,10 +218,10 @@ mod event {
 
         let mut env = EthEvmEnv::builder()
             .provider(provider)
+            .chain_spec(&ANVIL_CHAIN_SPEC)
             .build()
             .await
-            .unwrap()
-            .with_chain_spec(&ANVIL_CHAIN_SPEC);
+            .unwrap();
 
         let preflight_logs = {
             let event = risc0_steel::Event::preflight::<SteelTest::Event>(&mut env)
@@ -230,7 +230,7 @@ mod event {
         };
 
         let input = env.into_input().await.unwrap();
-        let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+        let env = input.into_env(&ANVIL_CHAIN_SPEC);
 
         let logs = {
             let event =
@@ -262,10 +262,10 @@ mod event {
 
         let mut env = EthEvmEnv::builder()
             .provider(provider)
+            .chain_spec(&ANVIL_CHAIN_SPEC)
             .build()
             .await
-            .unwrap()
-            .with_chain_spec(&ANVIL_CHAIN_SPEC);
+            .unwrap();
 
         let preflight_logs = {
             let event = Event::preflight::<SteelTest::Event>(&mut env).address(STEEL_TEST_CONTRACT);
@@ -273,7 +273,7 @@ mod event {
         };
 
         let input = env.into_input().await.unwrap();
-        let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+        let env = input.into_env(&ANVIL_CHAIN_SPEC);
 
         let logs = {
             let event = Event::new::<SteelTest::Event>(&env).address(STEEL_TEST_CONTRACT);
@@ -449,10 +449,10 @@ async fn multi_contract_calls() {
 async fn call_eoa() {
     let mut env = EthEvmEnv::builder()
         .provider(test_provider().await)
+        .chain_spec(&ANVIL_CHAIN_SPEC)
         .build()
         .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .unwrap();
     let mut contract = Contract::preflight(Address::ZERO, &mut env);
     contract
         .call_builder(&SteelTest::testBlockhashCall {})
@@ -465,10 +465,10 @@ async fn call_eoa() {
 async fn no_preflight() {
     let env = EthEvmEnv::builder()
         .provider(test_provider().await)
+        .chain_spec(&ANVIL_CHAIN_SPEC)
         .build()
         .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .unwrap();
     match env.into_input().await {
         Ok(_) => panic!("calling into_input without a preflight should fail"),
         Err(err) => assert_eq!(

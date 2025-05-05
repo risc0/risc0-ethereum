@@ -30,10 +30,9 @@ use std::marker::PhantomData;
 ///
 /// ### Examples
 /// ```rust,no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, Event};
+/// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Event};
 /// # use alloy_primitives::address;
 /// # use alloy_sol_types::sol;
-///
 /// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() -> anyhow::Result<()> {
 /// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
@@ -45,14 +44,14 @@ use std::marker::PhantomData;
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 /// let event = Event::preflight::<IERC20::Transfer>(&mut env).address(contract_address);
 /// event.query().await?;
 ///
 /// let evm_input = env.into_input().await?;
 ///
 /// // Guest:
-/// let env = evm_input.into_env();
+/// let env = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 /// let event = Event::new::<IERC20::Transfer>(&env).address(contract_address);
 /// let logs = event.query();
 ///

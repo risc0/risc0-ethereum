@@ -14,9 +14,8 @@
 
 //! Functionality that is only needed for the host and not the guest.
 use crate::{
-    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
-    history::HistoryCommit, BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv,
-    EvmFactory, EvmInput,
+    beacon::BeaconCommit, block::BlockInput, ethereum::EthEvmEnv, history::HistoryCommit,
+    BlockHeaderCommit, Commitment, ComposeInput, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
@@ -188,19 +187,6 @@ where
 }
 
 impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
-    /// Sets the chain ID and specification ID from the given chain spec.
-    ///
-    /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec<F::Spec>) -> Self {
-        self.chain_id = chain_spec.chain_id;
-        self.spec = *chain_spec
-            .active_fork(self.header.number(), self.header.timestamp())
-            .unwrap();
-        self.commit.config_id = chain_spec.digest();
-
-        self
-    }
-
     /// Extends the environment with the contents of another compatible environment.
     ///
     /// ### Errors
@@ -220,10 +206,9 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     ///
     /// ### Example
     /// ```rust
-    /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+    /// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
     /// # use alloy_primitives::address;
     /// # use alloy_sol_types::sol;
-    ///
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() -> anyhow::Result<()> {
     /// # sol! {
@@ -237,7 +222,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// # let usdc_addr = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
     ///
     /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-    /// let builder = EthEvmEnv::builder().rpc(url);
+    /// let builder = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     ///
     /// let mut env1 = builder.clone().build().await?;
     /// let block_hash = env1.header().seal();
@@ -250,7 +235,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     ///
     /// env1.extend(env2)?;
     /// let evm_input = env1.into_input().await?;
-    ///
+    /// # _ = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
     /// # Ok(())
     /// # }
     /// ```
