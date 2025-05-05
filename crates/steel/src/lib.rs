@@ -329,18 +329,17 @@ mod private {
             ///
             /// This field encodes two distinct pieces of information into a single 256-bit unsigned integer:
             /// 1.  **Version (Top 16 bits):** Bits `[255..240]` store a `u16` representing the type or version
-            ///     of the claim being made. See [crate::CommitmentVersion] for defined values like
+            ///     of the claim being made. See [CommitmentVersion] for defined values like
             ///     `Block` or `Beacon`.
             /// 2.  **Identifier (Bottom 64 bits):** Bits `[63..0]` store a `u64` value that uniquely identifies
             ///     the specific instance of the claim. For example, for a `Block` commitment, this
             ///     would be the block number. For a `Beacon` commitment, it would be the slot number.
             ///
-            /// The bits between the version and identifier (`[239..64]`) are currently unused and are expected
-            /// to be zero, as set by [crate::Commitment::encode_id].
-            ///
-            /// Use [crate::Commitment::decode_id] to unpack this field into its constituent parts in Rust code.
+            /// Use [Commitment::decode_id] to unpack this field into its constituent parts in Rust code.
             /// The packing scheme ensures efficient storage and retrieval while maintaining compatibility
             /// with Solidity's `uint256`.
+            ///
+            /// [CommitmentVersion]: crate::CommitmentVersion
             uint256 id;
 
             /// The cryptographic digest representing the core claim data.
@@ -383,9 +382,6 @@ impl Commitment {
     pub const ABI_ENCODED_SIZE: usize = 3 * 32;
 
     /// Creates a new [Commitment] by packing the version and identifier into the `id` field.
-    ///
-    /// This constructor uses [Commitment::encode_id] to combine the `version` and `id` arguments
-    /// according to the specified packing scheme.
     #[inline]
     pub const fn new(version: u16, id: u64, digest: B256, config_id: B256) -> Commitment {
         Self {
@@ -397,17 +393,9 @@ impl Commitment {
 
     /// Decodes the packed `Commitment.id` field into the identifier part and the version.
     ///
-    /// This function reverses the packing performed by [Commitment::encode_id]. It extracts
-    /// the version from the top 16 bits and returns the remaining part of the `id` field
-    /// (which contains the instance identifier in its lower 64 bits) along with the `u16` version.
-    ///
-    /// # Returns
-    ///
-    /// A tuple `(id_part, version)` where:
-    /// * `id_part`: A `U256` value representing the original `Commitment.id` but with the top 16
-    ///   version bits guaranteed to be zero. The actual instance identifier (e.g., block number)
-    ///   resides in the lowest 64 bits.
-    /// * `version`: The `u16` version identifier extracted from bits `[255..240]`.
+    /// This function extracts the version from the top 16 bits and returns the remaining part of
+    /// the `id` field (which contains the instance identifier in its lower 64 bits) along with the
+    /// `u16` version.
     #[inline]
     pub fn decode_id(&self) -> (U256, u16) {
         // define a mask to isolate the lower 240 bits (zeroing out the top 16 version bits)
