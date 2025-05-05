@@ -165,7 +165,7 @@ mod host {
             let mut state_commits: Vec<StateCommit> = Vec::new();
 
             // derive state commits backward from the target commitment block to the execution block
-            let mut state_info = StateInfo::from_header(&commitment_header, &rpc_provider).await?;
+            let mut state_info = StateInfo::from_header(commitment_header, &rpc_provider).await?;
             loop {
                 log::debug!("chained commitment for block {}", state_info.block_hash);
 
