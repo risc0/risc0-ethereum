@@ -25,9 +25,9 @@ use alloy::{
 use alloy_primitives::{address, Address, Bytes, B256, U256};
 use anyhow::Context;
 use risc0_steel::{
-    ethereum::{EthBlockHeader, EthEvmEnv, EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
+    ethereum::{EthBlockHeader, EthEvmEnv, EthEvmFactory, EthEvmInput, ETH_SEPOLIA_CHAIN_SPEC},
     host::BlockNumberOrTag,
-    Commitment, Contract, StateAccount,
+    Commitment, Contract, EvmFactory, StateAccount,
 };
 use serde_json::{from_value, to_value, Value};
 use test_log::test;
@@ -359,7 +359,8 @@ async fn corrupt_header_beacon_commitment() {
     let header_value = &mut get_block_input_mut(&mut input_value)["header"];
 
     // corrupt the header by modifying its number
-    let mut header: EthBlockHeader = from_value(header_value.clone()).unwrap();
+    let mut header: <EthEvmFactory as EvmFactory>::Header =
+        from_value(header_value.clone()).unwrap();
     header.inner_mut().number = 0xdeadbeaf;
     *header_value = to_value(header).unwrap();
 

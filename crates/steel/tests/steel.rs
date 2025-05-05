@@ -25,7 +25,7 @@ use alloy_primitives::{address, b256, bytes, hex, keccak256, Address, Bytes, U25
 use alloy_sol_types::SolCall;
 use alloy_trie::EMPTY_ROOT_HASH;
 use common::{CallOptions, ANVIL_CHAIN_SPEC};
-use risc0_steel::{ethereum::EthEvmEnv, Account, Contract};
+use risc0_steel::{account::AccountInfo, ethereum::EthEvmEnv, Account, Contract};
 use sha2::{Digest, Sha256};
 use test_log::test;
 
@@ -135,6 +135,71 @@ async fn test_provider() -> impl Provider + Clone {
     provider
 }
 
+async fn account_query<P>(provider: P, address: Address, bytecode: bool) -> AccountInfo
+where
+    P: Provider + 'static,
+{
+    let mut env = EthEvmEnv::builder()
+        .provider(provider)
+        .build()
+        .await
+        .unwrap()
+        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let block_hash = env.header().seal();
+    let block_number = env.header().number;
+
+    let preflight_info = {
+        let account = Account::preflight(address, &mut env).bytecode(bytecode);
+        account.info().await.unwrap()
+    };
+
+    let input = env.into_input().await.unwrap();
+    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let commitment = env.commitment();
+    assert_eq!(commitment.digest, block_hash, "invalid commitment");
+    assert_eq!(
+        commitment.id,
+        U256::from(block_number),
+        "invalid commitment"
+    );
+
+    let info = {
+        let account = Account::new(address, &env).bytecode(bytecode);
+        account.info()
+    };
+    assert_eq!(info, preflight_info, "mismatch in preflight and execution");
+
+    info
+}
+
+#[test(tokio::test)]
+async fn account_info() {
+    let p = test_provider().await;
+    let address = STEEL_TEST_CONTRACT;
+    let info = account_query(p.clone(), address, false).await;
+
+    assert_eq!(info.nonce, p.get_transaction_count(address).await.unwrap());
+    assert_eq!(info.balance, p.get_balance(address).await.unwrap());
+    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
+    let code = p.get_code_at(address).await.unwrap();
+    assert_eq!(info.code_hash, keccak256(&code));
+    assert_eq!(info.code, None);
+}
+
+#[test(tokio::test)]
+async fn account_info_with_bytecode() {
+    let p = test_provider().await;
+    let address = STEEL_TEST_CONTRACT;
+    let info = account_query(p.clone(), address, true).await;
+
+    assert_eq!(info.nonce, p.get_transaction_count(address).await.unwrap());
+    assert_eq!(info.balance, p.get_balance(address).await.unwrap());
+    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
+    let code = p.get_code_at(address).await.unwrap();
+    assert_eq!(info.code_hash, keccak256(&code));
+    assert_eq!(info.code, Some(code));
+}
+
 #[cfg(feature = "unstable-event")]
 mod event {
     use super::*;
@@ -220,41 +285,6 @@ mod event {
 }
 
 #[test(tokio::test)]
-async fn account_info() {
-    let provider = test_provider().await;
-    let mut env = EthEvmEnv::builder()
-        .provider(provider.clone())
-        .build()
-        .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
-    let address = STEEL_TEST_CONTRACT;
-    let preflight_info = {
-        let account = Account::preflight(address, &mut env);
-        account.bytecode(true).info().await.unwrap()
-    };
-
-    let input = env.into_input().await.unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
-
-    let info = {
-        let account = Account::new(address, &env);
-        account.bytecode(true).info()
-    };
-    assert_eq!(info, preflight_info, "mismatch in preflight and execution");
-
-    assert_eq!(
-        info.nonce,
-        provider.get_transaction_count(address).await.unwrap()
-    );
-    assert_eq!(info.balance, provider.get_balance(address).await.unwrap());
-    assert_eq!(info.storage_root, EMPTY_ROOT_HASH);
-    let code = info.code.unwrap();
-    assert_eq!(code, provider.get_code_at(address).await.unwrap());
-    assert_eq!(info.code_hash, keccak256(code));
-}
-
-#[test(tokio::test)]
 async fn ec_recover() {
     let result = common::eth_call(
         test_provider().await,
@@ -268,10 +298,7 @@ async fn ec_recover() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(
-        result._0,
-        address!("328809Bc894f92807417D2dAD6b7C998c1aFdac6")
-    );
+    assert_eq!(result, address!("328809Bc894f92807417D2dAD6b7C998c1aFdac6"));
 }
 
 #[test(tokio::test)]
@@ -284,7 +311,7 @@ async fn sha256() {
     )
     .await;
     assert_eq!(
-        result._0,
+        result,
         b256!("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
     );
 }
@@ -310,7 +337,7 @@ async fn point_evaluation_precompile() {
     )
     .await;
     assert_eq!(
-        result._0,
+        result,
         bytes!("000000000000000000000000000000000000000000000000000000000000100073eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
     );
 }
@@ -324,7 +351,7 @@ async fn nonexistent_account() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.size, uint!(0_U256));
+    assert_eq!(result, uint!(0_U256));
 }
 
 #[test(tokio::test)]
@@ -336,7 +363,7 @@ async fn eoa_account() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.size, uint!(0_U256));
+    assert_eq!(result, uint!(0_U256));
 }
 
 #[test(tokio::test)]
@@ -353,7 +380,7 @@ async fn blockhash() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.h, block_hash);
+    assert_eq!(result, block_hash);
 }
 
 #[test(tokio::test)]
@@ -365,7 +392,7 @@ async fn chainid() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result._0, uint!(31337_U256));
+    assert_eq!(result, uint!(31337_U256));
 }
 
 #[test(tokio::test)]
@@ -378,12 +405,12 @@ async fn origin() {
         CallOptions::with_from(from),
     )
     .await;
-    assert_eq!(result._0, from);
+    assert_eq!(result, from);
 }
 
 #[test(tokio::test)]
 async fn gasprice() {
-    let gas_price = uint!(42_U256);
+    let gas_price = 42;
     let result = common::eth_call(
         test_provider().await,
         STEEL_TEST_CONTRACT,
@@ -391,7 +418,7 @@ async fn gasprice() {
         CallOptions::with_gas_price(gas_price),
     )
     .await;
-    assert_eq!(result._0, gas_price);
+    assert_eq!(result, U256::from(gas_price));
 }
 
 #[test(tokio::test)]
@@ -403,7 +430,7 @@ async fn load_empty_storage() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result.val, uint!(0_U256));
+    assert_eq!(result, uint!(0_U256));
 }
 
 #[test(tokio::test)]
@@ -415,7 +442,7 @@ async fn multi_contract_calls() {
         CallOptions::new(),
     )
     .await;
-    assert_eq!(result._0, uint!(84_U256));
+    assert_eq!(result, uint!(84_U256));
 }
 
 #[test(tokio::test)]

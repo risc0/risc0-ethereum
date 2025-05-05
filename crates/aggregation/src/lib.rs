@@ -200,10 +200,10 @@ impl MerkleMountainRange {
         }])
     }
 
-    /// Push a new leaf onto the Merkle mountain range.
-    pub fn push(&mut self, leaf: Digest) -> Result<(), Error> {
+    /// Push a new value onto the Merkle mountain range.
+    pub fn push(&mut self, value: impl Borrow<Digest>) -> Result<(), Error> {
         self.push_peak(Peak {
-            digest: leaf,
+            digest: hash_leaf(value.borrow()),
             max_depth: 0,
         })
     }
@@ -347,20 +347,20 @@ impl MerkleMountainRange {
 }
 
 impl<D: Borrow<Digest>> Extend<D> for MerkleMountainRange {
-    /// Extend a [MerkleMountainRange] from an iterator of digest leaves.
-    fn extend<T: IntoIterator<Item = D>>(&mut self, leaves: T) {
-        for leaf in leaves {
-            self.push(*leaf.borrow())
+    /// Extend a [MerkleMountainRange] from an iterator of digest values.
+    fn extend<T: IntoIterator<Item = D>>(&mut self, values: T) {
+        for value in values {
+            self.push(value)
                 .expect("attempted to extend a finalized MerkleMountainRange");
         }
     }
 }
 
 impl<D: Borrow<Digest>> FromIterator<D> for MerkleMountainRange {
-    /// Construct a [MerkleMountainRange] from an iterator of digest leaves.
-    fn from_iter<T: IntoIterator<Item = D>>(leaves: T) -> Self {
+    /// Construct a [MerkleMountainRange] from an iterator of digest values.
+    fn from_iter<T: IntoIterator<Item = D>>(values: T) -> Self {
         let mut mmr = Self::empty();
-        mmr.extend(leaves);
+        mmr.extend(values);
         mmr
     }
 }
@@ -422,11 +422,28 @@ pub fn merkle_path(leaves: &[Digest], index: usize) -> Vec<Digest> {
 ///
 /// NOTE: The result of this function must be checked to be the root of some committed Merkle tree.
 pub fn merkle_path_root(
-    leaf: &Digest,
+    leaf_value: impl Borrow<Digest>,
     path: impl IntoIterator<Item = impl Borrow<Digest>>,
 ) -> Digest {
+    let leaf = hash_leaf(leaf_value.borrow());
     path.into_iter()
-        .fold(*leaf, |a, b| commutative_keccak256(a.borrow(), b.borrow()))
+        .fold(leaf, |a, b| commutative_keccak256(a.borrow(), b.borrow()))
+}
+
+/// Domain-separating tag value prepended to a digest before being hashed to form leaf node.
+///
+/// NOTE: It is explicitly not 32 bytes to avoid any chance of collision with a node value.
+const LEAF_TAG: &[u8; 8] = b"LEAF_TAG";
+
+/// Hash the given digest to form a leaf node.
+///
+/// This adds a tag to the given value and hashes it to ensure it is domain seperated from any
+/// internal nodes in the tree.
+fn hash_leaf(value: &Digest) -> Digest {
+    let mut hasher = Keccak256::new();
+    hasher.update(LEAF_TAG);
+    hasher.update(value.as_bytes());
+    hasher.finalize().0.into()
 }
 
 /// Computes the hash of a sorted pair of [Digest].
@@ -465,7 +482,7 @@ mod tests {
 
         assert_merkle_root(
             &digests,
-            Digest::from_hex("e004c72e4cb697fa97669508df099edbc053309343772a25e56412fc7db8ebef")
+            Digest::from_hex("bd792a6858270b233a6b399c1cbc60c5b1046a5b43758b9abc46ba32d23c7352")
                 .unwrap(),
         );
     }
@@ -473,7 +490,7 @@ mod tests {
     #[test]
     fn test_merkle_root() {
         let digests = vec![Digest::from([0u8; 32])];
-        assert_merkle_root(&digests, digests[0]);
+        assert_merkle_root(&digests, hash_leaf(&digests[0]));
 
         let digests = vec![
             Digest::from([0u8; 32]),
@@ -483,8 +500,8 @@ mod tests {
         assert_merkle_root(
             &digests,
             commutative_keccak256(
-                &commutative_keccak256(&digests[0], &digests[1]),
-                &digests[2],
+                &commutative_keccak256(&hash_leaf(&digests[0]), &hash_leaf(&digests[1])),
+                &hash_leaf(&digests[2]),
             ),
         );
 
@@ -497,8 +514,8 @@ mod tests {
         assert_merkle_root(
             &digests,
             commutative_keccak256(
-                &commutative_keccak256(&digests[0], &digests[1]),
-                &commutative_keccak256(&digests[2], &digests[3]),
+                &commutative_keccak256(&hash_leaf(&digests[0]), &hash_leaf(&digests[1])),
+                &commutative_keccak256(&hash_leaf(&digests[2]), &hash_leaf(&digests[3])),
             ),
         );
     }
@@ -513,7 +530,7 @@ mod tests {
 
             for i in 0..length {
                 let path = merkle_path(&digests, i);
-                assert_eq!(merkle_path_root(&digests[i], &path), root);
+                assert_eq!(merkle_path_root(digests[i], &path), root);
             }
         }
     }

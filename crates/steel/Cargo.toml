@@ -16,16 +16,18 @@ rustdoc-args = ["--cfg", "docsrs"]
 alloy = { workspace = true, optional = true, features = ["full"] }
 alloy-consensus = { workspace = true }
 alloy-eips = { workspace = true }
+alloy-evm = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
 alloy-rlp = { workspace = true }
 alloy-rpc-types = { workspace = true }
 alloy-sol-types = { workspace = true }
 alloy-trie = { workspace = true, features = ["serde"] }
 anyhow = { workspace = true }
+bincode = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
-revm = { workspace = true, features = ["serde"] }
+revm = { workspace = true, features = ["serde", "optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true }
@@ -36,7 +38,6 @@ url = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy = { workspace = true, features = ["contract", "node-bindings"] }
-bincode = { workspace = true }
 risc0-steel = { path = ".", features = ["host"] }
 serde_json = { workspace = true }
 test-log = { workspace = true }

@@ -29,7 +29,8 @@ use alloy_primitives::{
 use alloy_rpc_types::{Filter, TransactionReceipt};
 use anyhow::{ensure, Context, Result};
 use revm::{
-    primitives::{AccountInfo, Bytecode, KECCAK_EMPTY},
+    primitives::KECCAK_EMPTY,
+    state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
 use std::hash::{BuildHasher, Hash};
@@ -129,6 +130,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
     /// Returns the StateAccount information for the given address.
     pub(crate) async fn state_account(&mut self, address: Address) -> Result<StateAccount> {
         log::trace!("ACCOUNT: address={}", address);
+        self.accounts.entry(address).or_default();
 
         if !self.proofs.contains_key(&address) {
             let proof = self.get_proof(address, vec![]).await?;

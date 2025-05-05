@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,13 +18,16 @@ pragma solidity ^0.8.9;
 
 import {reverseByteOrderUint32} from "./Util.sol";
 
-/// @notice A receipt attesting to the execution of a guest program.
-/// @dev A receipt contains two parts: a seal and a claim. The seal is a zero-knowledge proof
-/// attesting to knowledge of a zkVM execution resulting in the claim. The claim is a set of public
-/// outputs for the execution. Crucially, the claim includes the journal and the image ID. The
-/// image ID identifies the program that was executed, and the journal is the public data written
-/// by the program. Note that this struct only contains the claim digest, as can be obtained with
-/// the `digest()` function on `ReceiptClaimLib`.
+/// @notice A receipt attesting to a claim using the RISC Zero proof system.
+/// @dev A receipt contains two parts: a seal and a claim.
+///
+/// The seal is a zero-knowledge proof attesting to knowledge of a witness for the claim. The claim
+/// is a set of public outputs, and for zkVM execution is the hash of a `ReceiptClaim` struct.
+///
+/// IMPORTANT: The `claimDigest` field must be a hash computed by the caller for verification to
+/// have meaningful guarantees. Treat this similar to verifying an ECDSA signature, in that hashing
+/// is a key operation in verification. The most common way to calculate this hash is to use the
+/// `ReceiptClaimLib.ok(imageId, journalDigest).digest()` for successful executions.
 struct Receipt {
     bytes seal;
     bytes32 claimDigest;

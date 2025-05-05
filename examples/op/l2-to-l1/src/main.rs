@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use alloy::primitives::{address, Address};
-use alloy::sol_types::SolCall;
+use alloy::{
+    primitives::{address, Address},
+    sol_types::SolCall,
+};
 use anyhow::{Context, Result};
 use clap::Parser;
 use l2_to_l1_core::{CALL, CALLER, CONTRACT, IERC20};
@@ -58,14 +60,17 @@ async fn main() -> Result<()> {
     env = env.with_chain_spec(&OP_MAINNET_CHAIN_SPEC);
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.base.caller = CALLER;
+    let returns = builder.call().await?;
     log::info!(
         "Call {} Function by {:#} on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
+    log::debug!("{:?}", env.commitment());
 
     let evm_input = env.into_input().await?;
 

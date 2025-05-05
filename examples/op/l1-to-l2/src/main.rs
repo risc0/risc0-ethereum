@@ -17,8 +17,11 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use l1_to_l2_core::{CALL, CALLER, CONTRACT, IERC20};
 use l1_to_l2_methods::{L1_TO_L2_GUEST_ELF, L1_TO_L2_GUEST_ID};
-use risc0_op_steel::ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC};
-use risc0_op_steel::{host::BlockNumberOrTag, l1, Contract};
+use risc0_op_steel::{
+    ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+    host::BlockNumberOrTag,
+    l1, Contract,
+};
 use risc0_zkvm::{default_prover, Digest, ExecutorEnv, ProverOpts, VerifierContext};
 use tokio::task;
 use tracing_subscriber::EnvFilter;
@@ -57,13 +60,15 @@ async fn main() -> Result<()> {
     env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.caller = CALLER;
+    let returns = builder.call().await?;
     log::info!(
         "Call {} Function by {:#} on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
 
     let evm_input = env.into_input().await?;

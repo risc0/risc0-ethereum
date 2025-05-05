@@ -16,24 +16,24 @@ use super::BlockId;
 use crate::{
     beacon::BeaconCommit,
     config::ChainSpec,
-    ethereum::EthBlockHeader,
+    ethereum::{EthChainSpec, EthEvmFactory},
     history::HistoryCommit,
     host::{
         db::{ProofDb, ProviderConfig, ProviderDb},
         BlockNumberOrTag, EthHostEvmEnv, HostCommit, HostEvmEnv,
     },
-    CommitmentVersion, EvmBlockHeader, EvmEnv,
+    CommitmentVersion, EvmBlockHeader, EvmEnv, EvmFactory,
 };
 use alloy::{
     network::{primitives::HeaderResponse, BlockResponse, Ethereum, Network},
     providers::{Provider, ProviderBuilder, RootProvider},
 };
-use alloy_primitives::{BlockHash, BlockNumber, Sealed, B256};
+use alloy_primitives::{BlockHash, BlockNumber, Sealable, Sealed, B256};
 use anyhow::{anyhow, ensure, Context, Result};
 use std::{fmt::Display, marker::PhantomData};
 use url::Url;
 
-impl<H> EvmEnv<(), H, ()> {
+impl<F: EvmFactory> EvmEnv<(), F, ()> {
     /// Creates a builder for building an environment.
     ///
     /// Create an Ethereum environment bast on the latest block:
@@ -47,7 +47,7 @@ impl<H> EvmEnv<(), H, ()> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn builder() -> EvmEnvBuilder<(), H, ()> {
+    pub fn builder() -> EvmEnvBuilder<(), F, ()> {
         EvmEnvBuilder {
             provider: (),
             provider_config: ProviderConfig::default(),
@@ -74,29 +74,29 @@ impl<H> EvmEnv<(), H, ()> {
 /// - `H`: The type of the block header.
 /// - `B`: The type of the configuration to access the Beacon API.
 #[derive(Clone, Debug)]
-pub struct EvmEnvBuilder<P, H, B> {
+pub struct EvmEnvBuilder<P, F, B> {
     provider: P,
     provider_config: ProviderConfig,
     block: BlockId,
     beacon_config: B,
-    phantom: PhantomData<H>,
+    phantom: PhantomData<F>,
 }
 
-impl EvmEnvBuilder<(), EthBlockHeader, ()> {
+impl EvmEnvBuilder<(), EthEvmFactory, ()> {
     /// Sets the Ethereum HTTP RPC endpoint that will be used by the [EvmEnv].
-    pub fn rpc(self, url: Url) -> EvmEnvBuilder<RootProvider<Ethereum>, EthBlockHeader, ()> {
+    pub fn rpc(self, url: Url) -> EvmEnvBuilder<RootProvider<Ethereum>, EthEvmFactory, ()> {
         self.provider(ProviderBuilder::default().on_http(url))
     }
 }
 
-impl<H: EvmBlockHeader> EvmEnvBuilder<(), H, ()> {
+impl<F: EvmFactory> EvmEnvBuilder<(), F, ()> {
     /// Sets a custom [Provider] that will be used by the [EvmEnv].
-    pub fn provider<N, P>(self, provider: P) -> EvmEnvBuilder<P, H, ()>
+    pub fn provider<N, P>(self, provider: P) -> EvmEnvBuilder<P, F, ()>
     where
         N: Network,
         P: Provider<N>,
-        H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-        <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+        F::Header: TryFrom<<N as Network>::HeaderResponse>,
+        <F::Header as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
         EvmEnvBuilder {
             provider,
@@ -115,12 +115,12 @@ pub struct Beacon {
     commitment_version: CommitmentVersion,
 }
 
-impl<P> EvmEnvBuilder<P, EthBlockHeader, ()> {
+impl<P> EvmEnvBuilder<P, EthEvmFactory, ()> {
     /// Sets the Beacon API URL for retrieving Ethereum Beacon block root commitments.
     ///
     /// This function configures the [EvmEnv] to interact with an Ethereum Beacon chain.
     /// It assumes the use of the [mainnet](https://github.com/ethereum/consensus-specs/blob/v1.4.0/configs/mainnet.yaml) preset for consensus specs.
-    pub fn beacon_api(self, url: Url) -> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
+    pub fn beacon_api(self, url: Url) -> EvmEnvBuilder<P, EthEvmFactory, Beacon> {
         EvmEnvBuilder {
             provider: self.provider,
             provider_config: self.provider_config,
@@ -134,7 +134,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, ()> {
     }
 }
 
-impl<P, H, B> EvmEnvBuilder<P, H, B> {
+impl<P, F, B> EvmEnvBuilder<P, F, B> {
     /// Sets the block number to be used for the EVM execution.
     pub fn block_number(self, number: u64) -> Self {
         self.block_number_or_tag(BlockNumberOrTag::Number(number))
@@ -166,12 +166,13 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     /// Returns the [EvmBlockHeader] of the specified block.
     ///
     /// If `block` is `None`, the block based on the current builder configuration is used instead.
-    async fn get_header<N>(&self, block: Option<BlockId>) -> Result<Sealed<H>>
+    async fn get_header<N>(&self, block: Option<BlockId>) -> Result<Sealed<F::Header>>
     where
+        F: EvmFactory,
         N: Network,
         P: Provider<N>,
-        H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-        <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+        F::Header: TryFrom<<N as Network>::HeaderResponse>,
+        <F::Header as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
         let block = block.unwrap_or(self.block);
         let block = block.into_rpc_type(&self.provider).await?;
@@ -184,7 +185,7 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
             .with_context(|| format!("block {} not found", block))?;
 
         let rpc_header = rpc_block.header().clone();
-        let header: H = rpc_header
+        let header: F::Header = rpc_header
             .try_into()
             .map_err(|err| anyhow!("header invalid: {}", err))?;
         let header = header.seal_slow();
@@ -197,14 +198,14 @@ impl<P, H, B> EvmEnvBuilder<P, H, B> {
     }
 }
 
-impl<P, H> EvmEnvBuilder<P, H, ()> {
+impl<P, F: EvmFactory> EvmEnvBuilder<P, F, ()> {
     /// Builds and returns an [EvmEnv] with the configured settings that commits to a block hash.
-    pub async fn build<N>(self) -> Result<HostEvmEnv<ProviderDb<N, P>, H, ()>>
+    pub async fn build<N>(self) -> Result<HostEvmEnv<ProviderDb<N, P>, F, ()>>
     where
         N: Network,
         P: Provider<N>,
-        H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-        <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+        F::Header: TryFrom<<N as Network>::HeaderResponse>,
+        <F::Header as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
     {
         let header = self.get_header(None).await?;
         log::info!(
@@ -220,7 +221,7 @@ impl<P, H> EvmEnvBuilder<P, H, ()> {
         ));
         let commit = HostCommit {
             inner: (),
-            config_id: ChainSpec::DEFAULT_DIGEST,
+            config_id: ChainSpec::<F::Spec>::default().digest(),
         };
 
         Ok(EvmEnv::new(db, header, commit))
@@ -235,7 +236,7 @@ pub struct History {
     commitment_block: BlockId,
 }
 
-impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
+impl<P> EvmEnvBuilder<P, EthEvmFactory, Beacon> {
     /// Configures the environment builder to generate consensus commitments.
     ///
     /// A consensus commitment contains the beacon block root indexed directly by its slot number.
@@ -270,7 +271,6 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
         self.beacon_config.commitment_version = CommitmentVersion::Consensus;
         self
     }
-
     /// Sets the block hash for the commitment block, which can be different from the execution
     /// block.
     ///
@@ -303,7 +303,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
     pub fn commitment_block_hash(
         self,
         hash: BlockHash,
-    ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+    ) -> EvmEnvBuilder<P, EthEvmFactory, History> {
         self.commitment_block(BlockId::Hash(hash))
     }
 
@@ -314,7 +314,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
     pub fn commitment_block_number_or_tag(
         self,
         block: BlockNumberOrTag,
-    ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+    ) -> EvmEnvBuilder<P, EthEvmFactory, History> {
         self.commitment_block(BlockId::Number(block))
     }
 
@@ -325,11 +325,11 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
     pub fn commitment_block_number(
         self,
         number: BlockNumber,
-    ) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+    ) -> EvmEnvBuilder<P, EthEvmFactory, History> {
         self.commitment_block_number_or_tag(BlockNumberOrTag::Number(number))
     }
 
-    fn commitment_block(self, block: BlockId) -> EvmEnvBuilder<P, EthBlockHeader, History> {
+    fn commitment_block(self, block: BlockId) -> EvmEnvBuilder<P, EthEvmFactory, History> {
         EvmEnvBuilder {
             provider: self.provider,
             provider_config: self.provider_config,
@@ -358,7 +358,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
         let version = self.beacon_config.commitment_version;
         let commit = HostCommit {
             inner: BeaconCommit::from_header(&header, version, &self.provider, beacon_url).await?,
-            config_id: ChainSpec::DEFAULT_DIGEST,
+            config_id: EthChainSpec::DEFAULT_DIGEST,
         };
         let db = ProofDb::new(ProviderDb::new(
             self.provider,
@@ -370,7 +370,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, Beacon> {
     }
 }
 
-impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
+impl<P> EvmEnvBuilder<P, EthEvmFactory, History> {
     /// Configures the environment builder to generate consensus commitments.
     ///
     /// See [EvmEnvBuilder<P, EthBlockHeader, Beacon>::consensus_commitment] for more info.
@@ -378,7 +378,6 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
         self.beacon_config.beacon_config.commitment_version = CommitmentVersion::Consensus;
         self
     }
-
     /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
     /// block that is different from the execution block.
     #[stability::unstable(feature = "history")]
@@ -413,7 +412,7 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
         .await?;
         let commit = HostCommit {
             inner: history_commit,
-            config_id: ChainSpec::DEFAULT_DIGEST,
+            config_id: EthChainSpec::DEFAULT_DIGEST,
         };
         let db = ProofDb::new(ProviderDb::new(
             self.provider,
@@ -429,7 +428,9 @@ impl<P> EvmEnvBuilder<P, EthBlockHeader, History> {
 mod tests {
     use super::*;
     use crate::{
-        config::ChainSpec, ethereum::EthEvmEnv, BlockHeaderCommit, Commitment, CommitmentVersion,
+        config::ChainSpec,
+        ethereum::{EthChainSpec, EthEvmEnv},
+        BlockHeaderCommit, Commitment, CommitmentVersion,
     };
     use test_log::test;
 
@@ -497,7 +498,7 @@ mod tests {
                 CommitmentVersion::Beacon as u16,
                 header.timestamp,
                 header.parent_beacon_block_root.unwrap(),
-                ChainSpec::DEFAULT_DIGEST,
+                EthChainSpec::DEFAULT_DIGEST,
             )
         );
     }
