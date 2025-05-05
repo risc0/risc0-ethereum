@@ -25,6 +25,10 @@ All notable changes to this project will be documented in this file.
 - Updated major dependencies: `alloy*` (to 0.14/1.0), `revm` (to 22.0).
 - Added new dependencies: `alloy-evm`, `alloy-op-evm`, `op-revm`, `bincode`.
 
+### 🚨 Breaking Changes
+
+- Replace `HostEvmEnv::extend(&mut self, other: Self)` with `HostEvmEnv::merge(self, other: Self) -> Result<Self>`. The new `merge` function consumes both environment instances and returns a new merged instance upon success, whereas `extend` modified the existing environment in place. This change improves safety and clarity when combining environments, especially after parallel preflight operations.
+
 ## [1.3.0](https://github.com/risc0/risc0-ethereum/releases/tag/v1.3.0)
 
 ### ⚡️ Features
