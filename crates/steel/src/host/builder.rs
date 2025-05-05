@@ -428,7 +428,7 @@ mod tests {
         let latest = provider.get_block_number().await.unwrap();
         let builder = EthEvmEnv::builder()
             .provider(&provider)
-            .block_number_or_tag(BlockNumberOrTag::Number(latest - 100))
+            .block_number_or_tag(BlockNumberOrTag::Number(latest - 8191))
             .beacon_api(CL_URL.parse().unwrap())
             .commitment_block_number(latest - 1);
         let env = builder.clone().build().await.unwrap();

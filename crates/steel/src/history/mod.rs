@@ -86,15 +86,51 @@ impl<H> BlockHeaderCommit<H> for HistoryCommit {
 mod host {
     use super::*;
     use crate::{
-        beacon::host::{client::BeaconClient, create_beacon_commit},
+        beacon::host::{client::BeaconClient, get_child_header},
         ethereum::EthBlockHeader,
-        history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH},
+        history::beacon_roots::BeaconRootsState,
         EvmBlockHeader,
     };
     use alloy::{network::Ethereum, providers::Provider};
-    use alloy_primitives::{BlockNumber, Sealable};
     use anyhow::{ensure, Context};
     use url::Url;
+
+    struct StateInfo {
+        block_hash: B256,
+        beacon_root: B256,
+        child_timestamp: u64,
+    }
+
+    impl StateInfo {
+        async fn from_header<P: Provider<Ethereum>>(
+            header: &Sealed<EthBlockHeader>,
+            rpc_provider: P,
+        ) -> anyhow::Result<Self> {
+            let child = get_child_header(header, rpc_provider).await?;
+            let beacon_block_root = child
+                .parent_beacon_block_root
+                .context("parent_beacon_block_root missing in execution header")?;
+
+            Ok(Self {
+                child_timestamp: child.timestamp,
+                beacon_root: beacon_block_root,
+                block_hash: header.seal(),
+            })
+        }
+
+        async fn create_commit(
+            &self,
+            beacon_client: &BeaconClient,
+        ) -> anyhow::Result<GeneralizedBeaconCommit<STATE_ROOT_LEAF_INDEX>> {
+            GeneralizedBeaconCommit::from_beacon_root(
+                "state_root".into(),
+                self.beacon_root,
+                beacon_client,
+                self.child_timestamp,
+            )
+            .await
+        }
+    }
 
     impl HistoryCommit {
         /// Creates a `HistoryCommit` from an EVM block header and a commitment header.
@@ -103,7 +139,7 @@ mod host {
         /// `HistoryCommit`. It iterates through blocks from the EVM header's number up to
         /// the commitment header's number, generating `StateCommit`s for each block in the range.
         pub(crate) async fn from_headers<P>(
-            evm_header: &Sealed<EthBlockHeader>,
+            execution_header: &Sealed<EthBlockHeader>,
             commitment_header: &Sealed<EthBlockHeader>,
             rpc_provider: P,
             beacon_url: Url,
@@ -112,82 +148,86 @@ mod host {
             P: Provider<Ethereum>,
         {
             ensure!(
-                evm_header.number() < commitment_header.number(),
+                execution_header.number() < commitment_header.number(),
                 "EVM execution block not before commitment block"
             );
             let client = BeaconClient::new(beacon_url.clone()).context("invalid URL")?;
 
             // create a regular beacon commit to the block header used for EVM execution
-            let evm_commit =
-                BeaconCommit::from_header(evm_header, &rpc_provider, beacon_url).await?;
-            let mut commit_ts = evm_commit.timestamp();
+            let execution_commit =
+                BeaconCommit::from_header(execution_header, &rpc_provider, beacon_url).await?;
+            let commit_timestamp = U256::from(execution_commit.timestamp());
             // safe unwrap: BeaconCommit::from_header checks that the proof can be processed
-            let mut commit_beacon_root = evm_commit.process_proof(evm_header.seal()).unwrap();
+            let commit_beacon_root = execution_commit
+                .process_proof(execution_header.seal())
+                .unwrap();
 
             let mut state_commits: Vec<StateCommit> = Vec::new();
 
-            // we assume that not more than 25% of the blocks have been skipped
-            // TODO(#309): implement a more sophisticated way to determine the step size
-            let step = HISTORY_BUFFER_LENGTH.to::<BlockNumber>() * 75 / 100;
-            let target = commitment_header.number();
+            // derive state commits backward from the target commitment block to the execution block
+            let mut state_info = StateInfo::from_header(&commitment_header, &rpc_provider).await?;
+            loop {
+                log::debug!("chained commitment for block {}", state_info.block_hash);
 
-            let mut state_block = evm_header.number;
-            while state_block < target {
-                state_block = std::cmp::min(state_block + step, target);
-
-                // get the header of the state block
-                let rpc_block = rpc_provider
-                    .get_block_by_number(state_block.into())
-                    .await
-                    .context("eth_getBlockByNumber failed")?
-                    .with_context(|| format!("block {} not found", state_block))?;
-                let header: EthBlockHeader = rpc_block
-                    .header
-                    .try_into()
-                    .with_context(|| format!("block {} invalid", state_block))?;
-                let header = header.seal_slow();
-
-                log::debug!(
-                    "chained commitment for block {} ({})",
-                    header.number,
-                    header.seal()
-                );
-
-                // derive the historic state needed to verify the previous beacon commitment
-                let (beacon_root, state) = BeaconRootsState::preflight_get(
-                    U256::from(commit_ts),
+                // query the timestamp in the slot that the execution commit will eventually occupy
+                let timestamp = beacon_roots::get_timestamp(
+                    commit_timestamp,
                     &rpc_provider,
-                    header.seal().into(),
+                    state_info.block_hash.into(),
                 )
                 .await
-                .with_context(|| format!("preflight failed for block {}", header.seal()))?;
-                // the result of the beacon roots contract must match the beacon root of the commit
-                ensure!(
-                    beacon_root == commit_beacon_root,
-                    "inconsistent state for block {}",
-                    header.seal()
-                );
+                .context("failed to get timestamp from beacon roots contract")?;
+                // using that timestamp, we can now call the contract as intended to get the
+                // corresponding parent beacon root
+                let (beacon_root, state) = BeaconRootsState::preflight_get(
+                    timestamp,
+                    &rpc_provider,
+                    state_info.block_hash.into(),
+                )
+                .await
+                .context("failed to preflight beacon roots contract")?;
 
-                // create a beacon commitment to that state
-                let (state_commit, beacon_root) =
-                    create_beacon_commit(&header, "state_root".into(), &rpc_provider, &client)
-                        .await?;
+                // create a beacon commit for that state
+                let state_commit = state_info.create_commit(&client).await?;
                 state_commit
-                    .verify(state.root(), beacon_root)
+                    .verify(state.root(), state_info.beacon_root)
                     .context("proof derived from API does not verify")?;
-                commit_ts = state_commit.timestamp();
-                commit_beacon_root = beacon_root;
 
-                state_commits.push(StateCommit {
-                    state,
-                    state_commit,
-                });
+                state_commits.insert(
+                    0,
+                    StateCommit {
+                        state,
+                        state_commit,
+                    },
+                );
+                // if the timestamp returned by the beacon roots contract matches the commitment's
+                // timestamp, we are done as we can now verify the commitment of the execution block
+                if timestamp == commit_timestamp {
+                    ensure!(
+                        beacon_root == commit_beacon_root,
+                        "failed to verify beacon commit"
+                    );
+                    break;
+                }
+
+                // if not, continue with the block returned by the beacon roots contract
+                let block_hash = client
+                    .get_execution_payload_block_hash(beacon_root)
+                    .await
+                    .with_context(|| {
+                        format!("failed to get execution payload for block {}", beacon_root)
+                    })?;
+                state_info = StateInfo {
+                    block_hash,
+                    beacon_root,
+                    child_timestamp: timestamp.to(),
+                };
             }
 
             log::debug!("state commitments: {}", state_commits.len());
 
             Ok(HistoryCommit {
-                evm_commit,
+                evm_commit: execution_commit,
                 state_commits,
             })
         }

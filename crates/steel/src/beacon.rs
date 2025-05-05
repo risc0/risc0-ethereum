@@ -115,7 +115,10 @@ impl<H, const LEAF_INDEX: usize> BlockHeaderCommit<H> for GeneralizedBeaconCommi
 pub(crate) mod host {
     use super::*;
     use crate::{ethereum::EthBlockHeader, EvmBlockHeader};
-    use alloy::{network::Ethereum, providers::Provider};
+    use alloy::{
+        network::{Ethereum, Network},
+        providers::Provider,
+    };
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};
     use client::BeaconClient;
@@ -128,6 +131,7 @@ pub(crate) mod host {
     use url::Url;
 
     pub(crate) mod client {
+        use alloy_primitives::B256;
         use ethereum_consensus::{
             phase0::SignedBeaconBlockHeader, primitives::Root, types::mainnet::SignedBeaconBlock,
             Fork,
@@ -146,6 +150,8 @@ pub(crate) mod host {
             Http(#[from] reqwest::Error),
             #[error("version field does not match data version")]
             VersionMismatch,
+            #[error("block does not contain an execution payload")]
+            NoExecutionPayload,
         }
 
         /// Response returned by the `get_block_header` API.
@@ -198,7 +204,7 @@ pub(crate) mod host {
                 Ok(value)
             }
 
-            /// Retrieves block details for given block id.
+            /// Retrieves block details for the given block id.
             pub async fn get_block(
                 &self,
                 block_id: impl Display,
@@ -209,6 +215,21 @@ pub(crate) mod host {
                     return Err(Error::VersionMismatch);
                 }
                 Ok(result.inner.data)
+            }
+
+            /// Retrieves the execution bock hash for the given block id.
+            pub async fn get_execution_payload_block_hash(
+                &self,
+                block_id: impl Display,
+            ) -> Result<B256, Error> {
+                let signed_beacon_block = self.get_block(block_id).await?;
+                let beacon_block = signed_beacon_block.message();
+                let beacon_block_body = beacon_block.body();
+                let execution_payload = beacon_block_body
+                    .execution_payload()
+                    .ok_or(Error::NoExecutionPayload)?;
+
+                Ok(B256::from_slice(execution_payload.block_hash()))
             }
         }
     }
@@ -241,14 +262,30 @@ pub(crate) mod host {
         }
     }
 
-    /// Creates a beacon commitment that `field` is contained in the `ExecutionPayload` of the
-    /// beacon block corresponding to `header`.
-    pub(crate) async fn create_beacon_commit<P, H, const LEAF_INDEX: usize>(
+    impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
+        pub(crate) async fn from_beacon_root(
+            field: PathElement,
+            parent_beacon_root: B256,
+            beacon_client: &BeaconClient,
+            timestamp: u64,
+        ) -> anyhow::Result<Self> {
+            let proof =
+                create_execution_payload_proof(field, parent_beacon_root, beacon_client).await?;
+            ensure!(proof.index == LEAF_INDEX, "field has the wrong leaf index");
+
+            let commit = GeneralizedBeaconCommit::new(
+                proof.branch.iter().map(|n| n.0.into()).collect(),
+                timestamp,
+            );
+
+            Ok(commit)
+        }
+    }
+
+    pub(crate) async fn get_child_header<P, H>(
         header: &Sealed<H>,
-        field: PathElement,
         rpc_provider: P,
-        beacon_client: &BeaconClient,
-    ) -> anyhow::Result<(GeneralizedBeaconCommit<LEAF_INDEX>, B256)>
+    ) -> anyhow::Result<<Ethereum as Network>::HeaderResponse>
     where
         P: Provider<Ethereum>,
         H: EvmBlockHeader,
@@ -273,23 +310,39 @@ pub(crate) mod host {
             "API returned invalid child block"
         );
 
+        Ok(child)
+    }
+
+    /// Creates a beacon commitment that `field` is contained in the `ExecutionPayload` of the
+    /// beacon block corresponding to `header`.
+    pub(crate) async fn create_beacon_commit<P, H, const LEAF_INDEX: usize>(
+        header: &Sealed<H>,
+        field: PathElement,
+        rpc_provider: P,
+        beacon_client: &BeaconClient,
+    ) -> anyhow::Result<(GeneralizedBeaconCommit<LEAF_INDEX>, B256)>
+    where
+        P: Provider<Ethereum>,
+        H: EvmBlockHeader,
+    {
+        let child = get_child_header(header, rpc_provider).await?;
         let beacon_root = child
             .parent_beacon_block_root
             .context("parent_beacon_block_root missing in execution header")?;
-        let proof = create_execution_payload_proof(field, beacon_root, beacon_client).await?;
-        ensure!(proof.index == LEAF_INDEX, "field has the wrong leaf index");
-
-        let commit = GeneralizedBeaconCommit::new(
-            proof.branch.iter().map(|n| n.0.into()).collect(),
+        let commit = GeneralizedBeaconCommit::from_beacon_root(
+            field,
+            beacon_root,
+            beacon_client,
             child.timestamp,
-        );
+        )
+        .await?;
 
         Ok((commit, beacon_root))
     }
 
     /// Creates the Merkle inclusion proof of the element `field` in the `ExecutionPayload` of the
     /// beacon block with the given `beacon_root`.
-    async fn create_execution_payload_proof(
+    pub(super) async fn create_execution_payload_proof(
         field: PathElement,
         beacon_root: B256,
         client: &BeaconClient,
