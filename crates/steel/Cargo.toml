@@ -27,7 +27,7 @@ bincode = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
-revm = { workspace = true, features = ["c-kzg", "optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee", "serde"] }
+revm = { workspace = true, features = ["optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee", "serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true }
@@ -53,6 +53,7 @@ host = [
     "dep:tokio",
     "dep:url",
 ]
+kzg = ["revm/c-kzg"]
 unstable-event = []
 unstable-history = []
 unstable-verifier = []
