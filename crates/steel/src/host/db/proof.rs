@@ -112,7 +112,7 @@ impl<D> ProofDb<D> {
         let log_filters = self
             .log_filters
             .into_iter()
-            .chain(other.log_filters.into_iter())
+            .chain(other.log_filters)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect();
