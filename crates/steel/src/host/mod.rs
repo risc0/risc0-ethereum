@@ -157,6 +157,8 @@ pub struct HostCommit<C> {
 }
 
 impl<C> HostCommit<C> {
+    /// Returns the config ID.
+    #[allow(dead_code)]
     #[inline]
     pub(super) fn config_id(&self) -> B256 {
         self.config_id
