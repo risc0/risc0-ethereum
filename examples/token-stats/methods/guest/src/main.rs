@@ -27,7 +27,7 @@ fn main() {
     let input: EthEvmInput = env::read();
 
     // Converts the input into a `EvmEnv` for execution.
-    let env_prev = input.into_env().with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    let env_prev = input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 
     // Execute the view calls on the older EVM state.
     let contract = Contract::new(CONTRACT, &env_prev);
