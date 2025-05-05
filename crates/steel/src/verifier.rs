@@ -70,11 +70,16 @@ impl<'a, F: EvmFactory> SteelVerifier<&'a GuestEvmEnv<F>> {
     }
 
     /// Verifies the commitment in the guest and panics on failure.
+    ///
+    /// This includes checking that the `commitment.configID` matches the
+    /// configuration ID associated with the current guest environment (`self.env.commit.configID`).
     #[inline]
     pub fn verify(&self, commitment: &Commitment) {
         self.verify_with_config_id(commitment, self.env.commit.configID);
     }
 
+    /// Verifies the commitment in the guest against an explicitly provided configuration ID,
+    /// and panics on failure.
     pub fn verify_with_config_id(&self, commitment: &Commitment, config_id: B256) {
         assert_eq!(commitment.configID, config_id, "Invalid config ID");
         let (id, version) = commitment.decode_id();
@@ -122,12 +127,17 @@ mod host {
         }
 
         /// Preflights the commitment verification on the host.
+        ///
+        /// This includes checking that the `commitment.configID` matches the
+        /// configuration ID associated with the current host environment.
         #[inline]
         pub async fn verify(self, commitment: &Commitment) -> anyhow::Result<()> {
             let config_id = self.env.commit.config_id();
             self.verify_with_config_id(commitment, config_id).await
         }
 
+        /// Preflights the commitment verification on the host against an explicitly provided
+        /// configuration ID.
         pub async fn verify_with_config_id(
             self,
             commitment: &Commitment,
