@@ -60,13 +60,15 @@ async fn main() -> Result<()> {
     env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.caller = CALLER;
+    let returns = builder.call().await?;
     log::info!(
         "Call {} Function by {:#} on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
 
     let evm_input = env.into_input().await?;

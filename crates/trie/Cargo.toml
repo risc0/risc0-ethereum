@@ -30,10 +30,6 @@ unnameable-types = "warn"
 [lints.rustdoc]
 all = "warn"
 
-[profile.bench]
-codegen-units = 1
-lto = "fat"
-
 [dependencies]
 alloy-primitives = { workspace = true, features = ["map"] }
 alloy-rlp = { workspace = true, features = ["arrayvec"] }

@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,8 +34,10 @@ fn main() {
 
     // Execute the call.
     let contract = Contract::new(CONTRACT, &env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call();
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.base.caller = CALLER;
+    let returns = builder.call();
 
     // Commit the result.
-    env::commit(&returns._0)
+    env::commit(&returns)
 }

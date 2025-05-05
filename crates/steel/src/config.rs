@@ -13,16 +13,14 @@
 // limitations under the License.
 
 //! Handling different blockchain specifications.
-use std::collections::BTreeMap;
-
-use alloy_primitives::{b256, BlockNumber, BlockTimestamp, ChainId, B256};
+use alloy_primitives::{BlockNumber, BlockTimestamp, ChainId, B256};
 use anyhow::bail;
-use revm::primitives::SpecId;
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Output, Digest, Sha256};
+use std::collections::BTreeMap;
 
 /// The condition at which a fork is activated.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
 pub enum ForkCondition {
     /// The fork is activated with a certain block.
     Block(BlockNumber),
@@ -42,36 +40,32 @@ impl ForkCondition {
 }
 
 /// Specification of a specific chain.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChainSpec {
+#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+pub struct ChainSpec<S: Ord> {
     /// Chain identifier.
     pub chain_id: ChainId,
     /// Map revm specification IDs to their respective activation condition.
-    pub forks: BTreeMap<SpecId, ForkCondition>,
+    pub forks: BTreeMap<S, ForkCondition>,
 }
 
-impl Default for ChainSpec {
+impl<S: Ord + Serialize + Default> Default for ChainSpec<S> {
     /// Defaults to Ethereum Chain ID using the latest specification.
     #[inline]
     fn default() -> Self {
-        Self::new_single(1, SpecId::LATEST)
+        Self::new_single(1, S::default())
     }
 }
 
-impl ChainSpec {
-    /// Digest of the default configuration, i.e. `ChainSpec::default().digest()`.
-    pub const DEFAULT_DIGEST: B256 =
-        b256!("0e0fe3926625a8ffdd4123ad55bf3a419918885daa2e506df18c0e3d6b6c5009");
-
+impl<S: Ord + Serialize> ChainSpec<S> {
     /// Creates a new configuration consisting of only one specification ID.
     ///
     /// For example, this can be used to create a [ChainSpec] for an anvil instance:
     /// ```rust
-    /// # use revm::primitives::SpecId;
+    /// # use revm::primitives::hardfork::SpecId;
     /// # use risc0_steel::config::ChainSpec;
     /// let spec = ChainSpec::new_single(31337, SpecId::CANCUN);
     /// ```
-    pub fn new_single(chain_id: ChainId, spec_id: SpecId) -> Self {
+    pub fn new_single(chain_id: ChainId, spec_id: S) -> Self {
         ChainSpec {
             chain_id,
             forks: BTreeMap::from([(spec_id, ForkCondition::Block(0))]),
@@ -90,11 +84,11 @@ impl ChainSpec {
         <[u8; 32]>::from(StructHash::digest::<Sha256>(self)).into()
     }
 
-    /// Returns the [SpecId] for a given block number and timestamp or an error if not supported.
-    pub fn active_fork(&self, block_number: BlockNumber, timestamp: u64) -> anyhow::Result<SpecId> {
+    /// Returns the spec for a given block number and timestamp or an error if not supported.
+    pub fn active_fork(&self, block_number: BlockNumber, timestamp: u64) -> anyhow::Result<&S> {
         for (spec_id, fork) in self.forks.iter().rev() {
             if fork.active(block_number, timestamp) {
-                return Ok(*spec_id);
+                return Ok(spec_id);
             }
         }
         bail!("no supported fork for block {}", block_number)
@@ -108,12 +102,14 @@ trait StructHash {
     fn digest<D: Digest>(&self) -> Output<D>;
 }
 
-impl StructHash for (&SpecId, &ForkCondition) {
+impl<S: Serialize> StructHash for (&S, &ForkCondition) {
     /// Computes the cryptographic digest of a fork.
     /// The hash is H(SpecID || ForkCondition::name || ForkCondition::value )
     fn digest<D: Digest>(&self) -> Output<D> {
         let mut hasher = D::new();
-        hasher.update([*self.0 as u8]);
+        // for enums this is essentially equivalent to (self.0 as u32).to_le_bytes()
+        let s_bytes = bincode::serialize(&self.0).unwrap();
+        hasher.update(&s_bytes);
         match self.1 {
             ForkCondition::Block(n) => {
                 hasher.update(b"Block");
@@ -128,7 +124,7 @@ impl StructHash for (&SpecId, &ForkCondition) {
     }
 }
 
-impl StructHash for ChainSpec {
+impl<S: Ord + Serialize> StructHash for ChainSpec<S> {
     /// Computes the cryptographic digest of a chain spec.
     ///
     /// This is equivalent to the `tagged_struct` structural hashing routines used for RISC Zero
@@ -155,6 +151,7 @@ impl StructHash for ChainSpec {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use revm::primitives::hardfork::SpecId;
 
     #[test]
     fn active_fork() {
@@ -167,27 +164,63 @@ mod tests {
         };
 
         assert!(spec.active_fork(0, 0).is_err());
-        assert_eq!(spec.active_fork(2, 0).unwrap(), SpecId::MERGE);
-        assert_eq!(spec.active_fork(u64::MAX, 59).unwrap(), SpecId::MERGE);
-        assert_eq!(spec.active_fork(0, 60).unwrap(), SpecId::CANCUN);
+        assert_eq!(*spec.active_fork(2, 0).unwrap(), SpecId::MERGE);
+        assert_eq!(*spec.active_fork(u64::MAX, 59).unwrap(), SpecId::MERGE);
+        assert_eq!(*spec.active_fork(0, 60).unwrap(), SpecId::CANCUN);
         assert_eq!(
-            spec.active_fork(u64::MAX, u64::MAX).unwrap(),
+            *spec.active_fork(u64::MAX, u64::MAX).unwrap(),
             SpecId::CANCUN
         );
     }
 
     #[test]
-    fn default_digest() {
+    fn digest() {
+        let chain_id = 0xF1E2D3C4B5A69788;
+        let forks = [
+            (SpecId::FRONTIER, ForkCondition::Block(0xF1E2D3C4B5A69788)),
+            (SpecId::PRAGUE, ForkCondition::Timestamp(0xF1E2D3C4B5A69788)),
+        ];
+        let chain_spec = ChainSpec {
+            chain_id,
+            forks: BTreeMap::from(forks.clone()),
+        };
+
         let exp: [u8; 32] = {
             let mut h = Sha256::new();
+            // tag digest
             h.update(Sha256::digest(b"ChainSpec(chain_id,forks)"));
-            h.update((&SpecId::LATEST, &ForkCondition::Block(0)).digest::<Sha256>());
-            h.update((1u64 as u32).to_le_bytes());
-            h.update(((1u64 >> 32) as u32).to_le_bytes());
-            h.update(1u16.to_le_bytes());
+            // fork digests
+            let fork_digest = {
+                let (spec, ForkCondition::Block(n)) = forks[0] else {
+                    unreachable!()
+                };
+                let mut h = Sha256::new();
+                h.update((spec as u32).to_le_bytes());
+                h.update(b"Block");
+                h.update(n.to_le_bytes());
+                h.finalize()
+            };
+            h.update(fork_digest);
+            let fork_digest = {
+                let (spec, ForkCondition::Timestamp(ts)) = forks[1] else {
+                    unreachable!()
+                };
+                let mut h = Sha256::new();
+                h.update((spec as u32).to_le_bytes());
+                h.update(b"Timestamp");
+                h.update(ts.to_le_bytes());
+                h.finalize()
+            };
+            h.update(fork_digest);
+            // chain_id
+            h.update((chain_id as u32).to_le_bytes());
+            h.update(((chain_id >> 32) as u32).to_le_bytes());
+            // len(forks)
+            h.update(2u16.to_le_bytes());
+
             h.finalize().into()
         };
-        assert_eq!(ChainSpec::DEFAULT_DIGEST.0, exp);
-        assert_eq!(ChainSpec::default().digest().0, exp);
+
+        assert_eq!(chain_spec.digest(), B256::from(exp));
     }
 }

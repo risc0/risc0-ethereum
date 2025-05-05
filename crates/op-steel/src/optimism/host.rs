@@ -14,7 +14,7 @@
 
 use crate::{
     game::host::{DisputeGameIndex, OptimismPortal2},
-    optimism::{OpBlockHeader, OpEvmInput},
+    optimism::{OpBlockHeader, OpChainSpec, OpEvmFactory, OpEvmInput},
     DisputeGameCommit,
 };
 use alloy::{
@@ -25,7 +25,6 @@ use alloy_primitives::{Address, Sealable};
 use anyhow::{Context, Result};
 use op_alloy_network::Optimism;
 use risc0_steel::{
-    config::ChainSpec,
     host::{
         db::{ProofDb, ProviderDb},
         BlockNumberOrTag, EvmEnvBuilder, HostCommit,
@@ -41,13 +40,13 @@ use url::Url;
 /// Wrapped [EvmEnv] for Optimism.
 pub struct OpEvmEnv<D, C> {
     /// Underlying generic environment without a specific commitment.
-    inner: EvmEnv<D, OpBlockHeader, HostCommit<()>>,
+    inner: EvmEnv<D, OpEvmFactory, HostCommit<()>>,
     /// Additional OP-specific commitment.
     commit: C,
 }
 
 impl<D, C> Deref for OpEvmEnv<D, C> {
-    type Target = EvmEnv<D, OpBlockHeader, HostCommit<()>>;
+    type Target = EvmEnv<D, OpEvmFactory, HostCommit<()>>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -75,7 +74,7 @@ impl OpEvmEnv<(), ()> {
 type HostOpEvmEnv<P2, C> = OpEvmEnv<ProofDb<ProviderDb<Optimism, P2>>, C>;
 
 impl<D, C> OpEvmEnv<ProofDb<D>, C> {
-    pub fn with_chain_spec(self, chain_spec: &ChainSpec) -> Self {
+    pub fn with_chain_spec(self, chain_spec: &OpChainSpec) -> Self {
         let Self { inner, commit } = self;
         Self {
             inner: inner.with_chain_spec(chain_spec),
@@ -134,7 +133,7 @@ where
 #[derive(Clone, Debug)]
 pub struct OpEvmEnvBuilder<Stage, P2, G> {
     /// Underlying generic builder with no Beacon API config.
-    inner: EvmEnvBuilder<P2, OpBlockHeader, ()>,
+    inner: EvmEnvBuilder<P2, OpEvmFactory, ()>,
     /// Clone of the L2 provider.
     l2_provider: P2,
     /// Optional dispute game config.
