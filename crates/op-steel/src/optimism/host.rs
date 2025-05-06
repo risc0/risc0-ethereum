@@ -186,7 +186,7 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
         portal: Address,
         l1_rpc: Url,
     ) -> OpEvmEnvBuilder<PreProviderStage, (), DisputeGameConfig<RootProvider<Ethereum>>> {
-        self.dispute_game(portal, ProviderBuilder::default().on_http(l1_rpc))
+        self.dispute_game(portal, ProviderBuilder::default().connect_http(l1_rpc))
     }
 
     /// Sets a fault dispute game that is feasible wrt the L1 `OptimismPortal` contract deployed at
@@ -226,7 +226,7 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
 impl<G> OpEvmEnvBuilder<PreProviderStage, (), G> {
     /// Sets the L2 Optimism HTTP RPC endpoint that will be used by the [OpEvmEnv].
     pub fn rpc(self, url: Url) -> OpEvmEnvBuilder<ProviderStage, RootProvider<Optimism>, G> {
-        self.provider(ProviderBuilder::default().on_http(url))
+        self.provider(ProviderBuilder::default().connect_http(url))
     }
 
     /// Sets the L2 Optimism [Provider] that will be used by the [OpEvmEnv].
