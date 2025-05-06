@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🚨 Breaking Changes
 
+- Remove deprecated `EvmEnv::into_beacon_input`.
 - **`EvmFactory` Abstraction:** The core types `EvmEnv`, `EvmInput`, `BlockInput`, `Contract`, `CallBuilder`, `Account`, `Event`, `SteelVerifier`, and host builder methods are now generic over an `EvmFactory` implementation (e.g., `EthEvmFactory`) instead of just a block header type. This is a fundamental change affecting environment creation, contract interaction, and type signatures throughout the library.
 - **`CallBuilder` API:** The API for configuring contract calls has changed significantly. Fluent methods like `.from()`, `.gas()`, `.value()`, `.gas_price()` have been removed. Call parameters **must** now be set by directly modifying the public `tx` field of the `CallBuilder` instance before execution (e.g., `builder.tx.caller = my_address; builder.tx.gas_limit = 100_000;`). Consult the specific `Tx` type documentation for your `EvmFactory` (e.g., `revm::context::TxEnv` for `EthEvmFactory`) for available fields.
 - **`EvmBlockHeader` Trait:** The trait now requires an associated type `Spec` and mandates implementing `fn to_block_env(&self, spec: Self::Spec) -> BlockEnv` instead of the previous `fill_block_env`.

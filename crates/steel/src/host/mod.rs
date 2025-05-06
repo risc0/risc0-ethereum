@@ -325,21 +325,3 @@ where
         )))
     }
 }
-
-impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, ()>
-where
-    P: Provider<Ethereum>,
-{
-    /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
-    #[deprecated(
-        since = "0.14.0",
-        note = "use `EvmEnv::builder().beacon_api()` instead"
-    )]
-    pub async fn into_beacon_input(self, url: Url) -> Result<EthEvmInput> {
-        let commit =
-            BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
-        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
-
-        Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))
-    }
-}
