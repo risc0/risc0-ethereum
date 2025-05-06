@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
 
     // Create an alloy provider for that private key and URL.
     let wallet = EthereumWallet::from(args.eth_wallet_private_key);
-    let provider = ProviderBuilder::new().wallet(wallet).on_http(args.rpc_url);
+    let provider = ProviderBuilder::new().wallet(wallet).connect_http(args.rpc_url);
 
     // Decode the hex-encoded proposal ID and votes data
     let proposal_id = hex::decode(&args.proposal_id).context("Failed to decode proposal ID")?;

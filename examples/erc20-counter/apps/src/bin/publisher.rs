@@ -110,7 +110,7 @@ async fn main() -> Result<()> {
     let wallet = EthereumWallet::from(args.eth_wallet_private_key);
     let provider = ProviderBuilder::new()
         .wallet(wallet)
-        .on_http(args.eth_rpc_url);
+        .connect_http(args.eth_rpc_url);
 
     #[cfg(feature = "beacon")]
     log::info!("Beacon commitment to block {}", args.execution_block);
