@@ -16,8 +16,8 @@
 pub use alloy_rpc_types::{Topic, ValueOrArray};
 
 use crate::{state::WrapStateDb, EvmBlockHeader, EvmDatabase, EvmFactory, GuestEvmEnv};
-use alloy_primitives::{Address, Log, Sealed};
-use alloy_rpc_types::Filter;
+use alloy_primitives::{Address, Bloom, Log, Sealed};
+use alloy_rpc_types::{Filter, FilteredParams};
 use alloy_sol_types::SolEvent;
 use std::marker::PhantomData;
 
@@ -52,9 +52,9 @@ use std::marker::PhantomData;
 ///   (retrieved via `env.header()`) used to create the `Event` query. You cannot specify a block
 ///   range or a different block hash.
 /// - **Topic 0 (Event Signature):** This topic is automatically set based on the `SolEvent` type
-///   parameter (`S`) provided to [Event::new] or [Event::preflight] (using
-///   `S::SIGNATURE_HASH`). It cannot be altered or set to a wildcard/list. Anonymous events (where
-///   `S::ANONYMOUS` is true) are not supported.
+///   parameter (`S`) provided to [Event::new] or [Event::preflight] (using `S::SIGNATURE_HASH`). It
+///   cannot be altered or set to a wildcard/list. Anonymous events (where `S::ANONYMOUS` is true)
+///   are not supported.
 ///
 /// ### Usage
 /// The usage pattern mirrors other Steel interactions like [Contract]:
@@ -152,7 +152,6 @@ impl<F: EvmFactory> Event<(), &GuestEvmEnv<F>> {
     }
 }
 
-#[cfg(feature = "unstable-event")]
 impl<S: SolEvent, F: EvmFactory> Event<S, &GuestEvmEnv<F>> {
     /// Executes the query and returns the matching logs and panics on failure.
     ///
@@ -259,4 +258,11 @@ fn event_filter<S: SolEvent, H: EvmBlockHeader>(header: &Sealed<H>) -> Filter {
     Filter::new()
         .event_signature(S::SIGNATURE_HASH)
         .at_block_hash(header.seal())
+}
+
+/// Checks if a bloom filter matches the given filter parameters.
+#[inline]
+pub(super) fn matches_filter(bloom: Bloom, filter: &Filter) -> bool {
+    FilteredParams::matches_address(bloom, &FilteredParams::address_filter(&filter.address))
+        && FilteredParams::matches_topics(bloom, &FilteredParams::topics_filter(&filter.topics))
 }

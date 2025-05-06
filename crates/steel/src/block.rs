@@ -77,13 +77,6 @@ impl<F: EvmFactory> BlockInput<F> {
             previous_header = ancestor;
         }
 
-        #[cfg(not(feature = "unstable-event"))]
-        // there must not be any receipts, if events are not supported
-        let logs = {
-            assert!(self.receipts.is_none(), "Receipts not supported");
-            None
-        };
-        #[cfg(feature = "unstable-event")]
         // verify the root hash of the included receipts and extract their logs
         let logs = self.receipts.map(|receipts| {
             let root = alloy_trie::root::ordered_trie_root_with_encoder(&receipts, |r, out| {

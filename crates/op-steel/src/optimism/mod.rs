@@ -158,12 +158,10 @@ impl EvmBlockHeader for OpBlockHeader {
     fn state_root(&self) -> &B256 {
         &self.0.inner().state_root
     }
-    #[cfg(feature = "unstable-event")]
     #[inline]
     fn receipts_root(&self) -> &B256 {
         &self.0.inner().receipts_root
     }
-    #[cfg(feature = "unstable-event")]
     #[inline]
     fn logs_bloom(&self) -> &alloy_primitives::Bloom {
         &self.0.inner().logs_bloom
