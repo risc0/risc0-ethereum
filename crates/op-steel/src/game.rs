@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::optimism::OpBlockHeader;
+use crate::optimism::{OpBlockHeader, OpEvmFactory};
 use alloy_primitives::{keccak256, Sealed, B256};
 use alloy_sol_types::SolValue;
 use risc0_steel::{BlockHeaderCommit, Commitment, ComposeInput};
@@ -44,7 +44,7 @@ impl OutputRootProof {
 }
 
 /// Input committing to the root claim of an OP dispute game.
-pub type DisputeGameInput = ComposeInput<OpBlockHeader, DisputeGameCommit>;
+pub type DisputeGameInput = ComposeInput<OpEvmFactory, DisputeGameCommit>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DisputeGameCommit {
@@ -222,7 +222,7 @@ pub mod host {
     }
 
     #[derive(Clone, Debug)]
-    pub struct OptimismPortal2<P>(IOptimismPortal2Instance<(), P>);
+    pub struct OptimismPortal2<P>(IOptimismPortal2Instance<P>);
 
     impl<P1> OptimismPortal2<P1>
     where
@@ -237,9 +237,9 @@ pub mod host {
             index: DisputeGameIndex,
             l2_provider: P2,
         ) -> anyhow::Result<DisputeGame> {
-            let game_type = self.0.respectedGameType().call().await?._0;
-            let updated_at = self.0.respectedGameTypeUpdatedAt().call().await?._0;
-            let factory_address = self.0.disputeGameFactory().call().await?._0;
+            let game_type = self.0.respectedGameType().call().await?;
+            let updated_at = self.0.respectedGameTypeUpdatedAt().call().await?;
+            let factory_address = self.0.disputeGameFactory().call().await?;
             let factory = IDisputeGameFactory::new(factory_address, self.0.provider());
 
             match index {
@@ -263,8 +263,7 @@ pub mod host {
                         .findFinalizedIndex(*self.0.address())
                         .call()
                         .overrides(overrides)
-                        .await?
-                        ._0;
+                        .await?;
                     // get the actual game of this index
                     let game =
                         find_latest_game(l2_provider, game_type, updated_at, factory, Some(index))
@@ -299,7 +298,7 @@ pub mod host {
         l2_provider: P2,
         game_type: u32,
         game_type_updated_at: u64,
-        factory: IDisputeGameFactoryInstance<(), P1>,
+        factory: IDisputeGameFactoryInstance<P1>,
         start_index: Option<U256>,
     ) -> anyhow::Result<DisputeGame>
     where
@@ -309,22 +308,21 @@ pub mod host {
         let index = match start_index {
             Some(index) => index,
             None => {
-                let game_count = factory.gameCount().call().await?.gameCount;
+                let game_count = factory.gameCount().call().await?;
                 game_count - uint!(1U256)
             }
         };
         let games = factory
             .findLatestGames(game_type, index, DISPUTE_GAME_FETCH_COUNT)
             .call()
-            .await?
-            .games;
+            .await?;
 
         for game in games {
             if game.createdAt < game_type_updated_at {
                 break;
             }
             // the extra data should contain the block number
-            let Ok(l2_block_number) = u64::abi_decode(&game.extraData, true) else {
+            let Ok(l2_block_number) = u64::abi_decode(&game.extraData) else {
                 continue;
             };
             // verify the claim of the game

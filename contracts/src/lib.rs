@@ -126,7 +126,7 @@ fn decode_contract_err<T: SolInterface>(err: alloy::contract::Error) -> Result<T
                 return Err(DecodingError::BytesFromStrError.into());
             };
 
-            let decoded_error = match T::abi_decode(&data, true) {
+            let decoded_error = match T::abi_decode(&data) {
                 Ok(res) => res,
                 Err(err) => {
                     return Err(DecodingError::Abi(err, data).into());

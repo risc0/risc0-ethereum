@@ -14,14 +14,14 @@
 
 pub use alloy_consensus::Account as StateAccount;
 
-use crate::{mpt::MerkleTrie, EvmBlockHeader};
+use crate::mpt::MerkleTrie;
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
     Address, Bytes, Log, Sealed, B256, U256,
 };
 use revm::{
-    primitives::{AccountInfo, Bytecode},
+    state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
 use std::{convert::Infallible, rc::Rc};
@@ -120,7 +120,7 @@ pub struct WrapStateDb<'a, H> {
     account_storage: AddressHashMap<Option<Rc<MerkleTrie>>>,
 }
 
-impl<'a, H: EvmBlockHeader> WrapStateDb<'a, H> {
+impl<'a, H> WrapStateDb<'a, H> {
     /// Creates a new [Database] from the given [StateDb].
     pub fn new(inner: &'a StateDb, header: &'a Sealed<H>) -> Self {
         Self {
@@ -195,7 +195,7 @@ impl<H> RevmDatabase for WrapStateDb<'_, H> {
 }
 
 #[cfg(feature = "unstable-event")]
-impl<H: EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
+impl<H: crate::EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
     fn logs(
         &mut self,
         filter: alloy_rpc_types::Filter,
