@@ -34,7 +34,6 @@ use std::{
     fmt::{self, Debug, Display},
     str::FromStr,
 };
-use url::Url;
 
 mod builder;
 pub mod db;
