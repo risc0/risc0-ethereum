@@ -137,7 +137,7 @@ async fn main() -> Result<()> {
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
     let mut contract = Contract::preflight(args.token_contract, &mut env);
-    let returns = contract.call_builder(&call).call().await?._0;
+    let returns = contract.call_builder(&call).call().await?;
     assert!(returns >= U256::from(1));
 
     // Finally, construct the input from the environment.
@@ -167,7 +167,7 @@ async fn main() -> Result<()> {
     let journal = &receipt.journal.bytes;
 
     // Decode and log the commitment
-    let journal = Journal::abi_decode(journal, true).context("invalid journal")?;
+    let journal = Journal::abi_decode(journal).context("invalid journal")?;
     log::debug!("Steel commitment: {:?}", journal.commitment);
 
     // ABI encode the seal.
@@ -177,7 +177,7 @@ async fn main() -> Result<()> {
     let contract = ICounter::new(args.counter_address, &provider);
 
     // Call ICounter::imageID() to check that the contract has been deployed correctly.
-    let contract_image_id = Digest::from(contract.imageID().call().await?._0.0);
+    let contract_image_id = Digest::from(contract.imageID().call().await?.0);
     ensure!(contract_image_id == BALANCE_OF_ID.into());
 
     // Call the increment function of the contract and wait for confirmation.

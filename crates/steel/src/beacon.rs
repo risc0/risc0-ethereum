@@ -13,9 +13,7 @@
 // limitations under the License.
 
 //! Types related to commitments to the beacon block root.
-use crate::{
-    merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader,
-};
+use crate::{merkle, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput};
 use alloy_primitives::{Sealed, B256};
 use serde::{Deserialize, Serialize};
 
@@ -26,7 +24,7 @@ pub const STATE_ROOT_LEAF_INDEX: usize = 6434;
 pub const BLOCK_HASH_LEAF_INDEX: usize = 6444;
 
 /// Input committing to the corresponding Beacon Chain block root.
-pub type BeaconInput<H> = ComposeInput<H, BeaconCommit>;
+pub type BeaconInput<F> = ComposeInput<F, BeaconCommit>;
 
 /// A commitment that an execution block hash is included in a specific beacon block on the Ethereum
 /// blockchain.
@@ -100,9 +98,7 @@ impl<const LEAF_INDEX: usize> GeneralizedBeaconCommit<LEAF_INDEX> {
     }
 }
 
-impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
-    for GeneralizedBeaconCommit<LEAF_INDEX>
-{
+impl<H, const LEAF_INDEX: usize> BlockHeaderCommit<H> for GeneralizedBeaconCommit<LEAF_INDEX> {
     #[inline]
     fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
         let (timestamp, beacon_root) = self.into_commit(header.seal());
@@ -118,7 +114,7 @@ impl<H: EvmBlockHeader, const LEAF_INDEX: usize> BlockHeaderCommit<H>
 #[cfg(feature = "host")]
 pub(crate) mod host {
     use super::*;
-    use crate::ethereum::EthBlockHeader;
+    use crate::{ethereum::EthBlockHeader, EvmBlockHeader};
     use alloy::{network::Ethereum, providers::Provider};
     use alloy_primitives::B256;
     use anyhow::{bail, ensure, Context};

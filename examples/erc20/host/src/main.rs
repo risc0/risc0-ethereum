@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,13 +69,15 @@ async fn main() -> Result<()> {
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
     let mut contract = Contract::preflight(CONTRACT, &mut env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.caller = CALLER;
+    let returns = builder.call().await?;
     println!(
         "Call {} Function by {:#} on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
 
     // Finally, construct the input from the environment.
@@ -94,7 +96,7 @@ async fn main() -> Result<()> {
     };
 
     // The journal should be the ABI encoded commitment.
-    let commitment = Commitment::abi_decode(session_info.journal.as_ref(), true)
+    let commitment = Commitment::abi_decode(session_info.journal.as_ref())
         .context("failed to decode journal")?;
     println!("{:?}", commitment);
 

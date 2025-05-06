@@ -14,12 +14,9 @@
 
 //! Functionality that is only needed for the host and not the guest.
 use crate::{
-    beacon::BeaconCommit,
-    block::BlockInput,
-    config::ChainSpec,
-    ethereum::{EthBlockHeader, EthEvmEnv},
-    history::HistoryCommit,
-    BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmInput,
+    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
+    history::HistoryCommit, BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv,
+    EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
@@ -42,6 +39,7 @@ use url::Url;
 mod builder;
 pub mod db;
 
+use crate::ethereum::EthEvmInput;
 pub use builder::EvmEnvBuilder;
 
 /// A Block Identifier.
@@ -149,7 +147,7 @@ impl Display for BlockNumberOrTag {
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type HostEvmEnv<D, H, C> = EvmEnv<ProofDb<D>, H, HostCommit<C>>;
+pub(crate) type HostEvmEnv<D, F, C> = EvmEnv<ProofDb<D>, F, HostCommit<C>>;
 type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
 
 /// Wrapper for the commit on the host.
@@ -158,7 +156,7 @@ pub struct HostCommit<C> {
     config_id: B256,
 }
 
-impl<D, H, C> HostEvmEnv<D, H, C>
+impl<D, FACTORY: EvmFactory, C> HostEvmEnv<D, FACTORY, C>
 where
     D: Send + 'static,
 {
@@ -189,13 +187,13 @@ where
     }
 }
 
-impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
+impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
     /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
-        self.cfg_env.chain_id = chain_spec.chain_id();
-        self.cfg_env.handler_cfg.spec_id = chain_spec
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec<F::Spec>) -> Self {
+        self.chain_id = chain_spec.chain_id;
+        self.spec = *chain_spec
             .active_fork(self.header.number(), self.header.timestamp())
             .unwrap();
         self.commit.config_id = chain_spec.digest();
@@ -257,7 +255,8 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     /// # }
     /// ```
     pub fn extend(&mut self, other: Self) -> Result<()> {
-        ensure!(self.cfg_env == other.cfg_env, "configuration mismatch");
+        ensure!(self.chain_id == other.chain_id, "configuration mismatch");
+        ensure!(self.spec == other.spec, "configuration mismatch");
         ensure!(
             self.header.seal() == other.header.seal(),
             "execution header mismatch"
@@ -269,22 +268,23 @@ impl<D, H: EvmBlockHeader, C> HostEvmEnv<D, H, C> {
     }
 }
 
-impl<N, P, H> HostEvmEnv<ProviderDb<N, P>, H, ()>
+impl<N, P, F> HostEvmEnv<ProviderDb<N, P>, F, ()>
 where
     N: Network,
     P: Provider<N>,
-    H: EvmBlockHeader + TryFrom<<N as Network>::HeaderResponse>,
-    <H as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
+    F: EvmFactory,
+    F::Header: TryFrom<<N as Network>::HeaderResponse>,
+    <F::Header as TryFrom<<N as Network>::HeaderResponse>>::Error: Display,
 {
     /// Converts the environment into a [EvmInput] committing to an execution block hash.
-    pub async fn into_input(self) -> Result<EvmInput<H>> {
+    pub async fn into_input(self) -> Result<EvmInput<F>> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Block(input))
     }
 }
 
-impl<D, H: EvmBlockHeader, C: Clone + BlockHeaderCommit<H>> HostEvmEnv<D, H, C> {
+impl<D, F: EvmFactory, C: Clone + BlockHeaderCommit<F::Header>> HostEvmEnv<D, F, C> {
     /// Returns the [Commitment] used to validate the environment.
     pub fn commitment(&self) -> Commitment {
         self.commit
@@ -299,7 +299,7 @@ where
     P: Provider<Ethereum>,
 {
     /// Converts the environment into a [EvmInput] committing to a Beacon Chain block root.
-    pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
+    pub async fn into_input(self) -> Result<EthEvmInput> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(
@@ -316,7 +316,7 @@ where
     /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
     /// block roots.
     #[stability::unstable(feature = "history")]
-    pub async fn into_input(self) -> Result<EvmInput<EthBlockHeader>> {
+    pub async fn into_input(self) -> Result<EthEvmInput> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::History(ComposeInput::new(
@@ -335,7 +335,7 @@ where
         since = "0.14.0",
         note = "use `EvmEnv::builder().beacon_api()` instead"
     )]
-    pub async fn into_beacon_input(self, url: Url) -> Result<EvmInput<EthBlockHeader>> {
+    pub async fn into_beacon_input(self, url: Url) -> Result<EthEvmInput> {
         let commit =
             BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;

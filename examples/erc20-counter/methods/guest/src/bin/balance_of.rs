@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ fn main() {
     let returns = Contract::new(contract, &env).call_builder(&call).call();
 
     // Check that the given account holds at least 1 token.
-    assert!(returns._0 >= U256::from(1));
+    assert!(returns >= U256::from(1));
 
     // Commit the block hash and number used when deriving `view_call_env` to the journal.
     let journal = Journal {
