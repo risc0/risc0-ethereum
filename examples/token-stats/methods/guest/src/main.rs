@@ -33,12 +33,10 @@ fn main() {
     let contract = Contract::new(CONTRACT, &env_prev);
     let utilization = contract
         .call_builder(&CometMainInterface::getUtilizationCall {})
-        .call()
-        ._0;
+        .call();
     let supply_rate_prev = contract
         .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
-        .call()
-        ._0;
+        .call();
 
     // Prepare the second `EvmEnv` for execution.  It corresponds to the recent EVM state.
     let input: EthEvmInput = env::read();
@@ -52,12 +50,10 @@ fn main() {
     let contract = Contract::new(CONTRACT, &env_cur);
     let utilization = contract
         .call_builder(&CometMainInterface::getUtilizationCall {})
-        .call()
-        ._0;
+        .call();
     let supply_rate_cur = contract
         .call_builder(&CometMainInterface::getSupplyRateCall { utilization })
-        .call()
-        ._0;
+        .call();
 
     // The formula for APR in percentage is the following:
     // Seconds Per Year = 60 * 60 * 24 * 365

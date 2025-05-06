@@ -60,13 +60,15 @@ async fn main() -> Result<()> {
     env = env.with_chain_spec(&OP_MAINNET_CHAIN_SPEC);
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
-    let returns = contract.call_builder(&CALL).from(CALLER).call().await?;
+    let mut builder = contract.call_builder(&CALL);
+    builder.tx.base.caller = CALLER;
+    let returns = builder.call().await?;
     log::info!(
         "Call {} Function by {:#} on {:#} returns: {}",
         IERC20::balanceOfCall::SIGNATURE,
         CALLER,
         CONTRACT,
-        returns._0
+        returns
     );
     log::debug!("{:?}", env.commitment());
 
