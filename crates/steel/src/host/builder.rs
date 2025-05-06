@@ -247,9 +247,8 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, Url> {
     /// let builder = EthEvmEnv::builder()
     ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
     ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
-    ///     .block_number(1_000_000);  // execute against historical state
-    /// # #[cfg(feature = "unstable-history")] // required because of the stability crate
-    /// let builder = builder.commitment_block_hash(commitment_hash); // commit to recent block
+    ///     .block_number(1_000_000)  // execute against historical state
+    ///     .commitment_block_hash(commitment_hash); // commit to recent block
     /// let env = builder.build().await?;
     /// # Ok(())
     /// # }

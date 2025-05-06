@@ -17,5 +17,4 @@ tracing-subscriber = { workspace = true }
 url = { workspace = true }
 
 [features]
-history = ["risc0-steel/unstable-history"]
 beacon = []
