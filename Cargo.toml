@@ -37,7 +37,7 @@ alloy-op-evm = { version = "0.5" }
 op-alloy-network = { version = "0.14" }
 
 # Alloy host dependencies
-alloy = { version = "0.14" }
+alloy = { version = "0.15" }
 alloy-trie = { version = "0.8" }
 
 # Beacon chain support
