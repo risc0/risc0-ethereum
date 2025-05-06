@@ -98,8 +98,8 @@ async fn main() -> Result<()> {
     .context("failed to execute guest")?;
 
     // The journal should be the ABI encoded commitment.
-    let journal = Journal::abi_decode(session_info.journal.as_ref(), true)
-        .context("failed to decode journal")?;
+    let journal =
+        Journal::abi_decode(session_info.journal.as_ref()).context("failed to decode journal")?;
     log::debug!("Steel commitment: {:?}", journal.commitment);
 
     log::info!(

@@ -37,7 +37,7 @@ fn basic_usage() {
     println!("{:#?}", &output);
 
     let output_bytes = hex::decode(output.stdout).unwrap();
-    let journal_seal = <JournalSeal>::abi_decode(&output_bytes, true).unwrap();
+    let journal_seal = <JournalSeal>::abi_decode(&output_bytes).unwrap();
     let journal = journal_seal.journal;
     let seal = journal_seal.seal;
 
@@ -73,7 +73,7 @@ fn basic_usage_with_rust_log() {
     println!("{:#?}", &output);
 
     let output_bytes = hex::decode(output.stdout).unwrap();
-    let journal_seal = <JournalSeal>::abi_decode(&output_bytes, true).unwrap();
+    let journal_seal = <JournalSeal>::abi_decode(&output_bytes).unwrap();
     let journal = journal_seal.journal;
     let seal = journal_seal.seal;
 

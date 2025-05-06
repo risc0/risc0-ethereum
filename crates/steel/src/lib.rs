@@ -23,15 +23,19 @@
 #[cfg(feature = "host")]
 pub use alloy;
 
-use ::serde::{Deserialize, Serialize};
-use alloy_primitives::{uint, BlockNumber, Bloom, Log, Sealable, Sealed, B256, U256};
+use ::serde::{de::DeserializeOwned, Deserialize, Serialize};
+use alloy_evm::{Database, Evm, EvmError, IntoTxEnv};
+use alloy_primitives::{
+    uint, Address, BlockNumber, Bloom, Bytes, ChainId, Log, Sealable, Sealed, B256, U256,
+};
 use alloy_rpc_types::{Filter, FilteredParams};
 use alloy_sol_types::SolValue;
 use config::ChainSpec;
 use revm::{
-    primitives::{BlockEnv, CfgEnvWithHandlerCfg, SpecId},
+    context::{result::HaltReasonTr, BlockEnv},
     Database as RevmDatabase,
 };
+use std::{error::Error, fmt::Debug};
 
 pub mod account;
 pub mod beacon;
@@ -73,21 +77,21 @@ pub use verifier::SteelVerifier;
 /// The serializable input to derive and validate an [EvmEnv] from.
 #[non_exhaustive]
 #[derive(Clone, Serialize, Deserialize)]
-pub enum EvmInput<H> {
+pub enum EvmInput<F: EvmFactory> {
     /// Input committing to the corresponding execution block hash.
-    Block(BlockInput<H>),
+    Block(BlockInput<F>),
     /// Input committing to the corresponding Beacon Chain block root.
-    Beacon(BeaconInput<H>),
+    Beacon(BeaconInput<F>),
     /// Input recursively committing to multiple Beacon Chain block root.
-    History(HistoryInput<H>),
+    History(HistoryInput<F>),
 }
 
-impl<H: EvmBlockHeader> EvmInput<H> {
+impl<F: EvmFactory> EvmInput<F> {
     /// Converts the input into a [EvmEnv] for execution.
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
     #[inline]
-    pub fn into_env(self) -> GuestEvmEnv<H> {
+    pub fn into_env(self) -> GuestEvmEnv<F> {
         match self {
             EvmInput::Block(input) => input.into_env(),
             EvmInput::Beacon(input) => input.into_env(),
@@ -97,7 +101,7 @@ impl<H: EvmBlockHeader> EvmInput<H> {
 }
 
 /// A trait linking the block header to a commitment.
-pub trait BlockHeaderCommit<H: EvmBlockHeader> {
+pub trait BlockHeaderCommit<H> {
     /// Creates a verifiable [Commitment] of the `header`.
     fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment;
 }
@@ -107,24 +111,24 @@ pub trait BlockHeaderCommit<H: EvmBlockHeader> {
 /// The `commit` field provides a mechanism to generate a commitment to the block header
 /// contained within the `input` field.
 #[derive(Clone, Serialize, Deserialize)]
-pub struct ComposeInput<H, C> {
-    input: BlockInput<H>,
+pub struct ComposeInput<F: EvmFactory, C> {
+    input: BlockInput<F>,
     commit: C,
 }
 
-impl<H: EvmBlockHeader, C: BlockHeaderCommit<H>> ComposeInput<H, C> {
+impl<F: EvmFactory, C: BlockHeaderCommit<F::Header>> ComposeInput<F, C> {
     /// Creates a new composed input from a [BlockInput] and a [BlockHeaderCommit].
-    pub const fn new(input: BlockInput<H>, commit: C) -> Self {
+    pub const fn new(input: BlockInput<F>, commit: C) -> Self {
         Self { input, commit }
     }
 
     /// Disassembles this `ComposeInput`, returning the underlying input and commitment creator.
-    pub fn into_parts(self) -> (BlockInput<H>, C) {
+    pub fn into_parts(self) -> (BlockInput<F>, C) {
         (self.input, self.commit)
     }
 
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    pub fn into_env(self) -> GuestEvmEnv<H> {
+    pub fn into_env(self) -> GuestEvmEnv<F> {
         let mut env = self.input.into_env();
         env.commit = self.commit.commit(&env.header, env.commit.configID);
 
@@ -151,26 +155,90 @@ pub(crate) fn matches_filter(bloom: Bloom, filter: &Filter) -> bool {
 }
 
 /// Alias for readability, do not make public.
-pub(crate) type GuestEvmEnv<H> = EvmEnv<StateDb, H, Commitment>;
+pub(crate) type GuestEvmEnv<F> = EvmEnv<StateDb, F, Commitment>;
 
-/// The environment to execute the contract calls in.
-pub struct EvmEnv<D, H, C> {
+/// Abstracts the creation and configuration of a specific EVM implementation.
+///
+/// This trait acts as a factory pattern, allowing generic code (like `Contract` and `CallBuilder`)
+/// to operate with different underlying EVM engines (e.g., `revm`) without being
+/// tightly coupled to a specific implementation. Implementors define the concrete types
+/// associated with their chosen EVM and provide the logic to instantiate it.
+pub trait EvmFactory {
+    /// The concrete EVM execution environment type created by this factory.
+    type Evm<DB: Database>: Evm<
+        DB = DB,
+        Tx = Self::Tx,
+        HaltReason = Self::HaltReason,
+        Error = Self::Error<DB::Error>,
+        Spec = Self::Spec,
+    >;
+    /// The transaction environment type compatible with `Self::Evm`.
+    type Tx: IntoTxEnv<Self::Tx> + Send + Sync + 'static;
+    /// The error type returned by `Self::Evm` during execution.
+    type Error<DBError: Error + Send + Sync + 'static>: EvmError;
+    /// The type representing reasons why `Self::Evm` might halt execution.
+    type HaltReason: HaltReasonTr + Send + Sync + 'static;
+    /// The EVM specification identifier (e.g., Shanghai, Cancun) used by `Self::Evm`.
+    type Spec: Ord + Default + Serialize + Debug + Copy + Send + Sync + 'static;
+    /// The block header type providing execution context (e.g., timestamp, number, basefee).
+    type Header: EvmBlockHeader<Spec = Self::Spec>
+        + Clone
+        + Serialize
+        + DeserializeOwned
+        + Send
+        + Sync
+        + 'static;
+
+    /// Creates a new transaction environment instance for a basic call.
+    ///
+    /// Implementors should create an instance of `Self::Tx`,
+    /// populate it with the target `address` and input `data`, and apply appropriate
+    /// defaults for other transaction fields (like caller, value, gas limit, etc.)
+    /// required by the specific EVM implementation.
+    fn new_tx(address: Address, data: Bytes) -> Self::Tx;
+
+    /// Creates a new instance of the EVM defined by `Self::Evm`.
+    fn create_evm<DB: Database>(
+        db: DB,
+        chain_id: ChainId,
+        spec: Self::Spec,
+        header: &Self::Header,
+    ) -> Self::Evm<DB>;
+}
+
+/// Represents the complete execution environment for EVM contract calls.
+///
+/// This struct encapsulates all necessary components to configure and run an EVM instance
+/// compatible with the specified [EvmFactory]. It serves as the primary context object passed
+/// around during EVM execution setup and interaction, both on the host (for preflight) and in the
+/// guest.
+pub struct EvmEnv<D, F: EvmFactory, C> {
+    /// The database instance providing EVM state (accounts, storage).
+    ///
+    /// This is wrapped in an `Option` because ownership might need to be temporarily
+    /// transferred during certain operations, particularly when moving execution into
+    /// a blocking task or thread on the host during preflight simulation.
     db: Option<D>,
-    cfg_env: CfgEnvWithHandlerCfg,
-    header: Sealed<H>,
+    /// The Chain ID of the EVM network (EIP-155).
+    chain_id: ChainId,
+    /// The EVM specification identifier, representing the active hardfork (e.g., Shanghai,
+    /// Cancun).
+    spec: F::Spec,
+    /// The sealed block header providing context for the current transaction execution.
+    header: Sealed<F::Header>,
+    /// Auxiliary context or commitment handler.
     commit: C,
 }
 
-impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
+impl<D, F: EvmFactory, C> EvmEnv<D, F, C> {
     /// Creates a new environment.
     ///
     /// It uses the default configuration for the latest specification.
-    pub(crate) fn new(db: D, header: Sealed<H>, commit: C) -> Self {
-        let cfg_env = CfgEnvWithHandlerCfg::new_with_spec_id(Default::default(), SpecId::LATEST);
-
+    pub(crate) fn new(db: D, header: Sealed<F::Header>, commit: C) -> Self {
         Self {
             db: Some(db),
-            cfg_env,
+            chain_id: 1,
+            spec: F::Spec::default(),
             header,
             commit,
         }
@@ -178,7 +246,7 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
 
     /// Returns the sealed header of the environment.
     #[inline]
-    pub fn header(&self) -> &Sealed<H> {
+    pub fn header(&self) -> &Sealed<F::Header> {
         &self.header
     }
 
@@ -194,13 +262,13 @@ impl<D, H: EvmBlockHeader, C> EvmEnv<D, H, C> {
     }
 }
 
-impl<D, H: EvmBlockHeader> EvmEnv<D, H, Commitment> {
+impl<D, F: EvmFactory> EvmEnv<D, F, Commitment> {
     /// Sets the chain ID and specification ID from the given chain spec.
     ///
     /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec) -> Self {
-        self.cfg_env.chain_id = chain_spec.chain_id();
-        self.cfg_env.handler_cfg.spec_id = chain_spec
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec<F::Spec>) -> Self {
+        self.chain_id = chain_spec.chain_id();
+        self.spec = *chain_spec
             .active_fork(self.header.number(), self.header.timestamp())
             .unwrap();
         self.commit.configID = chain_spec.digest();
@@ -223,6 +291,9 @@ impl<D, H: EvmBlockHeader> EvmEnv<D, H, Commitment> {
 
 /// An EVM abstraction of a block header.
 pub trait EvmBlockHeader: Sealable {
+    /// Associated type for the EVM specification (e.g., London, Shanghai)
+    type Spec: Copy;
+
     /// Returns the hash of the parent block's header.
     fn parent_hash(&self) -> &B256;
     /// Returns the block number.
@@ -238,8 +309,8 @@ pub trait EvmBlockHeader: Sealable {
     /// Returns the logs bloom filter of the block
     fn logs_bloom(&self) -> &Bloom;
 
-    /// Fills the EVM block environment with the header's data.
-    fn fill_block_env(&self, blk_env: &mut BlockEnv);
+    /// Returns the EVM block environment equivalent to this block header.
+    fn to_block_env(&self, spec: Self::Spec) -> BlockEnv;
 }
 
 // Keep everything in the Steel library private except the commitment.
