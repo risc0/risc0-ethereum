@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Query the latest block number.
-    let provider = ProviderBuilder::default().on_http(args.rpc_url);
+    let provider = ProviderBuilder::default().connect_http(args.rpc_url);
     let latest = provider.get_block_number().await?;
 
     // Create an EVM environment for that provider and about 12h (3600 blocks) ago.

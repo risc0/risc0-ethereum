@@ -125,7 +125,7 @@ alloy::sol!(
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
 async fn test_provider() -> impl Provider + Clone {
     let provider = ProviderBuilder::new()
-        .on_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
+        .connect_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
         .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();
     log::info!("Anvil started: {:?}", node_info);
