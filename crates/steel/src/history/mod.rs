@@ -128,7 +128,7 @@ mod host {
             );
             let client = BeaconClient::new(beacon_url.clone()).context("invalid URL")?;
 
-            // 1. Create a beacon commitment for the `execution_header`.
+            // 1. Create a beacon commitment for the execution_header.
             // This establishes the target beacon root we need to eventually verify.
             let evm_commit = BeaconCommit::from_header(
                 execution_header,
@@ -140,13 +140,13 @@ mod host {
             .context("failed to create beacon commit for the execution header")?;
             let execution_commit = match evm_commit.clone().into_commit(execution_header.seal()) {
                 (BeaconBlockId::Eip4788(ts), beacon_root) => (U256::from(ts), beacon_root),
-                // `CommitmentVersion::Beacon` should always yield Eip4788
+                // CommitmentVersion::Beacon should always yield Eip4788
                 _ => unreachable!(),
             };
 
-            // 2. Initialize the backward chaining process starting from the `commitment_header`.
-            // `current_state_block_hash` is the block hash whose state we are currently inspecting
-            // `current_state_commit` is the beacon commit for `current_state_block_hash`'s state
+            // 2. Initialize the backward chaining process starting from the commitment_header.
+            // current_state_block_hash is the block hash whose state we are currently inspecting
+            // current_state_commit is the beacon commit for current_state_block_hash's state
             let mut current_state_block_hash = commitment_header.seal();
             let (mut current_state_commit, _) = create_beacon_commit(
                 commitment_header,
@@ -164,8 +164,8 @@ mod host {
             loop {
                 log::debug!("Processing state for block: {}", current_state_block_hash);
 
-                // 2a. Query the EIP-4788 contract *within the current state* for the timestamp in
-                // the slot that the execution commit will eventually occupy,
+                // 2a. Query the beacon roots contract *within the current state* for the timestamp
+                // in the slot that the execution commit will eventually occupy,
                 let timestamp = beacon_roots::get_timestamp(
                     execution_commit.0,
                     &rpc_provider,
@@ -173,9 +173,8 @@ mod host {
                 )
                 .await
                 .context("failed to get timestamp from beacon roots contract")?;
-                // 2b. Preflight this contract call. This gives us the BeaconRootsState (proofs for
-                // the contract's storage) and the `parent_beacon_root` that the
-                // contract returns for `timestamp`.
+                // 2b. Preflight the beacon roots contract call for timestamp. This gives us the
+                // BeaconRootsState and the parent_beacon_root of that particular call.
                 let (parent_beacon_root, state_proof) = BeaconRootsState::preflight_get(
                     timestamp,
                     &rpc_provider,
@@ -184,7 +183,7 @@ mod host {
                 .await
                 .context("failed to preflight beacon roots contract")?;
 
-                // 2c. Store the fetched `BeaconRootsState` and commitment for the current state.
+                // 2c. Store the fetched BeaconRootsState and its beacon commitment
                 // These are inserted at the beginning as we are building the chain in reverse.
                 state_commits.insert(
                     0,
@@ -205,8 +204,8 @@ mod host {
                     break; // chain successfully linked
                 }
 
-                // 2e. If not yet linked, prepare for the next iteration. The `parent_beacon_root`
-                // is the beacon root of an *earlier* block's state, and we need to find that
+                // 2e. If not yet linked, prepare for the next iteration. The parent_beacon_root is
+                // the beacon root of an *earlier* block's state, and we need to find that
                 // execution block and repeat the process with its state.
                 current_state_block_hash = client
                     .get_execution_payload_block_hash(parent_beacon_root)
@@ -222,7 +221,7 @@ mod host {
                     "state_root".into(),
                     parent_beacon_root,
                     &client,
-                    // the timestamp that an *even earlier* block would use to look it up
+                    // in the current state, timestamp can be used to look up parent_beacon_root
                     BeaconBlockId::Eip4788(timestamp.to()),
                 )
                 .await

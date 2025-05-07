@@ -82,7 +82,7 @@ pub struct BeaconRootsState {
 
 /// Returns the timestamp stored in the slot which corresponds to the given `calldata` (timestamp).
 #[cfg(feature = "host")]
-pub(crate) async fn get_timestamp<N, P>(
+pub(super) async fn get_timestamp<N, P>(
     calldata: U256,
     provider: P,
     block_id: alloy::eips::BlockId,
@@ -91,9 +91,9 @@ where
     N: alloy::network::Network,
     P: alloy::providers::Provider<N>,
 {
-    // compute the keys of the two storage slots that will be accessed
+    // compute the key of the storage slot
     let timestamp_idx = calldata % HISTORY_BUFFER_LENGTH;
-
+    // return its value
     anyhow::Context::context(
         provider
             .get_storage_at(ADDRESS, timestamp_idx)
