@@ -35,7 +35,7 @@ use revm::{
     context::{result::HaltReasonTr, BlockEnv},
     Database as RevmDatabase,
 };
-use std::{error::Error, fmt::Debug};
+use std::{error::Error, fmt, fmt::Debug};
 
 pub mod account;
 pub mod beacon;
@@ -367,14 +367,16 @@ pub use private::Commitment;
 /// This enum defines the valid types of commitments that can be created and verified.
 /// The raw `u16` value of the enum variant is stored in the top 16 bits of the
 /// [Commitment::id] field.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, enumn::N)]
 #[repr(u16)]
-#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum CommitmentVersion {
-    /// Commitment to an execution block hash (`version = 0`).
+    /// Version 0: Commitment to an execution block hash indexed by its block number.
     Block = 0,
-    /// Commitment to a beacon chain state root (`version = 1`).
+    /// Version 1: Commitment to a beacon block root indexed by its EIP-4788 child timestamp.
     Beacon = 1,
+    /// Version 2: Commitment to a beacon block root indexed by its slot.
+    Consensus = 2,
 }
 
 impl Commitment {
@@ -421,18 +423,16 @@ impl Commitment {
     }
 }
 
-impl std::fmt::Debug for Commitment {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (id, version) = self.decode_id();
-        // attempt to display the version as an enum variant name for clarity
-        let version_display: Box<dyn std::fmt::Debug> = match version {
-            v if v == CommitmentVersion::Block as u16 => Box::new(CommitmentVersion::Block),
-            v if v == CommitmentVersion::Beacon as u16 => Box::new(CommitmentVersion::Beacon),
-            _ => Box::new(version), // fallback to the raw number if unknown
+impl Debug for Commitment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (id, version_code) = self.decode_id();
+        let version = match CommitmentVersion::n(version_code) {
+            Some(v) => format!("{:?}", v),
+            None => format!("Unknown({:x})", version_code),
         };
 
         f.debug_struct("Commitment")
-            .field("version", &version_display)
+            .field("version", &version)
             .field("id", &id)
             .field("digest", &self.digest)
             .field("configID", &self.configID)

@@ -15,8 +15,8 @@
 //! Functionality that is only needed for the host and not the guest.
 use crate::{
     beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
-    history::HistoryCommit, BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv,
-    EvmFactory, EvmInput,
+    history::HistoryCommit, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput,
+    EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
@@ -336,8 +336,13 @@ where
         note = "use `EvmEnv::builder().beacon_api()` instead"
     )]
     pub async fn into_beacon_input(self, url: Url) -> Result<EthEvmInput> {
-        let commit =
-            BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
+        let commit = BeaconCommit::from_header(
+            self.header(),
+            CommitmentVersion::Beacon,
+            self.db().inner().provider(),
+            url,
+        )
+        .await?;
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))

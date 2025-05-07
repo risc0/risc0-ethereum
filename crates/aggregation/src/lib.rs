@@ -84,7 +84,7 @@ pub struct GuestState {
 }
 
 impl GuestState {
-    /// Construct the initial, empty, state for for set builder.
+    /// Construct the initial, empty, state for set builder.
     pub fn initial(self_image_id: impl Into<Digest>) -> Self {
         Self {
             self_image_id: self_image_id.into(),
@@ -155,7 +155,7 @@ pub struct MerkleMountainRange(Vec<Peak>);
 struct Peak {
     /// Digest for the root of the Merkle subtree committed to by this peak.
     digest: Digest,
-    /// An upper-bound on the depth of the subtree rooted rooted at this peak.
+    /// An upper-bound on the depth of the subtree rooted at this peak.
     ///
     /// It is expressed as the total height of the subtree - 1, such that a peak with a single node
     /// (i.e. a leaf) has a max_depth value of 0.
@@ -437,7 +437,7 @@ const LEAF_TAG: &[u8; 8] = b"LEAF_TAG";
 
 /// Hash the given digest to form a leaf node.
 ///
-/// This adds a tag to the given value and hashes it to ensure it is domain seperated from any
+/// This adds a tag to the given value and hashes it to ensure it is domain separated from any
 /// internal nodes in the tree.
 fn hash_leaf(value: &Digest) -> Digest {
     let mut hasher = Keccak256::new();
