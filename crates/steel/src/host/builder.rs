@@ -22,7 +22,7 @@ use crate::{
         db::{ProofDb, ProviderConfig, ProviderDb},
         BlockNumberOrTag, EthHostEvmEnv, HostCommit, HostEvmEnv,
     },
-    EvmBlockHeader, EvmEnv, EvmFactory,
+    CommitmentVersion, EvmBlockHeader, EvmEnv, EvmFactory,
 };
 use alloy::{
     network::{primitives::HeaderResponse, BlockResponse, Ethereum, Network},
@@ -108,17 +108,27 @@ impl<F: EvmFactory> EvmEnvBuilder<(), F, ()> {
     }
 }
 
+/// Config for commitments to the beacon chain state.
+#[derive(Clone, Debug)]
+pub struct Beacon {
+    url: Url,
+    commitment_version: CommitmentVersion,
+}
+
 impl<P> EvmEnvBuilder<P, EthEvmFactory, ()> {
     /// Sets the Beacon API URL for retrieving Ethereum Beacon block root commitments.
     ///
     /// This function configures the [EvmEnv] to interact with an Ethereum Beacon chain.
     /// It assumes the use of the [mainnet](https://github.com/ethereum/consensus-specs/blob/v1.4.0/configs/mainnet.yaml) preset for consensus specs.
-    pub fn beacon_api(self, url: Url) -> EvmEnvBuilder<P, EthEvmFactory, Url> {
+    pub fn beacon_api(self, url: Url) -> EvmEnvBuilder<P, EthEvmFactory, Beacon> {
         EvmEnvBuilder {
             provider: self.provider,
             provider_config: self.provider_config,
             block: self.block,
-            beacon_config: url,
+            beacon_config: Beacon {
+                url,
+                commitment_version: CommitmentVersion::Beacon,
+            },
             phantom: self.phantom,
         }
     }
@@ -222,11 +232,45 @@ impl<P, F: EvmFactory> EvmEnvBuilder<P, F, ()> {
 #[stability::unstable(feature = "history")]
 #[derive(Clone, Debug)]
 pub struct History {
-    beacon_url: Url,
+    beacon_config: Beacon,
     commitment_block: BlockId,
 }
 
-impl<P> EvmEnvBuilder<P, EthEvmFactory, Url> {
+impl<P> EvmEnvBuilder<P, EthEvmFactory, Beacon> {
+    /// Configures the environment builder to generate consensus commitments.
+    ///
+    /// A consensus commitment contains the beacon block root indexed directly by its slot number.
+    /// This is in contrast to the default mechanism, which relies on timestamps for lookups, for
+    /// verification using the EIP-4788 beacon root contract deployed at the execution layer.
+    ///
+    /// The use of slot-based indexing is particularly beneficial for verification methods that have
+    /// direct access to the state of the beacon chain, such as systems using beacon light clients.
+    /// This allows the commitment to be verified directly against the state of the consensus layer.
+    ///
+    /// # Example
+    /// ```rust,no_run
+    /// # use risc0_steel::ethereum::EthEvmEnv;
+    /// # use alloy_primitives::B256;
+    /// # use url::Url;
+    /// # use std::str::FromStr;
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> anyhow::Result<()> {
+    /// let builder = EthEvmEnv::builder()
+    ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
+    ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
+    ///     // Configure the builder to use slot-indexed consensus commitments.
+    ///     .consensus_commitment();
+    ///
+    /// // The resulting 'env' will be configured to generate a consensus commitment
+    /// // (beacon root indexed by slot) when processing blocks or state.
+    /// let env = builder.build().await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn consensus_commitment(mut self) -> Self {
+        self.beacon_config.commitment_version = CommitmentVersion::Consensus;
+        self
+    }
     /// Sets the block hash for the commitment block, which can be different from the execution
     /// block.
     ///
@@ -291,7 +335,7 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, Url> {
             provider_config: self.provider_config,
             block: self.block,
             beacon_config: History {
-                beacon_url: self.beacon_config,
+                beacon_config: self.beacon_config,
                 commitment_block: block,
             },
             phantom: Default::default(),
@@ -310,8 +354,10 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, Url> {
             header.seal()
         );
 
+        let beacon_url = self.beacon_config.url;
+        let version = self.beacon_config.commitment_version;
         let commit = HostCommit {
-            inner: BeaconCommit::from_header(&header, &self.provider, self.beacon_config).await?,
+            inner: BeaconCommit::from_header(&header, version, &self.provider, beacon_url).await?,
             config_id: EthChainSpec::DEFAULT_DIGEST,
         };
         let db = ProofDb::new(ProviderDb::new(
@@ -325,6 +371,13 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, Url> {
 }
 
 impl<P> EvmEnvBuilder<P, EthEvmFactory, History> {
+    /// Configures the environment builder to generate consensus commitments.
+    ///
+    /// See [EvmEnvBuilder<P, EthBlockHeader, Beacon>::consensus_commitment] for more info.
+    pub fn consensus_commitment(mut self) -> Self {
+        self.beacon_config.beacon_config.commitment_version = CommitmentVersion::Consensus;
+        self
+    }
     /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
     /// block that is different from the execution block.
     #[stability::unstable(feature = "history")]
@@ -347,10 +400,12 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, History> {
             evm_header.seal()
         );
 
-        let beacon_url = self.beacon_config.beacon_url;
+        let beacon_url = self.beacon_config.beacon_config.url;
+        let commitment_version = self.beacon_config.beacon_config.commitment_version;
         let history_commit = HistoryCommit::from_headers(
             &evm_header,
             &commitment_header,
+            commitment_version,
             &self.provider,
             beacon_url,
         )

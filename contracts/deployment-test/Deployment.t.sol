@@ -103,7 +103,7 @@ contract DeploymentTest is Test {
                 try router.getVerifier(verifierConfig.selector) {
                     revert("expected router.getVerifier to revert");
                 } catch (bytes memory err) {
-                    // NOTE: We could allot SelectorRemoved as well here.
+                    // NOTE: We could allow SelectorRemoved as well here.
                     require(
                         keccak256(err)
                             == keccak256(
