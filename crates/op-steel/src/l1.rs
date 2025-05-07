@@ -19,7 +19,11 @@ use alloy::{
 };
 use alloy_primitives::{address, Address, BlockNumber};
 use op_alloy_network::Optimism;
-use risc0_steel::{beacon::BeaconCommit, ethereum::EthEvmInput, BeaconInput};
+use risc0_steel::{
+    beacon::{BeaconBlockId, BeaconCommit},
+    ethereum::EthEvmInput,
+    BeaconInput,
+};
 use std::{cmp::Ordering, future::IntoFuture};
 use url::Url;
 
@@ -64,7 +68,10 @@ where
         panic!("only EthEvmInput::Beacon is supported");
     };
     let (input, commit) = input.into_parts();
-    let (proof, timestamp) = commit.into_parts();
+    let (proof, beacon_block_id) = commit.into_parts();
+    let BeaconBlockId::Eip4788(timestamp) = beacon_block_id else {
+        panic!("only BeaconBlockId::Eip4788 is supported");
+    };
 
     let block_contract = L1Block::new(L1_BLOCK_ADDRESS, &provider);
     if timestamp > block_contract.latest_timestamp().await? {
@@ -86,7 +93,7 @@ where
 
     Ok(EthEvmInput::Beacon(BeaconInput::new(
         input,
-        BeaconCommit::new(proof, timestamp),
+        BeaconCommit::new(proof, BeaconBlockId::Eip4788(timestamp)),
     )))
 }
 
