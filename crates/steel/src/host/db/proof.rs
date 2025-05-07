@@ -248,6 +248,10 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                         .with_context(|| {
                             format!("invalid storage proof for address {}", address)
                         })?;
+                    ensure!(
+                        entry.get().hash_slow() == storage_root,
+                        "storage root mismatch"
+                    );
                 }
                 Entry::Vacant(entry) => {
                     // create a new trie for this root
@@ -255,7 +259,10 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                         MerkleTrie::from_rlp_nodes(storage_nodes).with_context(|| {
                             format!("invalid storage proof for address {}", address)
                         })?;
-                    ensure!(storage_trie.hash_slow() == storage_root);
+                    ensure!(
+                        storage_trie.hash_slow() == storage_root,
+                        "storage root mismatch"
+                    );
                     entry.insert(storage_trie);
                 }
             }
