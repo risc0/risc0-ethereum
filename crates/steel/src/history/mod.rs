@@ -13,7 +13,9 @@
 // limitations under the License.
 
 //! Types related to commitments to a historical state.
-use crate::{beacon, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput};
+use crate::{
+    beacon, beacon::BeaconBlockId, BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput,
+};
 use alloy_primitives::{Sealed, B256, U256};
 use beacon::{BeaconCommit, GeneralizedBeaconCommit, STATE_ROOT_LEAF_INDEX};
 use beacon_roots::{BeaconRootsContract, BeaconRootsState};
@@ -52,32 +54,36 @@ impl<H> BlockHeaderCommit<H> for HistoryCommit {
     #[inline]
     fn commit(self, header: &Sealed<H>, config_id: B256) -> Commitment {
         // first, compute the beacon commit of the EVM execution
-        let initial_commitment = self.evm_commit.commit(header, config_id);
-        let (mut timestamp, version) = initial_commitment.decode_id();
+        let evm_commitment = self.evm_commit.commit(header, config_id);
+        let (id, version) = evm_commitment.decode_id();
         // just a sanity check, a BeaconCommit will always have this version
         assert_eq!(version, CommitmentVersion::Beacon as u16);
 
+        let mut beacon_block_id = BeaconBlockId::Eip4788(id.to());
+        let mut beacon_root = evm_commitment.digest;
+
         // starting from evm_commit, "walk forward" along state_commits to reach a later beacon root
-        let mut beacon_root = initial_commitment.digest;
         for mut state_commit in self.state_commits {
             // verify that the previous commitment is valid wrt the current state
             let state_root = state_commit.state.root();
+            let timestamp = match beacon_block_id {
+                BeaconBlockId::Eip4788(ts) => U256::from(ts),
+                BeaconBlockId::Slot(_) => panic!("Invalid state commitment: wrong version"),
+            };
             let commitment_root =
                 BeaconRootsContract::get_from_db(&mut state_commit.state, timestamp)
                     .expect("Beacon roots contract failed");
             assert_eq!(commitment_root, beacon_root, "Beacon root does not match");
 
             // compute the beacon commitment of the current state
-            let (commit_ts, commit_beacon_root) = state_commit.state_commit.into_commit(state_root);
-            timestamp = U256::from(commit_ts);
-            beacon_root = commit_beacon_root;
+            (beacon_block_id, beacon_root) = state_commit.state_commit.into_commit(state_root);
         }
 
         Commitment::new(
-            CommitmentVersion::Beacon as u16,
-            timestamp.to(),
+            beacon_block_id.as_version(),
+            beacon_block_id.as_id(),
             beacon_root,
-            initial_commitment.configID,
+            evm_commitment.configID,
         )
     }
 }
@@ -86,7 +92,10 @@ impl<H> BlockHeaderCommit<H> for HistoryCommit {
 mod host {
     use super::*;
     use crate::{
-        beacon::host::{client::BeaconClient, create_beacon_commit},
+        beacon::{
+            host::{client::BeaconClient, create_beacon_commit, create_eip4788_beacon_commit},
+            BeaconBlockId,
+        },
         ethereum::EthBlockHeader,
         history::beacon_roots::{BeaconRootsState, HISTORY_BUFFER_LENGTH},
         EvmBlockHeader,
@@ -105,6 +114,7 @@ mod host {
         pub(crate) async fn from_headers<P>(
             evm_header: &Sealed<EthBlockHeader>,
             commitment_header: &Sealed<EthBlockHeader>,
+            commitment_version: CommitmentVersion,
             rpc_provider: P,
             beacon_url: Url,
         ) -> anyhow::Result<Self>
@@ -118,9 +128,16 @@ mod host {
             let client = BeaconClient::new(beacon_url.clone()).context("invalid URL")?;
 
             // create a regular beacon commit to the block header used for EVM execution
-            let evm_commit =
-                BeaconCommit::from_header(evm_header, &rpc_provider, beacon_url).await?;
-            let mut commit_ts = evm_commit.timestamp();
+            let evm_commit = BeaconCommit::from_header(
+                evm_header,
+                CommitmentVersion::Beacon,
+                &rpc_provider,
+                beacon_url,
+            )
+            .await?;
+            let BeaconBlockId::Eip4788(mut commit_ts) = evm_commit.block_id() else {
+                unreachable!()
+            };
             // safe unwrap: BeaconCommit::from_header checks that the proof can be processed
             let mut commit_beacon_root = evm_commit.process_proof(evm_header.seal()).unwrap();
 
@@ -132,7 +149,7 @@ mod host {
             let target = commitment_header.number();
 
             let mut state_block = evm_header.number;
-            while state_block < target {
+            loop {
                 state_block = std::cmp::min(state_block + step, target);
 
                 // get the header of the state block
@@ -168,14 +185,43 @@ mod host {
                     header.seal()
                 );
 
+                // if the target is reached, create the final commitment in the specified version
+                if state_block == target {
+                    let (state_commit, beacon_root) = create_beacon_commit(
+                        &header,
+                        "state_root".into(),
+                        commitment_version,
+                        &rpc_provider,
+                        &client,
+                    )
+                    .await?;
+                    state_commit
+                        .verify(state.root(), beacon_root)
+                        .context("proof derived from API does not verify")?;
+
+                    state_commits.push(StateCommit {
+                        state,
+                        state_commit,
+                    });
+
+                    break;
+                }
+
                 // create a beacon commitment to that state
-                let (state_commit, beacon_root) =
-                    create_beacon_commit(&header, "state_root".into(), &rpc_provider, &client)
-                        .await?;
+                let (state_commit, beacon_root) = create_eip4788_beacon_commit(
+                    &header,
+                    "state_root".into(),
+                    &rpc_provider,
+                    &client,
+                )
+                .await?;
                 state_commit
                     .verify(state.root(), beacon_root)
                     .context("proof derived from API does not verify")?;
-                commit_ts = state_commit.timestamp();
+                match state_commit.block_id() {
+                    BeaconBlockId::Eip4788(ts) => commit_ts = ts,
+                    _ => unreachable!(),
+                }
                 commit_beacon_root = beacon_root;
 
                 state_commits.push(StateCommit {
@@ -213,10 +259,15 @@ mod tests {
         let headers = get_headers(4).await.unwrap();
 
         // create a history commitment executing on header[0] and committing to header[2]
-        let mut commit =
-            HistoryCommit::from_headers(&headers[0], &headers[2], &el, CL_URL.parse().unwrap())
-                .await
-                .unwrap();
+        let mut commit = HistoryCommit::from_headers(
+            &headers[0],
+            &headers[2],
+            CommitmentVersion::Beacon,
+            &el,
+            CL_URL.parse().unwrap(),
+        )
+        .await
+        .unwrap();
 
         let [StateCommit {
             state,
@@ -232,8 +283,11 @@ mod tests {
             .unwrap();
         // the beacon roots contract should return the beacon block root of headers[0]
         assert_eq!(
-            BeaconRootsContract::get_from_db(state, U256::from(commit.evm_commit.timestamp()))
-                .unwrap(),
+            BeaconRootsContract::get_from_db(
+                state,
+                U256::from(commit.evm_commit.block_id().as_id())
+            )
+            .unwrap(),
             headers[1].parent_beacon_block_root.unwrap(),
         );
         // the resulting commitment should correspond to the beacon block root of headers[2]
