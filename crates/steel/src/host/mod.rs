@@ -201,7 +201,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
         self
     }
 
-    /// Extends the environment with the contents of another compatible environment.
+    /// Merges this environment with another, consuming both and returning a new one.
     ///
     /// ### Errors
     ///
@@ -246,25 +246,43 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// let mut env2 = builder.block_hash(block_hash).build().await?;
     /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
     ///
+    /// // Perform parallel operations (these would typically modify the state within env1/env2's dbs)
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
     ///
-    /// env1.extend(env2)?;
-    /// let evm_input = env1.into_input().await?;
+    /// let env = env1.merge(env2)?;
+    /// let evm_input = env.into_input().await?;
     ///
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend(&mut self, other: Self) -> Result<()> {
-        ensure!(self.chain_id == other.chain_id, "configuration mismatch");
-        ensure!(self.spec == other.spec, "configuration mismatch");
+    pub fn merge(self, mut other: Self) -> Result<Self> {
+        let Self {
+            mut db,
+            chain_id,
+            spec,
+            header,
+            commit,
+        } = self;
+
+        ensure!(chain_id == other.chain_id, "configuration mismatch");
+        ensure!(spec == other.spec, "configuration mismatch");
         ensure!(
-            self.header.seal() == other.header.seal(),
+            header.seal() == other.header.seal(),
             "execution header mismatch"
         );
         // the commitments do not need to match as long as the cfg_env is consistent
-        self.db_mut().extend(other.db.unwrap());
 
-        Ok(())
+        // safe unwrap: EvmEnv is never returned without a DB
+        let db = db.take().unwrap();
+        let db_other = other.db.take().unwrap();
+
+        Ok(Self {
+            db: Some(db.merge(db_other)),
+            chain_id,
+            spec,
+            header,
+            commit,
+        })
     }
 }
 
