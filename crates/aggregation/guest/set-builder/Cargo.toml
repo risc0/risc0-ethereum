@@ -1,6 +1,6 @@
 [package]
 name = "set-builder"
-version = "0.8.0-unreleased"
+version = "0.8.0-alpha.1"
 edition = "2021"
 
 [workspace]

@@ -51,7 +51,7 @@
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
 
    * The other PR should:
-     * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-unreleased`.
+     * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
        * `contracts/src/RiscZeroSetVerifier.sol`
