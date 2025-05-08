@@ -67,6 +67,27 @@ impl MerkleTrie {
         }
     }
 
+    /// Resolves currently unresolved nodes within the trie using the provided RLP-encoded nodes.
+    ///
+    /// This method iterates through the provided RLP-encoded nodes, computes the Keccak-256 hash of
+    /// each node, and attempts to replace any internal `Node::Digest` entries matching that hash
+    /// with the decoded node.
+    pub fn hydrate_from_rlp_nodes<T: AsRef<[u8]>>(
+        &mut self,
+        nodes: impl IntoIterator<Item = T>,
+    ) -> alloy_rlp::Result<()> {
+        let mut nodes_by_hash = B256HashMap::default();
+        for rlp in nodes {
+            let (hash, node) = parse_node(rlp)?;
+            if let Some(hash) = hash {
+                nodes_by_hash.insert(hash, node);
+            }
+        }
+        self.0.resolve_digests(&nodes_by_hash);
+
+        Ok(())
+    }
+
     /// Creates a new trie from the given RLP encoded nodes.
     ///
     /// The first node provided must always be the root node. The remaining nodes can be in any
@@ -90,12 +111,10 @@ impl MerkleTrie {
             }
         }
 
-        let root_node = root_node_opt.unwrap_or_default();
-        let trie = MerkleTrie(resolve_trie(root_node.clone(), &nodes_by_hash));
-        // Optional: Verify the resolved trie's hash matches the initial root's hash
-        debug_assert!(trie.hash_slow() == MerkleTrie(root_node).hash_slow());
+        let mut root_node = root_node_opt.unwrap_or_default();
+        root_node.resolve_digests(&nodes_by_hash);
 
-        Ok(trie)
+        Ok(MerkleTrie(root_node))
     }
 
     /// Creates a new trie corresponding to the given digest.
@@ -200,6 +219,29 @@ impl Node {
                 out
             }
             Node::Digest(digest) => alloy_rlp::encode(digest),
+        }
+    }
+
+    fn resolve_digests(&mut self, nodes_by_digest: &B256HashMap<Node>) {
+        match self {
+            Node::Null | Node::Leaf(..) => {}
+            Node::Extension(_, child) => {
+                child.resolve_digests(nodes_by_digest);
+            }
+            Node::Branch(children) => {
+                for child in children.iter_mut().flatten() {
+                    child.resolve_digests(nodes_by_digest);
+                }
+            }
+            Node::Digest(digest) => {
+                if let Some(node) = nodes_by_digest.get(digest) {
+                    // do not try to replace a node by a digest
+                    if !matches!(node, Node::Digest(_)) {
+                        *self = node.clone();
+                        self.resolve_digests(nodes_by_digest);
+                    }
+                }
+            }
         }
     }
 }
@@ -339,28 +381,6 @@ fn parse_node(rlp: impl AsRef<[u8]>) -> alloy_rlp::Result<(Option<B256>, Node)> 
 
     // the hash is only needed for RLP length >= 32
     Ok(((rlp.len() >= 32).then(|| keccak256(rlp)), node))
-}
-
-fn resolve_trie(root: Node, nodes_by_hash: &B256HashMap<Node>) -> Node {
-    match root {
-        Node::Null | Node::Leaf(..) => root,
-        Node::Extension(prefix, child) => {
-            Node::Extension(prefix, Box::new(resolve_trie(*child, nodes_by_hash)))
-        }
-        Node::Branch(mut children) => {
-            // iterate over the children in place, resolving each child node recursively.
-            for child in children.iter_mut() {
-                if let Some(node) = child.take() {
-                    *child = Some(Box::new(resolve_trie(*node, nodes_by_hash)));
-                }
-            }
-            Node::Branch(children)
-        }
-        Node::Digest(digest) => match nodes_by_hash.get(&digest) {
-            Some(node) => resolve_trie(node.clone(), nodes_by_hash),
-            None => root,
-        },
-    }
 }
 
 #[cfg(test)]
