@@ -17,7 +17,7 @@ N.B. Please make sure to run `foundryup` to update to the latest Foundry version
 ## Usage
 
 ```sh
-sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/crates/steel/docs/create-steel-app/create-steel-app)
+sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/release-2.1/crates/steel/docs/create-steel-app/create-steel-app)
 ```
 
 Once the script is finished running, you should:
