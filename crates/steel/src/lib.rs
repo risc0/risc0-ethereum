@@ -28,7 +28,7 @@ use alloy_evm::{Database, Evm, EvmError, IntoTxEnv};
 use alloy_primitives::{
     uint, Address, BlockNumber, Bloom, Bytes, ChainId, Log, Sealable, Sealed, B256, U256,
 };
-use alloy_rpc_types::{Filter, FilteredParams};
+use alloy_rpc_types::Filter;
 use alloy_sol_types::SolValue;
 use config::ChainSpec;
 use revm::{
@@ -43,35 +43,24 @@ mod block;
 pub mod config;
 mod contract;
 pub mod ethereum;
-#[cfg(feature = "unstable-event")]
 pub mod event;
-#[cfg(feature = "unstable-history")]
 pub mod history;
-#[cfg(not(feature = "unstable-history"))]
-mod history;
 #[cfg(feature = "host")]
 pub mod host;
 mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
-#[cfg(feature = "unstable-verifier")]
 mod verifier;
 
 pub use account::Account;
 pub use beacon::BeaconInput;
 pub use block::BlockInput;
 pub use contract::{CallBuilder, Contract};
+pub use event::Event;
+pub use history::HistoryInput;
 pub use mpt::MerkleTrie;
 pub use state::{StateAccount, StateDb};
-
-#[cfg(feature = "unstable-event")]
-pub use event::Event;
-#[cfg(feature = "unstable-history")]
-pub use history::HistoryInput;
-#[cfg(not(feature = "unstable-history"))]
-pub(crate) use history::HistoryInput;
-#[cfg(feature = "unstable-verifier")]
 pub use verifier::SteelVerifier;
 
 /// The serializable input to derive and validate an [EvmEnv] from.
@@ -143,15 +132,6 @@ pub trait EvmDatabase: RevmDatabase {
     /// It returns an error, if the corresponding logs cannot be retrieved from DB.
     /// The filter must match the block hash corresponding to the DB, it will panic otherwise.
     fn logs(&mut self, filter: Filter) -> Result<Vec<Log>, <Self as RevmDatabase>::Error>;
-}
-
-/// Checks if a bloom filter matches the given filter parameters.
-// TODO: Move to `event` once no longer unstable
-#[allow(dead_code)]
-#[inline]
-pub(crate) fn matches_filter(bloom: Bloom, filter: &Filter) -> bool {
-    FilteredParams::matches_address(bloom, &FilteredParams::address_filter(&filter.address))
-        && FilteredParams::matches_topics(bloom, &FilteredParams::topics_filter(&filter.topics))
 }
 
 /// Alias for readability, do not make public.
@@ -302,10 +282,8 @@ pub trait EvmBlockHeader: Sealable {
     fn timestamp(&self) -> u64;
     /// Returns the state root hash.
     fn state_root(&self) -> &B256;
-    #[cfg(feature = "unstable-event")]
     /// Returns the receipts root hash of the block.
     fn receipts_root(&self) -> &B256;
-    #[cfg(feature = "unstable-event")]
     /// Returns the logs bloom filter of the block
     fn logs_bloom(&self) -> &Bloom;
 

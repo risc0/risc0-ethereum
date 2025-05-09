@@ -58,7 +58,6 @@ use anyhow::{ensure, Context};
 /// [EthEvmEnv::builder]: crate::ethereum::EthEvmEnv
 /// [EvmEnv::builder]: crate::EvmEnv
 /// [EvmInput::into_env]: crate::EvmInput::into_env
-#[stability::unstable(feature = "verifier")]
 pub struct SteelVerifier<E> {
     env: E,
 }

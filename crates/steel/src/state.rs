@@ -14,7 +14,7 @@
 
 pub use alloy_consensus::Account as StateAccount;
 
-use crate::mpt::MerkleTrie;
+use crate::{event, mpt::MerkleTrie};
 use alloy_primitives::{
     keccak256,
     map::{AddressHashMap, B256HashMap, HashMap},
@@ -194,7 +194,6 @@ impl<H> RevmDatabase for WrapStateDb<'_, H> {
     }
 }
 
-#[cfg(feature = "unstable-event")]
 impl<H: crate::EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
     fn logs(
         &mut self,
@@ -205,7 +204,7 @@ impl<H: crate::EvmBlockHeader> crate::EvmDatabase for WrapStateDb<'_, H> {
         let Some(logs) = self.inner.logs.as_ref() else {
             // if no logs are stored in the DB, check that the Bloom filter proves non-existence
             assert!(
-                !crate::matches_filter(*self.header.logs_bloom(), &filter),
+                !event::matches_filter(*self.header.logs_bloom(), &filter),
                 "No logs for matching filter"
             );
             return Ok(vec![]);

@@ -315,7 +315,6 @@ where
 {
     /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
     /// block roots.
-    #[stability::unstable(feature = "history")]
     pub async fn into_input(self) -> Result<EthEvmInput> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
