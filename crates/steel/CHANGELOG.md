@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 - Introduce the capability to query Ethereum events. The new `Event` allows to query events of a specific type in Steel. Its usage is very similar to the existing `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-event` feature.
 - Introduce the `EvmFactory` trait (`EthEvmFactory`) to abstract over different EVM implementations, enabling better code reuse and support for chain-specific logic like Optimism's transaction types and state handling.
 - Add support for the Prague Ethereum fork on Mainnet, Sepolia, and Holešky testnets via updated `EthChainSpec`.
+- Introduce `SteelVerifier::verify_with_config_id` on host and guest to allow verifying a `Commitment` against an explicitly provided configuration ID.
+
+### 🛠️ Fixes
+
+- Add verification of the `Commitment::configID` field in `SteelVerifier::verify` on both host and guest against the environment's configuration ID. This corrects an omission where commitments with mismatched configurations could pass verification.
 
 ### 🚨 Breaking Changes
 
