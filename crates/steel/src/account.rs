@@ -67,23 +67,22 @@ impl From<StateAccount> for AccountInfo {
 ///
 /// ### Examples
 /// ```rust,no_run
-/// # use risc0_steel::{Account, ethereum::EthEvmEnv};
+/// # use risc0_steel::{Account, ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}};
 /// # use alloy_primitives::address;
-///
 /// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() -> anyhow::Result<()> {
 /// let account_address = address!("F977814e90dA44bFA03b6295A0616a897441aceC");
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 /// let account = Account::preflight(account_address, &mut env);
 /// let info = account.bytecode(true).info().await?;
 ///
 /// let evm_input = env.into_input().await?;
 ///
 /// // Guest:
-/// let env = evm_input.into_env();
+/// let env = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 /// let account = Account::new(account_address, &env);
 /// let info = account.bytecode(true).info();
 ///

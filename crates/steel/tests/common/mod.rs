@@ -37,10 +37,10 @@ where
 {
     let mut env = EthEvmEnv::builder()
         .provider(provider)
+        .chain_spec(&ANVIL_CHAIN_SPEC)
         .build()
         .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .unwrap();
     let block_hash = env.header().seal();
     let block_number = env.header().number;
 
@@ -54,7 +54,7 @@ where
     };
 
     let input = env.into_input().await.unwrap();
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let env = input.into_env(&ANVIL_CHAIN_SPEC);
 
     let commitment = env.commitment();
     assert_eq!(commitment.digest, block_hash, "invalid commitment");

@@ -91,11 +91,11 @@ impl<F: EvmFactory> EvmInput<F> {
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
     #[inline]
-    pub fn into_env(self) -> GuestEvmEnv<F> {
+    pub fn into_env(self, chain_spec: &ChainSpec<F::Spec>) -> GuestEvmEnv<F> {
         match self {
-            EvmInput::Block(input) => input.into_env(),
-            EvmInput::Beacon(input) => input.into_env(),
-            EvmInput::History(input) => input.into_env(),
+            EvmInput::Block(input) => input.into_env(chain_spec),
+            EvmInput::Beacon(input) => input.into_env(chain_spec),
+            EvmInput::History(input) => input.into_env(chain_spec),
         }
     }
 }
@@ -128,8 +128,8 @@ impl<F: EvmFactory, C: BlockHeaderCommit<F::Header>> ComposeInput<F, C> {
     }
 
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    pub fn into_env(self) -> GuestEvmEnv<F> {
-        let mut env = self.input.into_env();
+    pub fn into_env(self, chain_spec: &ChainSpec<F::Spec>) -> GuestEvmEnv<F> {
+        let mut env = self.input.into_env(chain_spec);
         env.commit = self.commit.commit(&env.header, env.commit.configID);
 
         env
@@ -179,7 +179,7 @@ pub trait EvmFactory {
     /// The type representing reasons why `Self::Evm` might halt execution.
     type HaltReason: HaltReasonTr + Send + Sync + 'static;
     /// The EVM specification identifier (e.g., Shanghai, Cancun) used by `Self::Evm`.
-    type Spec: Ord + Default + Serialize + Debug + Copy + Send + Sync + 'static;
+    type Spec: Ord + Serialize + Debug + Copy + Send + Sync + 'static;
     /// The block header type providing execution context (e.g., timestamp, number, basefee).
     type Header: EvmBlockHeader<Spec = Self::Spec>
         + Clone
@@ -232,13 +232,19 @@ pub struct EvmEnv<D, F: EvmFactory, C> {
 
 impl<D, F: EvmFactory, C> EvmEnv<D, F, C> {
     /// Creates a new environment.
-    ///
-    /// It uses the default configuration for the latest specification.
-    pub(crate) fn new(db: D, header: Sealed<F::Header>, commit: C) -> Self {
+    pub(crate) fn new(
+        db: D,
+        chain_spec: &ChainSpec<F::Spec>,
+        header: Sealed<F::Header>,
+        commit: C,
+    ) -> Self {
+        let spec = *chain_spec
+            .active_fork(header.number(), header.timestamp())
+            .unwrap();
         Self {
             db: Some(db),
-            chain_id: 1,
-            spec: F::Spec::default(),
+            chain_id: chain_spec.chain_id,
+            spec,
             header,
             commit,
         }
@@ -263,19 +269,6 @@ impl<D, F: EvmFactory, C> EvmEnv<D, F, C> {
 }
 
 impl<D, F: EvmFactory> EvmEnv<D, F, Commitment> {
-    /// Sets the chain ID and specification ID from the given chain spec.
-    ///
-    /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec<F::Spec>) -> Self {
-        self.chain_id = chain_spec.chain_id();
-        self.spec = *chain_spec
-            .active_fork(self.header.number(), self.header.timestamp())
-            .unwrap();
-        self.commit.configID = chain_spec.digest();
-
-        self
-    }
-
     /// Returns the [Commitment] used to validate the environment.
     #[inline]
     pub fn commitment(&self) -> &Commitment {

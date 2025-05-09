@@ -56,10 +56,9 @@ async fn main() -> Result<()> {
         .provider(provider.clone())
         .block_number(latest - 3600)
         .beacon_api(args.beacon_api_url)
+        .chain_spec(&ETH_MAINNET_CHAIN_SPEC)
         .build()
         .await?;
-    //  The `with_chain_spec` method is used to specify the chain configuration.
-    env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
     // Preflight the call to prepare the input that is required to execute the function in
     // the guest without RPC access. It also returns the result of the call.
@@ -90,8 +89,11 @@ async fn main() -> Result<()> {
     let input1 = env.into_input().await?;
 
     // Create another EVM environment for that provider defaulting to the latest block.
-    let mut env = EthEvmEnv::builder().provider(provider).build().await?;
-    env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    let mut env = EthEvmEnv::builder()
+        .provider(provider)
+        .chain_spec(&ETH_MAINNET_CHAIN_SPEC)
+        .build()
+        .await?;
 
     // Preflight the verification of the commitment of the previous input.
     SteelVerifier::preflight(&mut env)

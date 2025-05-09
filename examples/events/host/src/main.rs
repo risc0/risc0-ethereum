@@ -66,9 +66,11 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Create an EVM environment from an RPC endpoint defaulting to the latest block.
-    let mut env = EthEvmEnv::builder().rpc(args.rpc_url).build().await?;
-    //  The `with_chain_spec` method is used to specify the chain configuration.
-    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    let mut env = EthEvmEnv::builder()
+        .rpc(args.rpc_url)
+        .chain_spec(&ETH_SEPOLIA_CHAIN_SPEC)
+        .build()
+        .await?;
 
     // Preflight the event query to prepare the input that is required to execute the function in
     // the guest without RPC access.

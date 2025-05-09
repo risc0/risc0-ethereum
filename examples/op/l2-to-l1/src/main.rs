@@ -56,8 +56,11 @@ async fn main() -> Result<()> {
     let builder = OpEvmEnv::builder()
         .dispute_game_from_rpc(OPTIMISM_PORTAL, args.l1_rpc_url.clone())
         .game_index(DisputeGameIndex::Finalized);
-    let mut env = builder.rpc(args.l2_rpc_url).build().await?;
-    env = env.with_chain_spec(&OP_MAINNET_CHAIN_SPEC);
+    let mut env = builder
+        .rpc(args.l2_rpc_url)
+        .chain_spec(&OP_MAINNET_CHAIN_SPEC)
+        .build()
+        .await?;
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
     let mut builder = contract.call_builder(&CALL);

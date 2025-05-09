@@ -32,14 +32,14 @@ use anyhow::{ensure, Context};
 ///
 /// ### Examples
 /// ```rust,no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, SteelVerifier, Commitment};
+/// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, SteelVerifier, Commitment};
 /// # use url::Url;
 ///
 /// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() -> anyhow::Result<()> {
 /// // Host:
 /// let rpc_url = Url::parse("https://ethereum-rpc.publicnode.com")?;
-/// let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+/// let mut env = EthEvmEnv::builder().rpc(rpc_url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 ///
 /// // Preflight the verification of a commitment
 /// let commitment = Commitment::default(); // Your commitment here
@@ -48,7 +48,7 @@ use anyhow::{ensure, Context};
 /// let evm_input = env.into_input().await?;
 ///
 /// // Guest:
-/// let evm_env = evm_input.into_env();
+/// let evm_env = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 /// let verifier = SteelVerifier::new(&evm_env);
 /// verifier.verify(&commitment); // Panics if verification fails
 /// # Ok(())
@@ -162,7 +162,10 @@ fn validate_block_number(header: &impl EvmBlockHeader, block_number: U256) -> an
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{config::ChainSpec, ethereum::EthEvmEnv, CommitmentVersion};
+    use crate::{
+        ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+        CommitmentVersion,
+    };
     use alloy::{
         consensus::BlockHeader,
         network::{primitives::HeaderResponse, BlockResponse},
@@ -190,18 +193,27 @@ mod tests {
             CommitmentVersion::Block as u16,
             header.number(),
             header.hash(),
-            ChainSpec::DEFAULT_DIGEST,
+            ETH_MAINNET_CHAIN_SPEC.digest(),
         );
 
         // preflight the verifier
-        let mut env = EthEvmEnv::builder().provider(el).build().await.unwrap();
+        let mut env = EthEvmEnv::builder()
+            .provider(el)
+            .chain_spec(&ETH_MAINNET_CHAIN_SPEC)
+            .build()
+            .await
+            .unwrap();
         SteelVerifier::preflight(&mut env)
             .verify(&commit)
             .await
             .unwrap();
 
         // mock guest execution, by executing the verifier on the GuestEvmEnv
-        let env = env.into_input().await.unwrap().into_env();
+        let env = env
+            .into_input()
+            .await
+            .unwrap()
+            .into_env(&ETH_MAINNET_CHAIN_SPEC);
         SteelVerifier::new(&env).verify(&commit);
     }
 
@@ -221,18 +233,27 @@ mod tests {
             CommitmentVersion::Beacon as u16,
             header.timestamp,
             header.parent_beacon_block_root.unwrap(),
-            ChainSpec::DEFAULT_DIGEST,
+            ETH_MAINNET_CHAIN_SPEC.digest(),
         );
 
         // preflight the verifier
-        let mut env = EthEvmEnv::builder().provider(el).build().await.unwrap();
+        let mut env = EthEvmEnv::builder()
+            .provider(el)
+            .chain_spec(&ETH_MAINNET_CHAIN_SPEC)
+            .build()
+            .await
+            .unwrap();
         SteelVerifier::preflight(&mut env)
             .verify(&commit)
             .await
             .unwrap();
 
         // mock guest execution, by executing the verifier on the GuestEvmEnv
-        let env = env.into_input().await.unwrap().into_env();
+        let env = env
+            .into_input()
+            .await
+            .unwrap()
+            .into_env(&ETH_MAINNET_CHAIN_SPEC);
         SteelVerifier::new(&env).verify(&commit);
     }
 }

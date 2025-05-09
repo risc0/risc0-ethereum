@@ -29,7 +29,7 @@ fn main() {
     let input: EthEvmInput = env::read();
 
     // Create the environment and add the commitment.
-    let env = input.into_env().with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    let env = input.into_env(&ETH_MAINNET_CHAIN_SPEC);
     env::commit_slice(&env.commitment().abi_encode());
 
     // Execute the call.
