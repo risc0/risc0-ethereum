@@ -15,9 +15,12 @@
 //! Functionality that is only needed for the host and not the guest.
 
 use crate::{
-    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
-    ethereum::EthEvmInput,history::HistoryCommit, BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv,
-    EvmFactory, EvmInput,
+    beacon::BeaconCommit,
+    block::BlockInput,
+    config::ChainSpec,
+    ethereum::{EthEvmEnv, EthEvmInput},
+    history::HistoryCommit,
+    BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
