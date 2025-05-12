@@ -15,7 +15,8 @@
 //! Functionality that is only needed for the host and not the guest.
 use crate::{
     beacon::BeaconCommit, block::BlockInput, ethereum::EthEvmEnv, history::HistoryCommit,
-    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmEnv, EvmFactory, EvmInput,
+    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv,
+    EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
@@ -38,6 +39,7 @@ use url::Url;
 mod builder;
 pub mod db;
 
+use crate::config::ChainSpec;
 use crate::ethereum::EthEvmInput;
 pub use builder::EvmEnvBuilder;
 
@@ -187,6 +189,19 @@ where
 }
 
 impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
+    /// Sets the chain ID and specification ID from the given chain spec.
+    ///
+    /// This will panic when there is no valid specification ID for the current block.
+    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec<F::Spec>) -> Self {
+        self.chain_id = chain_spec.chain_id;
+        self.spec = *chain_spec
+            .active_fork(self.header.number(), self.header.timestamp())
+            .unwrap();
+        self.commit.config_id = chain_spec.digest();
+
+        self
+    }
+
     /// Extends the environment with the contents of another compatible environment.
     ///
     /// ### Errors
@@ -231,25 +246,43 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// let mut env2 = builder.block_hash(block_hash).build().await?;
     /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
     ///
+    /// // Perform parallel operations (these would typically modify the state within env1/env2's dbs)
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
     ///
-    /// env1.extend(env2)?;
-    /// let evm_input = env1.into_input().await?;
+    /// let env = env1.merge(env2)?;
+    /// let evm_input = env.into_input().await?;
     /// # _ = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend(&mut self, other: Self) -> Result<()> {
-        ensure!(self.chain_id == other.chain_id, "configuration mismatch");
-        ensure!(self.spec == other.spec, "configuration mismatch");
+    pub fn merge(self, mut other: Self) -> Result<Self> {
+        let Self {
+            mut db,
+            chain_id,
+            spec,
+            header,
+            commit,
+        } = self;
+
+        ensure!(chain_id == other.chain_id, "configuration mismatch");
+        ensure!(spec == other.spec, "configuration mismatch");
         ensure!(
-            self.header.seal() == other.header.seal(),
+            header.seal() == other.header.seal(),
             "execution header mismatch"
         );
         // the commitments do not need to match as long as the cfg_env is consistent
-        self.db_mut().extend(other.db.unwrap());
 
-        Ok(())
+        // safe unwrap: EvmEnv is never returned without a DB
+        let db = db.take().unwrap();
+        let db_other = other.db.take().unwrap();
+
+        Ok(Self {
+            db: Some(db.merge(db_other)),
+            chain_id,
+            spec,
+            header,
+            commit,
+        })
     }
 }
 
