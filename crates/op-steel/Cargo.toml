@@ -36,4 +36,3 @@ risc0-op-steel = { workspace = true, features = ["host"] }
 [features]
 default = []
 host = ["dep:alloy", "dep:tokio", "dep:url", "risc0-steel/host", "alloy-primitives/rand"]
-unstable-event = []
