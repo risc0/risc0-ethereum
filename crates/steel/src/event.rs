@@ -65,10 +65,9 @@ use std::marker::PhantomData;
 /// ### Examples
 /// Basic usage with a single contract address:
 /// ```rust,no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, Event};
+/// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Event};
 /// # use alloy_primitives::address;
 /// # use alloy_sol_types::sol;
-///
 /// # #[tokio::main(flavor = "current_thread")]
 /// # async fn main() -> anyhow::Result<()> {
 /// let contract_address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
@@ -80,14 +79,14 @@ use std::marker::PhantomData;
 ///
 /// // Host:
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 /// let event = Event::preflight::<IERC20::Transfer>(&mut env).address(contract_address);
 /// event.query().await?;
 ///
 /// let evm_input = env.into_input().await?;
 ///
 /// // Guest:
-/// let env = evm_input.into_env();
+/// let env = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 /// let event = Event::new::<IERC20::Transfer>(&env).address(contract_address);
 /// let logs = event.query();
 ///
@@ -97,7 +96,7 @@ use std::marker::PhantomData;
 ///
 /// Advanced filtering with multiple addresses and topics:
 /// ```rust,no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, Event};
+/// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Event};
 /// # use alloy_primitives::{address, b256, B256, Address};
 /// # use alloy_rpc_types::{Topic, ValueOrArray};
 /// # use alloy_sol_types::sol;
@@ -115,7 +114,7 @@ use std::marker::PhantomData;
 /// }
 ///
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 ///
 /// // Create an event query for Transfer events from *either* USDT or USDC contract,
 /// // originating from *either* sender1 or sender2.

@@ -50,8 +50,7 @@ fn main() {
     let input: EthEvmInput = env::read();
 
     // Converts the input into a `EvmEnv` for execution.
-    // The `with_chain_spec` method is used to specify the chain configuration.
-    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    let env = input.into_env(&ETH_SEPOLIA_CHAIN_SPEC);
     let block_hash = env.header().seal();
 
     // Query all `Transfer` events of the USDT contract.
