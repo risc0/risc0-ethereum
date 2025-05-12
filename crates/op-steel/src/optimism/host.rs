@@ -61,7 +61,7 @@ impl<D, C> DerefMut for OpEvmEnv<D, C> {
 
 impl OpEvmEnv<(), ()> {
     /// Initialize an OP-specific builder.
-    pub fn builder() -> OpEvmEnvBuilder<PreProviderStage, (), ()> {
+    pub fn builder() -> OpEvmEnvBuilder<PreProviderStage, (), (), ()> {
         OpEvmEnvBuilder {
             inner: EvmEnv::builder(),
             l2_provider: (),
@@ -72,16 +72,6 @@ impl OpEvmEnv<(), ()> {
 }
 
 type HostOpEvmEnv<P2, C> = OpEvmEnv<ProofDb<ProviderDb<Optimism, P2>>, C>;
-
-impl<D, C> OpEvmEnv<ProofDb<D>, C> {
-    pub fn with_chain_spec(self, chain_spec: &OpChainSpec) -> Self {
-        let Self { inner, commit } = self;
-        Self {
-            inner: inner.with_chain_spec(chain_spec),
-            commit,
-        }
-    }
-}
 
 impl<P2> HostOpEvmEnv<P2, ()>
 where
@@ -131,9 +121,9 @@ where
 ///
 /// The builder can be created using [OpEvmEnv::builder()].
 #[derive(Clone, Debug)]
-pub struct OpEvmEnvBuilder<Stage, P2, G> {
+pub struct OpEvmEnvBuilder<Stage, P2, Spec, G> {
     /// Underlying generic builder with no Beacon API config.
-    inner: EvmEnvBuilder<P2, OpEvmFactory, ()>,
+    inner: EvmEnvBuilder<P2, OpEvmFactory, Spec, ()>,
     /// Clone of the L2 provider.
     l2_provider: P2,
     /// Optional dispute game config.
@@ -157,7 +147,7 @@ pub struct DisputeGameConfig<P1> {
 }
 
 // Callable with or without a provider and with or without a game.
-impl<Stage, P2, G> OpEvmEnvBuilder<Stage, P2, G> {
+impl<Stage, P2, Spec, G> OpEvmEnvBuilder<Stage, P2, Spec, G> {
     pub fn eip1186_proof_chunk_size(self, chunk_size: usize) -> Self {
         let Self {
             inner,
@@ -174,8 +164,24 @@ impl<Stage, P2, G> OpEvmEnvBuilder<Stage, P2, G> {
     }
 }
 
+// Callable without chain specification.
+impl<Stage, P2, G> OpEvmEnvBuilder<Stage, P2, (), G> {
+    /// Sets the [OpChainSpec].
+    pub fn chain_spec(
+        self,
+        chain_spec: &OpChainSpec,
+    ) -> OpEvmEnvBuilder<Stage, P2, &OpChainSpec, G> {
+        OpEvmEnvBuilder {
+            inner: self.inner.chain_spec(chain_spec),
+            l2_provider: self.l2_provider,
+            dispute_game_config: self.dispute_game_config,
+            stage: self.stage,
+        }
+    }
+}
+
 // Callable only without a provider, only without a game.
-impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
+impl<Spec> OpEvmEnvBuilder<PreProviderStage, (), Spec, ()> {
     /// Sets a fault dispute game that is feasible wrt the L1 `OptimismPortal` contract deployed at
     /// `portal`.
     ///
@@ -185,7 +191,8 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
         self,
         portal: Address,
         l1_rpc: Url,
-    ) -> OpEvmEnvBuilder<PreProviderStage, (), DisputeGameConfig<RootProvider<Ethereum>>> {
+    ) -> OpEvmEnvBuilder<PreProviderStage, (), Spec, DisputeGameConfig<RootProvider<Ethereum>>>
+    {
         self.dispute_game(portal, ProviderBuilder::default().on_http(l1_rpc))
     }
 
@@ -198,7 +205,7 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
         self,
         portal: Address,
         l1_provider: P1,
-    ) -> OpEvmEnvBuilder<PreProviderStage, (), DisputeGameConfig<P1>>
+    ) -> OpEvmEnvBuilder<PreProviderStage, (), Spec, DisputeGameConfig<P1>>
     where
         P1: Provider<Ethereum>,
     {
@@ -223,14 +230,14 @@ impl OpEvmEnvBuilder<PreProviderStage, (), ()> {
 }
 
 // Callable only without a provider, with or without a game.
-impl<G> OpEvmEnvBuilder<PreProviderStage, (), G> {
+impl<G> OpEvmEnvBuilder<PreProviderStage, (), (), G> {
     /// Sets the L2 Optimism HTTP RPC endpoint that will be used by the [OpEvmEnv].
-    pub fn rpc(self, url: Url) -> OpEvmEnvBuilder<ProviderStage, RootProvider<Optimism>, G> {
+    pub fn rpc(self, url: Url) -> OpEvmEnvBuilder<ProviderStage, RootProvider<Optimism>, (), G> {
         self.provider(ProviderBuilder::default().on_http(url))
     }
 
     /// Sets the L2 Optimism [Provider] that will be used by the [OpEvmEnv].
-    pub fn provider<P2>(self, provider: P2) -> OpEvmEnvBuilder<ProviderStage, P2, G>
+    pub fn provider<P2>(self, provider: P2) -> OpEvmEnvBuilder<ProviderStage, P2, (), G>
     where
         P2: Provider<Optimism> + Clone,
     {
@@ -246,7 +253,7 @@ impl<G> OpEvmEnvBuilder<PreProviderStage, (), G> {
 }
 
 // Callable only with a provider and only without a game.
-impl<P2> OpEvmEnvBuilder<ProviderStage, P2, ()> {
+impl<P2, Spec> OpEvmEnvBuilder<ProviderStage, P2, Spec, ()> {
     pub fn block_number(self, number: u64) -> Self {
         let Self {
             inner,
@@ -276,7 +283,9 @@ impl<P2> OpEvmEnvBuilder<ProviderStage, P2, ()> {
             stage,
         }
     }
+}
 
+impl<P2> OpEvmEnvBuilder<ProviderStage, P2, &OpChainSpec, ()> {
     pub async fn build(self) -> Result<HostOpEvmEnv<P2, ()>>
     where
         P2: Provider<Optimism>,
@@ -289,7 +298,7 @@ impl<P2> OpEvmEnvBuilder<ProviderStage, P2, ()> {
 }
 
 // Callable with or without a provider and only with a game.
-impl<Stage, P1, P2> OpEvmEnvBuilder<Stage, P2, DisputeGameConfig<P1>> {
+impl<Stage, P1, P2, Spec> OpEvmEnvBuilder<Stage, P2, Spec, DisputeGameConfig<P1>> {
     pub fn game_index(mut self, index: DisputeGameIndex) -> Self {
         self.dispute_game_config.index = index;
         self
@@ -297,7 +306,7 @@ impl<Stage, P1, P2> OpEvmEnvBuilder<Stage, P2, DisputeGameConfig<P1>> {
 }
 
 // Callable only with a provider and with a game.
-impl<P1, P2> OpEvmEnvBuilder<ProviderStage, P2, DisputeGameConfig<P1>>
+impl<P1, P2> OpEvmEnvBuilder<ProviderStage, P2, &OpChainSpec, DisputeGameConfig<P1>>
 where
     P1: Provider<Ethereum>,
     P2: Provider<Optimism>,
@@ -334,7 +343,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::OutputRootProof;
+    use crate::{optimism::OP_MAINNET_CHAIN_SPEC, OutputRootProof};
     use alloy_primitives::address;
     use risc0_steel::Account;
     use test_log::test;
@@ -346,7 +355,9 @@ mod tests {
 
     #[test(tokio::test)]
     async fn clone_op_block_builder() {
-        let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
+        let builder = OpEvmEnv::builder()
+            .rpc(L2_URL.parse().unwrap())
+            .chain_spec(&OP_MAINNET_CHAIN_SPEC);
         // the builder should be cloneable
         let _ = builder.clone();
     }
@@ -354,13 +365,18 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_op_block_env() {
-        let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
+        let builder = OpEvmEnv::builder()
+            .rpc(L2_URL.parse().unwrap())
+            .chain_spec(&OP_MAINNET_CHAIN_SPEC);
         let mut env = builder.build().await.unwrap();
         let _ = Account::preflight(Address::ZERO, &mut env).info().await;
 
         let host_commit = env.commitment();
         let input = env.into_input().await.unwrap();
-        assert_eq!(input.into_env().into_commitment(), host_commit);
+        assert_eq!(
+            input.into_env(&OP_MAINNET_CHAIN_SPEC).into_commitment(),
+            host_commit
+        );
     }
 
     #[test(tokio::test)]
@@ -368,7 +384,8 @@ mod tests {
         let builder = OpEvmEnv::builder()
             .dispute_game_from_rpc(OP_PORTAL_ADDRESS, L1_URL.parse().unwrap())
             .rpc(L2_URL.parse().unwrap())
-            .game_index(DisputeGameIndex::Latest);
+            .game_index(DisputeGameIndex::Latest)
+            .chain_spec(&OP_MAINNET_CHAIN_SPEC);
         // the builder should be cloneable
         let _ = builder.clone();
     }
@@ -376,7 +393,9 @@ mod tests {
     #[test(tokio::test)]
     #[ignore = "queries actual RPC nodes"]
     async fn build_op_dispute_game_env() {
-        let builder = OpEvmEnv::builder().rpc(L2_URL.parse().unwrap());
+        let builder = OpEvmEnv::builder()
+            .rpc(L2_URL.parse().unwrap())
+            .chain_spec(&OP_MAINNET_CHAIN_SPEC);
         let env = builder.build().await.unwrap();
         // mock an env with a dispute game commit, since building one requires an archive node
         let block_hash = env.header().seal();
@@ -396,6 +415,9 @@ mod tests {
 
         let host_commit = env.commitment();
         let input = env.into_input().await.unwrap();
-        assert_eq!(input.into_env().into_commitment(), host_commit);
+        assert_eq!(
+            input.into_env(&OP_MAINNET_CHAIN_SPEC).into_commitment(),
+            host_commit
+        );
     }
 }
