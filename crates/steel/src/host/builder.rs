@@ -82,7 +82,7 @@ pub struct EvmEnvBuilder<P, F, S, B> {
 impl<S> EvmEnvBuilder<(), EthEvmFactory, S, ()> {
     /// Sets the Ethereum HTTP RPC endpoint that will be used by the [EvmEnv].
     pub fn rpc(self, url: Url) -> EvmEnvBuilder<RootProvider<Ethereum>, EthEvmFactory, S, ()> {
-        self.provider(ProviderBuilder::default().on_http(url))
+        self.provider(ProviderBuilder::default().connect_http(url))
     }
 }
 

@@ -51,7 +51,7 @@ where
 
 /// Derives the OP verifiable input from an L1 beacon input and an OP HTTP RPC url.
 pub async fn into_beacon_input(input: EthEvmInput, url: Url) -> Result<EthEvmInput, Error> {
-    into_beacon_input_with_provider(input, ProviderBuilder::default().on_http(url)).await
+    into_beacon_input_with_provider(input, ProviderBuilder::default().connect_http(url)).await
 }
 
 /// Derives the OP verifiable input from an L1 beacon input and an OP RPC provider.
