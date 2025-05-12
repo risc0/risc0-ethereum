@@ -24,11 +24,14 @@ use url::Url;
 
 /// Errors returned by the [BeaconClient].
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     #[error("could not parse URL: {0}")]
     Url(#[from] url::ParseError),
     #[error("HTTP request failed: {0}")]
     Http(#[from] reqwest::Error),
+    #[error("block does not contain an execution payload")]
+    NoExecutionPayload,
     #[error("response is empty")]
     EmptyResponse,
 }
@@ -116,7 +119,7 @@ impl BeaconClient {
         Ok(value)
     }
 
-    /// Retrieves block details for given block id.
+    /// Retrieves block details for the given block ID.
     ///
     /// Block ID can be 'head', 'genesis', 'finalized', <slot>, or <root>.
     pub async fn get_block(&self, block_id: impl Display) -> Result<SignedBeaconBlock> {
@@ -135,5 +138,13 @@ impl BeaconClient {
         let mut result: Response<Vec<BlockHeaderResponse>> =
             self.get_json(path, Some(&params)).await?;
         result.data.pop().ok_or(Error::EmptyResponse)
+    }
+
+    /// Retrieves the execution bock hash for the given block id.
+    pub async fn get_execution_payload_block_hash(&self, block_id: impl Display) -> Result<B256> {
+        let block = self.get_block(block_id).await?;
+        let execution_payload = block.execution_payload().ok_or(Error::NoExecutionPayload)?;
+
+        Ok(B256::from_slice(execution_payload.block_hash()))
     }
 }

@@ -33,8 +33,10 @@ use revm::{
     state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
-use std::fmt::Debug;
-use std::hash::{BuildHasher, Hash};
+use std::{
+    fmt::Debug,
+    hash::{BuildHasher, Hash},
+};
 
 /// A simple revm [RevmDatabase] wrapper that records all DB queries.
 pub struct ProofDb<D> {

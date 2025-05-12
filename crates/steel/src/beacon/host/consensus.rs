@@ -281,6 +281,8 @@ pub mod electra {
         MAX_VALIDATORS_PER_COMMITTEE * MAX_COMMITTEES_PER_SLOT;
 }
 
+pub use ethereum_consensus::types::ExecutionPayloadRef;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serializable, HashTreeRoot)]
 #[ssz(transparent)]
 pub enum SignedBeaconBlock<
@@ -471,6 +473,27 @@ impl<
             Self::Electra(inner) => inner.message.hash_tree_root()?,
         };
         Ok(root.0.into())
+    }
+
+    pub fn execution_payload(
+        &self,
+    ) -> Option<
+        ExecutionPayloadRef<
+            BYTES_PER_LOGS_BLOOM,
+            MAX_EXTRA_DATA_BYTES,
+            MAX_BYTES_PER_TRANSACTION,
+            MAX_TRANSACTIONS_PER_PAYLOAD,
+            MAX_WITHDRAWALS_PER_PAYLOAD,
+        >,
+    > {
+        match self {
+            Self::Phase0(_) => None,
+            Self::Altair(_) => None,
+            Self::Bellatrix(inner) => Some(From::from(&inner.message.body.execution_payload)),
+            Self::Capella(inner) => Some(From::from(&inner.message.body.execution_payload)),
+            Self::Deneb(inner) => Some(From::from(&inner.message.body.execution_payload)),
+            Self::Electra(inner) => Some(From::from(&inner.message.body.execution_payload)),
+        }
     }
 }
 
