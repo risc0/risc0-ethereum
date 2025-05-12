@@ -6,8 +6,9 @@
    Patch version changes are committed to the release branch matching their major and minor version.
 
 2. Make sure that the [Selector](./contracts/src/selector.rs) are up-to-date. 
+
    If any of the parameters affecting `Groth16ReceiptVerifierParameters` or the `SetInclusionReceiptVerifierParameters` changed, run this command and use the output to update them (this should be done for the main branch and only backport it if necessary):
-   
+
    > Before running, make sure the const `SET_BUILDER_ID` in the [selector::tests::print_verifier_parameters](./contracts/src/selector.rs) matches with what you are expecting.
    >
    > ```
