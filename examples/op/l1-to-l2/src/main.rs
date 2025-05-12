@@ -55,9 +55,9 @@ async fn main() -> Result<()> {
         .rpc(args.l1_rpc_url)
         .block_number_or_tag(BlockNumberOrTag::Finalized)
         .beacon_api(args.beacon_api_url)
+        .chain_spec(&ETH_MAINNET_CHAIN_SPEC)
         .build()
         .await?;
-    env = env.with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
     let mut builder = contract.call_builder(&CALL);

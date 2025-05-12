@@ -23,7 +23,7 @@ use alloy::{
 use alloy_consensus::ReceiptEnvelope;
 use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{
-    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashMap, HashSet},
+    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, Entry, HashMap, HashSet},
     Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, B256, U256,
 };
 use alloy_rpc_types::{Filter, TransactionReceipt};
@@ -33,6 +33,7 @@ use revm::{
     state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
+use std::fmt::Debug;
 use std::hash::{BuildHasher, Hash};
 
 /// A simple revm [RevmDatabase] wrapper that records all DB queries.
@@ -96,13 +97,35 @@ impl<D> ProofDb<D> {
         &self.inner
     }
 
-    /// Extends the `ProofDb` with the contents of another `ProofDb`. It panics if they are not
-    /// consistent.
-    pub(crate) fn extend(&mut self, other: ProofDb<D>) {
-        extend_checked(&mut self.accounts, other.accounts);
-        extend_checked(&mut self.contracts, other.contracts);
-        extend_checked(&mut self.proofs, other.proofs);
-        self.block_hash_numbers.extend(other.block_hash_numbers);
+    /// Merges this `ProofDb` with another, consuming both and returning a new one.
+    ///
+    /// It Panics if inconsistent data is found between `self` and `other`.
+    #[must_use = "merge consumes self and returns a new ProofDb"]
+    pub(crate) fn merge(self, other: Self) -> Self {
+        let accounts = merge_checked_maps(self.accounts, other.accounts);
+        let contracts = merge_checked_maps(self.contracts, other.contracts);
+        let proofs = merge_checked_maps(self.proofs, other.proofs);
+        // HashSet::extend naturally handles duplicates
+        let mut block_hash_numbers = self.block_hash_numbers;
+        block_hash_numbers.extend(other.block_hash_numbers);
+        // use a HashSet to remove duplicates, the order does not matter for filters
+        let log_filters = self
+            .log_filters
+            .into_iter()
+            .chain(other.log_filters)
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        // construct the new ProofDb using the struct literal for compile-time safety
+        ProofDb {
+            accounts,
+            contracts,
+            block_hash_numbers,
+            log_filters,
+            proofs,
+            inner: self.inner,
+        }
     }
 }
 
@@ -183,7 +206,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                 .provider()
                 .get_block_by_hash(hash)
                 .await
-                .context("eth_getBlockByNumber failed")?
+                .context("eth_getBlockByHash failed")?
                 .with_context(|| format!("block {} not found", hash))?;
 
             return Ok((
@@ -223,7 +246,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             .flat_map(|proof| proof.account_proof.iter());
         let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
 
-        let mut storage_tries = B256HashMap::default();
+        let mut storage_tries: B256HashMap<MerkleTrie> = B256HashMap::default();
         for (address, storage_keys) in &self.accounts {
             // if no storage keys have been accessed, we don't need to prove anything
             if storage_keys.is_empty() {
@@ -231,17 +254,41 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             }
 
             // safe unwrap: added a proof for each account in the previous loop
-            let storage_proofs = &proofs.get(address).unwrap().storage_proofs;
+            let proof = proofs.get(address).unwrap();
 
             let storage_nodes = storage_keys
                 .iter()
-                .filter_map(|key| storage_proofs.get(key))
+                .filter_map(|key| proof.storage_proofs.get(key))
                 .flat_map(|proof| proof.proof.iter());
-            let storage_trie =
-                MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
-            let storage_root_hash = storage_trie.hash_slow();
+            let storage_root = proof.account.storage_root;
 
-            storage_tries.insert(storage_root_hash, storage_trie);
+            match storage_tries.entry(storage_root) {
+                Entry::Occupied(mut entry) => {
+                    // add nodes to existing trie for this root
+                    entry
+                        .get_mut()
+                        .hydrate_from_rlp_nodes(storage_nodes)
+                        .with_context(|| {
+                            format!("invalid storage proof for address {}", address)
+                        })?;
+                    ensure!(
+                        entry.get().hash_slow() == storage_root,
+                        "storage root mismatch"
+                    );
+                }
+                Entry::Vacant(entry) => {
+                    // create a new trie for this root
+                    let storage_trie =
+                        MerkleTrie::from_rlp_nodes(storage_nodes).with_context(|| {
+                            format!("invalid storage proof for address {}", address)
+                        })?;
+                    ensure!(
+                        storage_trie.hash_slow() == storage_root,
+                        "storage root mismatch"
+                    );
+                    entry.insert(storage_trie);
+                }
+            }
         }
         let storage_tries = storage_tries.into_values().collect();
 
@@ -259,7 +306,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
         let block = provider
             .get_block_by_hash(block_hash)
             .await
-            .context("eth_getBlockByNumber failed")?
+            .context("eth_getBlockByHash failed")?
             .with_context(|| format!("block {} not found", block_hash))?;
         let header = block.header();
 
@@ -362,11 +409,12 @@ impl<DB: crate::EvmDatabase> crate::EvmDatabase for ProofDb<DB> {
     }
 }
 
-/// Extends a `HashMap` with the contents of an iterator.
-fn extend_checked<K, V, S, T>(map: &mut HashMap<K, V, S>, iter: T)
+/// Merges two HashMaps, checking for consistency on overlapping keys.
+/// Panics if values for the same key are different. Consumes both maps.
+fn merge_checked_maps<K, V, S, T>(mut map: HashMap<K, V, S>, iter: T) -> HashMap<K, V, S>
 where
-    K: Eq + Hash,
-    V: PartialEq,
+    K: Eq + Hash + Debug,
+    V: PartialEq + Debug,
     S: BuildHasher,
     T: IntoIterator<Item = (K, V)>,
 {
@@ -374,18 +422,26 @@ where
     let (lower_bound, _) = iter.size_hint();
     map.reserve(lower_bound);
 
-    for (k, v) in iter {
-        match map.entry(k) {
+    for (key, value2) in iter {
+        match map.entry(key) {
             hash_map::Entry::Vacant(entry) => {
-                entry.insert(v);
+                entry.insert(value2);
             }
             hash_map::Entry::Occupied(entry) => {
-                if entry.get() != &v {
-                    panic!("mismatching values for key")
+                let value1 = entry.get();
+                if value1 != &value2 {
+                    panic!(
+                        "mismatching values for key {:?}: existing={:?}, other={:?}",
+                        entry.key(),
+                        value1,
+                        value2
+                    );
                 }
             }
         }
     }
+
+    map
 }
 
 fn filter_existing_keys(account_proof: Option<&AccountProof>) -> impl Fn(&StorageKey) -> bool + '_ {
@@ -432,7 +488,10 @@ fn add_proof(
                     && account_proof.account_proof == proof_response.account_proof,
                 "inconsistent proof response"
             );
-            extend_checked(&mut account_proof.storage_proofs, storage_proofs);
+            account_proof.storage_proofs = merge_checked_maps(
+                std::mem::take(&mut account_proof.storage_proofs),
+                storage_proofs,
+            );
         }
         hash_map::Entry::Vacant(entry) => {
             entry.insert(AccountProof {

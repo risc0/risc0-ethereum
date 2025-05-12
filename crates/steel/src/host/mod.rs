@@ -14,8 +14,8 @@
 
 //! Functionality that is only needed for the host and not the guest.
 use crate::{
-    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
-    history::HistoryCommit, BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv,
+    beacon::BeaconCommit, block::BlockInput, ethereum::EthEvmEnv, history::HistoryCommit,
+    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv,
     EvmFactory, EvmInput,
 };
 use alloy::{
@@ -39,6 +39,7 @@ use url::Url;
 mod builder;
 pub mod db;
 
+use crate::config::ChainSpec;
 use crate::ethereum::EthEvmInput;
 pub use builder::EvmEnvBuilder;
 
@@ -228,11 +229,10 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// allowing you to execute multiple independent operations and merge their environments.
     ///
     /// ### Example
-    /// ```rust
-    /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+    /// ```rust,no_run
+    /// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
     /// # use alloy_primitives::address;
     /// # use alloy_sol_types::sol;
-    ///
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() -> anyhow::Result<()> {
     /// # sol! {
@@ -246,7 +246,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// # let usdc_addr = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
     ///
     /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-    /// let builder = EthEvmEnv::builder().rpc(url);
+    /// let builder = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     ///
     /// let mut env1 = builder.clone().build().await?;
     /// let block_hash = env1.header().seal();
@@ -255,25 +255,43 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// let mut env2 = builder.block_hash(block_hash).build().await?;
     /// let mut contract2 = Contract::preflight(usdc_addr, &mut env2);
     ///
+    /// // Perform parallel operations (these would typically modify the state within env1/env2's dbs)
     /// tokio::join!(contract1.call_builder(&call).call(), contract2.call_builder(&call).call());
     ///
-    /// env1.extend(env2)?;
-    /// let evm_input = env1.into_input().await?;
-    ///
+    /// let env = env1.merge(env2)?;
+    /// let evm_input = env.into_input().await?;
+    /// # _ = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
     /// # Ok(())
     /// # }
     /// ```
-    pub fn extend(&mut self, other: Self) -> Result<()> {
-        ensure!(self.chain_id == other.chain_id, "configuration mismatch");
-        ensure!(self.spec == other.spec, "configuration mismatch");
+    pub fn merge(self, mut other: Self) -> Result<Self> {
+        let Self {
+            mut db,
+            chain_id,
+            spec,
+            header,
+            commit,
+        } = self;
+
+        ensure!(chain_id == other.chain_id, "configuration mismatch");
+        ensure!(spec == other.spec, "configuration mismatch");
         ensure!(
-            self.header.seal() == other.header.seal(),
+            header.seal() == other.header.seal(),
             "execution header mismatch"
         );
         // the commitments do not need to match as long as the cfg_env is consistent
-        self.db_mut().extend(other.db.unwrap());
 
-        Ok(())
+        // safe unwrap: EvmEnv is never returned without a DB
+        let db = db.take().unwrap();
+        let db_other = other.db.take().unwrap();
+
+        Ok(Self {
+            db: Some(db.merge(db_other)),
+            chain_id,
+            spec,
+            header,
+            commit,
+        })
     }
 }
 
@@ -345,8 +363,13 @@ where
         note = "use `EvmEnv::builder().beacon_api()` instead"
     )]
     pub async fn into_beacon_input(self, url: Url) -> Result<EthEvmInput> {
-        let commit =
-            BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
+        let commit = BeaconCommit::from_header(
+            self.header(),
+            CommitmentVersion::Beacon,
+            self.db().inner().provider(),
+            url,
+        )
+        .await?;
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))
