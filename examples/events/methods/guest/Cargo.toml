@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 alloy-primitives = { version = "1.0" }
 alloy-sol-types = { version = "1.0" }
-risc0-steel = { path = "../../../../crates/steel", features = ["unstable-event"] }
+risc0-steel = { path = "../../../../crates/steel" }
 risc0-zkvm = { version = "2.0", default-features = false, features = ["std", "unstable"] }
 
 [patch.crates-io]
