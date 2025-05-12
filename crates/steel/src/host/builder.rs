@@ -245,7 +245,6 @@ impl<P, F: EvmFactory> EvmEnvBuilder<P, F, &ChainSpec<F::Spec>, ()> {
 }
 
 /// Config for separating the execution block from the commitment block.
-#[stability::unstable(feature = "history")]
 #[derive(Clone, Debug)]
 pub struct History {
     beacon_config: Beacon,
@@ -311,14 +310,12 @@ impl<P, S> EvmEnvBuilder<P, EthEvmFactory, S, Beacon> {
     ///     .rpc(Url::parse("https://ethereum-rpc.publicnode.com")?)
     ///     .beacon_api(Url::parse("https://ethereum-beacon-api.publicnode.com")?)
     ///     .block_number(1_000_000) // execute against historical state
+    ///     .commitment_block_hash(commitment_hash) // commit to recent block
     ///     .chain_spec(&ETH_MAINNET_CHAIN_SPEC);
-    /// # #[cfg(feature = "unstable-history")] // required because of the stability crate
-    /// let builder = builder.commitment_block_hash(commitment_hash); // commit to recent block
     /// let env = builder.build().await?;
     /// # Ok(())
     /// # }
     /// ```
-    #[stability::unstable(feature = "history")]
     pub fn commitment_block_hash(
         self,
         hash: BlockHash,
@@ -329,7 +326,6 @@ impl<P, S> EvmEnvBuilder<P, EthEvmFactory, S, Beacon> {
     /// Sets the block number or block tag ("latest", "earliest", "pending")  for the commitment.
     ///
     /// See [EvmEnvBuilder::commitment_block_hash] for detailed documentation.
-    #[stability::unstable(feature = "history")]
     pub fn commitment_block_number_or_tag(
         self,
         block: BlockNumberOrTag,
@@ -340,7 +336,6 @@ impl<P, S> EvmEnvBuilder<P, EthEvmFactory, S, Beacon> {
     /// Sets the block number for the commitment.
     ///
     /// See [EvmEnvBuilder::commitment_block_hash] for detailed documentation.
-    #[stability::unstable(feature = "history")]
     pub fn commitment_block_number(
         self,
         number: BlockNumber,
@@ -402,7 +397,6 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, &ChainSpec<<EthEvmFactory as EvmFactory>
     }
     /// Builds and returns an [EvmEnv] with the configured settings, using a dedicated commitment
     /// block that is different from the execution block.
-    #[stability::unstable(feature = "history")]
     pub async fn build(self) -> Result<EthHostEvmEnv<ProviderDb<Ethereum, P>, HistoryCommit>>
     where
         P: Provider<Ethereum>,

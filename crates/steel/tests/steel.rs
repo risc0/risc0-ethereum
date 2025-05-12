@@ -202,7 +202,6 @@ async fn account_info_with_bytecode() {
     assert_eq!(info.code, Some(code));
 }
 
-#[cfg(feature = "unstable-event")]
 mod event {
     use super::*;
     use risc0_steel::Event;

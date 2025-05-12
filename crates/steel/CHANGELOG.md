@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Add support for the Prague Ethereum fork on Mainnet, Sepolia, and Holešky testnets via updated `EthChainSpec`.
 - Improve `HistoryCommit` proof generation logic. The algorithm now reliably chains state proofs backward from the commitment block by querying the beacon roots contract state to verify linkage to the execution block commitment, replacing the previous forward-stepping approach.
 - Introduce `SteelVerifier::verify_with_config_id` on host and guest to allow verifying a `Commitment` against an explicitly provided configuration ID.
+- Stabilize `event`, `history` and `verifier`.
 
 ### 🛠️ Fixes
 
