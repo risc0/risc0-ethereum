@@ -37,7 +37,7 @@ pub enum Error {
 pub type Result<T> = StdResult<T, Error>;
 
 /// Response returned by the `get_block_header` API.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BlockHeaderResponse {
     pub root: B256,
     pub canonical: bool,
@@ -45,14 +45,14 @@ pub struct BlockHeaderResponse {
 }
 
 /// Generic wrapper structure for API responses containing data and metadata.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Response<T> {
     data: T,
     #[serde(flatten)]
     meta: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct RawVersionedJsonResponse<'a> {
     version: Fork,
     #[serde(borrow)]
