@@ -423,7 +423,6 @@ async fn corrupt_beacon_proof_length() {
     mock_usdt_guest(from_value(input_value).unwrap());
 }
 
-#[cfg(feature = "unstable-history")]
 mod history {
     use super::*;
     use risc0_steel::beacon::BeaconBlockId;
