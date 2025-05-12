@@ -205,7 +205,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// allowing you to execute multiple independent operations and merge their environments.
     ///
     /// ### Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
     /// # use alloy_primitives::address;
     /// # use alloy_sol_types::sol;

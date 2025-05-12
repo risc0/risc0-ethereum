@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 - Introduce the `EvmFactory` trait (`EthEvmFactory`) to abstract over different EVM implementations, enabling better code reuse and support for chain-specific logic like Optimism's transaction types and state handling.
 - Add support for the Prague Ethereum fork on Mainnet, Sepolia, and Holešky testnets via updated `EthChainSpec`.
 
+### 🛠️ Fixes
+
+- Fix error in storage proof processing where necessary Merkle proof nodes could be discarded if the same storage trie was accessed via multiple accounts and different storage keys. Proof nodes for shared tries are now correctly merged.
+
 ### 🚨 Breaking Changes
 
 - **`EvmFactory` Abstraction:** The core types `EvmEnv`, `EvmInput`, `BlockInput`, `Contract`, `CallBuilder`, `Account`, `Event`, `SteelVerifier`, and host builder methods are now generic over an `EvmFactory` implementation (e.g., `EthEvmFactory`) instead of just a block header type. This is a fundamental change affecting environment creation, contract interaction, and type signatures throughout the library.
