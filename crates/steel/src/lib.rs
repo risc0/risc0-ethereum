@@ -35,7 +35,7 @@ use revm::{
     context::{result::HaltReasonTr, BlockEnv},
     Database as RevmDatabase,
 };
-use std::{error::Error, fmt::Debug};
+use std::{error::Error, fmt, fmt::Debug};
 
 pub mod account;
 pub mod beacon;
@@ -91,11 +91,11 @@ impl<F: EvmFactory> EvmInput<F> {
     ///
     /// This method verifies that the state matches the state root in the header and panics if not.
     #[inline]
-    pub fn into_env(self) -> GuestEvmEnv<F> {
+    pub fn into_env(self, chain_spec: &ChainSpec<F::Spec>) -> GuestEvmEnv<F> {
         match self {
-            EvmInput::Block(input) => input.into_env(),
-            EvmInput::Beacon(input) => input.into_env(),
-            EvmInput::History(input) => input.into_env(),
+            EvmInput::Block(input) => input.into_env(chain_spec),
+            EvmInput::Beacon(input) => input.into_env(chain_spec),
+            EvmInput::History(input) => input.into_env(chain_spec),
         }
     }
 }
@@ -128,8 +128,8 @@ impl<F: EvmFactory, C: BlockHeaderCommit<F::Header>> ComposeInput<F, C> {
     }
 
     /// Converts the input into a [EvmEnv] for verifiable state access in the guest.
-    pub fn into_env(self) -> GuestEvmEnv<F> {
-        let mut env = self.input.into_env();
+    pub fn into_env(self, chain_spec: &ChainSpec<F::Spec>) -> GuestEvmEnv<F> {
+        let mut env = self.input.into_env(chain_spec);
         env.commit = self.commit.commit(&env.header, env.commit.configID);
 
         env
@@ -179,7 +179,7 @@ pub trait EvmFactory {
     /// The type representing reasons why `Self::Evm` might halt execution.
     type HaltReason: HaltReasonTr + Send + Sync + 'static;
     /// The EVM specification identifier (e.g., Shanghai, Cancun) used by `Self::Evm`.
-    type Spec: Ord + Default + Serialize + Debug + Copy + Send + Sync + 'static;
+    type Spec: Ord + Serialize + Debug + Copy + Send + Sync + 'static;
     /// The block header type providing execution context (e.g., timestamp, number, basefee).
     type Header: EvmBlockHeader<Spec = Self::Spec>
         + Clone
@@ -232,13 +232,19 @@ pub struct EvmEnv<D, F: EvmFactory, C> {
 
 impl<D, F: EvmFactory, C> EvmEnv<D, F, C> {
     /// Creates a new environment.
-    ///
-    /// It uses the default configuration for the latest specification.
-    pub(crate) fn new(db: D, header: Sealed<F::Header>, commit: C) -> Self {
+    pub(crate) fn new(
+        db: D,
+        chain_spec: &ChainSpec<F::Spec>,
+        header: Sealed<F::Header>,
+        commit: C,
+    ) -> Self {
+        let spec = *chain_spec
+            .active_fork(header.number(), header.timestamp())
+            .unwrap();
         Self {
             db: Some(db),
-            chain_id: 1,
-            spec: F::Spec::default(),
+            chain_id: chain_spec.chain_id,
+            spec,
             header,
             commit,
         }
@@ -263,19 +269,6 @@ impl<D, F: EvmFactory, C> EvmEnv<D, F, C> {
 }
 
 impl<D, F: EvmFactory> EvmEnv<D, F, Commitment> {
-    /// Sets the chain ID and specification ID from the given chain spec.
-    ///
-    /// This will panic when there is no valid specification ID for the current block.
-    pub fn with_chain_spec(mut self, chain_spec: &ChainSpec<F::Spec>) -> Self {
-        self.chain_id = chain_spec.chain_id();
-        self.spec = *chain_spec
-            .active_fork(self.header.number(), self.header.timestamp())
-            .unwrap();
-        self.commit.configID = chain_spec.digest();
-
-        self
-    }
-
     /// Returns the [Commitment] used to validate the environment.
     #[inline]
     pub fn commitment(&self) -> &Commitment {
@@ -316,89 +309,121 @@ pub trait EvmBlockHeader: Sealable {
 // Keep everything in the Steel library private except the commitment.
 mod private {
     alloy_sol_types::sol! {
-        /// A Solidity struct representing a commitment used for validation.
+        /// A Solidity struct representing a commitment used for validation within Steel proofs.
         ///
         /// This struct is used to commit to a specific claim, such as the hash of an execution block
-        /// or a beacon chain state. It includes a version, an identifier, the claim itself, and a
-        /// configuration ID to ensure the commitment is valid for the intended network.
+        /// or a beacon chain state root. It includes an identifier combining the claim type (version)
+        /// and a specific instance identifier (e.g., block number), the claim digest itself, and a
+        /// configuration ID to ensure the commitment is valid for the intended network configuration.
+        /// This structure is designed to be ABI-compatible with Solidity for on-chain verification.
         #[derive(Default, PartialEq, Eq, Hash)]
         struct Commitment {
-            /// Commitment ID.
+            /// Packed commitment identifier and version.
             ///
-            /// This ID combines the version and the actual identifier of the claim, such as the block number.
+            /// This field encodes two distinct pieces of information into a single 256-bit unsigned integer:
+            /// 1.  **Version (Top 16 bits):** Bits `[255..240]` store a `u16` representing the type or version
+            ///     of the claim being made. See [CommitmentVersion] for defined values like
+            ///     `Block` or `Beacon`.
+            /// 2.  **Identifier (Bottom 64 bits):** Bits `[63..0]` store a `u64` value that uniquely identifies
+            ///     the specific instance of the claim. For example, for a `Block` commitment, this
+            ///     would be the block number. For a `Beacon` commitment, it would be the slot number.
+            ///
+            /// Use [Commitment::decode_id] to unpack this field into its constituent parts in Rust code.
+            /// The packing scheme ensures efficient storage and retrieval while maintaining compatibility
+            /// with Solidity's `uint256`.
+            ///
+            /// [CommitmentVersion]: crate::CommitmentVersion
             uint256 id;
-            /// The cryptographic digest of the commitment.
+
+            /// The cryptographic digest representing the core claim data.
             ///
-            /// This is the core of the commitment, representing the data being committed to,
-            /// e.g., the hash of the execution block.
+            /// This is the actual data being attested to. The exact meaning depends on the `version` specified in the `id` field.
             bytes32 digest;
-            /// The cryptographic digest of the network configuration.
+
+            /// A cryptographic digest identifying the network and prover configuration.
             ///
-            /// This ID ensures that the commitment is valid only for the specific network configuration
-            /// it was created for.
+            /// This ID acts as a fingerprint of the context in which the commitment was generated,
+            /// including details like the Ethereum chain ID, active hard forks (part of the chain spec),
+            /// and potentially prover-specific settings. Verification must ensure this `configID`
+            /// matches the verifier's current environment configuration to prevent cross-chain or
+            /// misconfigured proof validation.
             bytes32 configID;
         }
     }
 }
 
+// Publicly export only the Commitment struct definition generated by the sol! macro.
 pub use private::Commitment;
 
-/// Version of a [`Commitment`].
+/// Version identifier for a [Commitment], indicating the type of claim.
 ///
-/// The version numbers are assigned as follows:
-/// - **0**: Commitment to an execution block.
-/// - **1**: Commitment to a beacon chain block root indexed by the EIP-4788 child timestamp.
-/// - **2**: Commitment to a beacon chain block root indexed by its slot (consensus commitment).
-#[non_exhaustive]
+/// This enum defines the valid types of commitments that can be created and verified.
+/// The raw `u16` value of the enum variant is stored in the top 16 bits of the
+/// [Commitment::id] field.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, enumn::N)]
 #[repr(u16)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum CommitmentVersion {
-    /// Version 0: Commitment to an execution block indexed by its block number.
+    /// Version 0: Commitment to an execution block hash indexed by its block number.
     Block = 0,
-    /// Version 1: Commitment to a beacon block root indexed by the EIP-4788 child timestamp.
+    /// Version 1: Commitment to a beacon block root indexed by its EIP-4788 child timestamp.
     Beacon = 1,
-    /// Version 2: Commitment to a beacon chain root indexed by its slot.
+    /// Version 2: Commitment to a beacon block root indexed by its slot.
     Consensus = 2,
 }
 
 impl Commitment {
-    /// The size in bytes of the ABI-encoded commitment.
+    /// The size in bytes of the ABI-encoded commitment (3 fields * 32 bytes/field = 96 bytes).
     pub const ABI_ENCODED_SIZE: usize = 3 * 32;
 
-    /// Creates a new commitment.
+    /// Creates a new [Commitment] by packing the version and identifier into the `id` field.
     #[inline]
     pub const fn new(version: u16, id: u64, digest: B256, config_id: B256) -> Commitment {
         Self {
-            id: Commitment::encode_id(id, version),
+            id: Commitment::encode_id(id, version), // pack id and version
             digest,
             configID: config_id,
         }
     }
 
-    /// Decodes the `id` field into the claim ID and the commitment version.
+    /// Decodes the packed `Commitment.id` field into the identifier part and the version.
+    ///
+    /// This function extracts the version from the top 16 bits and returns the remaining part of
+    /// the `id` field (which contains the instance identifier in its lower 64 bits) along with the
+    /// `u16` version.
     #[inline]
     pub fn decode_id(&self) -> (U256, u16) {
-        let decoded = self.id
-            & uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
+        // define a mask to isolate the lower 240 bits (zeroing out the top 16 version bits)
+        let id_mask =
+            uint!(0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_U256);
+        let id_part = self.id & id_mask;
+
+        // extract the version by right-shifting the most significant limb (limbs[3]) by 48 bits
         let version = (self.id.as_limbs()[3] >> 48) as u16;
-        (decoded, version)
+
+        (id_part, version)
     }
 
-    /// ABI-encodes the commitment.
+    /// ABI-encodes the commitment into a byte vector according to Solidity ABI specifications.
     #[inline]
     pub fn abi_encode(&self) -> Vec<u8> {
         SolValue::abi_encode(self)
     }
 
-    /// Encodes an ID and version into a single [U256] value.
+    /// Packs a `u64` identifier and a `u16` version into a single `U256` value.
     const fn encode_id(id: u64, version: u16) -> U256 {
         U256::from_limbs([id, 0, 0, (version as u64) << 48])
     }
 }
 
-impl std::fmt::Debug for Commitment {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let (id, version) = self.decode_id();
+impl Debug for Commitment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (id, version_code) = self.decode_id();
+        let version = match CommitmentVersion::n(version_code) {
+            Some(v) => format!("{:?}", v),
+            None => format!("Unknown({:x})", version_code),
+        };
+
         f.debug_struct("Commitment")
             .field("version", &version)
             .field("id", &id)
