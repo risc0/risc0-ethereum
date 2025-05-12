@@ -47,7 +47,6 @@ pub struct StateDb {
     /// Block hashes by their number.
     block_hashes: HashMap<u64, B256>,
     /// All the logs for this block.
-    #[allow(dead_code)]
     logs: Option<Vec<Log>>,
 }
 
@@ -115,7 +114,6 @@ impl StateDb {
 /// account.
 pub struct WrapStateDb<'a, H> {
     inner: &'a StateDb,
-    #[allow(dead_code)]
     header: &'a Sealed<H>,
     account_storage: AddressHashMap<Option<Rc<MerkleTrie>>>,
 }
