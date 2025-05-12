@@ -23,7 +23,7 @@ use alloy::{
 use alloy_consensus::ReceiptEnvelope;
 use alloy_eips::eip2718::Encodable2718;
 use alloy_primitives::{
-    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, HashMap, HashSet},
+    map::{hash_map, AddressHashMap, B256HashMap, B256HashSet, Entry, HashMap, HashSet},
     Address, BlockNumber, Bytes, Log, StorageKey, StorageValue, B256, U256,
 };
 use alloy_rpc_types::{Filter, TransactionReceipt};
@@ -206,7 +206,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                 .provider()
                 .get_block_by_hash(hash)
                 .await
-                .context("eth_getBlockByNumber failed")?
+                .context("eth_getBlockByHash failed")?
                 .with_context(|| format!("block {} not found", hash))?;
 
             return Ok((
@@ -246,7 +246,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             .flat_map(|proof| proof.account_proof.iter());
         let state_trie = MerkleTrie::from_rlp_nodes(state_nodes).context("accountProof invalid")?;
 
-        let mut storage_tries = B256HashMap::default();
+        let mut storage_tries: B256HashMap<MerkleTrie> = B256HashMap::default();
         for (address, storage_keys) in &self.accounts {
             // if no storage keys have been accessed, we don't need to prove anything
             if storage_keys.is_empty() {
@@ -254,17 +254,41 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             }
 
             // safe unwrap: added a proof for each account in the previous loop
-            let storage_proofs = &proofs.get(address).unwrap().storage_proofs;
+            let proof = proofs.get(address).unwrap();
 
             let storage_nodes = storage_keys
                 .iter()
-                .filter_map(|key| storage_proofs.get(key))
+                .filter_map(|key| proof.storage_proofs.get(key))
                 .flat_map(|proof| proof.proof.iter());
-            let storage_trie =
-                MerkleTrie::from_rlp_nodes(storage_nodes).context("storageProof invalid")?;
-            let storage_root_hash = storage_trie.hash_slow();
+            let storage_root = proof.account.storage_root;
 
-            storage_tries.insert(storage_root_hash, storage_trie);
+            match storage_tries.entry(storage_root) {
+                Entry::Occupied(mut entry) => {
+                    // add nodes to existing trie for this root
+                    entry
+                        .get_mut()
+                        .hydrate_from_rlp_nodes(storage_nodes)
+                        .with_context(|| {
+                            format!("invalid storage proof for address {}", address)
+                        })?;
+                    ensure!(
+                        entry.get().hash_slow() == storage_root,
+                        "storage root mismatch"
+                    );
+                }
+                Entry::Vacant(entry) => {
+                    // create a new trie for this root
+                    let storage_trie =
+                        MerkleTrie::from_rlp_nodes(storage_nodes).with_context(|| {
+                            format!("invalid storage proof for address {}", address)
+                        })?;
+                    ensure!(
+                        storage_trie.hash_slow() == storage_root,
+                        "storage root mismatch"
+                    );
+                    entry.insert(storage_trie);
+                }
+            }
         }
         let storage_tries = storage_tries.into_values().collect();
 
@@ -282,7 +306,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
         let block = provider
             .get_block_by_hash(block_hash)
             .await
-            .context("eth_getBlockByNumber failed")?
+            .context("eth_getBlockByHash failed")?
             .with_context(|| format!("block {} not found", block_hash))?;
         let header = block.header();
 

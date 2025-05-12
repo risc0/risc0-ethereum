@@ -14,8 +14,8 @@
 
 //! Functionality that is only needed for the host and not the guest.
 use crate::{
-    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
-    history::HistoryCommit, BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv,
+    beacon::BeaconCommit, block::BlockInput, ethereum::EthEvmEnv, history::HistoryCommit,
+    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv,
     EvmFactory, EvmInput,
 };
 use alloy::{
@@ -39,6 +39,7 @@ use url::Url;
 mod builder;
 pub mod db;
 
+use crate::config::ChainSpec;
 use crate::ethereum::EthEvmInput;
 pub use builder::EvmEnvBuilder;
 
@@ -201,7 +202,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
         self
     }
 
-    /// Merges this environment with another, consuming both and returning a new one.
+    /// Extends the environment with the contents of another compatible environment.
     ///
     /// ### Errors
     ///
@@ -219,11 +220,10 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// allowing you to execute multiple independent operations and merge their environments.
     ///
     /// ### Example
-    /// ```rust
-    /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+    /// ```rust,no_run
+    /// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
     /// # use alloy_primitives::address;
     /// # use alloy_sol_types::sol;
-    ///
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() -> anyhow::Result<()> {
     /// # sol! {
@@ -237,7 +237,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     /// # let usdc_addr = address!("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
     ///
     /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-    /// let builder = EthEvmEnv::builder().rpc(url);
+    /// let builder = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC);
     ///
     /// let mut env1 = builder.clone().build().await?;
     /// let block_hash = env1.header().seal();
@@ -251,7 +251,7 @@ impl<D, F: EvmFactory, C> HostEvmEnv<D, F, C> {
     ///
     /// let env = env1.merge(env2)?;
     /// let evm_input = env.into_input().await?;
-    ///
+    /// # _ = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
     /// # Ok(())
     /// # }
     /// ```
@@ -354,8 +354,13 @@ where
         note = "use `EvmEnv::builder().beacon_api()` instead"
     )]
     pub async fn into_beacon_input(self, url: Url) -> Result<EthEvmInput> {
-        let commit =
-            BeaconCommit::from_header(self.header(), self.db().inner().provider(), url).await?;
+        let commit = BeaconCommit::from_header(
+            self.header(),
+            CommitmentVersion::Beacon,
+            self.db().inner().provider(),
+            url,
+        )
+        .await?;
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
         Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))
