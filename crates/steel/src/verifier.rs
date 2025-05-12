@@ -16,7 +16,7 @@ use crate::{
     history::beacon_roots::BeaconRootsContract, state::WrapStateDb, Commitment, EvmBlockHeader,
     EvmFactory, GuestEvmEnv,
 };
-use alloy_primitives::U256;
+use alloy_primitives::{B256, U256};
 use anyhow::{ensure, Context};
 
 /// Represents a verifier for validating Steel commitments within Steel.
@@ -70,12 +70,23 @@ impl<'a, F: EvmFactory> SteelVerifier<&'a GuestEvmEnv<F>> {
     }
 
     /// Verifies the commitment in the guest and panics on failure.
+    ///
+    /// This includes checking that the `commitment.configID` matches the
+    /// configuration ID associated with the current guest environment (`self.env.commit.configID`).
+    #[inline]
     pub fn verify(&self, commitment: &Commitment) {
+        self.verify_with_config_id(commitment, self.env.commit.configID);
+    }
+
+    /// Verifies the commitment in the guest against an explicitly provided configuration ID,
+    /// and panics on failure.
+    pub fn verify_with_config_id(&self, commitment: &Commitment, config_id: B256) {
+        assert_eq!(commitment.configID, config_id, "Invalid config ID");
         let (id, version) = commitment.decode_id();
         match version {
             0 => {
                 let block_number =
-                    validate_block_number(self.env.header().inner(), id).expect("Invalid id");
+                    validate_block_number(self.env.header().inner(), id).expect("Invalid ID");
                 let block_hash = self.env.db().block_hash(block_number);
                 assert_eq!(block_hash, commitment.digest, "Invalid digest");
             }
@@ -116,14 +127,30 @@ mod host {
         }
 
         /// Preflights the commitment verification on the host.
+        ///
+        /// This includes checking that the `commitment.configID` matches the
+        /// configuration ID associated with the current host environment.
+        #[inline]
         pub async fn verify(self, commitment: &Commitment) -> anyhow::Result<()> {
+            let config_id = self.env.commit.config_id();
+            self.verify_with_config_id(commitment, config_id).await
+        }
+
+        /// Preflights the commitment verification on the host against an explicitly provided
+        /// configuration ID.
+        pub async fn verify_with_config_id(
+            self,
+            commitment: &Commitment,
+            config_id: B256,
+        ) -> anyhow::Result<()> {
             log::info!("Executing preflight verifying {:?}", commitment);
 
+            ensure!(commitment.configID == config_id, "invalid config ID");
             let (id, version) = commitment.decode_id();
             match version {
                 0 => {
                     let block_number = validate_block_number(self.env.header().inner(), id)
-                        .context("invalid id")?;
+                        .context("invalid ID")?;
                     let block_hash = self
                         .env
                         .spawn_with_db(move |db| db.block_hash(block_number))
