@@ -28,6 +28,7 @@ All notable changes to this project will be documented in this file.
   - Removed `HostEvmEnv::with_chain_spec`. Chain specification must now be provided via the new `.chain_spec()` builder method *before* calling `.build()`. `EvmEnvBuilder` now track the chain spec via a type parameter.
   - Methods like `EvmInput::into_env` now require a `&ChainSpec<...>` argument to reconstruct the environment in the guest, ensuring consistent configuration.
 - Replace `HostEvmEnv::extend(&mut self, other: Self)` with `HostEvmEnv::merge(self, other: Self) -> Result<Self>`. The new `merge` function consumes both environment instances and returns a new merged instance upon success, whereas `extend` modified the existing environment in place. This change improves safety and clarity when combining environments, especially after parallel preflight operations.
+- Remove deprecated `EvmEnv::into_beacon_input`.
 - **Alloy 1.0/0.14 Updates:**
   - Methods like `abi_decode` no longer take a `validate: bool` argument (use `abi_decode(&data)`).
   - Contract call results now directly return the value, not a single-element tuple (use `result` instead of `result._0`).
