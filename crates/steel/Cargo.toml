@@ -52,6 +52,7 @@ host = [
     "dep:serde_json",
     "dep:tokio",
     "dep:url",
+    "serde_json/raw_value"
 ]
 unstable-event = []
 unstable-history = []
