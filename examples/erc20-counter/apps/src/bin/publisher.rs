@@ -125,9 +125,7 @@ async fn main() -> Result<()> {
     #[cfg(feature = "history")]
     let builder = builder.commitment_block_number_or_tag(args.commitment_block);
 
-    let mut env = builder.build().await?;
-    //  The `with_chain_spec` method is used to specify the chain configuration.
-    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    let mut env = builder.chain_spec(&ETH_SEPOLIA_CHAIN_SPEC).build().await?;
 
     // Prepare the function call
     let call = IERC20::balanceOfCall {
