@@ -27,7 +27,7 @@ fn main() {
     let input: EthEvmInput = env::read();
 
     // Converts the input into a `EvmEnv` for execution.
-    let env_prev = input.into_env().with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    let env_prev = input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 
     // Execute the view calls on the older EVM state.
     let contract = Contract::new(CONTRACT, &env_prev);
@@ -40,7 +40,7 @@ fn main() {
 
     // Prepare the second `EvmEnv` for execution.  It corresponds to the recent EVM state.
     let input: EthEvmInput = env::read();
-    let env_cur = input.into_env().with_chain_spec(&ETH_MAINNET_CHAIN_SPEC);
+    let env_cur = input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 
     // Verify that the older EVM state is valid wrt the recent EVM state.
     // We initialize the SteelVerifier with the recent state, to check the previous commitment.

@@ -48,14 +48,6 @@ pub struct ChainSpec<S: Ord> {
     pub forks: BTreeMap<S, ForkCondition>,
 }
 
-impl<S: Ord + Serialize + Default> Default for ChainSpec<S> {
-    /// Defaults to Ethereum Chain ID using the latest specification.
-    #[inline]
-    fn default() -> Self {
-        Self::new_single(1, S::default())
-    }
-}
-
 impl<S: Ord + Serialize> ChainSpec<S> {
     /// Creates a new configuration consisting of only one specification ID.
     ///

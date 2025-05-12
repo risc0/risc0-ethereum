@@ -20,6 +20,9 @@ All notable changes to this project will be documented in this file.
 - **`CallBuilder` API:** The API for configuring contract calls has changed significantly. Fluent methods like `.from()`, `.gas()`, `.value()`, `.gas_price()` have been removed. Call parameters **must** now be set by directly modifying the public `tx` field of the `CallBuilder` instance before execution (e.g., `builder.tx.caller = my_address; builder.tx.gas_limit = 100_000;`). Consult the specific `Tx` type documentation for your `EvmFactory` (e.g., `revm::context::TxEnv` for `EthEvmFactory`) for available fields.
 - **`EvmBlockHeader` Trait:** The trait now requires an associated type `Spec` and mandates implementing `fn to_block_env(&self, spec: Self::Spec) -> BlockEnv` instead of the previous `fill_block_env`.
 - **`ChainSpec` Generics:** `ChainSpec` is now generic over the specification type instead of being fixed to `revm::primitives::SpecId`. Use the provided type aliases `EthChainSpec` (for `SpecId`). The hashing mechanism for `ChainSpec::digest()` has changed.
+- Chain specification handling refactored:
+  - Removed `HostEvmEnv::with_chain_spec`. Chain specification must now be provided via the new `.chain_spec()` builder method *before* calling `.build()`. `EvmEnvBuilder` now track the chain spec via a type parameter.
+  - Methods like `EvmInput::into_env` now require a `&ChainSpec<...>` argument to reconstruct the environment in the guest, ensuring consistent configuration.
 - **Alloy 1.0/0.14 Updates:**
   - Methods like `abi_decode` no longer take a `validate: bool` argument (use `abi_decode(&data)`).
   - Contract call results now directly return the value, not a single-element tuple (use `result` instead of `result._0`).
