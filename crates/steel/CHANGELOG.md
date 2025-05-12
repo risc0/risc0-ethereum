@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
-- Introduce the capability to query Ethereum events. The new `Event` allows to query events of a specific type in Steel. Its usage is very similar to the existing `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-event` feature.
 - Introduce the `EvmFactory` trait (`EthEvmFactory`) to abstract over different EVM implementations, enabling better code reuse and support for chain-specific logic like Optimism's transaction types and state handling.
+- Introduce the capability to query Ethereum events. The new `Event` allows to query events of a specific type in Steel. Its usage is very similar to the existing `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-event` feature.
 - Add support for the Prague Ethereum fork on Mainnet, Sepolia, and Holešky testnets via updated `EthChainSpec`.
 - Improve `HistoryCommit` proof generation logic. The algorithm now reliably chains state proofs backward from the commitment block by querying the beacon roots contract state to verify linkage to the execution block commitment, replacing the previous forward-stepping approach.
 - Introduce `SteelVerifier::verify_with_config_id` on host and guest to allow verifying a `Commitment` against an explicitly provided configuration ID.
@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 ### 🛠️ Fixes
 
 - Add verification of the `Commitment::configID` field in `SteelVerifier::verify` on both host and guest against the environment's configuration ID. This corrects an omission where commitments with mismatched configurations could pass verification.
+- Fix error in storage proof processing where necessary Merkle proof nodes could be discarded if the same storage trie was accessed via multiple accounts and different storage keys. Proof nodes for shared tries are now correctly merged.
 
 ### 🚨 Breaking Changes
 
