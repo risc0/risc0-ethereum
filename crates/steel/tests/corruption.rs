@@ -92,9 +92,9 @@ async fn anvil_provider() -> impl Provider {
 async fn anvil_input() -> anyhow::Result<EthEvmInput> {
     let mut env = EthEvmEnv::builder()
         .provider(anvil_provider().await)
+        .chain_spec(&ANVIL_CHAIN_SPEC)
         .build()
-        .await?
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .await?;
     Contract::preflight(ANVIL_CONTRACT_ADDRESS, &mut env)
         .call_builder(&sol::Pair::aCall {})
         .call()
@@ -109,7 +109,7 @@ async fn anvil_input() -> anyhow::Result<EthEvmInput> {
 
 /// Executes `Pair.a()` and `Pair.b()` on the input just as the guest would.
 fn mock_anvil_guest(input: EthEvmInput) -> Commitment {
-    let env = input.into_env().with_chain_spec(&ANVIL_CHAIN_SPEC);
+    let env = input.into_env(&ANVIL_CHAIN_SPEC);
     Contract::new(ANVIL_CONTRACT_ADDRESS, &env)
         .call_builder(&sol::Pair::aCall {})
         .call();
@@ -126,9 +126,9 @@ async fn rpc_usdt_beacon_input() -> anyhow::Result<EthEvmInput> {
         .rpc(RPC_URL.parse()?)
         .beacon_api(BEACON_API_URL.parse()?)
         .block_number_or_tag(BlockNumberOrTag::Parent)
+        .chain_spec(&ETH_SEPOLIA_CHAIN_SPEC)
         .build()
         .await?;
-    env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::preflight(USDT_ADDRESS, &mut env)
         .call_builder(&USDT_CALL)
         .call()
@@ -291,10 +291,10 @@ async fn corrupt_ancestor() {
     // create the corresponding input
     let mut env = EthEvmEnv::builder()
         .provider(provider)
+        .chain_spec(&ANVIL_CHAIN_SPEC)
         .build()
         .await
-        .unwrap()
-        .with_chain_spec(&ANVIL_CHAIN_SPEC);
+        .unwrap();
     Contract::preflight(address, &mut env)
         .call_builder(&sol::BlockHash::get256Call {})
         .call()
@@ -319,7 +319,10 @@ async fn corrupt_ancestor() {
 #[should_panic(expected = "Invalid commitment")]
 async fn corrupt_header_block_commitment() {
     let input = anvil_input().await.unwrap();
-    let exp_commit = input.clone().into_env().into_commitment();
+    let exp_commit = input
+        .clone()
+        .into_env(&ETH_SEPOLIA_CHAIN_SPEC)
+        .into_commitment();
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
@@ -337,7 +340,7 @@ async fn corrupt_header_block_commitment() {
 }
 
 fn mock_usdt_guest(input: EthEvmInput) -> Commitment {
-    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    let env = input.into_env(&ETH_SEPOLIA_CHAIN_SPEC);
     Contract::new(USDT_ADDRESS, &env)
         .call_builder(&USDT_CALL)
         .call();
@@ -352,7 +355,10 @@ async fn corrupt_header_beacon_commitment() {
     })
     .await
     .unwrap();
-    let exp_commit = input.clone().into_env().into_commitment();
+    let exp_commit = input
+        .clone()
+        .into_env(&ETH_SEPOLIA_CHAIN_SPEC)
+        .into_commitment();
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
@@ -378,7 +384,10 @@ async fn corrupt_beacon_proof() {
     })
     .await
     .unwrap();
-    let exp_commit = input.clone().into_env().into_commitment();
+    let exp_commit = input
+        .clone()
+        .into_env(&ETH_SEPOLIA_CHAIN_SPEC)
+        .into_commitment();
 
     // get the JSON representation of the block header for the state
     let mut input_value = to_value(&input).unwrap();
@@ -416,6 +425,7 @@ async fn corrupt_beacon_proof_length() {
 
 mod history {
     use super::*;
+    use risc0_steel::beacon::BeaconBlockId;
     use test_log::test;
 
     /// Creates `EthEvmInput::History` using live RPC nodes preflighting
@@ -426,9 +436,9 @@ mod history {
             .beacon_api(BEACON_API_URL.parse()?)
             .block_number_or_tag(BlockNumberOrTag::Safe)
             .commitment_block_number_or_tag(BlockNumberOrTag::Parent)
+            .chain_spec(&ETH_SEPOLIA_CHAIN_SPEC)
             .build()
             .await?;
-        env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
         Contract::preflight(USDT_ADDRESS, &mut env)
             .call_builder(&USDT_CALL)
             .call()
@@ -445,7 +455,10 @@ mod history {
         })
         .await
         .unwrap();
-        let exp_commit = input.clone().into_env().into_commitment();
+        let exp_commit = input
+            .clone()
+            .into_env(&ETH_SEPOLIA_CHAIN_SPEC)
+            .into_commitment();
 
         // get the JSON representation of the block header for the state
         let mut input_value = to_value(&input).unwrap();
@@ -469,7 +482,10 @@ mod history {
         })
         .await
         .unwrap();
-        let exp_commit = input.clone().into_env().into_commitment();
+        let exp_commit = input
+            .clone()
+            .into_env(&ETH_SEPOLIA_CHAIN_SPEC)
+            .into_commitment();
 
         // get the JSON representation of the block header for the state
         let mut input_value = to_value(&input).unwrap();
@@ -545,8 +561,8 @@ mod history {
         let evm_commit = &mut input_value["History"]["commit"]["evm_commit"];
 
         // corrupt the EVM commit by changing its timestamp
-        let timestamp_value = &mut evm_commit["timestamp"];
-        *timestamp_value = to_value(u64::MAX).unwrap();
+        let block_id_value = &mut evm_commit["block_id"];
+        *block_id_value = to_value(BeaconBlockId::Eip4788(u64::MAX)).unwrap();
 
         // converting this into an environment should panic
         mock_usdt_guest(from_value(input_value).unwrap());

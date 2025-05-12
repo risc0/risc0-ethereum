@@ -209,10 +209,10 @@ pub enum OpEvmInput {
 
 impl OpEvmInput {
     #[inline]
-    pub fn into_env(self) -> EvmEnv<StateDb, OpEvmFactory, Commitment> {
+    pub fn into_env(self, chain_spec: &OpChainSpec) -> EvmEnv<StateDb, OpEvmFactory, Commitment> {
         match self {
-            OpEvmInput::Block(input) => input.into_env(),
-            OpEvmInput::DisputeGame(input) => input.into_env(),
+            OpEvmInput::Block(input) => input.into_env(chain_spec),
+            OpEvmInput::DisputeGame(input) => input.into_env(chain_spec),
         }
     }
 }

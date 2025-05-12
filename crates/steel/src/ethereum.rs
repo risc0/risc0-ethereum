@@ -19,7 +19,7 @@ use crate::{
     EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy_evm::{Database, EthEvmFactory as AlloyEthEvmFactory, EvmFactory as AlloyEvmFactory};
-use alloy_primitives::{b256, Address, BlockNumber, Bytes, TxKind, B256};
+use alloy_primitives::{Address, BlockNumber, Bytes, TxKind, B256};
 use revm::{
     context::{BlockEnv, CfgEnv, TxEnv},
     context_interface::block::BlobExcessGasAndPrice,
@@ -110,11 +110,6 @@ impl EvmFactory for EthEvmFactory {
 /// [ChainSpec] for Ethereum.
 pub type EthChainSpec = ChainSpec<SpecId>;
 
-impl EthChainSpec {
-    pub const DEFAULT_DIGEST: B256 =
-        b256!("93fa9331a672fad1b84b892f841dcc9609d81b2ab408a1de847899f9b8743e10");
-}
-
 /// [EvmEnv] for Ethereum.
 pub type EthEvmEnv<D, C> = EvmEnv<D, EthEvmFactory, C>;
 
@@ -168,18 +163,5 @@ impl EvmBlockHeader for EthBlockHeader {
                 BlobExcessGasAndPrice::new(excess_blob_gas, spec >= SpecId::PRAGUE)
             }),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn default_digest() {
-        assert_eq!(
-            EthChainSpec::DEFAULT_DIGEST,
-            EthChainSpec::default().digest()
-        );
     }
 }

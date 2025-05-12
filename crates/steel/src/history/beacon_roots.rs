@@ -22,12 +22,12 @@ use revm::{
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 
-/// The length of the buffer that stores historical entries, i.e., the number of stored
-/// timestamps and roots.
-pub const HISTORY_BUFFER_LENGTH: U256 = uint!(8191_U256);
 /// Address where the contract is deployed.
 pub const ADDRESS: Address = address!("000F3df6D732807Ef1319fB7B8bB8522d0Beac02");
 
+/// The length of the buffer that stores historical entries, i.e., the number of stored
+/// timestamps and roots.
+const HISTORY_BUFFER_LENGTH: U256 = uint!(8191_U256);
 /// Hash of the contract's address, where the contract is deployed.
 const ADDRESS_HASH: B256 =
     b256!("37d65eaa92c6bc4c13a5ec45527f0c18ea8932588728769ec7aecfe6d9f32e42");
@@ -78,6 +78,29 @@ pub struct BeaconRootsState {
     state_trie: MerkleTrie,
     /// Storage trie containing the state of the beacon roots contract.
     storage_trie: MerkleTrie,
+}
+
+/// Returns the timestamp stored in the slot which corresponds to the given `calldata` (timestamp).
+#[cfg(feature = "host")]
+pub(super) async fn get_timestamp<N, P>(
+    calldata: U256,
+    provider: P,
+    block_id: alloy::eips::BlockId,
+) -> anyhow::Result<U256>
+where
+    N: alloy::network::Network,
+    P: alloy::providers::Provider<N>,
+{
+    // compute the key of the storage slot
+    let timestamp_idx = calldata % HISTORY_BUFFER_LENGTH;
+    // return its value
+    anyhow::Context::context(
+        provider
+            .get_storage_at(ADDRESS, timestamp_idx)
+            .block_id(block_id)
+            .await,
+        "eth_getStorageAt failed",
+    )
 }
 
 impl BeaconRootsState {

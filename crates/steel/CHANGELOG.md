@@ -6,10 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### ⚡️ Features
 
-- Introduce the capability to query Ethereum events. The new `Event` allows to query events of a specific type in Steel. Its usage is very similar to the existing `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-event` feature.
 - Introduce the `EvmFactory` trait (`EthEvmFactory`) to abstract over different EVM implementations, enabling better code reuse and support for chain-specific logic like Optimism's transaction types and state handling.
+- Introduce the capability to query Ethereum events. The new `Event` allows to query events of a specific type in Steel. Its usage is very similar to the existing `Contract`, during the preflight step and in the guest. This functionality is currently marked unstable and must be enabled using the `unstable-event` feature.
 - Add support for the Prague Ethereum fork on Mainnet, Sepolia, and Holešky testnets via updated `EthChainSpec`.
+- Improve `HistoryCommit` proof generation logic. The algorithm now reliably chains state proofs backward from the commitment block by querying the beacon roots contract state to verify linkage to the execution block commitment, replacing the previous forward-stepping approach.
+- Introduce `SteelVerifier::verify_with_config_id` on host and guest to allow verifying a `Commitment` against an explicitly provided configuration ID.
 - Stabilize `event`, `history` and `verifier`.
+
+### 🛠️ Fixes
+
+- Add verification of the `Commitment::configID` field in `SteelVerifier::verify` on both host and guest against the environment's configuration ID. This corrects an omission where commitments with mismatched configurations could pass verification.
+- Fix error in storage proof processing where necessary Merkle proof nodes could be discarded if the same storage trie was accessed via multiple accounts and different storage keys. Proof nodes for shared tries are now correctly merged.
 
 ### 🚨 Breaking Changes
 
@@ -17,6 +24,10 @@ All notable changes to this project will be documented in this file.
 - **`CallBuilder` API:** The API for configuring contract calls has changed significantly. Fluent methods like `.from()`, `.gas()`, `.value()`, `.gas_price()` have been removed. Call parameters **must** now be set by directly modifying the public `tx` field of the `CallBuilder` instance before execution (e.g., `builder.tx.caller = my_address; builder.tx.gas_limit = 100_000;`). Consult the specific `Tx` type documentation for your `EvmFactory` (e.g., `revm::context::TxEnv` for `EthEvmFactory`) for available fields.
 - **`EvmBlockHeader` Trait:** The trait now requires an associated type `Spec` and mandates implementing `fn to_block_env(&self, spec: Self::Spec) -> BlockEnv` instead of the previous `fill_block_env`.
 - **`ChainSpec` Generics:** `ChainSpec` is now generic over the specification type instead of being fixed to `revm::primitives::SpecId`. Use the provided type aliases `EthChainSpec` (for `SpecId`). The hashing mechanism for `ChainSpec::digest()` has changed.
+- Chain specification handling refactored:
+  - Removed `HostEvmEnv::with_chain_spec`. Chain specification must now be provided via the new `.chain_spec()` builder method *before* calling `.build()`. `EvmEnvBuilder` now track the chain spec via a type parameter.
+  - Methods like `EvmInput::into_env` now require a `&ChainSpec<...>` argument to reconstruct the environment in the guest, ensuring consistent configuration.
+- Replace `HostEvmEnv::extend(&mut self, other: Self)` with `HostEvmEnv::merge(self, other: Self) -> Result<Self>`. The new `merge` function consumes both environment instances and returns a new merged instance upon success, whereas `extend` modified the existing environment in place. This change improves safety and clarity when combining environments, especially after parallel preflight operations.
 - **Alloy 1.0/0.14 Updates:**
   - Methods like `abi_decode` no longer take a `validate: bool` argument (use `abi_decode(&data)`).
   - Contract call results now directly return the value, not a single-element tuple (use `result` instead of `result._0`).
