@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{host::db::ProviderDb, mpt::EMPTY_ROOT_HASH, MerkleTrie, StateAccount};
+use crate::{event, host::db::ProviderDb, mpt::EMPTY_ROOT_HASH, MerkleTrie, StateAccount};
 use alloy::{
     consensus::BlockHeader,
     eips::eip2930::{AccessList, AccessListItem},
@@ -316,7 +316,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
         let bloom_match = self
             .log_filters
             .iter()
-            .any(|filter| crate::matches_filter(header.logs_bloom(), filter));
+            .any(|filter| event::matches_filter(header.logs_bloom(), filter));
         if !bloom_match {
             return Ok(None);
         }

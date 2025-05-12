@@ -32,7 +32,6 @@ revm = { workspace = true, features = ["optional_balance_check", "optional_block
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 sha2 = { workspace = true }
-stability = { workspace = true }
 thiserror = { workspace = true, features = ["default"] }
 tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
@@ -56,6 +55,3 @@ host = [
     "serde_json/raw_value"
 ]
 kzg = ["revm/c-kzg"]
-unstable-event = []
-unstable-history = []
-unstable-verifier = []

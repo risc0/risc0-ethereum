@@ -158,7 +158,6 @@ pub struct HostCommit<C> {
 
 impl<C> HostCommit<C> {
     /// Returns the config ID.
-    #[cfg(feature = "unstable-verifier")]
     #[inline]
     pub(super) fn config_id(&self) -> B256 {
         self.config_id
@@ -176,7 +175,6 @@ where
     /// This function is necessary because mutable references to the database cannot be passed
     /// directly to `tokio::task::spawn_blocking`. Instead, the database is temporarily taken out of
     /// the `HostEvmEnv`, moved into the blocking task, and then restored after the task completes.
-    #[allow(dead_code)]
     pub(crate) async fn spawn_with_db<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut ProofDb<D>) -> R + Send + 'static,
@@ -341,7 +339,6 @@ where
 {
     /// Converts the environment into a [EvmInput] recursively committing to multiple Beacon Chain
     /// block roots.
-    #[stability::unstable(feature = "history")]
     pub async fn into_input(self) -> Result<EthEvmInput> {
         let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
 
