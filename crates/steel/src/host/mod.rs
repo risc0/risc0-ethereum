@@ -15,9 +15,12 @@
 //! Functionality that is only needed for the host and not the guest.
 
 use crate::{
-    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
-    ethereum::EthEvmInput, history::HistoryCommit, BlockHeaderCommit, Commitment,
-    CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
+    beacon::BeaconCommit,
+    block::BlockInput,
+    config::ChainSpec,
+    ethereum::{EthEvmEnv, EthEvmInput},
+    history::HistoryCommit,
+    BlockHeaderCommit, Commitment, ComposeInput, EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
@@ -35,7 +38,6 @@ use std::{
     fmt::{self, Debug, Display},
     str::FromStr,
 };
-use url::Url;
 
 pub use builder::EvmEnvBuilder;
 
@@ -346,28 +348,5 @@ where
             input,
             self.commit.inner,
         )))
-    }
-}
-
-impl<P> EthHostEvmEnv<ProviderDb<Ethereum, P>, ()>
-where
-    P: Provider<Ethereum>,
-{
-    /// Converts the environment into a [EvmInput] committing to an Ethereum Beacon block root.
-    #[deprecated(
-        since = "0.14.0",
-        note = "use `EvmEnv::builder().beacon_api()` instead"
-    )]
-    pub async fn into_beacon_input(self, url: Url) -> Result<EthEvmInput> {
-        let commit = BeaconCommit::from_header(
-            self.header(),
-            CommitmentVersion::Beacon,
-            self.db().inner().provider(),
-            url,
-        )
-        .await?;
-        let input = BlockInput::from_proof_db(self.db.unwrap(), self.header).await?;
-
-        Ok(EvmInput::Beacon(ComposeInput::new(input, commit)))
     }
 }
