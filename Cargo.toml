@@ -15,7 +15,7 @@ risc0-aggregation = { version = "0.7.0", default-features = false, path = "crate
 risc0-build-ethereum = { version = "2.1.0", default-features = false, path = "build" }
 risc0-ethereum-contracts = { version = "2.1.0", default-features = false, path = "contracts" }
 risc0-op-steel = { version = "0.6.0", default-features = false, path = "crates/op-steel" }
-risc0-steel = { version = "2.1.0-rc.1", default-features = false, path = "crates/steel" }
+risc0-steel = { version = "2.1.0", default-features = false, path = "crates/steel" }
 
 # risc0 monorepo dependencies.
 risc0-binfmt = { version = "2.0", default-features = false }
