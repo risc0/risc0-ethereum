@@ -13,10 +13,11 @@
 // limitations under the License.
 
 //! Functionality that is only needed for the host and not the guest.
+
 use crate::{
-    beacon::BeaconCommit, block::BlockInput, ethereum::EthEvmEnv, history::HistoryCommit,
-    BlockHeaderCommit, Commitment, CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv,
-    EvmFactory, EvmInput,
+    beacon::BeaconCommit, block::BlockInput, config::ChainSpec, ethereum::EthEvmEnv,
+    ethereum::EthEvmInput, history::HistoryCommit, BlockHeaderCommit, Commitment,
+    CommitmentVersion, ComposeInput, EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
 use alloy::{
     eips::{
@@ -36,12 +37,10 @@ use std::{
 };
 use url::Url;
 
+pub use builder::EvmEnvBuilder;
+
 mod builder;
 pub mod db;
-
-use crate::config::ChainSpec;
-use crate::ethereum::EthEvmInput;
-pub use builder::EvmEnvBuilder;
 
 /// A Block Identifier.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
