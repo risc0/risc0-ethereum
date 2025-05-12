@@ -44,9 +44,9 @@ async fn main() -> Result<()> {
 
     let mut env = OpEvmEnv::builder()
         .rpc(args.l2_rpc_url.clone())
+        .chain_spec(&OP_MAINNET_CHAIN_SPEC)
         .build()
         .await?;
-    env = env.with_chain_spec(&OP_MAINNET_CHAIN_SPEC);
 
     let mut contract = Contract::preflight(CONTRACT, &mut env);
     let mut builder = contract.call_builder(&CALL);

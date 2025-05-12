@@ -55,14 +55,14 @@ use std::{fmt::Debug, marker::PhantomData};
 ///     are set by **directly modifying the public `.tx` field** of the returned [CallBuilder]
 ///     instance.
 ///     ```rust,no_run
-///     # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+///     # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
 ///     # use alloy_primitives::{Address, U256};
 ///     # use alloy_sol_types::sol;
 ///     # sol! { interface Test { function test() external view returns (uint); } }
 ///     # #[tokio::main(flavor = "current_thread")]
 ///     # async fn main() -> anyhow::Result<()> {
 ///     # let rpc_url = "https://ethereum-rpc.publicnode.com".parse()?;
-///     # let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+///     # let mut env = EthEvmEnv::builder().rpc(rpc_url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 ///     # let mut contract = Contract::preflight(Address::ZERO, &mut env);
 ///     # let my_call = Test::testCall {};
 ///     let mut builder = contract.call_builder(&my_call);
@@ -91,7 +91,7 @@ use std::{fmt::Debug, marker::PhantomData};
 /// ### Examples
 ///
 /// ```rust,no_run
-/// # use risc0_steel::{ethereum::{EthEvmInput, EthEvmEnv}, Contract, host::BlockNumberOrTag};
+/// # use risc0_steel::{ethereum::{EthEvmInput, EthEvmEnv, ETH_MAINNET_CHAIN_SPEC}, Contract, host::BlockNumberOrTag};
 /// # use alloy_primitives::{Address, address};
 /// # use alloy_sol_types::sol;
 /// # use url::Url;
@@ -108,7 +108,7 @@ use std::{fmt::Debug, marker::PhantomData};
 ///
 /// // === Host Setup ===
 /// let rpc_url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut host_env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+/// let mut host_env = EthEvmEnv::builder().rpc(rpc_url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 ///
 /// // Preflight the call on the host
 /// let mut contract_host = Contract::preflight(CONTRACT_ADDRESS, &mut host_env);
@@ -126,7 +126,7 @@ use std::{fmt::Debug, marker::PhantomData};
 /// // === Guest Setup & Execution ===
 /// // (Inside the RISC Zero guest)
 /// # {
-/// let guest_env = evm_input.into_env();
+/// let guest_env = evm_input.into_env(&ETH_MAINNET_CHAIN_SPEC);
 /// let contract_guest = Contract::new(CONTRACT_ADDRESS, &guest_env);
 ///
 /// // Execute the same call in the guest
@@ -269,7 +269,7 @@ mod host {
         ///
         /// ### Example
         /// ```rust,no_run
-        /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+        /// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
         /// # use alloy_primitives::address;
         /// # use alloy_sol_types::sol;
         /// # use alloy::eips::eip2930::AccessList;
@@ -278,7 +278,7 @@ mod host {
         /// # #[tokio::main(flavor = "current_thread")]
         /// # async fn main() -> anyhow::Result<()> {
         /// # let rpc_url = "https://ethereum-rpc.publicnode.com".parse()?;
-        /// # let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+        /// # let mut env = EthEvmEnv::builder().rpc(rpc_url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
         /// # let contract_address = address!("0x0000000000000000000000000000000000000000");
         /// # let call = Test::testCall {};
         /// # let access_list = AccessList::default();
@@ -359,7 +359,7 @@ mod host {
         ///
         /// ### Example
         /// ```rust,no_run
-        /// # use risc0_steel::{ethereum::EthEvmEnv, Contract};
+        /// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Contract};
         /// # use alloy_primitives::address;
         /// # use alloy_sol_types::sol;
         /// # use url::Url;
@@ -367,7 +367,7 @@ mod host {
         /// # #[tokio::main(flavor = "current_thread")]
         /// # async fn main() -> anyhow::Result<()> {
         /// # let rpc_url = "https://ethereum-rpc.publicnode.com".parse()?;
-        /// # let mut env = EthEvmEnv::builder().rpc(rpc_url).build().await?;
+        /// # let mut env = EthEvmEnv::builder().rpc(rpc_url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
         /// # let contract_address = address!("0x0000000000000000000000000000000000000000");
         /// # let call = Test::testCall {};
         /// let mut contract = Contract::preflight(contract_address, &mut env);
