@@ -96,7 +96,7 @@ use std::marker::PhantomData;
 ///
 /// Advanced filtering with multiple addresses and topics:
 /// ```rust,no_run
-/// # use risc0_steel::{ethereum::EthEvmEnv, Event};
+/// # use risc0_steel::{ethereum::{ETH_MAINNET_CHAIN_SPEC, EthEvmEnv}, Event};
 /// # use alloy_primitives::{address, b256, B256, Address};
 /// # use alloy_rpc_types::{Topic, ValueOrArray};
 /// # use alloy_sol_types::sol;
@@ -114,7 +114,7 @@ use std::marker::PhantomData;
 /// }
 ///
 /// let url = "https://ethereum-rpc.publicnode.com".parse()?;
-/// let mut env = EthEvmEnv::builder().rpc(url).build().await?;
+/// let mut env = EthEvmEnv::builder().rpc(url).chain_spec(&ETH_MAINNET_CHAIN_SPEC).build().await?;
 ///
 /// // Create an event query for Transfer events from *either* USDT or USDC contract,
 /// // originating from *either* sender1 or sender2.
