@@ -247,16 +247,14 @@ mod host {
 mod tests {
     use super::*;
     use crate::ethereum::EthBlockHeader;
+    use crate::test_utils::{get_cl_url, get_el_url};
     use alloy::providers::{Provider, ProviderBuilder};
     use alloy_primitives::Sealable;
 
-    const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
-    const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
-
     #[tokio::test]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn from_beacon_commit_and_header() {
-        let el = ProviderBuilder::default().connect(EL_URL).await.unwrap();
+        let el = ProviderBuilder::default().connect_http(get_el_url());
 
         // get the latest 4 headers
         let headers = get_headers(4).await.unwrap();
@@ -267,7 +265,7 @@ mod tests {
             &headers[2],
             CommitmentVersion::Beacon,
             &el,
-            CL_URL.parse().unwrap(),
+            get_cl_url(),
         )
         .await
         .unwrap();
@@ -302,7 +300,7 @@ mod tests {
 
     // get the latest n headers, with header[0] being the oldest and header[n-1] being the newest.
     async fn get_headers(n: usize) -> anyhow::Result<Vec<Sealed<EthBlockHeader>>> {
-        let el = ProviderBuilder::new().connect(EL_URL).await?;
+        let el = ProviderBuilder::new().connect_http(get_el_url());
         let latest = el.get_block_number().await?;
 
         let mut headers = Vec::with_capacity(n);

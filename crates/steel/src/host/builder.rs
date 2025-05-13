@@ -443,33 +443,31 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, &ChainSpec<<EthEvmFactory as EvmFactory>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{get_cl_url, get_el_url};
     use crate::{
         ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
         BlockHeaderCommit, Commitment, CommitmentVersion,
     };
     use test_log::test;
 
-    const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
-    const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
-
     #[test(tokio::test)]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn build_block_env() {
         let builder = EthEvmEnv::builder()
-            .rpc(EL_URL.parse().unwrap())
+            .rpc(get_el_url())
             .chain_spec(&ETH_MAINNET_CHAIN_SPEC);
         // the builder should be cloneable
         builder.clone().build().await.unwrap();
     }
 
     #[test(tokio::test)]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn build_beacon_env() {
-        let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().connect_http(get_el_url());
 
         let builder = EthEvmEnv::builder()
             .provider(&provider)
-            .beacon_api(CL_URL.parse().unwrap())
+            .beacon_api(get_cl_url())
             .block_number_or_tag(BlockNumberOrTag::Parent)
             .chain_spec(&ETH_MAINNET_CHAIN_SPEC);
         let env = builder.clone().build().await.unwrap();
@@ -493,16 +491,16 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn build_history_env() {
-        let provider = ProviderBuilder::default().connect(EL_URL).await.unwrap();
+        let provider = ProviderBuilder::default().connect_http(get_el_url());
 
         // initialize the env at latest - 100 while committing to latest - 1
         let latest = provider.get_block_number().await.unwrap();
         let builder = EthEvmEnv::builder()
             .provider(&provider)
             .block_number_or_tag(BlockNumberOrTag::Number(latest - 8191))
-            .beacon_api(CL_URL.parse().unwrap())
+            .beacon_api(get_cl_url())
             .commitment_block_number(latest - 1)
             .chain_spec(&ETH_MAINNET_CHAIN_SPEC);
         let env = builder.clone().build().await.unwrap();
