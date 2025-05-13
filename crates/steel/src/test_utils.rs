@@ -38,9 +38,9 @@ pub fn get_cl_url() -> Url {
 
 fn get_url(key: &str, default: &str) -> Url {
     match env::var(key) {
-        Ok(rpc_url_str) => rpc_url_str
-            .parse()
-            .expect(&format!("Environment variable {} is not a valid URL", key)),
+        Ok(rpc_url_str) => rpc_url_str.parse().unwrap_or_else(|err| {
+            panic!("Environment variable {} is not a valid URL: {}", key, err)
+        }),
         Err(env::VarError::NotPresent) => {
             let url = default.parse().expect("Default URL is not valid");
             eprintln!(
