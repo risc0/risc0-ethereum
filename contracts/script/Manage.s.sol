@@ -181,7 +181,7 @@ contract RiscZeroManagementScript is Script {
 ///     * ADMIN address of admin (optional; leave unset to disable)
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract DeployTimelockRouter is RiscZeroManagementScript {
     function run() external withConfig {
         // initial minimum delay in seconds for operations
@@ -232,7 +232,7 @@ contract SetVerifierSelector is RiscZeroManagementScript {
 ///     * VERIFIER_ESTOP_OWNER owner of the emergency stop contract
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract DeployEstopGroth16Verifier is RiscZeroManagementScript {
     function run() external withConfig {
         string memory chainKey = vm.envString("CHAIN_KEY");
@@ -269,7 +269,7 @@ contract DeployEstopGroth16Verifier is RiscZeroManagementScript {
 ///     * SET_BUILDER_GUEST_URL URL of the SetBuilder guest
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract DeployEstopSetVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         string memory chainKey = vm.envString("CHAIN_KEY");
@@ -311,7 +311,7 @@ contract DeployEstopSetVerifier is RiscZeroManagementScript {
 ///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract ScheduleAddVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         // Schedule the 'addVerifier()' request
@@ -338,7 +338,7 @@ contract ScheduleAddVerifier is RiscZeroManagementScript {
 ///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract FinishAddVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         // Execute the 'addVerifier()' request
@@ -361,7 +361,7 @@ contract FinishAddVerifier is RiscZeroManagementScript {
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract ScheduleRemoveVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
@@ -388,7 +388,7 @@ contract ScheduleRemoveVerifier is RiscZeroManagementScript {
 ///     * VERIFIER_ROUTER contract address of RiscZeroVerifierRouter
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract FinishRemoveVerifier is RiscZeroManagementScript {
     function run() external withConfig {
         bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
@@ -410,7 +410,7 @@ contract FinishRemoveVerifier is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract ScheduleUpdateDelay is RiscZeroManagementScript {
     function run() external withConfig {
         uint256 minDelay = vm.envUint("MIN_DELAY");
@@ -435,7 +435,7 @@ contract ScheduleUpdateDelay is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract FinishUpdateDelay is RiscZeroManagementScript {
     function run() external withConfig {
         uint256 minDelay = vm.envUint("MIN_DELAY");
@@ -456,7 +456,7 @@ contract FinishUpdateDelay is RiscZeroManagementScript {
 ///     * OPERATION_ID identifier for the operation to cancel
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract CancelOperation is RiscZeroManagementScript {
     function run() external withConfig {
         bytes32 operationId = vm.envBytes32("OPERATION_ID");
@@ -476,7 +476,7 @@ contract CancelOperation is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract ScheduleGrantRole is RiscZeroManagementScript {
     function run() external withConfig {
         string memory roleStr = vm.envString("ROLE");
@@ -509,7 +509,7 @@ contract ScheduleGrantRole is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract FinishGrantRole is RiscZeroManagementScript {
     function run() external withConfig {
         string memory roleStr = vm.envString("ROLE");
@@ -538,7 +538,7 @@ contract FinishGrantRole is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract ScheduleRevokeRole is RiscZeroManagementScript {
     function run() external withConfig {
         string memory roleStr = vm.envString("ROLE");
@@ -571,7 +571,7 @@ contract ScheduleRevokeRole is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract FinishRevokeRole is RiscZeroManagementScript {
     function run() external withConfig {
         string memory roleStr = vm.envString("ROLE");
@@ -599,7 +599,7 @@ contract FinishRevokeRole is RiscZeroManagementScript {
 ///     * TIMELOCK_CONTROLLER contract address of TimelockController
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract RenounceRole is RiscZeroManagementScript {
     function run() external withConfig {
         address renouncer = vm.envAddress("RENOUNCE_ADDRESS");
@@ -624,7 +624,7 @@ contract RenounceRole is RiscZeroManagementScript {
 ///     * VERIFIER_ESTOP contract address of RiscZeroVerifierEmergencyStop
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/guides/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract ActivateEstop is RiscZeroManagementScript {
     function run() external withConfig {
         // Locate contracts
