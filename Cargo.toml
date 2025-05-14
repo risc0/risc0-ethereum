@@ -33,7 +33,7 @@ alloy-rpc-types = { version = "0.15" }
 alloy-sol-types = { version = "1.0" }
 
 # OP Steel
-alloy-op-evm = { version = "0.7.2" }
+alloy-op-evm = { version = "0.8.0" }
 op-alloy-network = { version = "0.15" }
 
 # Alloy host dependencies
