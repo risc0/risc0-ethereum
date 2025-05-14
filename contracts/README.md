@@ -12,7 +12,7 @@ You can use these contracts in [Foundry] using the `forge install` command to ad
 
 ```sh
 # Use @ref to install from any git ref, such as main or a different release.
-forge install risc0/risc0-ethereum@v1.0.0
+forge install risc0/risc0-ethereum@v2.1.0
 ```
 
 ## Verifier Interface

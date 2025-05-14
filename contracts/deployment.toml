@@ -175,6 +175,28 @@ estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
 
 ###
 
+[chains.ethereum-hoodi]
+name = "Ethereum Hoodi"
+id = 560048
+etherscan-url = "https://hoodi.etherscan.io/"
+
+# Accounts
+admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
+
+# Contracts
+timelock-controller = "0xE1CC216c5fd5EcAE1e951bDdcf951601554Be338"
+timelock-delay = 1
+router = "0x32Db7dc407AC886807277636a1633A1381748DD8"
+
+[[chains.ethereum-hoodi.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "2.0.0-rc.3"
+selector = "0x9f39696c"
+verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
+estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+
+###
+
 [chains.arbitrum-mainnet]
 name = "Arbitrum Mainnet"
 id = 42161
