@@ -259,6 +259,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::get_el_url;
     use alloy::{
         network::BlockResponse,
         providers::{Provider, ProviderBuilder},
@@ -266,12 +267,10 @@ mod tests {
     };
     use test_log::test;
 
-    const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
-
     #[test(tokio::test)]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn beacon_roots_contract() {
-        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
+        let el = ProviderBuilder::new().connect_http(get_el_url());
 
         // get the latest header
         let latest = el
