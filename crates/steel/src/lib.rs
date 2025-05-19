@@ -51,6 +51,8 @@ mod merkle;
 mod mpt;
 pub mod serde;
 mod state;
+#[cfg(test)]
+mod test_utils;
 mod verifier;
 
 pub use account::Account;

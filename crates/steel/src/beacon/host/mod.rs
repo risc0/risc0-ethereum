@@ -248,16 +248,14 @@ fn prove_execution_payload_field<T: SimpleSerialize>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{get_cl_url, get_el_url};
     use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
-    const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
-    const CL_URL: &str = "https://ethereum-beacon-api.publicnode.com";
-
     #[tokio::test]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn create_eip4788_beacon_commit() {
-        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
-        let cl = BeaconClient::new(CL_URL).unwrap();
+        let el = ProviderBuilder::new().connect_http(get_el_url());
+        let cl = BeaconClient::new(get_cl_url()).unwrap();
 
         let block = el
             .get_block_by_number(BlockNumberOrTag::Latest)
@@ -287,10 +285,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn create_slot_beacon_commit() {
-        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
-        let cl = BeaconClient::new(CL_URL).unwrap();
+        let el = ProviderBuilder::new().connect_http(get_el_url());
+        let cl = BeaconClient::new(get_cl_url()).unwrap();
 
         let block = el
             .get_block_by_number(BlockNumberOrTag::Latest)

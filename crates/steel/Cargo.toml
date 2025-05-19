@@ -55,3 +55,4 @@ host = [
     "serde_json/raw_value"
 ]
 kzg = ["revm/c-kzg"]
+rpc-tests = []

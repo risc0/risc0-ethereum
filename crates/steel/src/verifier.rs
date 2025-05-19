@@ -188,6 +188,7 @@ fn validate_block_number(header: &impl EvmBlockHeader, block_number: U256) -> an
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::get_el_url;
     use crate::{
         ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
         CommitmentVersion,
@@ -200,12 +201,10 @@ mod tests {
     };
     use test_log::test;
 
-    const EL_URL: &str = "https://ethereum-rpc.publicnode.com";
-
     #[test(tokio::test)]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn verify_block_commitment() {
-        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
+        let el = ProviderBuilder::new().connect_http(get_el_url());
 
         // create block commitment to the previous block
         let latest = el.get_block_number().await.unwrap();
@@ -244,9 +243,9 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[ignore = "queries actual RPC nodes"]
+    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
     async fn verify_beacon_commitment() {
-        let el = ProviderBuilder::new().connect(EL_URL).await.unwrap();
+        let el = ProviderBuilder::new().connect_http(get_el_url());
 
         // create Beacon commitment from latest block
         let block = el

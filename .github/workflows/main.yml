@@ -146,6 +146,8 @@ jobs:
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
+      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
+      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
