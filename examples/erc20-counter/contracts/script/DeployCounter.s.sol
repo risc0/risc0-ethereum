@@ -31,7 +31,7 @@ import {ERC20FixedSupply} from "../test/Counter.t.sol";
 ///   - TOKEN_CONTRACT to link the Counter to an existing ERC20 token.
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
-/// https://book.getfoundry.sh/tutorials/solidity-scripting
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
 contract DeployCounter is Script, RiscZeroCheats {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
