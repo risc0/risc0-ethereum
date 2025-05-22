@@ -42,7 +42,9 @@ pub enum Selector {
     FakeReceipt = 0xFFFFFFFF,
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
+    #[deprecated(note = "DO NOT MERGE: add a note")]
     Groth16V2_0 = 0x9f39696c,
+    Groth16V2_0_3 = 0x00000011,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
     SetVerifierV0_4 = 0xf443ad7b,
@@ -65,6 +67,7 @@ impl TryFrom<u32> for Selector {
             0x50bd1769 => Ok(Selector::Groth16V1_1),
             0xc101b42b => Ok(Selector::Groth16V1_2),
             0x9f39696c => Ok(Selector::Groth16V2_0),
+            0x00000011 => Ok(Selector::Groth16V2_0_3),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
