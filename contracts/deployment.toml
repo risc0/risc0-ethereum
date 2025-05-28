@@ -125,8 +125,8 @@ selector = "0x80479d24"
 verifier = "0xad2c6335191EA71Ffe2045A8d54b93A851ceca77"
 estop = "0x1A42D5b2fF29fbc2CB684836d222c561639b0bE4"
 # Build info for the set-builder guest
-set-builder-commit = "45a77235021f21ddc023d4655db0d6fd914de402"
-set-builder-image-id = "f584db3428af194f244e0ff74370918a649aab76"
+set-builder-commit = "f584db3428af194f244e0ff74370918a649aab76"
+set-builder-image-id = "2fcedaa205bbfab6b804dec81e99cc9a22b20dea7a9701a1a7c55c7d26ef32f6"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreifdozdfxhgdn6mcuq2mltbx7qaq5mie4iosq7kxj5rqmm4kg4qcfy"
 
 ###
@@ -460,6 +460,17 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+
+[[chains.base-sepolia.verifiers]]
+name = "RiscZeroSetVerifier"
+version = "0.6.0"
+selector = "0x80479d24"
+verifier = "0x0207A34E1a113f24BE0367D9b0C0e74049E05326"
+estop = "0x226B6e6b37F92a1D620Eb41b833Cc92760268D4a"
+# Build info for the set-builder guest
+set-builder-commit = "f584db3428af194f244e0ff74370918a649aab76"
+set-builder-image-id = "2fcedaa205bbfab6b804dec81e99cc9a22b20dea7a9701a1a7c55c7d26ef32f6"
+set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreifdozdfxhgdn6mcuq2mltbx7qaq5mie4iosq7kxj5rqmm4kg4qcfy"
 
 ###
 
