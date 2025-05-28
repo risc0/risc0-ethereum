@@ -17,32 +17,33 @@ export VERIFIER_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | 
 export ESTOP_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\").estop" $CONTRACTS_DIR/deployment.toml)
 export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" $CONTRACTS_DIR/deployment.toml)
 
-export CONTROL_ID_FILE="contracts/src/groth16/ControlID.sol"
+export CONTROL_ID_FILE="${CONTRACTS_DIR:?}/src/groth16/ControlID.sol"
 export CONTROL_ROOT=$(grep "CONTROL_ROOT" "$CONTROL_ID_FILE" | sed -E 's/.*hex"([^"]+)".*/0x\1/')
 export BN254_CONTROL_ID=$(grep "BN254_CONTROL_ID" "$CONTROL_ID_FILE" | sed -E 's/.*hex"([^"]+)".*/0x\1/')
 
 # NOTE: forge verify-contract seems to fail if an absolute path is used for the contract address.
 cd $CONTRACTS_DIR
 
-# TODO: This only supports verifying the groth16 verifier and its estop. Support the set verifier as well.
+CONSTUCTOR_ARGS="$(\
+    cast abi-encode 'constructor(bytes32,bytes32)' \
+    ${CONTROL_ROOT:?} \
+    ${BN254_CONTROL_ID:?} \
+)"
 forge verify-contract --watch \
     --chain-id=${CHAIN_ID:?} \
-    --constructor-args "$(\
-        cast abi-encode 'constructor(bytes32,bytes32)' \
-        ${CONTROL_ROOT:?} \
-        ${BN254_CONTROL_ID:?} \
-    )" \
+    --constructor-args=${CONSTUCTOR_ARGS} \
     --etherscan-api-key=${ETHERSCAN_API_KEY:?} \
     ${VERIFIER_ADDRESS:?} \
     ./src/groth16/RiscZeroGroth16Verifier.sol:RiscZeroGroth16Verifier
 
+CONSTRUCTOR_ARGS="$(\
+    cast abi-encode 'constructor(address,address)' \
+    ${VERIFIER_ADDRESS:?} \
+    ${ADMIN_ADDRESS:?} \
+)"
 forge verify-contract --watch \
     --chain-id=${CHAIN_ID:?} \
-    --constructor-args "$(\
-        cast abi-encode 'constructor(address,address)' \
-        ${VERIFIER_ADDRESS:?} \
-        ${ADMIN_ADDRESS:?} \
-    )" \
+    --constructor-args=${CONSTRUCTOR_ARGS:?} \
     --etherscan-api-key=${ETHERSCAN_API_KEY:?} \
     ${ESTOP_ADDRESS:?} \
     ./src/RiscZeroVerifierEmergencyStop.sol:RiscZeroVerifierEmergencyStop
