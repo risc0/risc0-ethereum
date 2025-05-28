@@ -135,7 +135,6 @@ version = "0.7.0"
 selector = "0x0f63ffd5"
 verifier = "0x7aAB646f23D1392d4522CFaB0b7FB5eaf6821d64"
 estop = "0x46D0322760631084bFfC10b31962A47a527Ac042"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
@@ -502,7 +501,6 @@ version = "0.7.0"
 selector = "0x0f63ffd5"
 verifier = "0x8C5a8b5cC272Fe2b74D18843CF9C3aCBc952a760"
 estop = "0x5c5076c20b897F9b8dd2c5e68Bd62785BA3D319B"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
