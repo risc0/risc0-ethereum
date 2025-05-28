@@ -34,6 +34,9 @@ struct VerifierDeployment {
     /// Specifies that this verifier is not deployed to the verifier router.
     /// Default is false since most of the verifiers in the config are intended to be routable.
     bool unroutable;
+    /// Flag set when the verifier has had its estop activated. Once activated,
+    /// the estop verifier is permanently inoperable.
+    bool stopped;
 }
 
 /// Deployment of the RISC Zero contracts on a particular chain.
@@ -164,6 +167,7 @@ library ConfigParser {
             verifier.verifier = stdToml.readAddress(config, string.concat(verifierKey, ".verifier"));
             verifier.estop = stdToml.readAddress(config, string.concat(verifierKey, ".estop"));
             verifier.unroutable = stdToml.readBoolOr(config, string.concat(verifierKey, ".unroutable"), false);
+            verifier.stopped = stdToml.readBoolOr(config, string.concat(verifierKey, ".stopped"), false);
 
             deploymentConfig.verifiers[verifierIndex] = verifier;
 

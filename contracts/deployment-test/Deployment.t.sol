@@ -142,7 +142,11 @@ contract DeploymentTest is Test {
             require(
                 keccak256(address(verifierEstop).code) != keccak256(bytes("")), "verifier estop has no deployed code"
             );
-            require(!verifierEstop.paused(), "verifier estop is paused");
+            if (verifierConfig.stopped) {
+                require(verifierEstop.paused(), "verifier estop is not stopped");
+            } else {
+                require(!verifierEstop.paused(), "verifier estop is stopped");
+            }
 
             IRiscZeroVerifier verifierImpl = verifierEstop.verifier();
             console2.log("verifier implementation is at %s", address(verifierImpl));
