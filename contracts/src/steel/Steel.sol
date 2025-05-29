@@ -84,12 +84,18 @@ library Beacon {
     /// @dev https://eips.ethereum.org/EIPS/eip-4788
     address internal constant BEACON_ROOTS_ADDRESS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
 
+    /// @notice call to the EIP-4788 beacon roots contract failed.
+    /// @dev This can occur if the given timestamp does not correspond to a beacon block root stored in the contract.
+    error BeaconRootContractCallFailed();
+
     /// @notice Find the root of the Beacon block corresponding to the parent of the execution block with the given timestamp.
     /// @return root Returns the corresponding Beacon block root or null, if no such block exists.
     function parentBlockRoot(uint256 timestamp) internal view returns (bytes32 root) {
         (bool success, bytes memory result) = BEACON_ROOTS_ADDRESS.staticcall(abi.encode(timestamp));
         if (success) {
             return abi.decode(result, (bytes32));
+        } else {
+            revert BeaconRootContractCallFailed();
         }
     }
 }
