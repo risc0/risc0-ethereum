@@ -71,9 +71,6 @@ library Steel {
     /// @param blockRoot The block root to validate.
     /// @return True if the block's block root matches the block root, false otherwise.
     function validateBeaconCommitment(uint256 timestamp, bytes32 blockRoot) internal view returns (bool) {
-        if (block.timestamp - timestamp > 12 * 8191) {
-            revert CommitmentTooOld();
-        }
         return blockRoot == Beacon.parentBlockRoot(timestamp);
     }
 }
@@ -84,9 +81,12 @@ library Beacon {
     /// @dev https://eips.ethereum.org/EIPS/eip-4788
     address internal constant BEACON_ROOTS_ADDRESS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
 
-    /// @notice call to the EIP-4788 beacon roots contract failed.
-    /// @dev This can occur if the given timestamp does not correspond to a beacon block root stored in the contract.
-    error BeaconRootContractCallFailed();
+    /// @notice call to the EIP-4788 beacon roots contract failed due to an invalid block timestamp.
+    /// @dev A block timestamp is invalid if it does not correspond to a stored block on the
+    ///      EIP-4788 contract. This can happen if the timestamp is too old, and the block
+    ///      it corresponds too has been evicted from the cache, if the timestamp corresponds to a
+    ///      slot with no block, or if the timestamp does not correspond to a slot at all.
+    error InvalidBlockTimestamp();
 
     /// @notice Find the root of the Beacon block corresponding to the parent of the execution block with the given timestamp.
     /// @return root Returns the corresponding Beacon block root or reverts, if no such block exists.
@@ -95,7 +95,7 @@ library Beacon {
         if (success) {
             return abi.decode(result, (bytes32));
         } else {
-            revert BeaconRootContractCallFailed();
+            revert InvalidBlockTimestamp();
         }
     }
 }
