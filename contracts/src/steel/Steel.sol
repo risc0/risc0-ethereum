@@ -89,7 +89,7 @@ library Beacon {
     error BeaconRootContractCallFailed();
 
     /// @notice Find the root of the Beacon block corresponding to the parent of the execution block with the given timestamp.
-    /// @return root Returns the corresponding Beacon block root or null, if no such block exists.
+    /// @return root Returns the corresponding Beacon block root or reverts, if no such block exists.
     function parentBlockRoot(uint256 timestamp) internal view returns (bytes32 root) {
         (bool success, bytes memory result) = BEACON_ROOTS_ADDRESS.staticcall(abi.encode(timestamp));
         if (success) {
