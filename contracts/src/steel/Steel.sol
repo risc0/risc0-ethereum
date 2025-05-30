@@ -60,7 +60,7 @@ library Steel {
     /// @param blockHash The block hash to validate.
     /// @return True if the block's block hash matches the block hash, false otherwise.
     function validateBlockCommitment(uint256 blockNumber, bytes32 blockHash) internal view returns (bool) {
-        // NOTE: blockhash opcode returns all zeroes if the block is number is too far in the past.
+        // NOTE: blockhash opcode returns all zeroes if the block number is too far in the past.
         bytes32 blockHashResult = blockhash(blockNumber);
         if (blockHashResult == bytes32(0)) {
             revert CommitmentTooOld();
