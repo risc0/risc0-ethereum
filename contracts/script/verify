@@ -17,7 +17,7 @@ export VERIFIER_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | 
 export ESTOP_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\").estop" $CONTRACTS_DIR/deployment.toml)
 export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" $CONTRACTS_DIR/deployment.toml)
 
-export CONTROL_ID_FILE="contracts/src/groth16/ControlID.sol"
+export CONTROL_ID_FILE="${CONTRACTS_DIR:?}/src/groth16/ControlID.sol"
 export CONTROL_ROOT=$(grep "CONTROL_ROOT" "$CONTROL_ID_FILE" | sed -E 's/.*hex"([^"]+)".*/0x\1/')
 export BN254_CONTROL_ID=$(grep "BN254_CONTROL_ID" "$CONTROL_ID_FILE" | sed -E 's/.*hex"([^"]+)".*/0x\1/')
 
