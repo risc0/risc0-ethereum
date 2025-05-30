@@ -43,6 +43,7 @@ pub enum Selector {
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
     Groth16V2_0 = 0x9f39696c,
+    Groth16V2_1 = 0xf536085a,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
     SetVerifierV0_4 = 0xf443ad7b,
@@ -65,6 +66,7 @@ impl TryFrom<u32> for Selector {
             0x50bd1769 => Ok(Selector::Groth16V1_1),
             0xc101b42b => Ok(Selector::Groth16V1_2),
             0x9f39696c => Ok(Selector::Groth16V2_0),
+            0xf536085a => Ok(Selector::Groth16V2_1),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -93,6 +95,10 @@ impl Selector {
                 "9f39696cb3ae9d6038d6b7a55c09017f0cf35e226ad7582b82dbabb0dae53385",
             )
             .unwrap()),
+            Selector::Groth16V2_1 => Ok(Digest::from_hex(
+                "f536085a791bdbc6cb46ab3074f88e9e94eabb192de8daca3caee1f4ed811b08",
+            )
+            .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
                 "bfca9ccb59eb38b8c78ddc399a734d8e0e84e8028b7d616fa54fe707a1ff1b3b",
             )
@@ -119,9 +125,10 @@ impl Selector {
     pub fn get_type(self) -> SelectorType {
         match self {
             Selector::FakeReceipt => SelectorType::FakeReceipt,
-            Selector::Groth16V1_1 | Selector::Groth16V1_2 | Selector::Groth16V2_0 => {
-                SelectorType::Groth16
-            }
+            Selector::Groth16V1_1
+            | Selector::Groth16V1_2
+            | Selector::Groth16V2_0
+            | Selector::Groth16V2_1 => SelectorType::Groth16,
             Selector::SetVerifierV0_1
             | Selector::SetVerifierV0_2
             | Selector::SetVerifierV0_4
