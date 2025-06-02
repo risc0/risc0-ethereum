@@ -24,25 +24,26 @@ export BN254_CONTROL_ID=$(grep "BN254_CONTROL_ID" "$CONTROL_ID_FILE" | sed -E 's
 # NOTE: forge verify-contract seems to fail if an absolute path is used for the contract address.
 cd $CONTRACTS_DIR
 
-# TODO: This only supports verifying the groth16 verifier and its estop. Support the set verifier as well.
+CONSTUCTOR_ARGS="$(\
+    cast abi-encode 'constructor(bytes32,bytes32)' \
+    ${CONTROL_ROOT:?} \
+    ${BN254_CONTROL_ID:?} \
+)"
 forge verify-contract --watch \
     --chain-id=${CHAIN_ID:?} \
-    --constructor-args "$(\
-        cast abi-encode 'constructor(bytes32,bytes32)' \
-        ${CONTROL_ROOT:?} \
-        ${BN254_CONTROL_ID:?} \
-    )" \
+    --constructor-args=${CONSTUCTOR_ARGS} \
     --etherscan-api-key=${ETHERSCAN_API_KEY:?} \
     ${VERIFIER_ADDRESS:?} \
     ./src/groth16/RiscZeroGroth16Verifier.sol:RiscZeroGroth16Verifier
 
+CONSTRUCTOR_ARGS="$(\
+    cast abi-encode 'constructor(address,address)' \
+    ${VERIFIER_ADDRESS:?} \
+    ${ADMIN_ADDRESS:?} \
+)"
 forge verify-contract --watch \
     --chain-id=${CHAIN_ID:?} \
-    --constructor-args "$(\
-        cast abi-encode 'constructor(address,address)' \
-        ${VERIFIER_ADDRESS:?} \
-        ${ADMIN_ADDRESS:?} \
-    )" \
+    --constructor-args=${CONSTRUCTOR_ARGS:?} \
     --etherscan-api-key=${ETHERSCAN_API_KEY:?} \
     ${ESTOP_ADDRESS:?} \
     ./src/RiscZeroVerifierEmergencyStop.sol:RiscZeroVerifierEmergencyStop
