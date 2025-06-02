@@ -46,9 +46,6 @@ pub struct Trie(Node<NoCache>);
 impl Trie {
     /// Retrieves the value associated with a given key.
     ///
-    /// This method inserts a new key-value pair into the trie. If the key already exists, the
-    /// associated value is updated, and the old value is returned.
-    ///
     /// # Panics
     ///
     /// It panics when neither inclusion nor exclusion of the key can be guaranteed.
