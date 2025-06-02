@@ -18,11 +18,12 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.85.0
+  FOUNDRY_VERSION: v1.2.2
   RISC0_MONOREPO_REF: "main"
 
 jobs:
   e2e-tests:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
@@ -33,12 +34,14 @@ jobs:
         include:
           - os: Linux
             feature: cuda
-            device: nvidia_rtx_a5000
+            device: nvidia_rtx_4000_ada
+            nvcc_arch: sm_89
         # Exclude Bonsai proving on non-release branches.
         exclude:
           - release: false
             prover: bonsai
     env:
+      NVCC_APPEND_FLAGS: -arch=${{ matrix.nvcc_arch }}
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -61,25 +64,22 @@ jobs:
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_CI_USER }}
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+        uses: risc0/risc0/.github/actions/cuda@352dea62857ba57331053cd0986a12c1a4708732
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
+      - uses: risc0/risc0/.github/actions/sccache@352dea62857ba57331053cd0986a12c1a4708732
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: "v1.0.0"
+          version: ${{ env.FOUNDRY_VERSION }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
-      - name: Install Kurtosis
+      - name: Configure Kurtosis
         run: |
-          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
-          sudo apt update
-          sudo apt install kurtosis-cli
           kurtosis analytics disable
           echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
         shell: bash
