@@ -45,7 +45,7 @@ jobs:
         with:
           # Full history is required by license-check.py
           fetch-depth: 0
-      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
@@ -80,7 +80,7 @@ jobs:
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
 
   clippy:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU.
       matrix:
@@ -94,10 +94,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
+      - uses: risc0/risc0/.github/actions/sccache@352dea62857ba57331053cd0986a12c1a4708732
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -130,7 +128,7 @@ jobs:
       - run: sccache --show-stats
 
   test-risc0-ethereum:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
@@ -140,12 +138,16 @@ jobs:
             device: cpu
           - os: Linux
             feature: cuda
-            device: nvidia_rtx_a5000
+            device: nvidia_rtx_4000_ada
+            nvcc_arch: sm_89
           - os: macOS
             feature: default
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
+      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
+      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
+      NVCC_APPEND_FLAGS: -arch=${{ matrix.nvcc_arch }}
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -154,9 +156,9 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+        uses: risc0/risc0/.github/actions/cuda@352dea62857ba57331053cd0986a12c1a4708732
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
+      - uses: risc0/risc0/.github/actions/sccache@352dea62857ba57331053cd0986a12c1a4708732
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -185,7 +187,7 @@ jobs:
       - run: sccache --show-stats
 
   examples:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU. Additional coverage is marginal.
       matrix:
@@ -201,10 +203,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
+      - uses: risc0/risc0/.github/actions/sccache@352dea62857ba57331053cd0986a12c1a4708732
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -236,14 +236,14 @@ jobs:
       - run: sccache --show-stats
 
   doc:
-    runs-on: [ self-hosted, prod, macOS, cpu ]
+    runs-on: [ self-hosted, cluster, macOS, cpu ]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -258,12 +258,12 @@ jobs:
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
   docs-rs:
-    runs-on: [ self-hosted, prod, macOS, cpu ]
+    runs-on: [ self-hosted, cluster, macOS, cpu ]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-      - uses: risc0/risc0/.github/actions/rustup@main
+      - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
         with:
           # Building with docs.rs config requires the nightly toolchain.
           toolchain: nightly-2025-02-20
