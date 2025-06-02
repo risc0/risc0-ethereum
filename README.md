@@ -26,7 +26,7 @@ You can install [Steel] with `cargo add risc0-steel`, check out the examples in 
 [contracts]: ./contracts
 [Steel]: ./crates/steel
 [examples directory]: ./examples
-[template]: https://github.com/risc0/bonsai-foundry-template
+[template]: https://github.com/risc0/risc0-foundry-template
 [dev.risczero.com]: https://dev.risczero.com
 [risc0-quickstart]: https://dev.risczero.com/api/zkvm/quickstart
 [bonsai-quickstart]: https://dev.risczero.com/bonsai
