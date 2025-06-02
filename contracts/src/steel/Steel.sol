@@ -85,7 +85,7 @@ library Beacon {
 
     /// @notice Call to the EIP-4788 beacon roots contract failed due to an invalid block timestamp.
     /// @dev A block timestamp is invalid if it does not correspond to a stored block on the
-    ///      EIP-4788 contract. This can happen if the timestamp is too old, and the corresponding 
+    ///      EIP-4788 contract. This can happen if the timestamp is too old, and the corresponding
     ///      block has been evicted from the cache, if the timestamp corresponds to a
     ///      slot with no block, or if the timestamp does not correspond to any slot at all.
     error InvalidBlockTimestamp();
