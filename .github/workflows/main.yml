@@ -158,9 +158,9 @@ jobs:
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/cuda@main
       - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@dd0833c83e8a915e0f7c40472737da2a6219d82a
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
+      #- uses: risc0/risc0/.github/actions/sccache@dd0833c83e8a915e0f7c40472737da2a6219d82a
+      #  with:
+      #    key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
