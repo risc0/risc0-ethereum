@@ -18,6 +18,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.85.0
+  FOUNDRY_VERSION: v1.2.2
   RISC0_MONOREPO_REF: "main"
 
 jobs:
@@ -71,7 +72,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: "v1.0.0"
+          version: ${{ env.FOUNDRY_VERSION }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
