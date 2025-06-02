@@ -30,12 +30,15 @@ library Steel {
     }
 
     /// @notice The version of the Commitment is incorrect.
+    /// @dev Error signature: 0xbb2b2291
     error InvalidCommitmentVersion();
 
     /// @notice The Commitment is too old and can no longer be validated.
+    /// @dev Error signature: 0xcfef9a95
     error CommitmentTooOld();
 
     /// @notice The consensus slot (version 2) commitment is not supported.
+    /// @dev Error signature: 0x13d71698
     error ConsensusSlotCommitmentNotSupported();
 
     /// @notice Validates if the provided Commitment matches the block hash of the given block number.
@@ -88,6 +91,7 @@ library Beacon {
     ///      EIP-4788 contract. This can happen if the timestamp is too old, and the corresponding
     ///      block has been evicted from the cache, if the timestamp corresponds to a
     ///      slot with no block, or if the timestamp does not correspond to any slot at all.
+    /// @dev Error signature: 0x4d0b0a41
     error InvalidBlockTimestamp();
 
     /// @notice Find the root of the Beacon block corresponding to the parent of the execution block with the given timestamp.
