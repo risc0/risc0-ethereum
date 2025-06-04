@@ -19,7 +19,7 @@ The recommended place is to start is [Steel examples], specifically the [ERC20 C
 The [create-steel-app] script will allow you to set up the erc20-counter example locally in one command:
 
 ```sh
-sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/main/crates/steel/docs/create-steel-app/create-steel-app)
+sh <(curl -fsSL https://raw.githubusercontent.com/risc0/risc0-ethereum/refs/heads/release-2.1/crates/steel/docs/create-steel-app/create-steel-app)
 ```
 
 This example acts as your skeleton project structure for further development. Once the script is finished, you can run through a test workflow with either local proving or Bonsai proving. The documentation below uses the ERC20-counter example as a guide to explain Steel in detail.
