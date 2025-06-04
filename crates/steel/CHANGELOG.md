@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ## [2.2.0](https://github.com/risc0/risc0-ethereum/releases/tag/v2.2.0)
 
+### ⚡️ Features
+
+- **Update to alloy 1.0:** This release updates Steel's alloy dependency to 1.0 :tada:
+
 ### 🛠️ Fixes
 
 - **Improve Validation in `Steel.validatedCommitment`:** Update the Steel beacon block commit validation to always revert on invalid timestamps [#605](https://github.com/risc0/risc0-ethereum/pull/605)
