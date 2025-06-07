@@ -13,8 +13,8 @@ risc0-build-ethereum = { path = "../../build" }
 risc0-ethereum-contracts = { path = "../../contracts" }
 
 # risc0 monorepo dependencies.
-risc0-build = { version = "2.0", features = ["docker"] }
-risc0-zkvm = "2.0"
+risc0-build = { version = "2.1", features = ["docker"] }
+risc0-zkvm = "2.1"
 risc0-zkp = { version = "2.0", default-features = false }
 
 alloy-primitives = { version = "1.0", default-features = false, features = ["rlp", "serde", "std"] }
