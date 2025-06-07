@@ -2831,7 +2831,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "alloy-consensus",
  "alloy-eips 0.15.11",
