@@ -18,7 +18,7 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.85.0
-  RISC0_MONOREPO_REF: "release-2.0"
+  RISC0_MONOREPO_REF: "release-2.1"
   FOUNDRY_VERSION: v1.2.2
 
 jobs:

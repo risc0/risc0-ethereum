@@ -26,10 +26,10 @@ get_risc0_version() {
   echo "detected risc0 version: ${RISC0_VERSION:?}"
 
   # map version to branch
-  if [[ "${RISC0_VERSION:?}" =~ ^2\.0\. ]]; then
-    BRANCH="release-2.0"
+  if [[ "${RISC0_VERSION:?}" =~ ^2\.1\. ]]; then
+    BRANCH="release-2.1"
   else
-    echo "unsupported risc0 version. version 2.0 is supported"
+    echo "unsupported risc0 version. version 2.1 is supported"
     BRANCH=""
   fi
 }

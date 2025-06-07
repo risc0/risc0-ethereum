@@ -7,8 +7,8 @@ debug = 1
 lto = true
 
 [workspace.dependencies]
-risc0-zkvm = "2.0"
-risc0-build = "2.0"
+risc0-zkvm = "2.1"
+risc0-build = "2.1"
 risc0-op-steel = { path = "../../crates/op-steel" }
 risc0-ethereum-contracts = { path = "../../contracts" }
 examples-common = { path = "common" }

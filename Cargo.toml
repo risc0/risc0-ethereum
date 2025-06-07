@@ -19,9 +19,9 @@ risc0-steel = { version = "2.1.0", default-features = false, path = "crates/stee
 
 # risc0 monorepo dependencies.
 risc0-binfmt = { version = "2.0", default-features = false }
-risc0-build = { version = "2.0", default-features = false }
+risc0-build = { version = "2.1", default-features = false }
 risc0-zkp = { version = "2.0", default-features = false }
-risc0-zkvm = { version = "2.0", default-features = false }
+risc0-zkvm = { version = "2.1", default-features = false }
 
 # Alloy guest dependencies
 alloy-consensus = { version = "0.15" }
