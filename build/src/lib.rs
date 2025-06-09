@@ -145,7 +145,7 @@ pub fn generate_elf_sol(guests: &[GuestListEntry]) -> Result<Vec<u8>> {
 fn forge_fmt(src: &[u8]) -> Result<Vec<u8>> {
     // Spawn `forge fmt`
     let mut fmt_proc = Command::new("forge")
-        .args(["fmt", "-", "--raw"])
+        .args(["fmt"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
