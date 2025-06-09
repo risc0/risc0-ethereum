@@ -23,19 +23,26 @@ env:
 
 jobs:
   e2e-tests:
-    runs-on: [ self-hosted, cluster, Linux, X64, prod, cuda, g6.xlarge ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.arch }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
         prover: [ bonsai, local ]
         release:
           - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+        # Run on Linux with GPU for faster local proving.
+        include:
+          - os: Linux
+            arch: X64
+            feature: cuda
+            device: nvidia_rtx_4000_ada
+            nvcc_arch: sm_89
         # Exclude Bonsai proving on non-release branches.
         exclude:
           - release: false
             prover: bonsai
     env:
-      FEATURE: cuda
+      NVCC_APPEND_FLAGS: -arch=${{ matrix.nvcc_arch }}
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -57,6 +64,8 @@ jobs:
         # Set the secret as an env so that it can be used in an if statement.
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_CI_USER }}
+      - if: matrix.feature == 'cuda'
+        uses: risc0/risc0/.github/actions/cuda@352dea62857ba57331053cd0986a12c1a4708732
       - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
       - uses: risc0/risc0/.github/actions/sccache@352dea62857ba57331053cd0986a12c1a4708732
       - name: Install Foundry
@@ -67,7 +76,7 @@ jobs:
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: ${{ env.FEATURE }}
+          features: ${{ matrix.feature }}
       - name: Configure Kurtosis
         run: |
           kurtosis analytics disable
