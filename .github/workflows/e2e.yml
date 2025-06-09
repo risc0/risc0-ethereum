@@ -18,30 +18,24 @@ permissions:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.85.0
-  FOUNDRY_VERSION: v1.0.0
+  FOUNDRY_VERSION: v1.2.3
   RISC0_MONOREPO_REF: "main"
 
 jobs:
   e2e-tests:
-    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, Linux, X64, cuda, g6e.xlarge ]
     strategy:
       fail-fast: false
       matrix:
         prover: [ bonsai, local ]
         release:
           - ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
-        # Run on Linux with GPU for faster local proving.
-        include:
-          - os: Linux
-            feature: cuda
-            device: nvidia_rtx_4000_ada
-            nvcc_arch: sm_89
         # Exclude Bonsai proving on non-release branches.
         exclude:
           - release: false
             prover: bonsai
     env:
-      NVCC_APPEND_FLAGS: -arch=${{ matrix.nvcc_arch }}
+      FEATURE: cuda
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -63,12 +57,8 @@ jobs:
         # Set the secret as an env so that it can be used in an if statement.
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_CI_USER }}
-      - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@352dea62857ba57331053cd0986a12c1a4708732
       - uses: risc0/risc0/.github/actions/rustup@352dea62857ba57331053cd0986a12c1a4708732
       - uses: risc0/risc0/.github/actions/sccache@352dea62857ba57331053cd0986a12c1a4708732
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -77,7 +67,7 @@ jobs:
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: ${{ matrix.feature }}
+          features: ${{ env.FEATURE }}
       - name: Configure Kurtosis
         run: |
           kurtosis analytics disable
