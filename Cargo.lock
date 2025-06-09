@@ -5086,7 +5086,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-aggregation"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "alloy-primitives 1.2.0",
  "alloy-sol-types",
@@ -5146,7 +5146,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -5219,7 +5219,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "alloy",
  "alloy-primitives 1.2.0",
@@ -5255,7 +5255,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-forge-ffi"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "alloy",
  "anyhow",
@@ -5313,7 +5313,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "alloy",
  "alloy-consensus",
