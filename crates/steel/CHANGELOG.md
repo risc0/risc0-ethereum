@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.2.0](https://github.com/risc0/risc0-ethereum/releases/tag/v2.2.0)
+
+### ⚡️ Features
+
+- **Update to alloy 1.0:** This release updates Steel's alloy dependency to 1.0 :tada:
+
+### 🛠️ Fixes
+
+- **Improve Validation in `Steel.validatedCommitment`:** Update the Steel beacon block commit validation to always revert on invalid timestamps [#605](https://github.com/risc0/risc0-ethereum/pull/605)
+    - Prior to this fix a beacon block commitment with a zero digest and invalid timestamp would be accepted by `Steel.validateCommitment`, violating the semantics of `validateCommitment`.
+    - No correct Steel guest would create such a commitment, and no opening proofs can be generated against it.
+
+## [2.1.0](https://github.com/risc0/risc0-ethereum/releases/tag/v2.1.0)
 
 ### ⚡️ Features
 
