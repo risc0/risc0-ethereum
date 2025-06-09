@@ -23,7 +23,7 @@ env:
 
 jobs:
   e2e-tests:
-    runs-on: [ self-hosted, cluster, Linux, X64, cuda, g6e.xlarge ]
+    runs-on: [ self-hosted, cluster, Linux, X64, cuda, g6e.xlarge, bench ]
     strategy:
       fail-fast: false
       matrix:
