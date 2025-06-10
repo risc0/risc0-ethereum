@@ -8,7 +8,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 
 # TODO: Add information for 1.0 contracts.
@@ -246,7 +246,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.arbitrum-mainnet.verifiers]]
@@ -348,7 +348,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
 [[chains.avalanche-mainnet.verifiers]]
@@ -452,7 +452,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.base-mainnet.verifiers]]
@@ -587,7 +587,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.optimism-mainnet.verifiers]]
@@ -691,7 +691,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.linea-mainnet.verifiers]]
@@ -798,7 +798,7 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
-timelock-delay = 604800
+timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
 
 [[chains.polygon-zkevm-mainnet.verifiers]]
