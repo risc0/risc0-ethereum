@@ -103,7 +103,7 @@ def main(toml_file, risc0_version, risc0_eth_version):
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python generate_md.py <path_to_toml_file> <risc0-zkvm-version> <risc0-ethereum-tag>")
+        print("Usage: python generate_md.py <path_to_toml_file> <risc0-zkvm-version> <risc0-ethereum-version>")
         sys.exit(1)
 
     toml_file = sys.argv[1]
