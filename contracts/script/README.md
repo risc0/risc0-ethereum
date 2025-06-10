@@ -401,6 +401,8 @@ This is a two-step process, guarded by the `TimelockController`.
 
 This is a two-step process, guarded by the `TimelockController`.
 
+The minimum delay (`MIN_DELAY`) on the timelock controller is denominated in seconds.
+
 ### Schedule the update
 
 1. Dry run the transaction:
