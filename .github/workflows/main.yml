@@ -96,7 +96,7 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
+        uses: risc0/risc0/.github/actions/cuda@5d1af63778ee5e4d047d7a16f9f267c1eca9c372
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@dd0833c83e8a915e0f7c40472737da2a6219d82a
         with:
@@ -157,7 +157,7 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
+        uses: risc0/risc0/.github/actions/cuda@5d1af63778ee5e4d047d7a16f9f267c1eca9c372
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@dd0833c83e8a915e0f7c40472737da2a6219d82a
         with:
@@ -205,7 +205,7 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
+        uses: risc0/risc0/.github/actions/cuda@5d1af63778ee5e4d047d7a16f9f267c1eca9c372
       - uses: risc0/risc0/.github/actions/rustup@main
       - uses: risc0/risc0/.github/actions/sccache@dd0833c83e8a915e0f7c40472737da2a6219d82a
         with:
