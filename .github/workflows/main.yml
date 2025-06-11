@@ -40,7 +40,14 @@ jobs:
         run: exit 1
 
   check:
-    runs-on: ubuntu-latest
+    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    strategy:
+      # Run only on Linux with CPU.
+      matrix:
+        include:
+          - os: Linux
+            feature: default
+            device: cpu
     steps:
       - uses: actions/checkout@v4
         with:
