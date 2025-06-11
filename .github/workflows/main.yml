@@ -89,8 +89,6 @@ jobs:
           - os: Linux
             feature: default
             device: cpu
-    env:
-      SCCACHE_RECACHE: 1
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -152,7 +150,6 @@ jobs:
       ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
       BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
       RUST_BACKTRACE: full
-      SCCACHE_RECACHE: 1
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -201,7 +198,6 @@ jobs:
             device: cpu
     env:
       RUST_BACKTRACE: full
-      SCCACHE_RECACHE: 1
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
