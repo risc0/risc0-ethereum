@@ -55,4 +55,10 @@ host = [
     "serde_json/raw_value"
 ]
 kzg = ["revm/c-kzg"]
+reqwest-rustls-tls = [
+    "alloy/reqwest-rustls-tls",
+]
+reqwest-native-tls = [
+    "alloy/reqwest-native-tls",
+]
 rpc-tests = []
