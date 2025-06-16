@@ -36,9 +36,9 @@ risc0-op-steel = { workspace = true, features = ["host"] }
 [features]
 default = []
 host = ["dep:alloy", "dep:tokio", "dep:url", "risc0-steel/host", "alloy-primitives/rand"]
-reqwest-native-tls = [
-    "risc0-steel/reqwest-native-tls"
+native-tls = [
+    "risc0-steel/native-tls"
 ]
-reqwest-rustls-tls = [
-    "risc0-steel/reqwest-rustls-tls"
+rustls-tls = [
+    "risc0-steel/rustls-tls"
 ]

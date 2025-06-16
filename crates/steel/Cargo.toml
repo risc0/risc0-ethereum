@@ -52,16 +52,15 @@ host = [
     "dep:serde_json",
     "dep:tokio",
     "dep:url",
+    "alloy/reqwest",
     "serde_json/raw_value"
 ]
 kzg = ["revm/c-kzg"]
-reqwest-native-tls = [
-    "alloy?/reqwest",
+native-tls = [
     "alloy?/reqwest-native-tls",
     "reqwest?/native-tls"
 ]
-reqwest-rustls-tls = [
-    "alloy?/reqwest",
+rustls-tls = [
     "alloy?/reqwest-rustls-tls",
     "reqwest?/rustls-tls"
 ]
