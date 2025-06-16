@@ -52,7 +52,7 @@ host = [
     "dep:serde_json",
     "dep:tokio",
     "dep:url",
-    "alloy/reqwest",
+    "alloy/reqwest-rustls-tls",
     "serde_json/raw_value"
 ]
 kzg = ["revm/c-kzg"]
@@ -61,7 +61,6 @@ native-tls = [
     "reqwest?/native-tls"
 ]
 rustls-tls = [
-    "alloy?/reqwest-rustls-tls",
     "reqwest?/rustls-tls"
 ]
 rpc-tests = []
