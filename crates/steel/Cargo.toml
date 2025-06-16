@@ -56,9 +56,11 @@ host = [
 ]
 kzg = ["revm/c-kzg"]
 reqwest-rustls-tls = [
+    "alloy/reqwest",
     "alloy/reqwest-rustls-tls",
 ]
 reqwest-native-tls = [
+    "alloy/reqwest",
     "alloy/reqwest-native-tls",
 ]
 rpc-tests = []
