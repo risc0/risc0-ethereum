@@ -24,7 +24,7 @@ import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
-import {TestReceipt} from "../test/TestReceipt.sol";
+import {TestReceipt} from "../test/TestReceiptV2_1.sol";
 
 // TODO: Check the image ID and ELF URL on the set verifier contract.
 
