@@ -40,6 +40,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x68dC2cB4e61774873971c499D9b239ec5Ac540E3"
+stopped = true
 
 [[chains.ethereum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -91,6 +92,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -197,6 +199,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.ethereum-holesky.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -226,6 +229,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.ethereum-hoodi.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -277,6 +281,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x68dC2cB4e61774873971c499D9b239ec5Ac540E3"
+stopped = true
 
 [[chains.arbitrum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -328,6 +333,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.arbitrum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -381,6 +387,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x9b7112223f492dDCc5443fCe9cd38960a57cACF1"
 estop = "0x0aA83C8e32cb07087e4c9409Ae092e7d66Dd890a"
+stopped = true
 
 [[chains.avalanche-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -432,6 +439,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -483,6 +491,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x68dC2cB4e61774873971c499D9b239ec5Ac540E3"
+stopped = true
 
 [[chains.base-mainnet.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -545,6 +554,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -618,6 +628,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x68dC2cB4e61774873971c499D9b239ec5Ac540E3"
+stopped = true
 
 [[chains.optimism-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -671,6 +682,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x20ff7C2Cf391a5F096A2Cc181cb41916680f8E97"
 estop = "0x8A8023bf44CABa343CEef3b06A4639fc8EBeE629"
+stopped = true
 
 [[chains.optimism-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -724,6 +736,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x2Bde5B9308AAC6bA374C0D13b0Cf1ec6088F870A"
 estop = "0x6D1A82E9B9E6F35E7201b8bE398D08762735e77d"
+stopped = true
 
 [[chains.linea-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -777,6 +790,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x2Bde5B9308AAC6bA374C0D13b0Cf1ec6088F870A"
 estop = "0x6d196602586FC411c3551a3cDDC05EAA70bd09b5"
+stopped = true
 
 # NOTE: Deployed with FOUNDRY_EVM_VERSION=paris
 [[chains.linea-sepolia.verifiers]]
@@ -831,6 +845,7 @@ version = "2.0.0-rc.3"
 selector = "0x9f39696c"
 verifier = "0x9b7112223f492dDCc5443fCe9cd38960a57cACF1"
 estop = "0x0aA83C8e32cb07087e4c9409Ae092e7d66Dd890a"
+stopped = true
 
 [[chains.polygon-zkevm-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
