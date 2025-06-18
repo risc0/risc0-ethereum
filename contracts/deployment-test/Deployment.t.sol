@@ -18,6 +18,7 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
+import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
@@ -157,15 +158,34 @@ contract DeploymentTest is Test {
             IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(address(verifierImpl));
             require(verifierConfig.selector == verifierSelectable.SELECTOR(), "selector mismatch");
 
-            // Check that the verifier works
             // TODO: Keep a test receipt for each supported verifier for regression testing.
             // Ensure that stopped and unroutable verifiers _cannot_ be used to verify a receipt.
             bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
             if (verifierConfig.selector == selector) {
+                // Check that a direct call to the verifier works. Note that this bypasses the estop.
                 console2.log(
-                    "Running verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
+                    "Running direct verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
                 );
                 verifierImpl.verify(TestReceipt.SEAL, TestReceipt.IMAGE_ID, sha256(TestReceipt.JOURNAL));
+
+                // Check that a direct call to the verifier works. Note that this bypasses the estop.
+                console2.log(
+                    "Running estop verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
+                );
+                if (!verifierConfig.stopped) {
+                    verifierEstop.verify(TestReceipt.SEAL, TestReceipt.IMAGE_ID, sha256(TestReceipt.JOURNAL));
+                    console2.log("Verifier with selector %x accepts receipt", uint256(uint32(verifierConfig.selector)));
+                } else {
+                    try verifierEstop.verify(TestReceipt.SEAL, TestReceipt.IMAGE_ID, sha256(TestReceipt.JOURNAL)) {
+                        revert("expected verifierEstop.verify to revert");
+                    } catch (bytes memory err) {
+                        require(keccak256(err) == keccak256(abi.encodePacked(Pausable.EnforcedPause.selector)));
+                        console2.log(
+                            "Verifier with selector %x fails as stopped, as configured",
+                            uint256(uint32(verifierConfig.selector))
+                        );
+                    }
+                }
             } else {
                 console2.log(
                     "Skipping verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
