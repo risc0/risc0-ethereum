@@ -44,7 +44,9 @@ test-log = { workspace = true }
 
 [features]
 default = []
-host = [
+host = ["host-rustls-tls"]
+kzg = ["revm/c-kzg"]
+host-native-tls = [
     "dep:alloy",
     "dep:ethereum-consensus",
     "dep:log",
@@ -52,7 +54,20 @@ host = [
     "dep:serde_json",
     "dep:tokio",
     "dep:url",
+    "alloy/reqwest-native-tls",
+    "reqwest/native-tls",
     "serde_json/raw_value"
 ]
-kzg = ["revm/c-kzg"]
+host-rustls-tls = [
+    "dep:alloy",
+    "dep:ethereum-consensus",
+    "dep:log",
+    "dep:reqwest",
+    "dep:serde_json",
+    "dep:tokio",
+    "dep:url",
+    "alloy/reqwest-rustls-tls",
+    "reqwest/rustls-tls",
+    "serde_json/raw_value"
+]
 rpc-tests = []
