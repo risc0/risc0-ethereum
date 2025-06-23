@@ -28,7 +28,7 @@ class Link:
         self.tag = tag
         self.url = url
 
-def generate_table_for_chain(chain_name, chain_data, version):
+def generate_table_for_chain(chain_name, chain_data, risc0_version):
     """Generate markdown content for a specific blockchain."""
 
     chain_id = chain_data['id']
@@ -52,7 +52,7 @@ def generate_table_for_chain(chain_name, chain_data, version):
     # Add verifiers that match the version
     if "verifiers" in chain_data:
         for verifier in chain_data["verifiers"]:
-            if verifier.get("version") == version:
+            if verifier.get("version") == risc0_version:
                 verifier_addr = verifier['verifier']
                 estop_addr = verifier['estop']
 
@@ -74,7 +74,7 @@ def generate_table_for_chain(chain_name, chain_data, version):
 
     return md_content
 
-def main(toml_file, version):
+def main(toml_file, risc0_version, risc0_eth_version):
     # Load the TOML configuration
     config = load_toml(toml_file)
 
@@ -89,12 +89,12 @@ def main(toml_file, version):
             continue
 
         # Generate markdown content for the chain
-        md_content = generate_table_for_chain(chain_key, chain_data, version)
+        md_content = generate_table_for_chain(chain_key, chain_data, risc0_version)
         all_md_content += md_content + "\n<br/>\n\n"
 
-    all_md_content += f"[router-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/RiscZeroVerifierRouter.sol\n"
-    all_md_content += f"[verifier-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/groth16/RiscZeroGroth16Verifier.sol\n"
-    all_md_content += f"[estop-src]: https://github.com/risc0/risc0-ethereum/tree/v{version}/contracts/src/RiscZeroVerifierEmergencyStop.sol\n"
+    all_md_content += f"[router-src]: https://github.com/risc0/risc0-ethereum/tree/v{risc0_eth_version}/contracts/src/RiscZeroVerifierRouter.sol\n"
+    all_md_content += f"[verifier-src]: https://github.com/risc0/risc0-ethereum/tree/v{risc0_eth_version}/contracts/src/groth16/RiscZeroGroth16Verifier.sol\n"
+    all_md_content += f"[estop-src]: https://github.com/risc0/risc0-ethereum/tree/v{risc0_eth_version}/contracts/src/RiscZeroVerifierEmergencyStop.sol\n"
 
     all_md_content += "\n<!-- GENERATED CONTENT END-->"
 
@@ -102,11 +102,12 @@ def main(toml_file, version):
     print(all_md_content)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python generate_md.py <path_to_toml_file> <version>")
+    if len(sys.argv) != 4:
+        print("Usage: python generate_md.py <path_to_toml_file> <risc0-zkvm-version> <risc0-ethereum-version>")
         sys.exit(1)
 
     toml_file = sys.argv[1]
-    version = sys.argv[2]
+    risc0_version = sys.argv[2]
+    risc0_eth_version = sys.argv[3]
 
-    main(toml_file, version)
+    main(toml_file, risc0_version, risc0_eth_version)
