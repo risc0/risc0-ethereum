@@ -55,6 +55,11 @@ contract RiscZeroSetVerifierTest is Test {
         setVerifier = new RiscZeroSetVerifier(verifier, SET_BUILDER_IMAGE_ID, "https://dev.null");
     }
 
+    function test_CannotConstructWithZeroAddressVerifier() public {
+        vm.expectRevert(VerifierAddressZero.selector);
+        new RiscZeroSetVerifier(IRiscZeroVerifier(address(0)), SET_BUILDER_IMAGE_ID, "https://dev.null");
+    }
+
     function testFuzz_CompletenessCachedRoot(bytes32[] memory claimDigests) public {
         vm.assume(claimDigests.length > 0);
         (bytes32 root, bytes32[][] memory tree) = TestUtils.computeMerkleTree(claimDigests);
