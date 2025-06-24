@@ -25,16 +25,17 @@ pub struct EventQueryConfig {
 impl Default for EventQueryConfig {
     fn default() -> Self {
         // Default values chosen based on the docs and pricing of requests on common RPC providers.
+        // NOTE: Alchemy free tier applies a limit of 500 block range as of June 24, 2025.
         Self {
             max_iterations: 100,
-            block_range: 1000,
+            block_range: 500,
         }
     }
 }
 
 impl EventQueryConfig {
     /// Creates a new event query configuration.
-    pub fn new(max_iterations: u64, block_range: u64) -> Self {
+    pub const fn new(max_iterations: u64, block_range: u64) -> Self {
         Self {
             max_iterations,
             block_range,
