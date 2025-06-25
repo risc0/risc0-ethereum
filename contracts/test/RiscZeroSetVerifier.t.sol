@@ -24,7 +24,7 @@ import {
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroSetVerifier} from "../src/IRiscZeroSetVerifier.sol";
-import {RiscZeroSetVerifier} from "../src/RiscZeroSetVerifier.sol";
+import {RiscZeroSetVerifier, VerifierAddressZero} from "../src/RiscZeroSetVerifier.sol";
 
 contract RiscZeroSetVerifierTest is Test {
     using ReceiptClaimLib for ReceiptClaim;
