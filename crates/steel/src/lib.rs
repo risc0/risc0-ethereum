@@ -143,7 +143,7 @@ pub(crate) type GuestEvmEnv<F> = EvmEnv<StateDb, F, Commitment>;
 ///
 /// This trait acts as a factory pattern, allowing generic code (like `Contract` and `CallBuilder`)
 /// to operate with different underlying EVM engines (e.g., `revm`) without being
-/// tightly coupled to a specific implementation. Implementors define the concrete types
+/// tightly coupled to a specific implementation. Implementers define the concrete types
 /// associated with their chosen EVM and provide the logic to instantiate it.
 pub trait EvmFactory {
     /// The concrete EVM execution environment type created by this factory.
@@ -173,7 +173,7 @@ pub trait EvmFactory {
 
     /// Creates a new transaction environment instance for a basic call.
     ///
-    /// Implementors should create an instance of `Self::Tx`,
+    /// Implementers should create an instance of `Self::Tx`,
     /// populate it with the target `address` and input `data`, and apply appropriate
     /// defaults for other transaction fields (like caller, value, gas limit, etc.)
     /// required by the specific EVM implementation.

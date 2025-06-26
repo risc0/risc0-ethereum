@@ -346,4 +346,9 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
         assertEq(verifierRouter.owner(), newOwner);
     }
+
+    function test_CannotAddZeroAddressVerifier() external {
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.VerifierAddressZero.selector));
+        verifierRouter.addVerifier(SELECTOR_A, IRiscZeroVerifier(address(0)));
+    }
 }
