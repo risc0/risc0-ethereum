@@ -34,7 +34,7 @@ import {
     VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
-import {TestReceipt} from "./TestReceipt.sol";
+import {TestReceipt} from "./TestReceiptV2_1.sol";
 
 contract RiscZeroGroth16VerifierTest is Test {
     using OutputLib for Output;
