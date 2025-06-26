@@ -633,5 +633,6 @@ contract ActivateEstop is RiscZeroManagementScript {
         // Activate the emergency stop
         vm.broadcast(adminAddress());
         verifierEstop().estop();
+        require(verifierEstop().paused(), "verifier is not stopped after calling estop");
     }
 }
