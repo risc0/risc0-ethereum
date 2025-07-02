@@ -44,6 +44,7 @@ pub enum Selector {
     Groth16V1_2 = 0xc101b42b,
     Groth16V2_0 = 0x9f39696c,
     Groth16V2_1 = 0xf536085a,
+    Groth16V2_2 = 0xbb001d44,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
     SetVerifierV0_4 = 0xf443ad7b,
@@ -68,6 +69,7 @@ impl TryFrom<u32> for Selector {
             0xc101b42b => Ok(Selector::Groth16V1_2),
             0x9f39696c => Ok(Selector::Groth16V2_0),
             0xf536085a => Ok(Selector::Groth16V2_1),
+            0xbb001d44 => Ok(Selector::Groth16V2_2),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -99,6 +101,10 @@ impl Selector {
             .unwrap()),
             Selector::Groth16V2_1 => Ok(Digest::from_hex(
                 "f536085a791bdbc6cb46ab3074f88e9e94eabb192de8daca3caee1f4ed811b08",
+            )
+            .unwrap()),
+            Selector::Groth16V2_2 => Ok(Digest::from_hex(
+                "bb001d444841d70e8bc0c7d034b349044bf3cf0117afb702b2f1e898b7dd13cc",
             )
             .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
@@ -134,7 +140,8 @@ impl Selector {
             Selector::Groth16V1_1
             | Selector::Groth16V1_2
             | Selector::Groth16V2_0
-            | Selector::Groth16V2_1 => SelectorType::Groth16,
+            | Selector::Groth16V2_1
+            | Selector::Groth16V2_2 => SelectorType::Groth16,
             Selector::SetVerifierV0_1
             | Selector::SetVerifierV0_2
             | Selector::SetVerifierV0_4
@@ -150,7 +157,7 @@ impl Selector {
 
     /// Returns the selector corresponding to the Groth16 verifier for the latest zkVM version.
     pub const fn groth16_latest() -> Self {
-        Self::Groth16V2_1
+        Self::Groth16V2_2
     }
 
     /// Returns the selector corresponding to the latest version of the set inclusion verifier (aka
@@ -162,6 +169,7 @@ impl Selector {
 
 #[cfg(test)]
 mod tests {
+    use super::Selector;
     use hex::FromHex;
     use risc0_aggregation::SetInclusionReceiptVerifierParameters;
     use risc0_zkvm::{
@@ -174,13 +182,26 @@ mod tests {
 
     #[test]
     fn print_verifier_parameters() {
-        let digest = Groth16ReceiptVerifierParameters::default().digest();
-        println!("Groth16ReceiptVerifierParameters {}", digest);
+        let groth16_digest = Groth16ReceiptVerifierParameters::default().digest();
+        println!("Groth16ReceiptVerifierParameters {groth16_digest}");
 
-        let digest = SetInclusionReceiptVerifierParameters {
+        let set_inclusion_digest = SetInclusionReceiptVerifierParameters {
             image_id: Digest::from_hex(SET_BUILDER_ID).unwrap(),
         }
         .digest();
-        println!("SetInclusionReceiptVerifierParameters {}", digest);
+        println!("SetInclusionReceiptVerifierParameters {set_inclusion_digest}");
+
+        assert_eq!(
+            groth16_digest,
+            Selector::groth16_latest()
+                .verifier_parameters_digest()
+                .unwrap()
+        );
+        assert_eq!(
+            set_inclusion_digest,
+            Selector::set_inclusion_latest()
+                .verifier_parameters_digest()
+                .unwrap()
+        );
     }
 }
