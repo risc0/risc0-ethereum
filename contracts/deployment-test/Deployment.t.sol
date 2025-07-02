@@ -29,6 +29,7 @@ import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 import {TestReceipt as TestReceiptV20} from "../test/TestReceiptV2_0.sol";
 import {TestReceipt as TestReceiptV21} from "../test/TestReceiptV2_1.sol";
+import {TestReceipt as TestReceiptV22} from "../test/TestReceiptV2_2.sol";
 
 // TODO: Check the image ID and ELF URL on the set verifier contract.
 
