@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #![allow(unused_doc_comments)]
-#![no_main]
 
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolValue};
@@ -22,8 +21,6 @@ use risc0_steel::{
     Commitment, Contract,
 };
 use risc0_zkvm::guest::env;
-
-risc0_zkvm::guest::entry!(main);
 
 /// Specify the function to call using the [`sol!`] macro.
 /// This parses the Solidity syntax to generate a struct that implements the `SolCall` trait.
