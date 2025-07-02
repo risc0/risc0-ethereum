@@ -55,6 +55,10 @@ library TestReceipts {
             bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV21.IMAGE_ID, sha256(TestReceiptV21.JOURNAL)).digest();
             return (true, RiscZeroReceipt({seal: TestReceiptV21.SEAL, claimDigest: claimDigest}));
         }
+        if (selector == getFirst4Bytes(TestReceiptV22.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV22.IMAGE_ID, sha256(TestReceiptV22.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV22.SEAL, claimDigest: claimDigest}));
+        }
         return (false, RiscZeroReceipt({seal: new bytes(0), claimDigest: bytes32(0)}));
     }
 }
