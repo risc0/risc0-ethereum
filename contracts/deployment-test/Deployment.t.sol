@@ -29,6 +29,7 @@ import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 import {TestReceipt as TestReceiptV20} from "../test/TestReceiptV2_0.sol";
 import {TestReceipt as TestReceiptV21} from "../test/TestReceiptV2_1.sol";
+import {TestReceipt as TestReceiptV22} from "../test/TestReceiptV2_2.sol";
 
 // TODO: Check the image ID and ELF URL on the set verifier contract.
 
@@ -53,6 +54,10 @@ library TestReceipts {
         if (selector == getFirst4Bytes(TestReceiptV21.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV21.IMAGE_ID, sha256(TestReceiptV21.JOURNAL)).digest();
             return (true, RiscZeroReceipt({seal: TestReceiptV21.SEAL, claimDigest: claimDigest}));
+        }
+        if (selector == getFirst4Bytes(TestReceiptV22.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV22.IMAGE_ID, sha256(TestReceiptV22.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV22.SEAL, claimDigest: claimDigest}));
         }
         return (false, RiscZeroReceipt({seal: new bytes(0), claimDigest: bytes32(0)}));
     }
