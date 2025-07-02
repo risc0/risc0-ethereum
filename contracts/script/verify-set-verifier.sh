@@ -17,14 +17,15 @@ export VERIFIER_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | 
 export ESTOP_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\").estop" $CONTRACTS_DIR/deployment.toml)
 export ADMIN_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].admin" $CONTRACTS_DIR/deployment.toml)
 
-export CHAIN_ID=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].id" $CONTRACTS_DIR/deployment.toml)
-
 export VERIFIER_ROUTER_ADDRESS=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].router" $CONTRACTS_DIR/deployment.toml)
 export SET_BUILDER_IMAGE_ID=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\").set-builder-image-id" $CONTRACTS_DIR/deployment.toml)
 export SET_BUILDER_ELF_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\").set-builder-elf-url" $CONTRACTS_DIR/deployment.toml)
 
 # NOTE: forge verify-contract seems to fail if an absolute path is used for the contract address.
 cd $CONTRACTS_DIR
+
+# Run forge build to ensure artifacts are available and built with the right options.
+forge build
 
 CONSTRUCTOR_ARGS="$(\
     cast abi-encode 'constructor(address,bytes32,string)' \

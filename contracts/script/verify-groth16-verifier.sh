@@ -24,6 +24,9 @@ export BN254_CONTROL_ID=$(grep "BN254_CONTROL_ID" "$CONTROL_ID_FILE" | sed -E 's
 # NOTE: forge verify-contract seems to fail if an absolute path is used for the contract address.
 cd $CONTRACTS_DIR
 
+# Run forge build to ensure artifacts are available and built with the right options.
+forge build
+
 CONSTUCTOR_ARGS="$(\
     cast abi-encode 'constructor(bytes32,bytes32)' \
     ${CONTROL_ROOT:?} \

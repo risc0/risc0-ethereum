@@ -198,17 +198,20 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
-3. ~~Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.~~
+3. Verify the contracts on Etherscan.
 
-    > [!WARNING]
-    > The verify functionality appears to be broken see #393
+    > The verify functionality of forge script appears to be broken, see #393
+
+    ```sh
+    VERIFIER_SELECTOR="0x..." bash contracts/script/verify-groth16-verifier.sh 
+    ```
 
 4. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
 5. Test the deployment.
 
-    ```console
-    FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
+    ```sh
+    bash contracts/script/test
     ```
 
 6. Dry run the operation to schedule the operation to add the verifier to the router.
