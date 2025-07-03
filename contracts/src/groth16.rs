@@ -145,7 +145,7 @@ mod tests {
     #[test]
     #[cfg(feature = "unstable")]
     fn test_decode_seal() {
-        const TEST_RECEIPT_PATH: &str = "./test/TestReceiptV2_1.sol";
+        const TEST_RECEIPT_PATH: &str = "./test/TestReceiptV2_2.sol";
         const SEAL: &str = "SEAL";
         const JOURNAL: &str = "JOURNAL";
         const IMAGE_ID: &str = "IMAGE_ID";
