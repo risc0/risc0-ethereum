@@ -170,7 +170,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -230,7 +229,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -268,7 +266,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -388,7 +385,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -510,6 +506,8 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+# As of July 7, we are having trouble sending the tx to add this verifier to the router.
+# TODO: Fix this.
 unroutable = true # remove when added to the router
 
 ###
@@ -663,7 +661,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -785,7 +782,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -911,7 +907,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0x7F321e749E36d5646E12d6614EB0Ec2E962962A0"
 estop = "0x0e428E8426FBc2824257736A129FF4dF9d56B9b3"
-unroutable = true # remove when added to the router
 
 ###
 
