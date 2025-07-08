@@ -55,7 +55,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -325,7 +324,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -446,7 +444,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -579,7 +576,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -720,7 +716,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -844,7 +839,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0x7F321e749E36d5646E12d6614EB0Ec2E962962A0"
 estop = "0x24496Cfa1362eB60929dBdeEF9988a3AA853EcC6"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -968,7 +962,6 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0x65e8db061e4b967D901EcbA7D99Baa1d2E5e2de9"
 estop = "0x57880e43BA126a29d81851F3410dF23a2008bF2E"
-unroutable = true # remove when added to the router
 
 ###
 
