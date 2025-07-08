@@ -119,6 +119,8 @@
 
      Use [contracts/generate_contract_address_table.py] to generate the tables. Python 3.11+ is required.
 
+     Also update https://docs.beboundless.xyz/developers/smart-contracts/reference
+
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 
 7. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
