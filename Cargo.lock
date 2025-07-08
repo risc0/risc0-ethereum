@@ -5198,7 +5198,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-build-ethereum"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -5271,7 +5271,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "alloy",
  "alloy-primitives 1.2.1",
@@ -5307,7 +5307,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-forge-ffi"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "alloy",
  "anyhow",
@@ -5366,7 +5366,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "alloy",
  "alloy-consensus",
