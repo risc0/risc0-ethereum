@@ -5068,7 +5068,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-ethereum-contracts"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "alloy",
  "alloy-sol-types",
@@ -5125,7 +5125,7 @@ dependencies = [
 
 [[package]]
 name = "risc0-steel"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "alloy",
  "alloy-consensus",
