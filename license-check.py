@@ -28,11 +28,12 @@ EXTENSIONS = [
     '.sol',
 ]
 
+CWD = str(Path.cwd())
 SKIP_DIRS = [
     # Groth16 verifier implementation uses circom generated code under GPL3.
-    str(Path.cwd()) + "/contracts/src/groth16",
-    str(Path.cwd()) + "/contracts/src/test/utils/Strings2.sol",
-    str(Path.cwd()) + "/examples/erc20-counter/contracts/ERC20.sol",
+    CWD + "/contracts/src/groth16",
+    CWD + "/contracts/src/test/utils/Strings2.sol",
+    CWD + "/examples/erc20-counter/contracts/ERC20.sol",
 ]
 
 def check_header(expected_year, lines_actual):
