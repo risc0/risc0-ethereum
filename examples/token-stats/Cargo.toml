@@ -9,7 +9,7 @@ risc0-steel = { path = "../../crates/steel" }
 # risc0 monorepo dependencies.
 risc0-build = { version = "2.3" }
 risc0-zkvm = { version = "2.3" }
-risc0-zkp = {version = "2.0", default-features = false }
+risc0-zkp = { version = "2.0", default-features = false }
 
 alloy-primitives = { version = "1.0", features = ["serde", "rlp", "std"] }
 alloy-rlp = { version = "0.3", default-features = false }
