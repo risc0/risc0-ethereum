@@ -18,7 +18,7 @@ concurrency:
 
 env:
   RISC0_TOOLCHAIN_VERSION: 1.85.0
-  RISC0_MONOREPO_REF: "main"
+  RISC0_MONOREPO_REF: "release-2.3"
 
 jobs:
   build:

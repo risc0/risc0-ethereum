@@ -26,8 +26,8 @@ get_risc0_version() {
     echo "detected risc0 version: ${RISC0_VERSION:?}"
 
     # map version to branch
-    if [[ "${RISC0_VERSION:?}" =~ ^2\.0\. ]]; then
-        BRANCH="release-2.0"
+    if [[ "${RISC0_VERSION:?}" =~ ^2\.3\. ]]; then
+        BRANCH="release-2.3"
     else
         echo "unsupported risc0 version. version 2.0 is supported"
         BRANCH=""
@@ -37,9 +37,9 @@ get_risc0_version() {
 select_branch() {
     get_risc0_version
     
-    # NOTE: Only 2.0 is currently supported.
+    # NOTE: Only 2.3 is currently supported.
 
-    BRANCH="release-2.0"
+    BRANCH="release-2.3"
     echo "selected branch: ${BRANCH:?}"
 
     # Logic below can be used when more than one version is supported.
