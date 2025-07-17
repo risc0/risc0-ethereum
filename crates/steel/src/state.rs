@@ -24,7 +24,11 @@ use revm::{
     state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
-use std::{convert::Infallible, rc::Rc};
+use std::{
+    convert::Infallible,
+    fmt::{self, Debug},
+    rc::Rc,
+};
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
@@ -36,6 +40,7 @@ use std::{convert::Infallible, rc::Rc};
 /// requiring mutability.
 ///
 /// [DatabaseRef]: revm::DatabaseRef
+#[derive(Debug)]
 pub struct StateDb {
     /// State MPT.
     state_trie: MerkleTrie,
@@ -126,6 +131,15 @@ impl<'a, H> WrapStateDb<'a, H> {
             header,
             account_storage: Default::default(),
         }
+    }
+}
+
+impl<H> Debug for WrapStateDb<'_, H> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WrapStateDb")
+            .field("inner", &self.inner)
+            .field("block_hash", &self.header.seal())
+            .finish_non_exhaustive()
     }
 }
 
