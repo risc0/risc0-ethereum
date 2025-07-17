@@ -18,15 +18,50 @@ pragma solidity ^0.8.9;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
+import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
-import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
+import {
+    IRiscZeroVerifier, Receipt as RiscZeroReceipt, ReceiptClaim, ReceiptClaimLib
+} from "../src/IRiscZeroVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
-import {TestReceipt} from "../test/TestReceipt.sol";
+import {TestReceipt as TestReceiptV20} from "../test/TestReceiptV2_0.sol";
+import {TestReceipt as TestReceiptV21} from "../test/TestReceiptV2_1.sol";
+import {TestReceipt as TestReceiptV22} from "../test/TestReceiptV2_2.sol";
 
 // TODO: Check the image ID and ELF URL on the set verifier contract.
+
+library TestReceipts {
+    using ReceiptClaimLib for ReceiptClaim;
+
+    // HACK: Get first 4 bytes of a memory bytes vector
+    function getFirst4Bytes(bytes memory data) internal pure returns (bytes4) {
+        require(data.length >= 4, "Data too short");
+        bytes4 result;
+        assembly {
+            result := mload(add(data, 32))
+        }
+        return result;
+    }
+
+    function getTestReceipt(bytes4 selector) internal pure returns (bool, RiscZeroReceipt memory) {
+        if (selector == getFirst4Bytes(TestReceiptV20.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV20.IMAGE_ID, sha256(TestReceiptV20.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV20.SEAL, claimDigest: claimDigest}));
+        }
+        if (selector == getFirst4Bytes(TestReceiptV21.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV21.IMAGE_ID, sha256(TestReceiptV21.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV21.SEAL, claimDigest: claimDigest}));
+        }
+        if (selector == getFirst4Bytes(TestReceiptV22.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV22.IMAGE_ID, sha256(TestReceiptV22.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV22.SEAL, claimDigest: claimDigest}));
+        }
+        return (false, RiscZeroReceipt({seal: new bytes(0), claimDigest: bytes32(0)}));
+    }
+}
 
 /// Test designed to be run against a chain with an active deployment of the RISC Zero contracts.
 /// Checks that the deployment matches what is recorded in the deployment.toml file.
@@ -142,7 +177,11 @@ contract DeploymentTest is Test {
             require(
                 keccak256(address(verifierEstop).code) != keccak256(bytes("")), "verifier estop has no deployed code"
             );
-            require(!verifierEstop.paused(), "verifier estop is paused");
+            if (verifierConfig.stopped) {
+                require(verifierEstop.paused(), "verifier estop is not stopped");
+            } else {
+                require(!verifierEstop.paused(), "verifier estop is stopped");
+            }
 
             IRiscZeroVerifier verifierImpl = verifierEstop.verifier();
             console2.log("verifier implementation is at %s", address(verifierImpl));
@@ -153,15 +192,34 @@ contract DeploymentTest is Test {
             IRiscZeroSelectable verifierSelectable = IRiscZeroSelectable(address(verifierImpl));
             require(verifierConfig.selector == verifierSelectable.SELECTOR(), "selector mismatch");
 
-            // Check that the verifier works
-            // TODO: Keep a test receipt for each supported verifier for regression testing.
             // Ensure that stopped and unroutable verifiers _cannot_ be used to verify a receipt.
-            bytes4 selector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
-            if (verifierConfig.selector == selector) {
+            (bool testReceiptExists, RiscZeroReceipt memory testReceipt) =
+                TestReceipts.getTestReceipt(verifierConfig.selector);
+            if (testReceiptExists) {
+                // Check that a direct call to the verifier works. Note that this bypasses the estop.
                 console2.log(
-                    "Running verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
+                    "Running direct verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
                 );
-                verifierImpl.verify(TestReceipt.SEAL, TestReceipt.IMAGE_ID, sha256(TestReceipt.JOURNAL));
+                verifierImpl.verifyIntegrity(testReceipt);
+
+                // Check that a direct call to the verifier works. Note that this bypasses the estop.
+                console2.log(
+                    "Running estop verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))
+                );
+                if (!verifierConfig.stopped) {
+                    verifierEstop.verifyIntegrity(testReceipt);
+                    console2.log("Verifier with selector %x accepts receipt", uint256(uint32(verifierConfig.selector)));
+                } else {
+                    try verifierEstop.verifyIntegrity(testReceipt) {
+                        revert("expected verifierEstop.verifyIntegrity to revert");
+                    } catch (bytes memory err) {
+                        require(keccak256(err) == keccak256(abi.encodePacked(Pausable.EnforcedPause.selector)));
+                        console2.log(
+                            "Verifier with selector %x fails as stopped, as configured",
+                            uint256(uint32(verifierConfig.selector))
+                        );
+                    }
+                }
             } else {
                 console2.log(
                     "Skipping verification of receipt with selector %x", uint256(uint32(verifierConfig.selector))

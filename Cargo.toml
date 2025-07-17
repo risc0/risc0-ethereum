@@ -31,6 +31,8 @@ alloy-rlp = { version = "0.3.8" }
 alloy-primitives = { version = "1.0" }
 alloy-rpc-types = { version = "1.0" }
 alloy-sol-types = { version = "1.0" }
+# TODO: Update op-alloy-network to 0.18 to remove this requirement.
+alloy-network = { version = "<1.0.14,>=1.0.0" }
 
 # OP Steel
 alloy-op-evm = { version = "0.8" }

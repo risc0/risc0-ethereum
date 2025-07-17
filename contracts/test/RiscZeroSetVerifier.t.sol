@@ -24,7 +24,7 @@ import {
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroSetVerifier} from "../src/IRiscZeroSetVerifier.sol";
-import {RiscZeroSetVerifier} from "../src/RiscZeroSetVerifier.sol";
+import {RiscZeroSetVerifier, VerifierAddressZero} from "../src/RiscZeroSetVerifier.sol";
 
 contract RiscZeroSetVerifierTest is Test {
     using ReceiptClaimLib for ReceiptClaim;
@@ -53,6 +53,11 @@ contract RiscZeroSetVerifierTest is Test {
     function setUp() public {
         verifier = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         setVerifier = new RiscZeroSetVerifier(verifier, SET_BUILDER_IMAGE_ID, "https://dev.null");
+    }
+
+    function test_CannotConstructWithZeroAddressVerifier() public {
+        vm.expectRevert(VerifierAddressZero.selector);
+        new RiscZeroSetVerifier(IRiscZeroVerifier(address(0)), SET_BUILDER_IMAGE_ID, "https://dev.null");
     }
 
     function testFuzz_CompletenessCachedRoot(bytes32[] memory claimDigests) public {

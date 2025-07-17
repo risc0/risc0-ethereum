@@ -34,7 +34,7 @@ import {
     VerificationFailed
 } from "../src/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
-import {TestReceipt} from "./TestReceipt.sol";
+import {TestReceipt} from "./TestReceiptV2_2.sol";
 
 contract RiscZeroGroth16VerifierTest is Test {
     using OutputLib for Output;
@@ -138,6 +138,6 @@ contract RiscZeroGroth16VerifierTest is Test {
     }
 
     function testSelectorIsStable() external view {
-        require(verifier.SELECTOR() == hex"f536085a");
+        require(verifier.SELECTOR() == hex"bb001d44");
     }
 }
