@@ -87,7 +87,7 @@ where
         .get_block_by_number(block_number.into())
         .hashes()
         .await?;
-    let timestamp = block_response.unwrap().header.timestamp;
+    let timestamp = block_response.ok_or(Error::NotYetPropagated)?.header.timestamp;
 
     log::debug!("OP timestamp of beacon commit: {}", timestamp);
 
