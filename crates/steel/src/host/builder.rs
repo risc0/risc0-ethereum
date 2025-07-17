@@ -443,9 +443,9 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, &ChainSpec<<EthEvmFactory as EvmFactory>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{get_cl_url, get_el_url};
     use crate::{
         ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+        test_utils::{get_cl_url, get_el_url},
         BlockHeaderCommit, Commitment, CommitmentVersion,
     };
     use test_log::test;

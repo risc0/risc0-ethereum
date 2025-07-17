@@ -34,7 +34,7 @@ use revm::{
     Database as RevmDatabase,
 };
 use std::{
-    fmt::Debug,
+    fmt::{self, Debug},
     hash::{BuildHasher, Hash},
 };
 
@@ -64,6 +64,17 @@ struct StorageProof {
     value: StorageValue,
     /// In MPT inclusion proof for this particular slot.
     proof: Vec<Bytes>,
+}
+
+impl<D> Debug for ProofDb<D> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PreflightDb")
+            .field("accounts", &self.accounts)
+            .field("contracts", &self.contracts)
+            .field("block_hash_numbers", &self.block_hash_numbers)
+            .field("log_filters", &self.log_filters)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<D> ProofDb<D> {

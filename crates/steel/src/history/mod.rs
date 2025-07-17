@@ -246,8 +246,10 @@ mod host {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ethereum::EthBlockHeader;
-    use crate::test_utils::{get_cl_url, get_el_url};
+    use crate::{
+        ethereum::EthBlockHeader,
+        test_utils::{get_cl_url, get_el_url},
+    };
     use alloy::providers::{Provider, ProviderBuilder};
     use alloy_primitives::Sealable;
 

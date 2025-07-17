@@ -110,11 +110,7 @@ impl<M: Memoization> Node<M> {
         }
     }
 
-    /// Returns the RLP-encoded nodes of the trie in preorder. I may return duplicate nodes.
-    ///
-    /// Each value but the first, represents a node with RLP-length >= 32, while shorter nodes are
-    /// included inline.
-    #[allow(dead_code)]
+    /// Returns the RLP-encoded nodes of the trie in preorder.
     pub(super) fn rlp_nodes(&self) -> Vec<Bytes> {
         fn rec<'a, M: Memoization>(node: &'a Node<M>, nodes: &mut Vec<Bytes>) -> NodeRef<'a> {
             let node_ref = match node {

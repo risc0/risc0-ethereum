@@ -17,7 +17,7 @@ alloy = { workspace = true, optional = true, features = ["full"] }
 alloy-consensus = { workspace = true }
 alloy-eips = { workspace = true }
 alloy-evm = { workspace = true }
-alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
+alloy-primitives = { workspace = true, features = ["rlp", "serde", "map"] }
 alloy-rlp = { workspace = true }
 alloy-rpc-types = { workspace = true }
 alloy-sol-types = { workspace = true }
