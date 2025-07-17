@@ -323,7 +323,7 @@ async fn sha256() {
     should_panic(expected = "EVM error: c-kzg feature is not enabled")
 )]
 async fn point_evaluation_precompile() {
-    // test data from: https://github.com/ethereum/c-kzg-4844/blob/main/tests/verify_kzg_proof/kzg-mainnet/verify_kzg_proof_case_correct_proof_0_0/data.yaml
+    // test data from: https://github.com/ethereum/c-kzg-4844/blob/v1.0.3/tests/verify_kzg_proof/kzg-mainnet/verify_kzg_proof_case_correct_proof_31ebd010e6098750/data.yaml
     let commitment = hex!("8f59a8d2a1a625a17f3fea0fe5eb8c896db3764f3185481bc22f91b4aaffcca25f26936857bc3a7c2539ea8ec3a952b7").to_vec();
     let mut versioned_hash = Sha256::digest(&commitment).to_vec();
     versioned_hash[0] = 0x01;
