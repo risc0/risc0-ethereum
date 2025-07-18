@@ -39,7 +39,7 @@ use std::{
     str::FromStr,
 };
 
-pub use builder::EvmEnvBuilder;
+pub use builder::{Beacon, EvmEnvBuilder, History};
 
 mod builder;
 pub mod db;

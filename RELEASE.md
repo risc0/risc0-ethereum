@@ -97,7 +97,7 @@
 
    1. Deploy the verifier contract and schedule the update.
 
-   2. After the timelock delay has passed (7 days on mainnet chains and 1 second on testnet), finish the operation to add the new verifier to the router.
+   2. After the timelock delay has passed (3 days on mainnet chains and 1 second on testnet), finish the operation to add the new verifier to the router.
 
    3. Run the deployment tests to confirm that the state recorded in `deployment.toml` matches the state of the contracts deployed on-chain.
 
