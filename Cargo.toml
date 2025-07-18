@@ -36,7 +36,7 @@ alloy-network = { version = "<1.0.14,>=1.0.0" }
 
 # OP Steel
 alloy-op-evm = { version = "0.8" }
-op-alloy-network = { version = "0.16" }
+op-alloy-network = { version = "0.18" }
 
 # Alloy host dependencies
 alloy = { version = "1.0" }
