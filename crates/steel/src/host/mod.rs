@@ -136,6 +136,12 @@ impl FromStr for BlockNumberOrTag {
     }
 }
 
+impl From<u64> for BlockNumberOrTag {
+    fn from(number: u64) -> Self {
+        Self::Number(number)
+    }
+}
+
 impl Display for BlockNumberOrTag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
