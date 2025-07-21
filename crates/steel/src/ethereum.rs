@@ -63,6 +63,11 @@ pub static ETH_MAINNET_CHAIN_SPEC: LazyLock<EthChainSpec> = LazyLock::new(|| Cha
     ]),
 });
 
+// TODO: Make this a function of the spec ID.
+/// [ChainSpec] for an Anvil chain using the Cancun EVM.
+pub static ANVIL_CHAIN_SPEC: LazyLock<ChainSpec<SpecId>> =
+    LazyLock::new(|| ChainSpec::new_single(31337, SpecId::CANCUN));
+
 /// [EvmFactory] for Ethereum.
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 #[non_exhaustive]
