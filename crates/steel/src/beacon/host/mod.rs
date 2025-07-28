@@ -158,7 +158,7 @@ where
         let response = beacon_client
             .get_header_for_parent_root(parent_root)
             .await
-            .with_context(|| format!("failed to get header for parent root {}", parent_root))?;
+            .with_context(|| format!("failed to get header for parent root {parent_root}"))?;
         ensure!(
             response.header.message.parent_root.0 == parent_root.0,
             "API returned invalid beacon header"
@@ -210,7 +210,7 @@ async fn create_execution_payload_proof(
     let signed_beacon_block = client
         .get_block(beacon_root)
         .await
-        .with_context(|| format!("failed to get block {}", beacon_root))?;
+        .with_context(|| format!("failed to get block {beacon_root}"))?;
     // create the inclusion proof of the execution block hash depending on the fork version
     let (proof, _) = match signed_beacon_block {
         SignedBeaconBlock::Phase0(_)

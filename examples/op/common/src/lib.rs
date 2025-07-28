@@ -22,7 +22,7 @@ pub async fn verify_on_chain(
     image_id: Digest,
     rpc_url: Url,
 ) -> anyhow::Result<()> {
-    log::info!("Validating the receipt on {}...", rpc_url);
+    log::info!("Validating the receipt on {rpc_url}...");
 
     let seal = risc0_ethereum_contracts::encode_seal(&receipt).context("encode_seal failed")?;
     let journal = receipt.journal.bytes;
