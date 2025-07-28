@@ -84,7 +84,7 @@ impl<M> Drop for OccupiedEntry<'_, M> {
 
 impl<'a, M> Entry<'a, M> {
     #[inline]
-    fn new(child: &'a mut Option<Child<M>>) -> Self {
+    const fn new(child: &'a mut Option<Child<M>>) -> Self {
         match child {
             None => Entry::Vacant(VacantEntry { child }),
             Some(_) => Entry::Occupied(OccupiedEntry { child }),
@@ -131,7 +131,7 @@ impl<M> Children<M> {
     }
 
     #[inline]
-    pub(super) fn entry(&mut self, idx: u8) -> Entry<'_, M> {
+    pub(super) const fn entry(&mut self, idx: u8) -> Entry<'_, M> {
         Entry::new(&mut self.0[idx as usize])
     }
 

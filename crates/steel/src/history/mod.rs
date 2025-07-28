@@ -162,7 +162,7 @@ mod host {
 
             // loop backwards until we link to `execution_header`'s beacon root
             loop {
-                log::debug!("Processing state for block: {}", current_state_block_hash);
+                log::debug!("Processing state for block: {current_state_block_hash}");
 
                 // 2a. Query the beacon roots contract *within the current state* for the timestamp
                 // in the slot that the execution commit will eventually occupy,
@@ -212,8 +212,7 @@ mod host {
                     .await
                     .with_context(|| {
                         format!(
-                            "Failed to get execution payload block hash for beacon block {}",
-                            parent_beacon_root
+                            "Failed to get execution payload block hash for beacon block {parent_beacon_root}"
                         )
                     })?;
                 // create the beacon commitment for the next state
@@ -227,8 +226,7 @@ mod host {
                 .await
                 .with_context(|| {
                     format!(
-                        "Failed to create beacon commit for new state block hash {}",
-                        current_state_block_hash
+                        "Failed to create beacon commit for new state block hash {current_state_block_hash}"
                     )
                 })?;
             }
@@ -246,8 +244,10 @@ mod host {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ethereum::EthBlockHeader;
-    use crate::test_utils::{get_cl_url, get_el_url};
+    use crate::{
+        ethereum::EthBlockHeader,
+        test_utils::{get_cl_url, get_el_url},
+    };
     use alloy::providers::{Provider, ProviderBuilder};
     use alloy_primitives::Sealable;
 
