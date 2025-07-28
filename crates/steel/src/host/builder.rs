@@ -198,7 +198,7 @@ impl<P, F, S, B> EvmEnvBuilder<P, F, S, B> {
             .get_block(block)
             .await
             .context("eth_getBlock1 failed")?
-            .with_context(|| format!("block {} not found", block))?;
+            .with_context(|| format!("block {block} not found"))?;
 
         let rpc_header = rpc_block.header().clone();
         let header: F::Header = rpc_header

@@ -89,7 +89,7 @@ where
         .await?;
     let timestamp = block_response.unwrap().header.timestamp;
 
-    log::debug!("OP timestamp of beacon commit: {}", timestamp);
+    log::debug!("OP timestamp of beacon commit: {timestamp}");
 
     Ok(EthEvmInput::Beacon(BeaconInput::new(
         input,

@@ -19,11 +19,11 @@ use alloy_op_evm::OpEvmFactory as AlloyOpEvmFactory;
 use alloy_primitives::{Address, BlockNumber, Bytes, ChainId, Sealable, TxKind, B256, U256};
 use op_alloy_network::{Network, Optimism};
 use op_revm::{spec::OpSpecId, OpTransaction};
-use revm::primitives::hardfork::SpecId;
 use revm::{
     context::{BlockEnv, CfgEnv, TxEnv},
     context_interface::block::BlobExcessGasAndPrice,
     inspector::NoOpInspector,
+    primitives::hardfork::SpecId,
 };
 use risc0_steel::{
     config::{ChainSpec, ForkCondition},

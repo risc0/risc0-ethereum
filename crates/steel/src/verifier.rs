@@ -142,7 +142,7 @@ mod host {
             commitment: &Commitment,
             config_id: B256,
         ) -> anyhow::Result<()> {
-            log::info!("Executing preflight verifying {:?}", commitment);
+            log::info!("Executing preflight verifying {commitment:?}");
 
             ensure!(commitment.configID == config_id, "invalid config ID");
             let (id, version) = commitment.decode_id();
@@ -163,7 +163,7 @@ mod host {
                         .env
                         .spawn_with_db(move |db| BeaconRootsContract::get_from_db(db, id))
                         .await
-                        .with_context(|| format!("calling BeaconRootsContract({}) failed", id))?;
+                        .with_context(|| format!("calling BeaconRootsContract({id}) failed"))?;
                     ensure!(beacon_root == commitment.digest, "invalid digest");
 
                     Ok(())
