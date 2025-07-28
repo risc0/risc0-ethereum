@@ -80,7 +80,7 @@ async fn anvil_provider() -> impl Provider {
         .connect_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
         .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();
-    log::info!("Anvil started: {:?}", node_info);
+    log::info!("Anvil started: {node_info:?}");
     sol::Pair::deploy(&provider, U256::from(123456789), U256::from(987654321))
         .await
         .unwrap();

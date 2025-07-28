@@ -46,6 +46,6 @@ fn main() {
         .with_elf_sol_path(SOLIDITY_ELF_PATH);
 
     if let Err(e) = generate_solidity_files(guests.as_slice(), &solidity_opts) {
-        println!("cargo:warning=Failed to generate Solidity files: {}", e);
+        println!("cargo:warning=Failed to generate Solidity files: {e}");
     }
 }

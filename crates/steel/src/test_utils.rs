@@ -38,19 +38,16 @@ pub fn get_cl_url() -> Url {
 
 fn get_url(key: &str, default: &str) -> Url {
     match env::var(key) {
-        Ok(rpc_url_str) => rpc_url_str.parse().unwrap_or_else(|err| {
-            panic!("Environment variable {} is not a valid URL: {}", key, err)
-        }),
+        Ok(rpc_url_str) => rpc_url_str
+            .parse()
+            .unwrap_or_else(|err| panic!("Environment variable {key} is not a valid URL: {err}")),
         Err(env::VarError::NotPresent) => {
             let url = default.parse().expect("Default URL is not valid");
-            eprintln!(
-                "Warning: Environment variable {} not set. Using default URL '{}'",
-                key, default
-            );
+            eprintln!("Warning: Environment variable {key} not set. Using default URL '{default}'");
             url
         }
         Err(env::VarError::NotUnicode(_)) => {
-            panic!("Environment variable {} contains invalid unicode", key)
+            panic!("Environment variable {key} contains invalid unicode")
         }
     }
 }

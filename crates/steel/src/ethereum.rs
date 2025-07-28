@@ -18,8 +18,9 @@ use crate::{
     serde::RlpHeader,
     EvmBlockHeader, EvmEnv, EvmFactory, EvmInput,
 };
+use alloy_eips::{eip4844, eip7691};
 use alloy_evm::{Database, EthEvmFactory as AlloyEthEvmFactory, EvmFactory as AlloyEvmFactory};
-use alloy_primitives::{Address, BlockNumber, Bytes, TxKind, B256};
+use alloy_primitives::{Address, BlockNumber, Bytes, TxKind, B256, U256};
 use revm::{
     context::{BlockEnv, CfgEnv, TxEnv},
     context_interface::block::BlobExcessGasAndPrice,
@@ -151,17 +152,31 @@ impl EvmBlockHeader for EthBlockHeader {
     fn to_block_env(&self, spec: SpecId) -> BlockEnv {
         let header = self.inner();
 
+        let blob_excess_gas_and_price = header.excess_blob_gas.map(|excess_blob_gas| match spec {
+            SpecId::CANCUN => BlobExcessGasAndPrice::new(
+                excess_blob_gas,
+                eip4844::BLOB_GASPRICE_UPDATE_FRACTION as u64,
+            ),
+            SpecId::PRAGUE => BlobExcessGasAndPrice::new(
+                excess_blob_gas,
+                eip7691::BLOB_GASPRICE_UPDATE_FRACTION_PECTRA as u64,
+            ),
+            SpecId::OSAKA => BlobExcessGasAndPrice::new(
+                excess_blob_gas,
+                eip7691::BLOB_GASPRICE_UPDATE_FRACTION_PECTRA as u64,
+            ),
+            _ => unimplemented!("unsupported spec with `excess_blob_gas`: {spec}"),
+        });
+
         BlockEnv {
-            number: header.number,
+            number: U256::from(header.number),
             beneficiary: header.beneficiary,
-            timestamp: header.timestamp,
+            timestamp: U256::from(header.timestamp),
             gas_limit: header.gas_limit,
             basefee: header.base_fee_per_gas.unwrap_or_default(),
             difficulty: header.difficulty,
             prevrandao: (spec >= SpecId::MERGE).then_some(header.mix_hash),
-            blob_excess_gas_and_price: header.excess_blob_gas.map(|excess_blob_gas| {
-                BlobExcessGasAndPrice::new(excess_blob_gas, spec >= SpecId::PRAGUE)
-            }),
+            blob_excess_gas_and_price,
         }
     }
 }
