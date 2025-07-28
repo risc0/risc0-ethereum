@@ -135,7 +135,7 @@ fn main() {
 
                 ecrecover(v, rs, sig_digest)
             }
-            _ => panic!("value of signed is invalid: {}", signed),
+            _ => panic!("value of signed is invalid: {signed}"),
         };
         // Add the vote to the map of votes, possibly replacing an existing vote.
         votes.insert(voter, support);

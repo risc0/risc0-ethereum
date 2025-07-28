@@ -147,7 +147,7 @@ async fn main() -> Result<()> {
 
     // Calculation is handling `/ 10^18 * 100` to match precision for a percentage.
     let apr = apr_commit.annualSupplyRate as f64 / 10f64.powi(16);
-    println!("Proven APR calculated is: {}%", apr);
+    println!("Proven APR calculated is: {apr}%");
 
     Ok(())
 }
