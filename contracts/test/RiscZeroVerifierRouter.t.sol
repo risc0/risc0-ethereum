@@ -34,7 +34,7 @@ import {
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
-import {TestReceipt} from "./TestReceipt.sol";
+import {TestReceipt} from "./TestReceiptV2_1.sol";
 
 contract RiscZeroVerifierEmergencyStopTest is Test {
     using OutputLib for Output;
@@ -345,5 +345,10 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.stopPrank();
 
         assertEq(verifierRouter.owner(), newOwner);
+    }
+
+    function test_CannotAddZeroAddressVerifier() external {
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.VerifierAddressZero.selector));
+        verifierRouter.addVerifier(SELECTOR_A, IRiscZeroVerifier(address(0)));
     }
 }

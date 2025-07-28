@@ -42,7 +42,7 @@ sol! {
     }
 }
 
-/// Address of the deployed contract to call the function on (USDT contract on Mainnet).
+/// Address of the deployed contract to query.
 const CONTRACT: Address = address!("dAC17F958D2ee523a2206206994597C13D831ec7");
 
 fn main() {

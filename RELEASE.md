@@ -101,7 +101,7 @@
 
    3. Run the deployment tests to confirm that the state recorded in `deployment.toml` matches the state of the contracts deployed on-chain.
 
-      You can run the tests against a single chain with the following command:
+      You can run the tests against a single chain with the following command, with `RPC_URL` set to an Ethereum RPC provider such as Alchemy, with you API key:
 
       ```sh
       # In the contracts directory.
@@ -118,6 +118,8 @@
    4. Document the new addresses and version in the `dev.risczero.com` docs.
 
      Use [contracts/generate_contract_address_table.py] to generate the tables. Python 3.11+ is required.
+
+     Also update https://docs.beboundless.xyz/developers/smart-contracts/reference
 
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 

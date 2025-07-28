@@ -16,9 +16,9 @@
 
 use alloy_primitives::{bytes, keccak256, Bytes, B256};
 use alloy_trie::{HashBuilder, Nibbles};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use risc0_ethereum_trie::{CachedTrie, Trie};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, hint::black_box};
 
 const SIZE: usize = 1024;
 
