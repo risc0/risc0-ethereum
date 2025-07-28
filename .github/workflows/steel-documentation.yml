@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RISC0_TOOLCHAIN_VERSION: 1.85.0
-  RISC0_MONOREPO_REF: "release-2.3"
+  RISC0_TOOLCHAIN_VERSION: 1.88.0
+  RISC0_MONOREPO_REF: "main"
 
 jobs:
   build:

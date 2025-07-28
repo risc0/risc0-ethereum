@@ -61,9 +61,9 @@ impl fmt::Display for BeaconBlockId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BeaconBlockId::Eip4788(timestamp) => {
-                write!(f, "eip4788-timestamp: {}", timestamp)
+                write!(f, "eip4788-timestamp: {timestamp}")
             }
-            BeaconBlockId::Slot(slot) => write!(f, "slot: {}", slot),
+            BeaconBlockId::Slot(slot) => write!(f, "slot: {slot}"),
         }
     }
 }

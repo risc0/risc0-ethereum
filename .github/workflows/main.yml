@@ -16,7 +16,7 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: 1.85.0
+  RISC0_TOOLCHAIN_VERSION: 1.88.0
   FOUNDRY_VERSION: v1.0.0
   RISC0_MONOREPO_REF: "release-2.3"
   # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.

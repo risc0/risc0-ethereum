@@ -468,14 +468,11 @@ where
             if reason == SuccessReason::Return {
                 Ok(output)
             } else {
-                Err(format!(
-                    "succeeded but did not return (reason: {:?})",
-                    reason
-                ))
+                Err(format!("succeeded but did not return (reason: {reason:?})"))
             }
         }
-        ExecutionResult::Revert { output, .. } => Err(format!("reverted with output: {}", output)),
-        ExecutionResult::Halt { reason, .. } => Err(format!("halted: {:?}", reason)),
+        ExecutionResult::Revert { output, .. } => Err(format!("reverted with output: {output}")),
+        ExecutionResult::Halt { reason, .. } => Err(format!("halted: {reason:?}")),
     }?;
 
     // decode the successful return output
