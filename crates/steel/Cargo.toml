@@ -27,7 +27,6 @@ bincode = { workspace = true }
 enumn = { workspace = true }
 ethereum-consensus = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
-reqwest = { workspace = true, optional = true }
 revm = { workspace = true, features = ["optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee", "serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
@@ -44,30 +43,15 @@ test-log = { workspace = true }
 
 [features]
 default = []
-host = ["host-rustls-tls"]
+host = [
+    "dep:alloy",
+    "dep:ethereum-consensus",
+    "dep:log",
+    "dep:serde_json",
+    "dep:tokio",
+    "dep:url",
+]
 kzg = ["revm/c-kzg"]
-host-native-tls = [
-    "dep:alloy",
-    "dep:ethereum-consensus",
-    "dep:log",
-    "dep:reqwest",
-    "dep:serde_json",
-    "dep:tokio",
-    "dep:url",
-    "alloy/reqwest-native-tls",
-    "reqwest/native-tls",
-    "serde_json/raw_value"
-]
-host-rustls-tls = [
-    "dep:alloy",
-    "dep:ethereum-consensus",
-    "dep:log",
-    "dep:reqwest",
-    "dep:serde_json",
-    "dep:tokio",
-    "dep:url",
-    "alloy/reqwest-rustls-tls",
-    "reqwest/rustls-tls",
-    "serde_json/raw_value"
-]
+reqwest-native-tls = ["alloy?/reqwest-native-tls"]
+reqwest-rustls-tls = ["alloy?/reqwest-rustls-tls"]
 rpc-tests = []

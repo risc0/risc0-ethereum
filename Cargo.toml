@@ -55,7 +55,6 @@ hex = "0.4"
 itertools = "0.14"
 log = "0.4"
 rand = "0.9"
-reqwest = { version = "0.12", default-features = false }
 revm = { version = "27.0.3", default-features = false, features = ["std"] }
 op-revm = { version = "8.0.3", default-features = false, features = ["std"] }
 rkyv = "0.8"
