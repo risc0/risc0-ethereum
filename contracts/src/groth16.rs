@@ -117,7 +117,7 @@ mod tests {
 
     fn parse_digest(file_path: &str, name: &str) -> Result<String, anyhow::Error> {
         let content = fs::read_to_string(file_path)?;
-        let re_digest = Regex::new(&format!(r#"{}\s*=\s*hex"([0-9a-fA-F]+)""#, name))?;
+        let re_digest = Regex::new(&format!(r#"{name}\s*=\s*hex"([0-9a-fA-F]+)""#))?;
         re_digest
             .captures(&content)
             .and_then(|caps| caps.get(1).map(|m| m.as_str().to_string()))
