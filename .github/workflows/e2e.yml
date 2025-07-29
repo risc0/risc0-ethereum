@@ -17,7 +17,8 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  RISC0_TOOLCHAIN_VERSION: 1.85.0
+  RISC0_TOOLCHAIN_VERSION: 1.88.0
+  FOUNDRY_VERSION: v1.0.0
   RISC0_MONOREPO_REF: "main"
 
 jobs:
@@ -61,15 +62,15 @@ jobs:
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_CI_USER }}
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@main
-      - uses: risc0/risc0/.github/actions/rustup@main
-      - uses: risc0/risc0/.github/actions/sccache@main
+        uses: risc0/risc0/.github/actions/cuda@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: "v1.0.0"
+          version: ${{ env.FOUNDRY_VERSION }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}

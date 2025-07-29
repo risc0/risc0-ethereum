@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     ///         removed, or attempting to add a new verifier with a selector that was previously
     ///         registered and then removed.
     error SelectorRemoved(bytes4 selector);
+    /// @notice Error raised when attempting to add a verifier with a zero address.
+    error VerifierAddressZero();
 
     constructor(address admin) Ownable(admin) {}
 
@@ -52,6 +54,9 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
         }
         if (verifiers[selector] != UNSET) {
             revert SelectorInUse({selector: selector});
+        }
+        if (address(verifier) == address(0)) {
+            revert VerifierAddressZero();
         }
         verifiers[selector] = verifier;
     }

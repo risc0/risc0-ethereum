@@ -46,9 +46,6 @@ pub struct Trie(Node<NoCache>);
 impl Trie {
     /// Retrieves the value associated with a given key.
     ///
-    /// This method inserts a new key-value pair into the trie. If the key already exists, the
-    /// associated value is updated, and the old value is returned.
-    ///
     /// # Panics
     ///
     /// It panics when neither inclusion nor exclusion of the key can be guaranteed.
@@ -152,6 +149,15 @@ impl Trie {
         }
 
         CachedTrie { inner: rec(self.0), hash: None }
+    }
+
+    /// Returns the RLP-encoded nodes of the trie in preorder. It may return duplicate nodes.
+    ///
+    /// Each value but the first, represents a node with RLP-length >= 32, while shorter nodes are
+    /// included inline.
+    #[inline]
+    pub fn rlp_nodes(&self) -> Vec<Bytes> {
+        self.0.rlp_nodes()
     }
 
     /// Creates a new trie that only contains a digest of the root.
@@ -312,6 +318,14 @@ impl CachedTrie {
     ) -> alloy_rlp::Result<()> {
         let rlp_by_digest = nodes.into_iter().map(|rlp| (keccak256(&rlp), rlp)).collect();
         self.inner.resolve_digests(&rlp_by_digest)
+    }
+
+    /// Returns the RLP-encoded nodes of the trie in preorder.
+    ///
+    /// See [`Trie::rlp_nodes`] for detailed documentation.
+    #[inline]
+    pub fn rlp_nodes(&self) -> Vec<Bytes> {
+        self.inner.rlp_nodes()
     }
 
     /// Creates a new trie that only contains a digest of the root.

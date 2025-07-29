@@ -14,6 +14,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 alloy = { workspace = true, optional = true, features = ["contract", "providers"] }
+alloy-eips = { workspace = true }
 alloy-evm = { workspace = true }
 alloy-op-evm = { workspace = true }
 alloy-primitives = { workspace = true, features = ["rlp", "serde"] }

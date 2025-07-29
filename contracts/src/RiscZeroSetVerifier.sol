@@ -25,6 +25,9 @@ import {IRiscZeroSetVerifier, Seal} from "./IRiscZeroSetVerifier.sol";
 ///         usually indicates a mismatch between the version of the prover and this verifier.
 error SelectorMismatch(bytes4 received, bytes4 expected);
 
+/// @notice Error raised when attempting to construct a verifier with a zero address.
+error VerifierAddressZero();
+
 library RiscZeroSetVerifierLib {
     function selector(bytes32 imageId) internal pure returns (bytes4) {
         return bytes4(
@@ -75,6 +78,9 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     mapping(bytes32 => bool) private merkleRoots;
 
     constructor(IRiscZeroVerifier verifier, bytes32 imageId, string memory _imageUrl) {
+        if (address(verifier) == address(0)) {
+            revert VerifierAddressZero();
+        }
         VERIFIER = verifier;
         IMAGE_ID = imageId;
         imageUrl = _imageUrl;

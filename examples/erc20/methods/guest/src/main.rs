@@ -59,5 +59,5 @@ fn main() {
     let mut builder = contract.call_builder(&CALL);
     builder.tx.caller = CALLER;
     let returns = builder.call();
-    println!("View call result: {}", returns);
+    println!("View call result: {returns}");
 }

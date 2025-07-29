@@ -127,10 +127,10 @@ alloy::sol!(
 /// Returns an Anvil provider with the deployed [SteelTest] contract.
 async fn test_provider() -> impl Provider + Clone {
     let provider = ProviderBuilder::new()
-        .connect_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "cancun"]))
+        .connect_anvil_with_wallet_and_config(|anvil| anvil.args(["--hardfork", "prague"]))
         .unwrap();
     let node_info = provider.anvil_node_info().await.unwrap();
-    log::info!("Anvil started: {:?}", node_info);
+    log::info!("Anvil started: {node_info:?}");
     let instance = SteelTest::deploy(&provider).await.unwrap();
     assert_eq!(*instance.address(), STEEL_TEST_CONTRACT);
 
@@ -247,8 +247,7 @@ mod event {
                     data: SteelTest::Event { value: VALUE, .. },
                 }]
             ),
-            "Unexpected event logs: {:?}",
-            logs
+            "Unexpected event logs: {logs:?}"
         );
     }
 
