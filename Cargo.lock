@@ -54,7 +54,6 @@ dependencies = [
  "alloy-contract",
  "alloy-core",
  "alloy-eips",
- "alloy-genesis",
  "alloy-network",
  "alloy-node-bindings",
  "alloy-provider",
@@ -260,7 +259,6 @@ dependencies = [
  "alloy-serde",
  "alloy-trie 0.9.0",
  "serde",
- "serde_with",
 ]
 
 [[package]]
