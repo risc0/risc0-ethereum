@@ -15,7 +15,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 anyhow = "1.0"
 
 [dependencies]
-alloy = { workspace = true, features = ["contract"] }
+alloy = { workspace = true, optional = true, features = ["essentials"] }
 alloy-primitives = { workspace = true, optional = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
@@ -30,17 +30,17 @@ tracing = { workspace = true }
 [dev-dependencies]
 hex = { workspace = true }
 regex = "1.10"
-tokio = { workspace = true, features = ["macros", "rt"] }
 
 [lib]
 doctest = false
 
 [features]
 default = []
+service = ["dep:alloy"]
 unstable = [
-    "dep:alloy-primitives", 
-    "dep:hex", 
-    "dep:risc0-aggregation",  
+    "dep:alloy-primitives",
+    "dep:hex",
+    "dep:risc0-aggregation",
     "dep:serde",
     "risc0-aggregation/verify"
 ]
