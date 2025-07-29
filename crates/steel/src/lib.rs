@@ -400,8 +400,8 @@ impl Debug for Commitment {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (id, version_code) = self.decode_id();
         let version = match CommitmentVersion::n(version_code) {
-            Some(v) => format!("{:?}", v),
-            None => format!("Unknown({:x})", version_code),
+            Some(v) => format!("{v:?}"),
+            None => format!("Unknown({version_code:x})"),
         };
 
         f.debug_struct("Commitment")

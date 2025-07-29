@@ -133,7 +133,7 @@ async fn main() -> Result<()> {
         .send_transaction(tx)
         .await
         .context("Failed to send transaction")?;
-    println!("Transaction sent with hash: {:?}", tx_hash);
+    println!("Transaction sent with hash: {tx_hash:?}");
 
     Ok(())
 }
