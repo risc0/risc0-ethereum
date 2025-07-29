@@ -89,39 +89,64 @@ pub mod host {
     const DISPUTE_GAME_FETCH_COUNT: U256 = uint!(20_U256);
 
     alloy::sol! {
-        // https://github.com/ethereum-optimism/optimism/blob/v1.13.5/packages/contracts-bedrock/interfaces/L1/IOptimismPortal2.sol
+        // https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/L1/IOptimismPortal2.sol
         #[sol(rpc)]
         interface IOptimismPortal2 {
-            function anchorStateRegistry() external view returns (address);
-            function disputeGameFactory() external view returns (address);
-            function respectedGameType() external view returns (uint32);
-            function respectedGameTypeUpdatedAt() external view returns (uint64);
-            function version() external pure returns (string memory);
+            function anchorStateRegistry() external view returns (IAnchorStateRegistry);
+            function disputeGameFactory() external view returns (IDisputeGameFactory);
+            function respectedGameType() external view returns (GameType);
         }
 
-        // https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGameFactory.sol
+        // https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/dispute/IAnchorStateRegistry.sol
+        interface IAnchorStateRegistry {
+            function isGameClaimValid(IDisputeGame _game) external view returns (bool);
+        }
+
+        // https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/dispute/IDisputeGameFactory.sol
         #[sol(rpc)]
         interface IDisputeGameFactory {
-            function gameCount() external view returns (uint256 gameCount);
-            function gameAtIndex(uint256 index) external view returns (uint32 gameType, uint64 createdAt, address gameProxy);
-            function findLatestGames(uint32 gameType, uint256 start, uint256 n) external view returns (GameSearchResult[] memory games);
+            function gameCount() external view returns (uint256 gameCount_);
+            function gameAtIndex(uint256 _index) external view returns (GameType gameType_, Timestamp timestamp_, IDisputeGame proxy_);
+            function findLatestGames(GameType _gameType, uint256 _start, uint256 _n) external view returns (GameSearchResult[] memory games_);
         }
 
+        /// @notice Information about a dispute game found in a `findLatestGames` search.
         struct GameSearchResult {
             uint256 index;
-            bytes32 metadata;
-            uint64 createdAt;
-            bytes32 rootClaim;
+            GameId metadata;
+            Timestamp timestamp;
+            Claim rootClaim;
             bytes extraData;
         }
 
-        // https://github.com/ethereum-optimism/optimism/blob/v1.13.5/packages/contracts-bedrock/interfaces/dispute/IAnchorStateRegistry.sol
-        interface IAnchorStateRegistry {
-            function isGameClaimValid(address) external view returns (bool);
+        // https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/dispute/IDisputeGame.sol
+        interface IDisputeGame {
+            function wasRespectedGameTypeWhenCreated() external view returns (bool);
         }
 
-        // docker run -i ethereum/solc:0.8.28 - --optimize --bin-runtime
-        #[sol(rpc, deployed_bytecode="608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063e2ead3881461002d575b5f5ffd5b61004061003b3660046102ae565b610052565b60405190815260200160405180910390f35b5f5f826001600160a01b031663f2b4e6176040518163ffffffff1660e01b8152600401602060405180830381865afa158015610090573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906100b491906102d0565b90505f836001600160a01b0316635c0cba336040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100f3573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061011791906102d0565b90505f826001600160a01b0316634d1975b46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610156573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061017a91906102eb565b90505b801561027e575f6001600160a01b03841663bb8aa1fc61019c84610302565b9350836040518263ffffffff1660e01b81526004016101bd91815260200190565b606060405180830381865afa1580156101d8573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101fc9190610323565b604051636c4f446760e01b81526001600160a01b0380831660048301529194509086169250636c4f44679150602401602060405180830381865afa158015610246573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061026a9190610381565b156102785750949350505050565b5061017d565b6040516309b3c62760e21b815260040160405180910390fd5b6001600160a01b03811681146102ab575f5ffd5b50565b5f602082840312156102be575f5ffd5b81356102c981610297565b9392505050565b5f602082840312156102e0575f5ffd5b81516102c981610297565b5f602082840312156102fb575f5ffd5b5051919050565b5f8161031c57634e487b7160e01b5f52601160045260245ffd5b505f190190565b5f5f5f60608486031215610335575f5ffd5b835163ffffffff81168114610348575f5ffd5b602085015190935067ffffffffffffffff81168114610365575f5ffd5b604085015190925061037681610297565b809150509250925092565b5f60208284031215610391575f5ffd5b815180151581146102c9575f5ffdfea2646970667358221220ece184f96e1fb64eaf9e4e9eca74f8f0ffe3d70623a843d6cd252d7f6450938e64736f6c634300081c0033")]
+        // https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/src/dispute/lib/LibUDT.sol
+        /// @notice A `GameId` represents a packed 4 byte game ID, a 8 byte timestamp, and a 20 byte address.
+        /// @dev The packed layout of this type is as follows:
+        /// ┌───────────┬───────────┐
+        /// │   Bits    │   Value   │
+        /// ├───────────┼───────────┤
+        /// │ [0, 32)   │ Game Type │
+        /// │ [32, 96)  │ Timestamp │
+        /// │ [96, 256) │ Address   │
+        /// └───────────┴───────────┘
+        type GameId is bytes32;
+
+        /// @notice A `GameType` represents the type of game being played.
+        type GameType is uint32;
+
+        /// @notice A dedicated timestamp type.
+        type Timestamp is uint64;
+
+        /// @notice A claim represents an MPT root representing the state of the fault proof program.
+        type Claim is bytes32;
+
+        // docker run -i ethereum/solc:0.8.30 - --optimize --bin-runtime
+        #[sol(rpc, deployed_bytecode="608060405234801561000f575f5ffd5b5060043610610029575f3560e01c8063e2ead3881461002d575b5f5ffd5b61004061003b3660046102ae565b610052565b60405190815260200160405180910390f35b5f5f826001600160a01b031663f2b4e6176040518163ffffffff1660e01b8152600401602060405180830381865afa158015610090573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906100b491906102d0565b90505f836001600160a01b0316635c0cba336040518163ffffffff1660e01b8152600401602060405180830381865afa1580156100f3573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061011791906102d0565b90505f826001600160a01b0316634d1975b46040518163ffffffff1660e01b8152600401602060405180830381865afa158015610156573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061017a91906102eb565b90505b801561027e575f6001600160a01b03841663bb8aa1fc61019c84610302565b9350836040518263ffffffff1660e01b81526004016101bd91815260200190565b606060405180830381865afa1580156101d8573d5f5f3e3d5ffd5b505050506040513d601f19601f820116820180604052508101906101fc9190610323565b604051636c4f446760e01b81526001600160a01b0380831660048301529194509086169250636c4f44679150602401602060405180830381865afa158015610246573d5f5f3e3d5ffd5b505050506040513d601f19601f8201168201806040525081019061026a9190610381565b156102785750949350505050565b5061017d565b6040516309b3c62760e21b815260040160405180910390fd5b6001600160a01b03811681146102ab575f5ffd5b50565b5f602082840312156102be575f5ffd5b81356102c981610297565b9392505050565b5f602082840312156102e0575f5ffd5b81516102c981610297565b5f602082840312156102fb575f5ffd5b5051919050565b5f8161031c57634e487b7160e01b5f52601160045260245ffd5b505f190190565b5f5f5f60608486031215610335575f5ffd5b835163ffffffff81168114610348575f5ffd5b602085015190935067ffffffffffffffff81168114610365575f5ffd5b604085015190925061037681610297565b809150509250925092565b5f60208284031215610391575f5ffd5b815180151581146102c9575f5ffdfea264697066735822122012b65558cae1484ba1282fa74905203ff526b3922afd7888f24acf9e748e162b64736f6c634300081e0033")]
         contract OPGameFinder {
             error GameNotFound();
 
@@ -134,13 +159,13 @@ pub mod host {
             ///
             /// @return uint256 Finalized index if found; reverts with GameNotFound error otherwise
             function findFinalizedIndex(address portal) external view returns (uint256) {
-                IDisputeGameFactory factory = IDisputeGameFactory(IOptimismPortal2(portal).disputeGameFactory());
-                IAnchorStateRegistry anchorStateRegistry = IAnchorStateRegistry(IOptimismPortal2(portal).anchorStateRegistry());
+                IDisputeGameFactory factory = IOptimismPortal2(portal).disputeGameFactory();
+                IAnchorStateRegistry anchorStateRegistry = IOptimismPortal2(portal).anchorStateRegistry();
 
                 uint256 i = factory.gameCount();
                 while (i > 0) {
                     // Fetch the dispute game proxy from the `DisputeGameFactory` contract.
-                    (, , address game) = factory.gameAtIndex(--i);
+                    (,, IDisputeGame game) = factory.gameAtIndex(--i);
 
                     // Check that the root claim is valid.
                     if (anchorStateRegistry.isGameClaimValid(game)) {
@@ -217,13 +242,12 @@ pub mod host {
             l2_provider: P2,
         ) -> anyhow::Result<DisputeGame> {
             let game_type = self.0.respectedGameType().call().await?;
-            let updated_at = self.0.respectedGameTypeUpdatedAt().call().await?;
             let factory_address = self.0.disputeGameFactory().call().await?;
             let factory = IDisputeGameFactory::new(factory_address, self.0.provider());
 
             match index {
                 DisputeGameIndex::Latest => {
-                    find_latest_game(l2_provider, game_type, updated_at, factory, None).await
+                    find_latest_game(l2_provider, game_type, factory, None).await
                 }
                 DisputeGameIndex::Finalized => {
                     // Finding the latest finalized game is very RPC intensive, instead we use the
@@ -250,8 +274,7 @@ pub mod host {
                     };
                     // get the actual game of this index
                     let game =
-                        find_latest_game(l2_provider, game_type, updated_at, factory, Some(index))
-                            .await?;
+                        find_latest_game(l2_provider, game_type, factory, Some(index)).await?;
                     ensure!(
                         game.index == index,
                         "invalid dispute game at index: {}",
@@ -264,8 +287,7 @@ pub mod host {
                     let index = U256::from(index);
                     // get the actual game of this index
                     let game =
-                        find_latest_game(l2_provider, game_type, updated_at, factory, Some(index))
-                            .await?;
+                        find_latest_game(l2_provider, game_type, factory, Some(index)).await?;
                     ensure!(
                         game.index == index,
                         "invalid dispute game at index: {}",
@@ -278,10 +300,10 @@ pub mod host {
         }
     }
 
+    /// Finds the latest game in the DisputeGameFactory contract.
     async fn find_latest_game<P1, P2>(
         l2_provider: P2,
         game_type: u32,
-        game_type_updated_at: u64,
         factory: IDisputeGameFactoryInstance<P1>,
         start_index: Option<U256>,
     ) -> anyhow::Result<DisputeGame>
@@ -302,9 +324,6 @@ pub mod host {
             .await?;
 
         for game in games {
-            if game.createdAt < game_type_updated_at {
-                break;
-            }
             // the extra data should contain the block number
             let Ok(l2_block_number) = u64::abi_decode(&game.extraData) else {
                 continue;

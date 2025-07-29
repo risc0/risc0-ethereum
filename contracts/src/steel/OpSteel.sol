@@ -47,52 +47,40 @@ abstract contract OpCommitmentValidator {
     /// @return True if the commitment is valid, false otherwise.
     function validateDisputeGameCommitment(uint256 gameIndex, bytes32 rootClaim) internal view returns (bool) {
         IDisputeGameFactory factory = optimismPortal.disputeGameFactory();
+        IAnchorStateRegistry anchorStateRegistry = optimismPortal.anchorStateRegistry();
 
         // Retrieve game information from the factory.
-        (uint32 gameType, uint64 createdAt, IDisputeGame game) = factory.gameAtIndex(gameIndex);
+        (,, IDisputeGame game) = factory.gameAtIndex(gameIndex);
 
-        // The game type of the dispute game must be the respected game type.
-        if (gameType != optimismPortal.respectedGameType()) return false;
-        // The game must have been created after `respectedGameTypeUpdatedAt`.
-        if (createdAt < optimismPortal.respectedGameTypeUpdatedAt()) return false;
-        // The game must be resolved in favor of the root claim (the output proposal).
-        if (game.status() != GameStatus.DEFENDER_WINS) return false;
-        // The game must have been resolved for at least `proofMaturityDelaySeconds`.
-        if (block.timestamp - game.resolvedAt() <= optimismPortal.proofMaturityDelaySeconds()) return false;
-        // The game must not be blacklisted.
-        if (optimismPortal.disputeGameBlacklist(game)) return false;
+        // Check that the root claim is valid.
+        if (!anchorStateRegistry.isGameClaimValid(game)) return false;
 
         // Finally, verify that the provided root claim matches the game's root claim.
         return game.rootClaim() == rootClaim;
     }
 }
 
-// https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/L1/interfaces/IOptimismPortal2.sol
+// https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/L1/IOptimismPortal2.sol
 interface IOptimismPortal2 {
-    function disputeGameBlacklist(IDisputeGame) external view returns (bool);
+    function anchorStateRegistry() external view returns (IAnchorStateRegistry);
     function disputeGameFactory() external view returns (IDisputeGameFactory);
-    function proofMaturityDelaySeconds() external view returns (uint256);
-    function respectedGameType() external view returns (uint32);
-    function respectedGameTypeUpdatedAt() external view returns (uint64);
-    function version() external pure returns (string memory);
 }
 
-// https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGameFactory.sol
+// https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/dispute/IAnchorStateRegistry.sol
+interface IAnchorStateRegistry {
+    function isGameClaimValid(IDisputeGame _game) external view returns (bool);
+}
+
+// https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/dispute/IDisputeGameFactory.sol
 interface IDisputeGameFactory {
     function gameCount() external view returns (uint256);
-    function gameAtIndex(uint256 index) external view returns (uint32 gameType, uint64 createdAt, IDisputeGame game);
+    function gameAtIndex(uint256 _index)
+        external
+        view
+        returns (uint32 gameType_, uint64 timestamp_, IDisputeGame proxy_);
 }
 
-// https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/interfaces/IDisputeGame.sol
+// https://github.com/ethereum-optimism/optimism/blob/op-contracts/v4.0.0/packages/contracts-bedrock/interfaces/dispute/IDisputeGame.sol
 interface IDisputeGame {
-    function status() external view returns (GameStatus);
-    function resolvedAt() external view returns (uint64);
-    function rootClaim() external pure returns (bytes32);
-}
-
-// https://github.com/ethereum-optimism/optimism/blob/v1.9.3/packages/contracts-bedrock/src/dispute/lib/Types.sol
-enum GameStatus {
-    IN_PROGRESS,
-    CHALLENGER_WINS,
-    DEFENDER_WINS
+    function rootClaim() external pure returns (bytes32 rootClaim_);
 }
