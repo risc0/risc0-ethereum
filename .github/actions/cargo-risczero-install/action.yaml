@@ -58,12 +58,12 @@ runs:
       shell: bash
     - name: install cargo-risczero from git
       if: inputs.ref != ''
-      run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
+      run: cargo install --locked --force --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
       working-directory: tmp/risc0
       shell: bash
     - name: install r0vm from git
       if: inputs.ref != ''
-      run: cargo install --locked --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
+      run: cargo install --locked --force --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
       shell: bash
       working-directory: tmp/risc0
     - name: install toolchains
@@ -77,7 +77,7 @@ runs:
     # Only run this step if using version (installing from crates.io)
     - name: install cargo-risczero from crates.io
       if: inputs.version != ''
-      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
+      run: cargo install --locked --force cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
       shell: bash
     - name: install rzup
       if: inputs.version != ''
@@ -87,7 +87,7 @@ runs:
       shell: bash
     - name: install r0vm
       if: inputs.version != ''
-      run: rzup install --verbose r0vm ${{ inputs.version }}
+      run: rzup install --verbose --force r0vm ${{ inputs.version }}
       shell: bash
     - name: install toolchains
       if: inputs.version != ''
