@@ -33,6 +33,7 @@ pub enum SelectorType {
     FakeReceipt,
     Groth16,
     SetVerifier,
+    ShrinkBitvm2,
 }
 
 #[repr(u32)]
@@ -51,6 +52,7 @@ pub enum Selector {
     SetVerifierV0_5 = 0xf2e6e6dc,
     SetVerifierV0_6 = 0x80479d24,
     SetVerifierV0_7 = 0x0f63ffd5,
+    ShrinkBitvm2V0_1 = 0xdeadbeef, // TODO(ec2): Replace with actual value
 }
 
 impl Display for Selector {
@@ -76,6 +78,7 @@ impl TryFrom<u32> for Selector {
             0xf2e6e6dc => Ok(Selector::SetVerifierV0_5),
             0x80479d24 => Ok(Selector::SetVerifierV0_6),
             0x0f63ffd5 => Ok(Selector::SetVerifierV0_7),
+            0xdeadbeef => Ok(Selector::ShrinkBitvm2V0_1), // TODO(ec2): Replace with actual value
             _ => Err(SelectorError::UnsupportedSelector),
         }
     }
@@ -131,6 +134,12 @@ impl Selector {
                 "0f63ffd5b1579bf938597f82089ca639a393341e888f58c12d0c91065eb2a3de",
             )
             .unwrap()),
+            Selector::ShrinkBitvm2V0_1 => {
+                // TODO(ec2): Replace with actual value
+                Err(SelectorError::NoVerifierParameters(
+                    Selector::ShrinkBitvm2V0_1,
+                ))
+            }
         }
     }
 
@@ -148,6 +157,7 @@ impl Selector {
             | Selector::SetVerifierV0_5
             | Selector::SetVerifierV0_6
             | Selector::SetVerifierV0_7 => SelectorType::SetVerifier,
+            Selector::ShrinkBitvm2V0_1 => SelectorType::ShrinkBitvm2,
         }
     }
 

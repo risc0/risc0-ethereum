@@ -11,7 +11,8 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
-risc0-aggregation = { version = "0.7.0", default-features = false, path = "crates/aggregation" }
+risc0-aggregation = { version = "0.7.1", default-features = false }
+# risc0-aggregation = { version = "0.7.0", default-features = false, path = "crates/aggregation" }
 risc0-build-ethereum = { version = "2.2.2", default-features = false, path = "build" }
 risc0-ethereum-contracts = { version = "2.2.2", default-features = false, path = "contracts" }
 risc0-op-steel = { version = "0.6.0", default-features = false, path = "crates/op-steel" }

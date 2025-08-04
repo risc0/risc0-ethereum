@@ -2899,7 +2899,7 @@ name = "guest-set-builder"
 version = "0.7.0"
 dependencies = [
  "rand 0.9.1",
- "risc0-aggregation",
+ "risc0-aggregation 0.7.0",
  "risc0-build",
  "risc0-build-ethereum",
  "risc0-zkvm",
@@ -5154,6 +5154,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "risc0-aggregation"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f18e3e10496d7cda4adb19d220865c39c9ad3b2fd5f9b6c5ebc21db5ab6a2ba"
+dependencies = [
+ "alloy-primitives 1.2.1",
+ "alloy-sol-types",
+ "bytemuck",
+ "hex",
+ "risc0-binfmt",
+ "risc0-zkp",
+ "risc0-zkvm",
+ "serde",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "risc0-binfmt"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5280,7 +5297,7 @@ dependencies = [
  "cfg-if",
  "hex",
  "regex",
- "risc0-aggregation",
+ "risc0-aggregation 0.7.1",
  "risc0-zkvm",
  "serde",
  "thiserror 2.0.12",

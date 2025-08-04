@@ -25,6 +25,9 @@ import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencySto
 import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
+
+import {ControlID, RiscZeroBitvm2Groth16Verifier} from "../src/bitvm/RiscZeroBitvm2Groth16Verifier.sol";
+
 import {RiscZeroSetVerifier, RiscZeroSetVerifierLib} from "../src/RiscZeroSetVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 
@@ -253,6 +256,41 @@ contract DeployEstopGroth16Verifier is RiscZeroManagementScript {
         console2.log("");
         console2.log("[[chains.%s.verifiers]]", chainKey);
         console2.log("name = \"RiscZeroGroth16Verifier\"");
+        console2.log("version = \"%s\"", groth16Verifier.VERSION());
+        console2.log("selector = \"%s\"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4));
+        console2.log("verifier = \"%s\"", address(verifier()));
+        console2.log("estop = \"%s\"", address(verifierEstop()));
+        console2.log("unroutable = true # remove when added to the router");
+    }
+}
+
+/// @notice Deployment script for the RISC Zero verifier with Emergency Stop mechanism.
+/// @dev Use the following environment variable to control the deployment:
+///     * CHAIN_KEY key of the target chain
+///     * VERIFIER_ESTOP_OWNER owner of the emergency stop contract
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/guides/scripting-with-solidity
+contract DeployEstopBitvm2Verifier is RiscZeroManagementScript {
+    function run() external withConfig {
+        string memory chainKey = vm.envString("CHAIN_KEY");
+        console2.log("chainKey:", chainKey);
+        address verifierEstopOwner = vm.envOr("VERIFIER_ESTOP_OWNER", adminAddress());
+        console2.log("verifierEstopOwner:", verifierEstopOwner);
+
+        // Deploy new contracts
+        vm.broadcast(deployerAddress());
+        RiscZeroBitvm2Groth16Verifier groth16Verifier =
+            new RiscZeroBitvm2Groth16Verifier{salt: CREATE2_SALT}(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+        _verifier = groth16Verifier;
+
+        vm.broadcast(deployerAddress());
+        _verifierEstop = new RiscZeroVerifierEmergencyStop{salt: CREATE2_SALT}(groth16Verifier, verifierEstopOwner);
+
+        // Print in TOML format
+        console2.log("");
+        console2.log("[[chains.%s.verifiers]]", chainKey);
+        console2.log("name = \"RiscZeroBitvm2Groth16Verifier\"");
         console2.log("version = \"%s\"", groth16Verifier.VERSION());
         console2.log("selector = \"%s\"", Strings.toHexString(uint256(uint32(groth16Verifier.SELECTOR())), 4));
         console2.log("verifier = \"%s\"", address(verifier()));
