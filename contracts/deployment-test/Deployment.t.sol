@@ -177,6 +177,7 @@ contract DeploymentTest is Test {
             require(
                 keccak256(address(verifierEstop).code) != keccak256(bytes("")), "verifier estop has no deployed code"
             );
+            require(verifierEstop.owner() == deployment.admin, "estop owner is not the admin address");
             if (verifierConfig.stopped) {
                 require(verifierEstop.paused(), "verifier estop is not stopped");
             } else {
