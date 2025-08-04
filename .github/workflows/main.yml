@@ -154,8 +154,6 @@ jobs:
             device: apple_m2_pro
     env:
       FEATURE: ${{ matrix.feature }}
-      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
-      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
       RUST_BACKTRACE: full
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -183,7 +181,7 @@ jobs:
       - name: cargo build with all features
         run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test with all features
-        run: cargo test $CARGO_LOCKED --workspace --all-features --timings
+        run: cargo test $CARGO_LOCKED --workspace --all-features --timings --cfg no_auth
       - name: Upload timings artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -193,6 +191,38 @@ jobs:
       - run: forge test -vvv
         working-directory: contracts
       - run: sccache --show-stats
+
+  rpc-tests:
+    # Skip if the PR is not from a fork.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    strategy:
+      # Run only on Linux with CPU.
+      matrix:
+        include:
+          - os: Linux
+            feature: default
+            device: cpu
+    env:
+      FEATURE: ${{ matrix.feature }}
+      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
+      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
+      RUST_BACKTRACE: full
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
+      - name: cargo test including RPC tests
+        run: cargo test $CARGO_LOCKED --workspace --all-features
 
   examples:
     runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
