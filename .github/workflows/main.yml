@@ -181,7 +181,7 @@ jobs:
       - name: cargo build with all features
         run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test with all features
-        run: cargo test $CARGO_LOCKED --workspace --all-features --timings --cfg no_auth
+        run: cargo test $CARGO_LOCKED --workspace --all-features --timings -- --cfg no_auth
       - name: Upload timings artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -221,6 +221,10 @@ jobs:
           ref: ${{ env.RISC0_MONOREPO_REF }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
       - name: cargo test including RPC tests
         run: cargo test $CARGO_LOCKED --workspace --all-features
 
