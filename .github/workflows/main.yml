@@ -155,6 +155,7 @@ jobs:
     env:
       FEATURE: ${{ matrix.feature }}
       RUST_BACKTRACE: full
+      RUSTFLAGS: "--cfg no_auth"
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -181,7 +182,7 @@ jobs:
       - name: cargo build with all features
         run: cargo build $CARGO_LOCKED --workspace --all-features
       - name: cargo test with all features
-        run: cargo test $CARGO_LOCKED --workspace --all-features --timings -- --cfg no_auth
+        run: cargo test $CARGO_LOCKED --workspace --all-features --timings
       - name: Upload timings artifacts
         uses: actions/upload-artifact@v4
         with:
