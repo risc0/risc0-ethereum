@@ -12,6 +12,9 @@ repository = { workspace = true }
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(no_auth)'] }
+
 [dependencies]
 alloy = { workspace = true, optional = true, features = ["std", "reqwest", "essentials"] }
 alloy-consensus = { workspace = true }
