@@ -268,7 +268,10 @@ mod tests {
     use test_log::test;
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn beacon_roots_contract() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
 
