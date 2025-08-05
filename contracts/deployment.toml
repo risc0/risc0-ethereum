@@ -467,6 +467,9 @@ timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 timelock-delay = 1
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
+# NOTE: As of Aug 4, 2025, Fireblocks appears to have issues sending EIP-1559 transactions to Fuji
+# A workaround for this is to `forge script` in the `manage` script to disable use of EIP-1559.
+
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "1.1.0-rc.2"
