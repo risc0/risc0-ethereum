@@ -252,7 +252,10 @@ mod tests {
     use alloy_primitives::Sealable;
 
     #[tokio::test]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn from_beacon_commit_and_header() {
         let el = ProviderBuilder::default().connect_http(get_el_url());
 

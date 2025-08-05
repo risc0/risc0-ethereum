@@ -904,6 +904,28 @@ estop = "0x0e428E8426FBc2824257736A129FF4dF9d56B9b3"
 
 ###
 
+[chains.polygon-mainnet]
+name = "Polygon (POS) Mainnet"
+id = 137
+etherscan-url = "https://polygonscan.com/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0x15249b0ee8eCabC8AB5753763501D4AcD0B7ABAB"
+timelock-delay = 259200
+router = "0xdBAD523786971B75A7b1c1CFdCfECDeb59A764B9"
+
+[[chains.polygon-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "2.2.0"
+selector = "0xbb001d44"
+verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
+estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
+
+###
+
 [chains.polygon-zkevm-mainnet]
 name = "Polygon zkEVM Mainnet"
 id = 1101
