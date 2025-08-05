@@ -12,8 +12,11 @@ repository = { workspace = true }
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(no_auth)'] }
+
 [dependencies]
-alloy = { workspace = true, optional = true, features = ["full"] }
+alloy = { workspace = true, optional = true, features = ["std", "reqwest", "essentials"] }
 alloy-consensus = { workspace = true }
 alloy-eips = { workspace = true }
 alloy-evm = { workspace = true }
@@ -36,7 +39,7 @@ tokio = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 
 [dev-dependencies]
-alloy = { workspace = true, features = ["contract", "node-bindings"] }
+alloy = { workspace = true, features = ["node-bindings"] }
 risc0-steel = { path = ".", features = ["host"] }
 serde_json = { workspace = true }
 test-log = { workspace = true }
