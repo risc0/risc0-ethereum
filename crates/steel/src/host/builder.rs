@@ -198,7 +198,7 @@ impl<P, F, S, B> EvmEnvBuilder<P, F, S, B> {
             .get_block(block)
             .await
             .context("eth_getBlock1 failed")?
-            .with_context(|| format!("block {} not found", block))?;
+            .with_context(|| format!("block {block} not found"))?;
 
         let rpc_header = rpc_block.header().clone();
         let header: F::Header = rpc_header
@@ -443,9 +443,9 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, &ChainSpec<<EthEvmFactory as EvmFactory>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{get_cl_url, get_el_url};
     use crate::{
         ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+        test_utils::{get_cl_url, get_el_url},
         BlockHeaderCommit, Commitment, CommitmentVersion,
     };
     use test_log::test;

@@ -24,7 +24,11 @@ use revm::{
     state::{AccountInfo, Bytecode},
     Database as RevmDatabase,
 };
-use std::{convert::Infallible, rc::Rc};
+use std::{
+    convert::Infallible,
+    fmt::{self, Debug},
+    rc::Rc,
+};
 
 /// A simple MPT-based read-only EVM database implementation.
 ///
@@ -36,6 +40,7 @@ use std::{convert::Infallible, rc::Rc};
 /// requiring mutability.
 ///
 /// [DatabaseRef]: revm::DatabaseRef
+#[derive(Debug)]
 pub struct StateDb {
     /// State MPT.
     state_trie: MerkleTrie,
@@ -88,7 +93,7 @@ impl StateDb {
     pub(crate) fn code_by_hash(&self, hash: B256) -> &Bytes {
         self.contracts
             .get(&hash)
-            .unwrap_or_else(|| panic!("No code with hash: {}", hash))
+            .unwrap_or_else(|| panic!("No code with hash: {hash}"))
     }
 
     #[inline]
@@ -96,7 +101,7 @@ impl StateDb {
         let hash = self
             .block_hashes
             .get(&number)
-            .unwrap_or_else(|| panic!("No block with number: {}", number));
+            .unwrap_or_else(|| panic!("No block with number: {number}"));
         *hash
     }
 
@@ -126,6 +131,15 @@ impl<'a, H> WrapStateDb<'a, H> {
             header,
             account_storage: Default::default(),
         }
+    }
+}
+
+impl<H> Debug for WrapStateDb<'_, H> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WrapStateDb")
+            .field("inner", &self.inner)
+            .field("block_hash", &self.header.seal())
+            .finish_non_exhaustive()
     }
 }
 
@@ -173,7 +187,7 @@ impl<H> RevmDatabase for WrapStateDb<'_, H> {
         let storage = self
             .account_storage
             .get(&address)
-            .unwrap_or_else(|| panic!("No storage trie with root: {}", address));
+            .unwrap_or_else(|| panic!("No storage trie with root: {address}"));
         match storage {
             Some(storage) => {
                 let val = storage

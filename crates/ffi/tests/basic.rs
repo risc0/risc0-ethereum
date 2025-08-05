@@ -24,7 +24,7 @@ use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt, ReceiptClaim};
 fn basic_usage() {
     let exe_path = env!("CARGO_BIN_EXE_risc0-forge-ffi");
     let args = ["prove", ECHO_PATH, "0xdeadbeef"];
-    println!("{} {:?}", exe_path, args);
+    println!("{exe_path} {args:?}");
     let output = Command::new(exe_path)
         .env_clear()
         // PATH is required so r0vm can be found.
@@ -59,7 +59,7 @@ fn basic_usage() {
 fn basic_usage_with_rust_log() {
     let exe_path = env!("CARGO_BIN_EXE_risc0-forge-ffi");
     let args = ["prove", ECHO_PATH, "0xdeadbeef"];
-    println!("{} {:?}", exe_path, args);
+    println!("{exe_path} {args:?}");
     let output = Command::new(exe_path)
         .env_clear()
         // PATH is required so r0vm can be found.

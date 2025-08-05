@@ -39,7 +39,7 @@ async fn usdt_mainnet() {
     let provider = ProviderBuilder::new()
         .connect_anvil_with_config(|anvil| anvil.args(["--hardfork", "cancun"]));
     let node_info = provider.anvil_node_info().await.unwrap();
-    log::info!("Anvil started: {:?}", node_info);
+    log::info!("Anvil started: {node_info:?}");
 
     // unfortunately, we do not know the private key of the USDT owner, so we have to mock it
     provider

@@ -185,7 +185,7 @@ pub mod host {
                 .await
                 .context("eth_getBlockByNumber failed")?;
             let block =
-                block_response.with_context(|| format!("block not found: {}", block_number))?;
+                block_response.with_context(|| format!("block not found: {block_number}"))?;
             let header = block.header;
 
             let proof = provider

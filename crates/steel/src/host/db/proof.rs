@@ -34,7 +34,7 @@ use revm::{
     Database as RevmDatabase,
 };
 use std::{
-    fmt::Debug,
+    fmt::{self, Debug},
     hash::{BuildHasher, Hash},
 };
 
@@ -64,6 +64,17 @@ struct StorageProof {
     value: StorageValue,
     /// In MPT inclusion proof for this particular slot.
     proof: Vec<Bytes>,
+}
+
+impl<D> Debug for ProofDb<D> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PreflightDb")
+            .field("accounts", &self.accounts)
+            .field("contracts", &self.contracts)
+            .field("block_hash_numbers", &self.block_hash_numbers)
+            .field("log_filters", &self.log_filters)
+            .finish_non_exhaustive()
+    }
 }
 
 impl<D> ProofDb<D> {
@@ -154,7 +165,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
 
     /// Returns the StateAccount information for the given address.
     pub(crate) async fn state_account(&mut self, address: Address) -> Result<StateAccount> {
-        log::trace!("ACCOUNT: address={}", address);
+        log::trace!("ACCOUNT: address={address}");
         self.accounts.entry(address).or_default();
 
         if !self.proofs.contains_key(&address) {
@@ -182,7 +193,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                     .get_block_by_number(number.into())
                     .await
                     .context("eth_getBlockByNumber failed")?
-                    .with_context(|| format!("block {} not found", number))?;
+                    .with_context(|| format!("block {number} not found"))?;
                 ancestors.push(rpc_block.header().clone());
             }
         }
@@ -209,7 +220,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                 .get_block_by_hash(hash)
                 .await
                 .context("eth_getBlockByHash failed")?
-                .with_context(|| format!("block {} not found", hash))?;
+                .with_context(|| format!("block {hash} not found"))?;
 
             return Ok((
                 MerkleTrie::from_digest(block.header().state_root()),
@@ -270,9 +281,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                     entry
                         .get_mut()
                         .hydrate_from_rlp_nodes(storage_nodes)
-                        .with_context(|| {
-                            format!("invalid storage proof for address {}", address)
-                        })?;
+                        .with_context(|| format!("invalid storage proof for address {address}"))?;
                     ensure!(
                         entry.get().hash_slow() == storage_root,
                         "storage root mismatch"
@@ -280,10 +289,8 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
                 }
                 Entry::Vacant(entry) => {
                     // create a new trie for this root
-                    let storage_trie =
-                        MerkleTrie::from_rlp_nodes(storage_nodes).with_context(|| {
-                            format!("invalid storage proof for address {}", address)
-                        })?;
+                    let storage_trie = MerkleTrie::from_rlp_nodes(storage_nodes)
+                        .with_context(|| format!("invalid storage proof for address {address}"))?;
                     ensure!(
                         storage_trie.hash_slow() == storage_root,
                         "storage root mismatch"
@@ -309,7 +316,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             .get_block_by_hash(block_hash)
             .await
             .context("eth_getBlockByHash failed")?
-            .with_context(|| format!("block {} not found", block_hash))?;
+            .with_context(|| format!("block {block_hash} not found"))?;
         let header = block.header();
 
         // we don't need to include any receipts, if the Bloom filter proves the exclusion
@@ -325,7 +332,7 @@ impl<N: Network, P: Provider<N>> ProofDb<ProviderDb<N, P>> {
             .get_block_receipts(block_hash.into())
             .await
             .context("eth_getBlockReceipts failed")?
-            .with_context(|| format!("block {} not found", block_hash))?;
+            .with_context(|| format!("block {block_hash} not found"))?;
 
         // convert the receipts so that they can be RLP-encoded
         let receipts = convert_rpc_receipts::<N>(rpc_receipts, header.receipts_root())
@@ -358,7 +365,7 @@ impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
     type Error = DB::Error;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        log::trace!("BASIC: address={}", address);
+        log::trace!("BASIC: address={address}");
         self.accounts.entry(address).or_default();
 
         // Because RevmDatabase requires that basic is always called before code_by_hash, it is just
@@ -367,7 +374,7 @@ impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
     }
 
     fn code_by_hash(&mut self, hash: B256) -> Result<Bytecode, Self::Error> {
-        log::trace!("CODE: hash={}", hash);
+        log::trace!("CODE: hash={hash}");
         let code = self.inner.code_by_hash(hash)?;
         self.contracts.insert(hash, code.original_bytes());
 
@@ -386,14 +393,14 @@ impl<DB: RevmDatabase> RevmDatabase for ProofDb<DB> {
         {
             Some(storage_proof) => Ok(storage_proof.value),
             None => {
-                log::trace!("STORAGE: address={}, index={}", address, key);
+                log::trace!("STORAGE: address={address}, index={key}");
                 self.inner.storage(address, index)
             }
         }
     }
 
     fn block_hash(&mut self, number: u64) -> Result<B256, Self::Error> {
-        log::trace!("BLOCK: number={}", number);
+        log::trace!("BLOCK: number={number}");
         self.block_hash_numbers.insert(number);
 
         self.inner.block_hash(number)
