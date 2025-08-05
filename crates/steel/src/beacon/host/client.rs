@@ -15,9 +15,9 @@
 //! A simple Beacon API client.
 
 use super::consensus::{mainnet::SignedBeaconBlock, phase0::SignedBeaconBlockHeader};
+use alloy::transports::http::reqwest;
 use alloy_primitives::B256;
 use ethereum_consensus::Fork;
-use reqwest::IntoUrl;
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, fmt::Display, result::Result as StdResult};
 use url::Url;
@@ -97,7 +97,7 @@ pub struct BeaconClient {
 
 impl BeaconClient {
     /// Creates a new beacon endpoint API client.
-    pub fn new<U: IntoUrl>(endpoint: U) -> Result<Self> {
+    pub fn new<U: reqwest::IntoUrl>(endpoint: U) -> Result<Self> {
         Ok(Self {
             http: reqwest::Client::new(),
             endpoint: endpoint.into_url()?,

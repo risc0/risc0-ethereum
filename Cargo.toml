@@ -37,7 +37,7 @@ alloy-op-evm = { version = "0.15" }
 op-alloy-network = { version = "0.18" }
 
 # Alloy host dependencies
-alloy = { version = "1.0" }
+alloy = { version = "1.0", default-features = false }
 alloy-trie = { version = "0.8" }
 
 # Beacon chain support
@@ -55,7 +55,6 @@ hex = "0.4"
 itertools = "0.14"
 log = "0.4"
 rand = "0.9"
-reqwest = "0.12"
 revm = { version = "27.0.3", default-features = false, features = ["std"] }
 op-revm = { version = "8.0.3", default-features = false, features = ["std"] }
 rkyv = "0.8"

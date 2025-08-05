@@ -13,7 +13,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-alloy = { workspace = true, optional = true, features = ["contract", "providers"] }
+alloy = { workspace = true, optional = true, features = ["std", "essentials"] }
 alloy-eips = { workspace = true }
 alloy-evm = { workspace = true }
 alloy-op-evm = { workspace = true }
@@ -37,3 +37,5 @@ risc0-op-steel = { workspace = true, features = ["host"] }
 [features]
 default = []
 host = ["dep:alloy", "dep:tokio", "dep:url", "risc0-steel/host", "alloy-primitives/rand"]
+reqwest-native-tls = ["alloy?/reqwest-native-tls", "risc0-steel/reqwest-native-tls"]
+reqwest-rustls-tls = ["alloy?/reqwest-rustls-tls", "risc0-steel/reqwest-rustls-tls"]

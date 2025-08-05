@@ -252,7 +252,10 @@ mod tests {
     use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
     #[tokio::test]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn create_eip4788_beacon_commit() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
         let cl = BeaconClient::new(get_cl_url()).unwrap();
@@ -285,7 +288,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn create_slot_beacon_commit() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
         let cl = BeaconClient::new(get_cl_url()).unwrap();
