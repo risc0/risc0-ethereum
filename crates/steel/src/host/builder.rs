@@ -451,7 +451,10 @@ mod tests {
     use test_log::test;
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn build_block_env() {
         let builder = EthEvmEnv::builder()
             .rpc(get_el_url())
@@ -461,7 +464,10 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn build_beacon_env() {
         let provider = ProviderBuilder::default().connect_http(get_el_url());
 
@@ -491,7 +497,10 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn build_history_env() {
         let provider = ProviderBuilder::default().connect_http(get_el_url());
 
