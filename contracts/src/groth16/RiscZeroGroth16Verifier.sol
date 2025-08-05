@@ -87,7 +87,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Grot
 
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
     /// @dev This value is computed at compile time.
-    function verifier_key_digest() internal pure returns (bytes32) {
+    function verifier_key_digest() public pure returns (bytes32) {
         bytes32[] memory ic_digests = new bytes32[](6);
         ic_digests[0] = sha256(abi.encodePacked(IC0x, IC0y));
         ic_digests[1] = sha256(abi.encodePacked(IC1x, IC1y));
