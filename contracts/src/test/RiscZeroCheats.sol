@@ -83,9 +83,10 @@ abstract contract RiscZeroCheats is CommonBase {
             console2.log("Deployed RiscZeroMockVerifier to", address(verifier));
             return verifier;
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+            RiscZeroGroth16Verifier verifier = new RiscZeroGroth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
             console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
-            return verifier;
+            console2.logBytes32(verifier.verifier_key_digest());
+            return IRiscZeroVerifier(verifier);
         }
     }
 
@@ -97,9 +98,11 @@ abstract contract RiscZeroCheats is CommonBase {
             console2.log("Deployed RiscZeroMockVerifier to", address(verifier));
             return verifier;
         } else {
-            IRiscZeroVerifier verifier = new RiscZeroBitvm2Groth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
+            RiscZeroBitvm2Groth16Verifier verifier = new RiscZeroBitvm2Groth16Verifier(ControlID.CONTROL_ROOT, ControlID.BN254_CONTROL_ID);
             console2.log("Deployed RiscZeroBitvm2Groth16Verifier to", address(verifier));
-            return verifier;
+            console2.logBytes32(verifier.verifier_key_digest());
+
+            return IRiscZeroVerifier(verifier);
         }
     }
 }

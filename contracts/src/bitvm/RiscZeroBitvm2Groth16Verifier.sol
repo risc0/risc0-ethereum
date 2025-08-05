@@ -87,21 +87,21 @@ contract RiscZeroBitvm2Groth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable
 
     /// @notice Identifier for the Groth16 verification key encoded into the base contract.
     /// @dev This value is computed at compile time.
-    function verifier_key_digest() internal pure returns (bytes32) {
-        bytes32[] memory ic_digests = new bytes32[](6);
+    function verifier_key_digest() public pure returns (bytes32) {
+        bytes32[] memory ic_digests = new bytes32[](2);
         ic_digests[0] = sha256(abi.encodePacked(IC0x, IC0y));
         ic_digests[1] = sha256(abi.encodePacked(IC1x, IC1y));
 
         return sha256(
             abi.encodePacked(
                 // tag
-                sha256("bitvm2_groth16.VerifyingKey"),
-                // down
+                sha256("risc0_groth16.VerifyingKey"),         
+               // down
                 sha256(abi.encodePacked(alphax, alphay)),
                 sha256(abi.encodePacked(betax1, betax2, betay1, betay2)),
                 sha256(abi.encodePacked(gammax1, gammax2, gammay1, gammay2)),
                 sha256(abi.encodePacked(deltax1, deltax2, deltay1, deltay2)),
-                StructHash.taggedList(sha256("bitvm2_groth16.VerifyingKey.IC"), ic_digests),
+                StructHash.taggedList(sha256("risc0_groth16.VerifyingKey.IC"), ic_digests),
                 // down length
                 uint16(5) << 8
             )
@@ -116,7 +116,7 @@ contract RiscZeroBitvm2Groth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable
             sha256(
                 abi.encodePacked(
                     // tag
-                    sha256("bitvm2_groth16.Groth16ReceiptVerifierParameters"),
+                    sha256("risc0.Groth16ReceiptVerifierParameters"),
                     // down
                     control_root,
                     reverseByteOrderUint256(uint256(bn254_control_id)),
