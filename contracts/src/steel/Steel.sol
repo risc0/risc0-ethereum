@@ -29,9 +29,9 @@ library Steel {
         bytes32 configID;
     }
 
-    /// @notice The version of the Commitment is incorrect.
-    /// @dev Error signature: 0xbb2b2291
-    error InvalidCommitmentVersion();
+    /// @notice The version of the Commitment not supported.
+    /// @dev Error signature: 0x04e2dd22
+    error InvalidCommitmentVersion(uint16 version);
 
     /// @notice The Commitment is too old and can no longer be validated.
     /// @dev Error signature: 0xcfef9a95
@@ -41,10 +41,28 @@ library Steel {
     /// @dev Error signature: 0x13d71698
     error ConsensusSlotCommitmentNotSupported();
 
-    /// @notice Validates if the provided Commitment matches the block hash of the given block number.
+    /// @notice The config ID (i.e. chain spec digest) does not match the expected value.
+    /// @dev Error signature: 0xa7e6de3e
+    error InvalidConfigID(bytes32 expected, bytes32 received);
+
+    /// @notice Validates if the provided commitment commits to a block in the current chain,
+    ///         and contains the expected config ID for the current chain.
     /// @param commitment The Commitment struct to validate.
-    /// @return True if the commitment's block hash matches the block hash of the block number, false otherwise.
+    /// @return True if the commitment commits to a block in the current chain, false otherwise.
     function validateCommitment(Commitment memory commitment) internal view returns (bool) {
+        return validateCommitment(commitment, ChainSpec.configID());
+    }
+
+    /// @notice Validates if the provided commitment commits to a block in the current chain,
+    ///         and contains the given config ID.
+    /// @param commitment The Commitment struct to validate.
+    /// @param configID The expected configID for the commitment. The configID commits to the chain
+    ///        specification used to instanciate the EVM within Steel.
+    /// @return True if the commitment commits to a block in the current chain, false otherwise.
+    function validateCommitment(Commitment memory commitment, bytes32 configID) internal view returns (bool) {
+        if (configID != commitment.configID) {
+            revert InvalidConfigID(configID, commitment.configID);
+        }
         (uint240 claimID, uint16 version) = Encoding.decodeVersionedID(commitment.id);
         if (version == 0) {
             return validateBlockCommitment(claimID, commitment.digest);
@@ -54,7 +72,7 @@ library Steel {
             // Stateless SteelVerifier does not support consensus slot commitments.
             revert ConsensusSlotCommitmentNotSupported();
         } else {
-            revert InvalidCommitmentVersion();
+            revert InvalidCommitmentVersion(version);
         }
     }
 
@@ -131,5 +149,30 @@ library Encoding {
             version := shr(240, id)
         }
         return (decoded, version);
+    }
+}
+
+library ChainSpec {
+    error UnknownChainId(uint256 chainID);
+
+    function configID() internal view returns (bytes32) {
+        return configID(block.chainid);
+    }
+
+    // TODO(povw): Add something to keep this in sync with the Rust.
+    function configID(uint256 chainID) internal pure returns (bytes32) {
+        // Mainnet
+        if (chainID == 1) {
+            return hex"9a223c7ca04c969f1cacbe5b8db44c308b2c53390505d3d48c834ed4469fc839";
+        }
+        // Sepolia
+        if (chainID == 11155111) {
+            return hex"5c9552dc9bfad8572ded4f818bb35b0f4260660c1554236986b768ae999b4b60";
+        }
+        // Holesky
+        if (chainID == 17000) {
+            return hex"8eae1ba5f877e6ad7007bf6985f5245be7d758457fb4eb7e6a72d47f49bea389";
+        }
+        revert UnknownChainId(chainID);
     }
 }
