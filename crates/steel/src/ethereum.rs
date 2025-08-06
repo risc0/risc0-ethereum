@@ -185,3 +185,34 @@ impl EvmBlockHeader for EthBlockHeader {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloy::primitives::b256;
+
+    use super::{ETH_HOLESKY_CHAIN_SPEC, ETH_MAINNET_CHAIN_SPEC, ETH_SEPOLIA_CHAIN_SPEC};
+
+    #[test]
+    fn mainnet_spec_digest() {
+        assert_eq!(
+            ETH_MAINNET_CHAIN_SPEC.digest(),
+            b256!("0x9a223c7ca04c969f1cacbe5b8db44c308b2c53390505d3d48c834ed4469fc839")
+        );
+    }
+
+    #[test]
+    fn sepolia_spec_digest() {
+        assert_eq!(
+            ETH_SEPOLIA_CHAIN_SPEC.digest(),
+            b256!("0x5c9552dc9bfad8572ded4f818bb35b0f4260660c1554236986b768ae999b4b60")
+        );
+    }
+
+    #[test]
+    fn holesky_spec_digest() {
+        assert_eq!(
+            ETH_HOLESKY_CHAIN_SPEC.digest(),
+            b256!("0x8eae1ba5f877e6ad7007bf6985f5245be7d758457fb4eb7e6a72d47f49bea389")
+        );
+    }
+}
