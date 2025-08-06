@@ -173,6 +173,10 @@ library ChainSpec {
         if (chainID == 17000) {
             return hex"8eae1ba5f877e6ad7007bf6985f5245be7d758457fb4eb7e6a72d47f49bea389";
         }
+        // Anvil / Hardhat
+        if (chainID == 31337) {
+            return hex"9c769887f8e753e3f67d1806eaebd55c24b2e59bc7218363221c2f01d8dd6420";
+        }
         revert UnknownChainId(chainID);
     }
 }
