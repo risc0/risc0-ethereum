@@ -26,7 +26,7 @@ import {IRiscZeroVerifier} from "../src/IRiscZeroVerifier.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 
-import {ControlID, RiscZeroBitvm2Groth16Verifier} from "../src/bitvm/RiscZeroBitvm2Groth16Verifier.sol";
+import {RiscZeroBitvm2Groth16Verifier} from "../src/bitvm/RiscZeroBitvm2Groth16Verifier.sol";
 
 import {RiscZeroSetVerifier, RiscZeroSetVerifierLib} from "../src/RiscZeroSetVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";

@@ -139,7 +139,9 @@ contract RiscZeroBitvm2Groth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable
 
     /// @inheritdoc IRiscZeroVerifier
     function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view {
-        _verifyIntegrity(seal, ReceiptClaimLib.ok(imageId, journalDigest).digest());
+        // We only support verifying the integrity
+        revert VerificationFailed();
+        // _verifyIntegrity(seal, ReceiptClaimLib.ok(imageId, journalDigest).digest());
     }
 
     /// @inheritdoc IRiscZeroVerifier
