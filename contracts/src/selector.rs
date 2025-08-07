@@ -168,6 +168,11 @@ impl Selector {
         Self::Groth16V2_2
     }
 
+    /// Returns the selector corresponding to the Bitvm2 Groth16 verifier for the latest zkVM version.
+    pub const fn shrink_bitvm2_latest() -> Self {
+        Self::ShrinkBitvm2V0_1
+    }
+
     /// Returns the selector corresponding to the latest version of the set inclusion verifier (aka
     /// aggregation verifier).
     pub const fn set_inclusion_latest() -> Self {
