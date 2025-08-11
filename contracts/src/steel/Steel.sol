@@ -30,19 +30,19 @@ library Steel {
     }
 
     /// @notice The version of the Commitment not supported.
-    /// @dev Error signature: 0x04e2dd22
+    /// @dev Error selector: 0x04e2dd22
     error InvalidCommitmentVersion(uint16 version);
 
     /// @notice The Commitment is too old and can no longer be validated.
-    /// @dev Error signature: 0xcfef9a95
+    /// @dev Error selector: 0xcfef9a95
     error CommitmentTooOld();
 
     /// @notice The consensus slot (version 2) commitment is not supported.
-    /// @dev Error signature: 0x13d71698
+    /// @dev Error selector: 0x13d71698
     error ConsensusSlotCommitmentNotSupported();
 
     /// @notice The config ID (i.e. chain spec digest) does not match the expected value.
-    /// @dev Error signature: 0xa7e6de3e
+    /// @dev Error selector: 0xa7e6de3e
     error InvalidConfigID(bytes32 expected, bytes32 received);
 
     /// @notice Validates if the provided commitment commits to a block in the current chain,
@@ -109,7 +109,7 @@ library Beacon {
     ///      EIP-4788 contract. This can happen if the timestamp is too old, and the corresponding
     ///      block has been evicted from the cache, if the timestamp corresponds to a
     ///      slot with no block, or if the timestamp does not correspond to any slot at all.
-    /// @dev Error signature: 0x4d0b0a41
+    /// @dev Error selector: 0x4d0b0a41
     error InvalidBlockTimestamp();
 
     /// @notice Find the root of the Beacon block corresponding to the parent of the execution block with the given timestamp.
@@ -153,6 +153,7 @@ library Encoding {
 }
 
 library ChainSpec {
+    /// @dev Error selector: 0x45b21e77
     error UnknownChainId(uint256 chainID);
 
     function configID() internal view returns (bytes32) {
@@ -175,6 +176,7 @@ library ChainSpec {
         }
         // Anvil / Hardhat
         if (chainID == 31337) {
+            // TODO: This is only the chain spec for a specific config of Anvil.
             return hex"9c769887f8e753e3f67d1806eaebd55c24b2e59bc7218363221c2f01d8dd6420";
         }
         revert UnknownChainId(chainID);
