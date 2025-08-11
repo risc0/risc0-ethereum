@@ -144,8 +144,35 @@ mod tests {
 
     #[test]
     #[cfg(feature = "unstable")]
-    fn test_decode_seal() {
+    fn test_decode_seal_v2() {
         const TEST_RECEIPT_PATH: &str = "./test/TestReceiptV2_2.sol";
+        const SEAL: &str = "SEAL";
+        const JOURNAL: &str = "JOURNAL";
+        const IMAGE_ID: &str = "IMAGE_ID";
+        let seal_bytes =
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, SEAL).unwrap()).unwrap());
+        let journal =
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, JOURNAL).unwrap()).unwrap())
+                .to_vec();
+        let image_id = Digest::try_from(
+            Bytes::from(hex::decode(parse_digest(TEST_RECEIPT_PATH, IMAGE_ID).unwrap()).unwrap())
+                .as_ref(),
+        )
+        .unwrap();
+        let receipt = decode_groth16_seal(
+            seal_bytes,
+            ReceiptClaim::ok(image_id, journal.clone()),
+            &journal,
+            None,
+        )
+        .unwrap();
+        receipt.verify(image_id).unwrap();
+    }
+
+    #[test]
+    #[cfg(feature = "unstable")]
+    fn test_decode_seal_v3() {
+        const TEST_RECEIPT_PATH: &str = "./test/TestReceiptV3_0.sol";
         const SEAL: &str = "SEAL";
         const JOURNAL: &str = "JOURNAL";
         const IMAGE_ID: &str = "IMAGE_ID";
