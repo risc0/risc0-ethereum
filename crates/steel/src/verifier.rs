@@ -142,7 +142,7 @@ mod host {
             commitment: &Commitment,
             config_id: B256,
         ) -> anyhow::Result<()> {
-            log::info!("Executing preflight verifying {:?}", commitment);
+            log::info!("Executing preflight verifying {commitment:?}");
 
             ensure!(commitment.configID == config_id, "invalid config ID");
             let (id, version) = commitment.decode_id();
@@ -163,7 +163,7 @@ mod host {
                         .env
                         .spawn_with_db(move |db| BeaconRootsContract::get_from_db(db, id))
                         .await
-                        .with_context(|| format!("calling BeaconRootsContract({}) failed", id))?;
+                        .with_context(|| format!("calling BeaconRootsContract({id}) failed"))?;
                     ensure!(beacon_root == commitment.digest, "invalid digest");
 
                     Ok(())
@@ -188,9 +188,9 @@ fn validate_block_number(header: &impl EvmBlockHeader, block_number: U256) -> an
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::get_el_url;
     use crate::{
         ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+        test_utils::get_el_url,
         CommitmentVersion,
     };
     use alloy::{
@@ -202,7 +202,10 @@ mod tests {
     use test_log::test;
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn verify_block_commitment() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
 
@@ -243,7 +246,10 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn verify_beacon_commitment() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
 

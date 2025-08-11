@@ -1,4 +1,4 @@
-// Copyright 2024 RISC Zero, Inc.
+// Copyright 2025 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ fn main() {
 
                 ecrecover(v, rs, sig_digest)
             }
-            _ => panic!("value of signed is invalid: {}", signed),
+            _ => panic!("value of signed is invalid: {signed}"),
         };
         // Add the vote to the map of votes, possibly replacing an existing vote.
         votes.insert(voter, support);

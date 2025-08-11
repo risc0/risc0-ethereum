@@ -198,7 +198,7 @@ impl<P, F, S, B> EvmEnvBuilder<P, F, S, B> {
             .get_block(block)
             .await
             .context("eth_getBlock1 failed")?
-            .with_context(|| format!("block {} not found", block))?;
+            .with_context(|| format!("block {block} not found"))?;
 
         let rpc_header = rpc_block.header().clone();
         let header: F::Header = rpc_header
@@ -443,15 +443,18 @@ impl<P> EvmEnvBuilder<P, EthEvmFactory, &ChainSpec<<EthEvmFactory as EvmFactory>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{get_cl_url, get_el_url};
     use crate::{
         ethereum::{EthEvmEnv, ETH_MAINNET_CHAIN_SPEC},
+        test_utils::{get_cl_url, get_el_url},
         BlockHeaderCommit, Commitment, CommitmentVersion,
     };
     use test_log::test;
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn build_block_env() {
         let builder = EthEvmEnv::builder()
             .rpc(get_el_url())
@@ -461,7 +464,10 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn build_beacon_env() {
         let provider = ProviderBuilder::default().connect_http(get_el_url());
 
@@ -491,7 +497,10 @@ mod tests {
     }
 
     #[test(tokio::test)]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn build_history_env() {
         let provider = ProviderBuilder::default().connect_http(get_el_url());
 

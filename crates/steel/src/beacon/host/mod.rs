@@ -158,7 +158,7 @@ where
         let response = beacon_client
             .get_header_for_parent_root(parent_root)
             .await
-            .with_context(|| format!("failed to get header for parent root {}", parent_root))?;
+            .with_context(|| format!("failed to get header for parent root {parent_root}"))?;
         ensure!(
             response.header.message.parent_root.0 == parent_root.0,
             "API returned invalid beacon header"
@@ -210,7 +210,7 @@ async fn create_execution_payload_proof(
     let signed_beacon_block = client
         .get_block(beacon_root)
         .await
-        .with_context(|| format!("failed to get block {}", beacon_root))?;
+        .with_context(|| format!("failed to get block {beacon_root}"))?;
     // create the inclusion proof of the execution block hash depending on the fork version
     let (proof, _) = match signed_beacon_block {
         SignedBeaconBlock::Phase0(_)
@@ -252,7 +252,10 @@ mod tests {
     use alloy::{eips::BlockNumberOrTag, network::BlockResponse, providers::ProviderBuilder};
 
     #[tokio::test]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn create_eip4788_beacon_commit() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
         let cl = BeaconClient::new(get_cl_url()).unwrap();
@@ -285,7 +288,10 @@ mod tests {
     }
 
     #[tokio::test]
-    #[cfg_attr(not(feature = "rpc-tests"), ignore = "RPC tests are disabled")]
+    #[cfg_attr(
+        any(not(feature = "rpc-tests"), no_auth),
+        ignore = "RPC tests are disabled"
+    )]
     async fn create_slot_beacon_commit() {
         let el = ProviderBuilder::new().connect_http(get_el_url());
         let cl = BeaconClient::new(get_cl_url()).unwrap();

@@ -14,7 +14,7 @@
 
 //! A sparse Merkle Patricia trie implementation.
 
-use alloy_primitives::{keccak256, Bytes, B256};
+use alloy_primitives::{keccak256, map::B256Map, Bytes, B256};
 use alloy_trie::Nibbles;
 use children::Children;
 use memoize::{Cache, NoCache};
@@ -151,6 +151,15 @@ impl Trie {
         CachedTrie { inner: rec(self.0), hash: None }
     }
 
+    /// Returns the RLP-encoded nodes of the trie in preorder. It may return duplicate nodes.
+    ///
+    /// Each value but the first, represents a node with RLP-length >= 32, while shorter nodes are
+    /// included inline.
+    #[inline]
+    pub fn rlp_nodes(&self) -> Vec<Bytes> {
+        self.0.rlp_nodes()
+    }
+
     /// Creates a new trie that only contains a digest of the root.
     #[inline]
     pub const fn from_digest(digest: B256) -> Self {
@@ -174,6 +183,25 @@ impl Trie {
     #[inline]
     pub fn from_rlp<T: AsRef<[u8]>>(nodes: impl IntoIterator<Item = T>) -> alloy_rlp::Result<Self> {
         Ok(Self(Node::from_rlp(nodes)?))
+    }
+
+    /// Creates a new trie from a root digest and a map of pre-hashed, RLP-encoded nodes.
+    ///
+    /// This method offers an efficient way to construct a trie when the node digests are already
+    /// known, as it avoids re-computing the hashes.
+    ///
+    /// It is crucial that the provided `rlp_by_digest` map contains keys that are the correct
+    /// `keccak256` hashes of their corresponding RLP-encoded values. If the hashes are incorrect,
+    /// the resulting trie will be invalid, potentially leading to a different root hash than
+    /// the one provided and subsequent logical errors.
+    #[inline]
+    pub fn from_prehashed_nodes(
+        root: B256,
+        rlp_by_digest: &B256Map<impl AsRef<[u8]>>,
+    ) -> alloy_rlp::Result<Self> {
+        let mut trie = Self::from_digest(root);
+        trie.0.resolve_digests(rlp_by_digest)?;
+        Ok(trie)
     }
 }
 
@@ -311,6 +339,14 @@ impl CachedTrie {
         self.inner.resolve_digests(&rlp_by_digest)
     }
 
+    /// Returns the RLP-encoded nodes of the trie in preorder.
+    ///
+    /// See [`Trie::rlp_nodes`] for detailed documentation.
+    #[inline]
+    pub fn rlp_nodes(&self) -> Vec<Bytes> {
+        self.inner.rlp_nodes()
+    }
+
     /// Creates a new trie that only contains a digest of the root.
     #[inline]
     pub fn from_digest(digest: B256) -> Self {
@@ -329,6 +365,19 @@ impl CachedTrie {
         let root = Node::from_rlp(nodes)?;
 
         Ok(Self { inner: root, hash: None })
+    }
+
+    /// Creates a new trie from a root digest and a map of pre-hashed, RLP-encoded nodes.
+    ///
+    /// See [`Trie::from_prehashed_nodes`] for detailed documentation.
+    #[inline]
+    pub fn from_prehashed_nodes(
+        root: B256,
+        rlp_by_digest: &B256Map<impl AsRef<[u8]>>,
+    ) -> alloy_rlp::Result<Self> {
+        let mut trie = Self::from_digest(root);
+        trie.inner.resolve_digests(rlp_by_digest)?;
+        Ok(trie)
     }
 }
 
