@@ -159,7 +159,7 @@ mod tests {
                 .as_ref(),
         )
         .unwrap();
-        let receipt = decode_groth16_seal(
+        let _receipt = decode_groth16_seal(
             seal_bytes,
             ReceiptClaim::ok(image_id, journal.clone()),
             &journal,
