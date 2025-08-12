@@ -67,11 +67,6 @@
 
    Crates currently published to `crates.io` are:
 
-   * ~~`risc0-steel`~~
-
-     > NOTE: risc0-steel currently cannot be published to crates.io.
-     > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
-
    * `risc0-aggregation`
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
