@@ -45,7 +45,7 @@ runs:
     # Only run these steps if using ref (building from source)
     - name: checkout risc0
       if: inputs.ref != ''
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: 'risc0/risc0'
         path: 'tmp/risc0'

@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Find or create a Linear Issue
         uses: risc0/action-find-or-create-linear-issue@risc0
         with:
