@@ -48,6 +48,7 @@
          > ```
 
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
+     * Update `RISC0_MONOREPO_REF` in `.github/workflows` to the appropriate release branch instead of `main`.
 
    * The other PR should:
      * Bump the version on the `main` branch to the next, unreleased, minor version `x.y+1.0-alpha.1`.
