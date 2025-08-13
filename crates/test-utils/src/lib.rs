@@ -54,12 +54,13 @@ pub struct TestCtx {
 
 pub async fn text_ctx() -> anyhow::Result<TestCtx> {
     let anvil = Anvil::new().spawn();
-    test_ctx_with(Mutex::new(anvil).into(), 0).await
+    test_ctx_with(Mutex::new(anvil).into(), 0, VerifierContext::default()).await
 }
 
 pub async fn test_ctx_with(
     anvil: Arc<Mutex<AnvilInstance>>,
     signer_index: usize,
+    verifier_ctx: VerifierContext,
 ) -> anyhow::Result<TestCtx> {
     let rpc_url = anvil.lock().await.endpoint_url();
 
@@ -71,8 +72,9 @@ pub async fn test_ctx_with(
         .connect_http(rpc_url)
         .erased();
 
+    // Deploy the verifier contract, using the mock verifier or the real Groth16 verifier depending
+    // on the setting of RISC0_DEV_MODE.
     // TODO: Also support deploying the router and set verifier.
-    let verifier_ctx = VerifierContext::default();
     let verifier = if verifier_ctx.dev_mode() {
         let mock_verifier =
             MockRiscZeroVerifier::deploy(provider.clone(), FixedBytes([0xFFu8; 4])).await?;
