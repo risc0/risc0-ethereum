@@ -182,7 +182,6 @@ jobs:
       # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
       # Find a good way to remove this requirement.
       - run: forge build
-        working-directory: contracts
       - name: cargo test
         run: cargo test $CARGO_LOCKED --workspace
       - name: cargo build with all features
@@ -231,7 +230,6 @@ jobs:
       # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
       # Find a good way to remove this requirement.
       - run: forge build
-        working-directory: contracts
       - name: cargo test
         run: cargo test $CARGO_LOCKED --workspace --all-features
       - run: sccache --show-stats
@@ -271,7 +269,6 @@ jobs:
       # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
       # Find a good way to remove this requirement.
       - run: forge build
-        working-directory: contracts
       - name: cargo test including RPC tests
         run: cargo test $CARGO_LOCKED --workspace --all-features
 
