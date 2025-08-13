@@ -12,26 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{collections::BTreeSet, sync::Arc};
+use std::sync::Arc;
 
 use alloy::{
     network::EthereumWallet,
     node_bindings::{Anvil, AnvilInstance},
-    primitives::{Address, FixedBytes},
-    providers::{ext::AnvilApi, DynProvider, Provider, ProviderBuilder},
-    rpc::types::TransactionReceipt,
+    primitives::FixedBytes,
+    providers::{DynProvider, Provider, ProviderBuilder},
     signers::local::PrivateKeySigner,
-    signers::Signer,
     sol,
-    sol_types::SolValue,
 };
-use anyhow::{bail, Context};
+use anyhow::Context;
 use risc0_ethereum_contracts::IRiscZeroVerifier::{self, IRiscZeroVerifierInstance};
 use risc0_ethereum_test_utils_guests::ECHO_ELF;
-use risc0_zkvm::{
-    default_executor, default_prover, sha::Digestible, ExecutorEnv, ExitCode, FakeReceipt,
-    InnerReceipt, ProveInfo, ProverOpts, Receipt, ReceiptClaim, VerifierContext,
-};
+use risc0_zkvm::{default_prover, ExecutorEnv, ProveInfo, ProverOpts, VerifierContext};
 use tokio::sync::Mutex;
 
 // Import the Solidity contracts using alloy's sol! macro
