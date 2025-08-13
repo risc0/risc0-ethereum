@@ -17,7 +17,7 @@ use std::sync::Arc;
 use alloy::{
     network::EthereumWallet,
     node_bindings::{Anvil, AnvilInstance},
-    primitives::FixedBytes,
+    primitives::{FixedBytes, B256},
     providers::{DynProvider, Provider, ProviderBuilder},
     signers::local::PrivateKeySigner,
     sol,
@@ -87,8 +87,11 @@ pub async fn test_ctx_with(
             .context("groth16 verifier parameters not provided")?;
         let control_root =
             bytemuck::cast::<_, [u8; 32]>(groth16_verifier_parameters.control_root).into();
-        let bn254_control_id =
+        // Byte order in the contract is opposite that of Rust, because the EVM interprets the
+        // digest as a big-endian uint256.
+        let mut bn254_control_id: B256 =
             bytemuck::cast::<_, [u8; 32]>(groth16_verifier_parameters.bn254_control_id).into();
+        bn254_control_id.as_mut_slice().reverse();
         let groth16_verifier =
             RiscZeroGroth16Verifier::deploy(provider.clone(), control_root, bn254_control_id)
                 .await?;
