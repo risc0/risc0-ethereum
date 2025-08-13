@@ -232,7 +232,7 @@ jobs:
       # Find a good way to remove this requirement.
       - run: forge build
         working-directory: contracts
-      - name cargo test
+      - name: cargo test
         run: cargo test $CARGO_LOCKED --workspace --all-features
       - run: sccache --show-stats
 
