@@ -253,6 +253,8 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
       - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
         with:
