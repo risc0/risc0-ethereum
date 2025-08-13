@@ -17,4 +17,4 @@ risc0-ethereum-contracts = { workspace = true }
 risc0-zkvm = { workspace = true, default-features = true }
 
 [dev-dependencies]
-ffi-guests = { path = "./guests" }
+risc0-ethereum-test-utils-guests = { path = "../test-utils/guests" }
