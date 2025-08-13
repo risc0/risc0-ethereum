@@ -23,7 +23,7 @@ env:
 
 jobs:
   e2e-tests:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +34,7 @@ jobs:
         include:
           - os: Linux
             feature: cuda
-            device: nvidia_rtx_a5000
+            device: nvidia_rtx_4000_ada
         # Exclude Bonsai proving on non-release branches.
         exclude:
           - release: false
@@ -62,9 +62,9 @@ jobs:
         env:
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_CI_USER }}
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+        uses: risc0/risc0/.github/actions/cuda@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
+      - uses: risc0/risc0/.github/actions/sccache@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - name: Install Foundry
