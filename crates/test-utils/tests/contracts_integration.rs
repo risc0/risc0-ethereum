@@ -15,9 +15,9 @@
 use anyhow::Context;
 use risc0_ethereum_test_utils::{prove_echo, text_ctx};
 use risc0_ethereum_test_utils_guests::ECHO_ID;
-use risc0_zkvm::sha::{Digestible, Sha256};
-use risc0_zkvm::{sha, ReceiptClaim};
-use risc0_zkvm::{Digest, ProverOpts};
+use risc0_zkvm::sha;
+use risc0_zkvm::sha::Sha256;
+use risc0_zkvm::ProverOpts;
 
 #[tokio::test]
 async fn basic() -> anyhow::Result<()> {
