@@ -342,7 +342,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
-      - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
+      - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace --exclude risc0-ethereum-test-utils
         env:
           RISC0_SKIP_BUILD: true,
           RISC0_SKIP_BUILD_KERNEL: true,
