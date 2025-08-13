@@ -115,6 +115,9 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
+      # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
+      # Find a good way to remove this requirement.
+      - run: forge build
       - name: cargo clippy risc0-ethereum
         run: cargo clippy $CARGO_LOCKED --workspace --all-targets --all-features
         env:
