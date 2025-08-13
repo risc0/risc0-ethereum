@@ -30,7 +30,7 @@ jobs:
       - check
       - doc
       - docs-rs
-      - test-risc0-ethereum
+      - test
     runs-on: ubuntu-latest
     steps:
       - name: Check all job status
