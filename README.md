@@ -17,14 +17,13 @@ RISC Zero's Ethereum contracts, including the on-chain verifier for all RISC Zer
 
 ## Steel
 
-A powerful library for querying and generating verifiable proofs over Ethereum or other EVM-based blockchain state. It leverages [alloy], giving developers a familiar and high quality interface for querying Ethereum via view calls. By moving execution off-chain, Steel significantly reduces gas costs and enables novel Ethereum use cases without compromising security.
+Steel lets Solidity developers effortlessly scale their applications by moving computation offchain without compromising on onchain security. Steel drastically reduces gas costs and this enables previously impossible applications.
 
-You can install [Steel] with `cargo add risc0-steel`, check out the examples in the [examples directory].
+Steel now lives in its own repository. Check out [github.com/boundless-xyz/steel](https://github.com/boundless-xyz/steel)
 
 [RISC Zero]: https://github.com/risc0/risc0
 [Ethereum]: https://ethereum.org/
 [contracts]: ./contracts
-[Steel]: ./crates/steel
 [examples directory]: ./examples
 [template]: https://github.com/risc0/risc0-foundry-template
 [dev.risczero.com]: https://dev.risczero.com

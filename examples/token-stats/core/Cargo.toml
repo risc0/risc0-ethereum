@@ -1,9 +1,0 @@
-[package]
-name = "token-stats-core"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-alloy-primitives = { workspace = true }
-alloy-sol-types = { workspace = true }
-risc0-steel = { workspace = true }
