@@ -2,11 +2,13 @@
 resolver = "2"
 members = [
   "contracts",
-  "crates/aggregation",
+  "crates/*",
   "crates/aggregation/guest",
-  "crates/ffi",
   "crates/ffi/guests",
-  "crates/trie"
+]
+exclude = [
+  "crates/op-steel",
+  "crates/steel",
 ]
 
 [workspace.package]
