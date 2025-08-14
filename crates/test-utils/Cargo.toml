@@ -14,5 +14,5 @@ bytemuck = { workspace = true }
 hex = "0.4.3"
 risc0-ethereum-contracts = { workspace = true, features = ["unstable"] }
 risc0-ethereum-test-utils-guests = { path = "./guests" }
-risc0-zkvm = { workspace = true, default-features = false, features = ["unstable", "client"] }
+risc0-zkvm = { workspace = true, default-features = false, features = ["unstable", "client", "bonsai"] }
 tokio = { workspace = true, features = ["rt"] }

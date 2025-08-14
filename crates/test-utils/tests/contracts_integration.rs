@@ -25,6 +25,8 @@ use tokio::sync::Mutex;
 async fn basic() -> anyhow::Result<()> {
     const MSG: &str = "hello risc0!";
 
+    // TODO: Check to ensure that Bonsai is being used when expected.
+
     let anvil = Anvil::new().spawn();
     // On MacOS, we cannot produce a Groth16 proof (risc0#1749), so we always set dev mode.
     let verifier_ctx = if cfg!(target_os = "macos") {
