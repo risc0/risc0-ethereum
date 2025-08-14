@@ -203,8 +203,7 @@ jobs:
 
   # Run the tests, including the contract integration test, using Bonsai as the prover.
   test-bonsai:
-    # DO NOT MERGE: Only run this on release branches.
-    #if: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+    if: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
     runs-on: [ self-hosted, prod, Linux, cpu ]
     env:
       RUST_BACKTRACE: full
