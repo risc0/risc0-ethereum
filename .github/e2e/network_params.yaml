@@ -1,9 +1,0 @@
-participants:
-  - el_type: geth
-    el_image: "ethereum/client-go:v1.15.10"
-    cl_type: teku
-    cl_image: "consensys/teku:25.4.0"
-additional_services:
-  - tx_spammer
-network_params:
-  preset: mainnet
