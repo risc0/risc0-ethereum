@@ -205,7 +205,7 @@ jobs:
   test-bonsai:
     # DO NOT MERGE: Only run this on release branches.
     #if: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
-    runs-on: [ self-hosted, prod, Linux, nvidia_rtx_a5000 ]
+    runs-on: [ self-hosted, prod, Linux, cpu ]
     env:
       RUST_BACKTRACE: full
       # NOTE: cfg no_auth is used by Steel to skip tests that require a real RPC URL.
@@ -234,7 +234,10 @@ jobs:
       # Find a good way to remove this requirement.
       - run: forge build
       - name: cargo test
-        run: cargo test $CARGO_LOCKED --workspace --all-features
+        run: cargo test $CARGO_LOCKED -p risc0-ethereum-test-utils --test contracts_integration
+        env:
+          BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
+          BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
       - run: sccache --show-stats
 
   rpc-tests:
