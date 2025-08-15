@@ -5,6 +5,7 @@ members = [
   "crates/*",
   "crates/aggregation/guest",
   "crates/ffi/guests",
+  "crates/test-utils/guests",
 ]
 exclude = [
   "crates/op-steel",

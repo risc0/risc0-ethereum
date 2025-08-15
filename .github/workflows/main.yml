@@ -30,7 +30,7 @@ jobs:
       - check
       - doc
       - docs-rs
-      - test-risc0-ethereum
+      - test
     runs-on: ubuntu-latest
     steps:
       - name: Check all job status
@@ -109,6 +109,9 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
+      # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
+      # Find a good way to remove this requirement.
+      - run: forge build
       - name: cargo clippy risc0-ethereum
         run: cargo clippy $CARGO_LOCKED --workspace --all-targets --all-features
         env:
@@ -122,7 +125,7 @@ jobs:
           RUSTFLAGS: -Dwarnings
       - run: sccache --show-stats
 
-  test-risc0-ethereum:
+  test:
     runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
@@ -138,8 +141,9 @@ jobs:
             feature: default
             device: apple_m2_pro
     env:
-      FEATURE: ${{ matrix.feature }}
       RUST_BACKTRACE: full
+      # NOTE: cfg no_auth is used by Steel to skip tests that require a real RPC URL.
+      # TODO(victor): Remove this along with removing Steel.
       RUSTFLAGS: "--cfg no_auth"
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
@@ -165,6 +169,9 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
+      # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
+      # Find a good way to remove this requirement.
+      - run: forge build
       - name: cargo test
         run: cargo test $CARGO_LOCKED --workspace
       - name: cargo build with all features
@@ -181,26 +188,21 @@ jobs:
         working-directory: contracts
       - run: sccache --show-stats
 
-  rpc-tests:
-    # Skip if the PR is not from a fork.
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
-    strategy:
-      # Run only on Linux with CPU.
-      matrix:
-        include:
-          - os: Linux
-            feature: default
-            device: cpu
+  # Run the tests, including the contract integration test, using Bonsai as the prover.
+  test-bonsai:
+    if: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
+    runs-on: [ self-hosted, prod, Linux, cpu ]
     env:
-      FEATURE: ${{ matrix.feature }}
-      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
-      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
       RUST_BACKTRACE: full
+      # NOTE: cfg no_auth is used by Steel to skip tests that require a real RPC URL.
+      # TODO(victor): Remove this along with removing Steel.
+      RUSTFLAGS: "--cfg no_auth"
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
       - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
         with:
@@ -214,6 +216,53 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
+      # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
+      # Find a good way to remove this requirement.
+      - run: forge build
+      - name: cargo test
+        run: cargo test $CARGO_LOCKED -p risc0-ethereum-test-utils --test contracts_integration
+        env:
+          BONSAI_API_URL: ${{ secrets.BONSAI_API_URL }}
+          BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
+      - run: sccache --show-stats
+
+  rpc-tests:
+    # Skip if the PR is from a fork.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    strategy:
+      # Run only on Linux with CPU.
+      matrix:
+        include:
+          - os: Linux
+            feature: default
+            device: cpu
+    env:
+      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
+      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
+      RUST_BACKTRACE: full
+    steps:
+      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
+      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+        with:
+          key: ${{ matrix.os }}-${{ matrix.feature }}
+      - uses: ./.github/actions/cargo-risczero-install
+        with:
+          ref: ${{ env.RISC0_MONOREPO_REF }}
+          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
+          features: ${{ matrix.feature }}
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
+      # Find a good way to remove this requirement.
+      - run: forge build
       - name: cargo test including RPC tests
         run: cargo test $CARGO_LOCKED --workspace --all-features
 
@@ -230,7 +279,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: ${{ env.FOUNDRY_VERSION }}
-      - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace
+      - run: cargo doc $CARGO_LOCKED --all-features --no-deps --workspace --exclude risc0-ethereum-test-utils
         env:
           RISC0_SKIP_BUILD: true,
           RISC0_SKIP_BUILD_KERNEL: true,

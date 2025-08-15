@@ -1,0 +1,18 @@
+[package]
+name = "risc0-ethereum-test-utils"
+version = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+alloy = { workspace = true, features = ["network", "node-bindings", "rpc-types", "providers", "transports", "sol-types", "contract", "signers", "signer-local"] }
+anyhow = { workspace = true }
+bytemuck = { workspace = true }
+hex = "0.4.3"
+risc0-ethereum-contracts = { workspace = true, features = ["unstable"] }
+risc0-ethereum-test-utils-guests = { path = "./guests" }
+risc0-zkvm = { workspace = true, default-features = false, features = ["unstable", "client", "bonsai"] }
+tokio = { workspace = true, features = ["rt"] }

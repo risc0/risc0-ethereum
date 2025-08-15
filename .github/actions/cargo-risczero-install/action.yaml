@@ -70,7 +70,9 @@ runs:
       if: inputs.ref != ''
       run: |
         cargo run --bin rzup -- install --verbose --force rust ${{ inputs.toolchain-version }}
-        cargo run --bin rzup -- install --verbose cpp
+        # NOTE: This uses the latest cpp toolchain and the latest groth16 prover.
+        cargo run --bin rzup -- install --verbose --force cpp
+        cargo run --bin rzup -- install --verbose --force risc0-groth16
       shell: bash
       working-directory: tmp/risc0
 
@@ -93,7 +95,9 @@ runs:
       if: inputs.version != ''
       run: |
         rzup install --verbose --force rust ${{ inputs.toolchain-version }}
-        rzup install --verbose cpp
+        # NOTE: This uses the latest cpp toolchain and the latest groth16 prover.
+        rzup install --verbose --force cpp
+        rzup install --verbose --force risc0-groth16
       shell: bash
 
     - name: cleanup
