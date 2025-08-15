@@ -125,7 +125,7 @@ jobs:
           RUSTFLAGS: -Dwarnings
       - run: sccache --show-stats
 
-  test-risc0-ethereum:
+  test:
     runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
