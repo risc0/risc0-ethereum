@@ -1,3 +1,0 @@
-forge-std/=../../../lib/forge-std/
-openzeppelin/=../../../lib/openzeppelin-contracts/
-risc0/=../../../contracts/src/

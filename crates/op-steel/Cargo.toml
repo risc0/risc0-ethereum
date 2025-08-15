@@ -1,41 +1,5 @@
 [package]
 name = "risc0-op-steel"
-description = "Optimism abstraction for Steel."
-version = "0.7.0-alpha.1"
-rust-version = "1.81"
-edition = { workspace = true }
-license = { workspace = true }
-homepage = { workspace = true }
-repository = { workspace = true }
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+version = "0.0.0"
 
 [dependencies]
-alloy = { workspace = true, optional = true, features = ["std", "essentials"] }
-alloy-eips = { workspace = true }
-alloy-evm = { workspace = true }
-alloy-op-evm = { workspace = true }
-alloy-primitives = { workspace = true, features = ["rlp", "serde"] }
-alloy-sol-types = { workspace = true }
-anyhow = { workspace = true }
-log = { workspace = true }
-op-alloy-network = { workspace = true }
-op-revm = { workspace = true, features = ["serde"] }
-revm = { workspace = true, features = ["serde", "optional_balance_check", "optional_block_gas_limit", "optional_eip3607", "optional_no_base_fee"] }
-risc0-steel = { workspace = true }
-serde = { workspace = true }
-test-log = { workspace = true }
-thiserror = { workspace = true }
-tokio = { workspace = true, optional = true }
-url = { workspace = true, optional = true }
-
-[dev-dependencies]
-risc0-op-steel = { workspace = true, features = ["host"] }
-
-[features]
-default = []
-host = ["dep:alloy", "dep:tokio", "dep:url", "risc0-steel/host", "alloy-primitives/rand"]
-reqwest-native-tls = ["alloy?/reqwest-native-tls", "risc0-steel/reqwest-native-tls"]
-reqwest-rustls-tls = ["alloy?/reqwest-rustls-tls", "risc0-steel/reqwest-rustls-tls"]
