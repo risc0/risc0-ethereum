@@ -1,5 +1,5 @@
 [package]
-name = "ffi-guests"
+name = "risc0-ethereum-test-utils-guests"
 version = "0.1.0"
 edition = "2021"
 
