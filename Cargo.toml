@@ -4,7 +4,6 @@ members = [
   "contracts",
   "crates/*",
   "crates/aggregation/guest",
-  "crates/ffi/guests",
   "crates/test-utils/guests",
 ]
 exclude = [
