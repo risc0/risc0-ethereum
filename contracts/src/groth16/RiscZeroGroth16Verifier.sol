@@ -56,7 +56,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Grot
 
     /// @notice Semantic version of the RISC Zero system of which this contract is part.
     /// @dev This is set to be equal to the version of the risc0-zkvm crate.
-    string public constant VERSION = "2.2.0";
+    string public constant VERSION = "3.0.0";
 
     /// @notice Control root hash binding the set of circuits in the RISC Zero system.
     /// @dev This value controls what set of recursion programs (e.g. lift, join, resolve), and
