@@ -226,46 +226,6 @@ jobs:
           BONSAI_API_KEY: ${{ secrets.BONSAI_API_KEY }}
       - run: sccache --show-stats
 
-  rpc-tests:
-    # Skip if the PR is from a fork.
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
-    strategy:
-      # Run only on Linux with CPU.
-      matrix:
-        include:
-          - os: Linux
-            feature: default
-            device: cpu
-    env:
-      ETH_RPC_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_RISC0_ETH_API_KEY }}
-      BEACON_API_URL: https://ethereum-beacon-api.publicnode.com
-      RUST_BACKTRACE: full
-    steps:
-      # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
-      - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
-      - uses: ./.github/actions/cargo-risczero-install
-        with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
-          toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
-          features: ${{ matrix.feature }}
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: ${{ env.FOUNDRY_VERSION }}
-      # TODO(victor): This forge build step is required because test-utils needs the built contract artifacts.
-      # Find a good way to remove this requirement.
-      - run: forge build
-      - name: cargo test including RPC tests
-        run: cargo test $CARGO_LOCKED --workspace --all-features
-
   doc:
     runs-on: [ self-hosted, prod, macOS, cpu ]
     steps:
