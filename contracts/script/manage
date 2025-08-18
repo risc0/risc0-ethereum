@@ -24,6 +24,10 @@ while [[ $# -gt 0 ]]; do
         FORGE_SCRIPT_FLAGS+=("$1") 
         shift
         ;;
+    --legacy)
+        FORGE_SCRIPT_FLAGS+=("$1") 
+        shift
+        ;;
     -*|--*)
         echo "Unknown option $1"
         exit 1

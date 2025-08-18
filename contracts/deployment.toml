@@ -507,6 +507,8 @@ selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
 
+# TODO(victor): activate the 3.0.0 verifier on Fuji. This failed in the 3.0.0 deployment due to an
+# issue with forge script + Fireblocks where EIP-1559 tx on Fuji fail.
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "3.0.0"
