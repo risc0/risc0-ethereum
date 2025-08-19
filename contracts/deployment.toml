@@ -54,7 +54,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -169,7 +168,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -229,7 +227,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -275,7 +272,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -335,7 +331,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -395,7 +390,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -457,7 +451,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -514,6 +507,8 @@ selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
 
+# TODO(victor): activate the 3.0.0 verifier on Fuji. This failed in the 3.0.0 deployment due to an
+# issue with forge script + Fireblocks where EIP-1559 tx on Fuji fail.
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "3.0.0"
@@ -591,7 +586,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -673,7 +667,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -733,7 +726,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -795,7 +787,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -858,7 +849,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x3d9aad871eaae3c5b847930f3Eef878D91766e46"
 estop = "0x4384e61DF16BFB392EFC1eF4B0D99F4ECC49BC40"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -921,7 +911,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x3d9aad871eaae3c5b847930f3Eef878D91766e46"
 estop = "0xF968911CA0b32faE4CDded83F1219b89189EB94B"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -951,7 +940,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -1013,7 +1001,6 @@ version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0xBdbFbF4500fced0d5511feEc1BB6a62EEf5Cd028"
 estop = "0xf0BF916fCC8581C1c2EfA480444feDf9BdbE8A4c"
-unroutable = true # remove when added to the router
 
 ###
 
