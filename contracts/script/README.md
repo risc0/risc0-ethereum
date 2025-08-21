@@ -223,6 +223,10 @@ This is a two-step process, guarded by the `TimelockController`.
     VERIFIER_SELECTOR="0x..." bash contracts/script/manage ScheduleAddVerifier
     ```
 
+    > [!NOTE]
+    > As of August 21, 2025 Fireblocks has issues sending EIP-1559 transactions to Fuji.
+    > You can use the --legacy flag with the manage script to work around this.
+
 7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
 
     This will send one transaction from the admin address.
