@@ -12,7 +12,7 @@ exclude = [
 ]
 
 [workspace.package]
-version = "3.0.0-rc.1"
+version = "3.0.0"
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://risczero.com/"
@@ -20,9 +20,9 @@ repository = "https://github.com/risc0/risc0-ethereum/"
 
 [workspace.dependencies]
 # Intra-workspace dependencies
-risc0-aggregation = { version = "0.8.0-rc.1", default-features = false, path = "crates/aggregation" }
-risc0-build-ethereum = { version = "3.0.0-rc.1", default-features = false, path = "build" }
-risc0-ethereum-contracts = { version = "3.0.0-rc.1", default-features = false, path = "contracts" }
+risc0-aggregation = { version = "0.8.0", default-features = false, path = "crates/aggregation" }
+risc0-build-ethereum = { version = "3.0.0", default-features = false, path = "build" }
+risc0-ethereum-contracts = { version = "3.0.0", default-features = false, path = "contracts" }
 
 # risc0 monorepo dependencies.
 risc0-binfmt = { version = "3.0.1", default-features = false }
