@@ -459,6 +459,9 @@ name = "Avalanche Fuji"
 id = 43113
 etherscan-url = "https://testnet.snowtrace.io"
 
+# NOTE: As of Aug 21, 2025, Fireblocks appears to have issues sending EIP-1559 transactions to Fuji
+# As a workaround, the `--legacy` flag can be used with forge script to not use EIP-1559.
+
 # Accounts
 admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
@@ -466,9 +469,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 timelock-delay = 1
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
-
-# NOTE: As of Aug 4, 2025, Fireblocks appears to have issues sending EIP-1559 transactions to Fuji
-# A workaround for this is to `forge script` in the `manage` script to disable use of EIP-1559.
 
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -507,15 +507,12 @@ selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
 
-# TODO(victor): activate the 3.0.0 verifier on Fuji. This failed in the 3.0.0 deployment due to an
-# issue with forge script + Fireblocks where EIP-1559 tx on Fuji fail.
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "3.0.0"
 selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
-unroutable = true # remove when added to the router
 
 ###
 
