@@ -18,7 +18,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   RISC0_TOOLCHAIN_VERSION: 1.88.0
   FOUNDRY_VERSION: v1.0.0
-  RISC0_MONOREPO_REF: "main"
+  RISC0_CRATE_VERSION: "3.0.1"
   # CARGO_LOCKED is defined as the string '--locked' in PRs targeting release branches and '' elsewhere.
   CARGO_LOCKED: ${{ (startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-')) && '--locked' || '' }}
 
@@ -40,7 +40,7 @@ jobs:
         run: exit 1
 
   check:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU.
       matrix:
@@ -53,7 +53,7 @@ jobs:
         with:
           # Full history is required by license-check.py
           fetch-depth: 0
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
@@ -82,7 +82,7 @@ jobs:
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
 
   clippy:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU.
       matrix:
@@ -96,13 +96,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
+      - uses: risc0/risc0/.github/actions/sccache@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_CRATE_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - name: Install Foundry
@@ -126,7 +126,7 @@ jobs:
       - run: sccache --show-stats
 
   test:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
@@ -136,7 +136,7 @@ jobs:
             device: cpu
           - os: Linux
             feature: cuda
-            device: nvidia_rtx_a5000
+            device: nvidia_rtx_4000_ada
           - os: macOS
             feature: default
             device: apple_m2_pro
@@ -152,17 +152,17 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+        uses: risc0/risc0/.github/actions/cuda@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
       # When building the prover from source (i.e. via the cuda flag, which activates the prove flag) protoc is required.
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/protoc@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
+      - uses: risc0/risc0/.github/actions/sccache@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_CRATE_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - name: Install Foundry
@@ -191,7 +191,7 @@ jobs:
   # Run the tests, including the contract integration test, using Bonsai as the prover.
   test-bonsai:
     if: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
-    runs-on: [ self-hosted, prod, Linux, cpu ]
+    runs-on: [ self-hosted, cluster, Linux, cpu ]
     env:
       RUST_BACKTRACE: full
       # NOTE: cfg no_auth is used by Steel to skip tests that require a real RPC URL.
@@ -203,13 +203,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
+      - uses: risc0/risc0/.github/actions/sccache@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
-          ref: ${{ env.RISC0_MONOREPO_REF }}
+          version: ${{ env.RISC0_CRATE_VERSION }}
           toolchain-version: ${{ env.RISC0_TOOLCHAIN_VERSION }}
           features: ${{ matrix.feature }}
       - name: Install Foundry
@@ -227,14 +227,14 @@ jobs:
       - run: sccache --show-stats
 
   doc:
-    runs-on: [ self-hosted, prod, macOS, cpu ]
+    runs-on: [ self-hosted, cluster, macOS, cpu ]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -249,7 +249,7 @@ jobs:
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
   docs-rs:
-    runs-on: [ self-hosted, prod, macOS, cpu ]
+    runs-on: [ self-hosted, cluster, macOS, cpu ]
     env:
       RUSTDOCFLAGS: "--cfg docsrs -D warnings"
       # Building with docs.rs config requires the nightly toolchain.
@@ -259,7 +259,7 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
         with:
           # Building with docs.rs config requires the nightly toolchain.
           toolchain: ${{ env.NIGHTLY_RUST_TOOLCHAIN }}
