@@ -84,11 +84,8 @@ runs:
     - name: install rzup
       if: inputs.version != ''
       run: |
-        # DO NOT MERGE: With the 3.0 release a groth16 component is added that is only available
-        # with the pre-release version of rzup. Remove this when the new version of rzup is released.
-        cargo install --force rzup --version 0.5.0-rc.3
-        #curl -L https://risczero.com/install | bash
-        #echo "$HOME/.risc0/bin" >> $GITHUB_PATH
+        curl -L https://risczero.com/install | bash
+        echo "$HOME/.risc0/bin" >> $GITHUB_PATH
       shell: bash
     - name: install r0vm
       if: inputs.version != ''

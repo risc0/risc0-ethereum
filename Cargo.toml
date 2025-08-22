@@ -25,10 +25,10 @@ risc0-build-ethereum = { version = "3.0.0-rc.1", default-features = false, path 
 risc0-ethereum-contracts = { version = "3.0.0-rc.1", default-features = false, path = "contracts" }
 
 # risc0 monorepo dependencies.
-risc0-binfmt = { version = "3.0.0-rc.3", default-features = false }
-risc0-build = { version = "3.0.0-rc.3", default-features = false }
-risc0-zkp = { version = "3.0.0-rc.3", default-features = false }
-risc0-zkvm = { version = "3.0.0-rc.3", default-features = false }
+risc0-binfmt = { version = "3.0.1", default-features = false }
+risc0-build = { version = "3.0.1", default-features = false }
+risc0-zkp = { version = "3.0.1", default-features = false }
+risc0-zkvm = { version = "3.0.1", default-features = false }
 
 # Alloy guest dependencies
 alloy-consensus = { version = "1.0" }
