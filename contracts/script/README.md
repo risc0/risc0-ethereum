@@ -171,7 +171,7 @@ Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `man
     FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url=${RPC_URL:?}
     ```
 
-6. If using Fireblocks, add the newly deployed timelock controller address to the like of allowed contract call destinations.
+6. If using Fireblocks, add the newly deployed timelock controller address to the list of allowed contract call destinations.
    This allows future operations, e.g. adding a new verifier, that go through the timelock controller.
 
 ## Deploy a Groth16 verifier with emergency stop mechanism
