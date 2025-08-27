@@ -33,7 +33,6 @@
        * `contracts/src/RiscZeroSetVerifier.sol`
      * Update references to the `main` branch
        * Search for `risc0/risc0-ethereum/refs/heads/main`
-     * Update `crates/steel/CHANGELOG.md` to ensure it details the changes to be released.
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
 
@@ -55,7 +54,6 @@
      * Update the version string in contracts that contain it:
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
        * `contracts/src/RiscZeroSetVerifier.sol`
-     * Update `crates/steel/CHANGELOG.md` to start a new section for the next release.
 
 4. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
@@ -66,11 +64,6 @@
 5. Publish crates to `crates.io`
 
    Crates currently published to `crates.io` are:
-
-   * ~~`risc0-steel`~~
-
-     > NOTE: risc0-steel currently cannot be published to crates.io.
-     > See [#202](https://github.com/risc0/risc0-ethereum/issues/202)
 
    * `risc0-aggregation`
    * `risc0-build-ethereum`
@@ -124,5 +117,3 @@
      [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
 
 7. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
-
-8. Update and test the `create-steel-app` script.

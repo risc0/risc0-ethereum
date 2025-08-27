@@ -11,15 +11,6 @@ timelock-controller = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 timelock-delay = 259200
 router = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 
-# TODO: Add information for 1.0 contracts.
-[[chains.ethereum-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0x5a99469f18a5863D3258E577892589386dFD965E"
-estop = "0xB839eA7bBA8e6bB2893ca5252F3f3C13323D74F7"
-
 [[chains.ethereum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
 version = "1.1.0-rc.3"
@@ -48,6 +39,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0xDa8f3de6fBBdb261Ac771B813a578A7aBdA6B2b1"
+stopped = true
 
 [[chains.ethereum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -55,6 +47,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
+
+[[chains.ethereum-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
 
 ###
 
@@ -70,14 +69,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0xB4E3306129208cC8e6E75157f75f62eAe0B920a0"
 timelock-delay = 1
 router = "0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187"
-
-[[chains.ethereum-sepolia.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xf4D938c73Bcc124e02A2D6c7557e98838B5E91B4"
-estop = "0x1C182869A6bF84DfAc0a70B46e2f9b3aeE9100e1"
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -162,6 +153,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -169,6 +161,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+
+[[chains.ethereum-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -184,14 +183,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 timelock-delay = 1
 router = "0xf70aBAb028Eb6F4100A24B203E113D94E87DE93C"
-
-[[chains.ethereum-holesky.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xDC986a09728F76110FF666eE7b20d99086501d15"
-estop = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
 
 [[chains.ethereum-holesky.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -221,6 +212,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.ethereum-holesky.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -228,6 +220,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+
+[[chains.ethereum-holesky.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -258,6 +257,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.ethereum-hoodi.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -265,6 +265,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+
+[[chains.ethereum-hoodi.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -280,14 +287,6 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.arbitrum-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.arbitrum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -317,6 +316,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0xDa8f3de6fBBdb261Ac771B813a578A7aBdA6B2b1"
+stopped = true
 
 [[chains.arbitrum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -324,6 +324,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
+
+[[chains.arbitrum-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
 
 ###
 
@@ -339,14 +346,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 1
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.arbitrum-sepolia.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.arbitrum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -376,6 +375,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.arbitrum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -383,6 +383,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+
+[[chains.arbitrum-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -398,14 +405,6 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 timelock-delay = 259200
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
-
-[[chains.avalanche-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.avalanche-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -437,6 +436,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0xDa8f3de6fBBdb261Ac771B813a578A7aBdA6B2b1"
+stopped = true
 
 [[chains.avalanche-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -445,12 +445,22 @@ selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
 
+[[chains.avalanche-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
+
 ###
 
 [chains.avalanche-fuji]
 name = "Avalanche Fuji"
 id = 43113
 etherscan-url = "https://testnet.snowtrace.io"
+
+# NOTE: As of Aug 21, 2025, Fireblocks appears to have issues sending EIP-1559 transactions to Fuji
+# As a workaround, the `--legacy` flag can be used with forge script to not use EIP-1559.
 
 # Accounts
 admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
@@ -459,14 +469,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0xDC986a09728F76110FF666eE7b20d99086501d15"
 timelock-delay = 1
 router = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
-
-[[chains.avalanche-fuji.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -496,6 +498,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -503,9 +506,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
-# As of July 7, we are having trouble sending the tx to add this verifier to the router.
-# TODO: Fix this.
-unroutable = true # remove when added to the router
+
+[[chains.avalanche-fuji.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -521,14 +528,6 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.base-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.base-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -569,6 +568,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0xDa8f3de6fBBdb261Ac771B813a578A7aBdA6B2b1"
+stopped = true
 
 [[chains.base-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -576,6 +576,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
+
+[[chains.base-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
 
 ###
 
@@ -591,14 +598,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 1
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.base-sepolia.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0x84b943E31e7fAe6072ce5F75eb4694C7D5F9b0cF"
-estop = "0x5E36f0D56741013d864d8FEb5950AB0E7Eff9Ab1"
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -650,6 +649,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -657,6 +657,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+
+[[chains.base-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -672,14 +679,6 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.optimism-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.optimism-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -709,6 +708,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0xDa8f3de6fBBdb261Ac771B813a578A7aBdA6B2b1"
+stopped = true
 
 [[chains.optimism-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -716,6 +716,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
+
+[[chains.optimism-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
 
 ###
 
@@ -733,14 +740,6 @@ timelock-delay = 1
 router = "0xB369b4dd27FBfb59921d3A4a3D23AC2fc32FB908"
 
 # NOTE: 1.0 was not deployed to OP Sepolia.
-
-[[chains.optimism-sepolia.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.optimism-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -770,6 +769,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0x54aCE3ED46529B4d4F3770C8Bad5dDC48717B9bF"
 estop = "0x9d6232CD50b5a2df431274f2633988f97bF3985f"
+stopped = true
 
 [[chains.optimism-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -777,6 +777,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
 estop = "0x7BE0Ca3734bB4B0aC66dD05714D25476bd658a9F"
+
+[[chains.optimism-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
 ###
 
@@ -792,14 +799,6 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.linea-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.linea-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -832,6 +831,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0xCb941DE7Fac82B1D768848ed267cc93B7AbE5AB6"
 estop = "0x8777853Dbe9694D7a146D8e17f7b6331BF75C64c"
+stopped = true
 
 [[chains.linea-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -839,6 +839,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0x7F321e749E36d5646E12d6614EB0Ec2E962962A0"
 estop = "0x24496Cfa1362eB60929dBdeEF9988a3AA853EcC6"
+
+[[chains.linea-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x3d9aad871eaae3c5b847930f3Eef878D91766e46"
+estop = "0x4384e61DF16BFB392EFC1eF4B0D99F4ECC49BC40"
 
 ###
 
@@ -854,14 +861,6 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 timelock-controller = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
 timelock-delay = 1
 router = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
-
-[[chains.linea-sepolia.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0x0b144E07A0826182B6b59788c34b32Bfa86Fb711"
-estop = "0x8EaB2D97Dfce405A1692a21b3ff3A172d593D319"
 
 [[chains.linea-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -894,6 +893,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0xCb941DE7Fac82B1D768848ed267cc93B7AbE5AB6"
 estop = "0x7D2da71AFC99198eFb25dF594A13aDa3C6D9Ada2"
+stopped = true
 
 [[chains.linea-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -901,6 +901,42 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0x7F321e749E36d5646E12d6614EB0Ec2E962962A0"
 estop = "0x0e428E8426FBc2824257736A129FF4dF9d56B9b3"
+
+[[chains.linea-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x3d9aad871eaae3c5b847930f3Eef878D91766e46"
+estop = "0xF968911CA0b32faE4CDded83F1219b89189EB94B"
+
+###
+
+[chains.polygon-mainnet]
+name = "Polygon (POS) Mainnet"
+id = 137
+etherscan-url = "https://polygonscan.com/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0x15249b0ee8eCabC8AB5753763501D4AcD0B7ABAB"
+timelock-delay = 259200
+router = "0xdBAD523786971B75A7b1c1CFdCfECDeb59A764B9"
+
+[[chains.polygon-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "2.2.0"
+selector = "0xbb001d44"
+verifier = "0xafB31f5b70623CDF4b20Ada3f7230916A5A79df9"
+estop = "0x1efDd13f831ceeEa14940806705A53D3211CD698"
+
+[[chains.polygon-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
 
 ###
 
@@ -916,14 +952,6 @@ admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
 timelock-delay = 259200
 router = "0x0b144e07a0826182b6b59788c34b32bfa86fb711"
-
-[[chains.polygon-zkevm-mainnet.verifiers]]
-name = "RiscZeroGroth16Verifier"
-version = "1.1.0-rc.2"
-unroutable = true
-selector = "0x4c630d87"
-verifier = "0xBDaEd5bbf8016AfD05Fc4659572e5fEb5854aAD4"
-estop = "0x27983ee173aD10E171D17C9c5C14d5baFE997609"
 
 [[chains.polygon-zkevm-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -955,6 +983,7 @@ version = "2.1.0"
 selector = "0xf536085a"
 verifier = "0xCb97eF56F2b3d8116b5B851bbe74ea31380fA7dD"
 estop = "0xC5cbE5B24231E3339CdD8D4F1F1F7e096D919790"
+stopped = true
 
 [[chains.polygon-zkevm-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -962,6 +991,13 @@ version = "2.2.0"
 selector = "0xbb001d44"
 verifier = "0x65e8db061e4b967D901EcbA7D99Baa1d2E5e2de9"
 estop = "0x57880e43BA126a29d81851F3410dF23a2008bF2E"
+
+[[chains.polygon-zkevm-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0xBdbFbF4500fced0d5511feEc1BB6a62EEf5Cd028"
+estop = "0xf0BF916fCC8581C1c2EfA480444feDf9BdbE8A4c"
 
 ###
 

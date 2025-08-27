@@ -12,15 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod game;
-pub mod optimism;
-
-#[cfg(feature = "host")]
-pub mod l1;
-
-pub use game::{DisputeGameCommit, DisputeGameInput, OutputRootProof};
-
-#[cfg(feature = "host")]
-pub use game::host::DisputeGameIndex;
-
-pub use risc0_steel::*;
+compile_error!("risc0-op-steel has moved. Please reference https://github.com/boundless-xyz/steel");

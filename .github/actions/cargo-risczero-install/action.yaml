@@ -58,26 +58,28 @@ runs:
       shell: bash
     - name: install cargo-risczero from git
       if: inputs.ref != ''
-      run: cargo install --locked --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
+      run: cargo install --locked --force --path risc0/cargo-risczero --no-default-features --features "${{ inputs.features }}"
       working-directory: tmp/risc0
       shell: bash
     - name: install r0vm from git
       if: inputs.ref != ''
-      run: cargo install --locked --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
+      run: cargo install --locked --force --bin r0vm --path risc0/cargo-risczero --features "${{ inputs.features }}"
       shell: bash
       working-directory: tmp/risc0
     - name: install toolchains
       if: inputs.ref != ''
       run: |
         cargo run --bin rzup -- install --verbose --force rust ${{ inputs.toolchain-version }}
-        cargo run --bin rzup -- install --verbose cpp
+        # NOTE: This uses the latest cpp toolchain and the latest groth16 prover.
+        cargo run --bin rzup -- install --verbose --force cpp
+        cargo run --bin rzup -- install --verbose --force risc0-groth16
       shell: bash
       working-directory: tmp/risc0
 
     # Only run this step if using version (installing from crates.io)
     - name: install cargo-risczero from crates.io
       if: inputs.version != ''
-      run: cargo install --locked cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
+      run: cargo install --locked --force cargo-risczero --version "${{ inputs.version }}" --no-default-features --features "${{ inputs.features }}"
       shell: bash
     - name: install rzup
       if: inputs.version != ''
@@ -87,13 +89,15 @@ runs:
       shell: bash
     - name: install r0vm
       if: inputs.version != ''
-      run: rzup install --verbose r0vm ${{ inputs.version }}
+      run: rzup install --verbose --force r0vm ${{ inputs.version }}
       shell: bash
     - name: install toolchains
       if: inputs.version != ''
       run: |
         rzup install --verbose --force rust ${{ inputs.toolchain-version }}
-        rzup install --verbose cpp
+        # NOTE: This uses the latest cpp toolchain and the latest groth16 prover.
+        rzup install --verbose --force cpp
+        rzup install --verbose --force risc0-groth16
       shell: bash
 
     - name: cleanup

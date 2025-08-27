@@ -24,6 +24,10 @@ while [[ $# -gt 0 ]]; do
         FORGE_SCRIPT_FLAGS+=("$1") 
         shift
         ;;
+    --legacy)
+        FORGE_SCRIPT_FLAGS+=("$1") 
+        shift
+        ;;
     -*|--*)
         echo "Unknown option $1"
         exit 1
@@ -92,12 +96,12 @@ if [ $FIREBLOCKS -gt 0 ]; then
     # Run forge via fireblocks
     fireblocks-json-rpc --verbose --rpcUrl ${RPC_URL:?} --http --apiKey ${FIREBLOCKS_API_KEY:?} -- \
         forge script ${SCRIPT_FILE:?}:${SCRIPT_FUNCTION:?} \
-        --slow --unlocked ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS} \
+        --slow --unlocked ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS[@]} \
         --rpc-url {}
 else
     # Run forge
     forge script ${SCRIPT_FILE:?}:${SCRIPT_FUNCTION:?} \
-        --slow ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS} \
+        --slow ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS[@]} \
         --private-key ${DEPLOYER_PRIVATE_KEY:?} \
         --rpc-url ${RPC_URL:?}
 fi

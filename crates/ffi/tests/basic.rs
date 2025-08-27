@@ -15,8 +15,8 @@
 use std::process::Command;
 
 use alloy::sol_types::SolValue;
-use ffi_guests::{ECHO_ID, ECHO_PATH};
 use risc0_ethereum_contracts::encode_seal;
+use risc0_ethereum_test_utils_guests::{ECHO_ID, ECHO_PATH};
 use risc0_forge_ffi::JournalSeal;
 use risc0_zkvm::{FakeReceipt, InnerReceipt, Receipt, ReceiptClaim};
 

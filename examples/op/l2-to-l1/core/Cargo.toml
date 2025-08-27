@@ -1,8 +1,0 @@
-[package]
-name = "l2-to-l1-core"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-alloy-primitives = "1.0"
-alloy-sol-types = "1.0"
