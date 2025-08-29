@@ -154,7 +154,7 @@ selector = "0x242f9d5b"
 verifier = "0xcb9D14347b1e816831ECeE46EC199144F360B55c"
 estop = "0xA9aa32A5aAF3Bad63e5F25d1cb86040bbf883c5B"
 unroutable = true # remove when added to the router
-# Build info for the set-builder guest
+# Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafybeicclqbjn5ief3ycqif6wv3n3wr43szv2locrmml5h7d4fkrz4jrum"
@@ -581,7 +581,7 @@ selector = "0x242f9d5b"
 verifier = "0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104"
 estop = "0x8607C0F600857E6f65Ac85b8ba730410D4771fA6"
 unroutable = true # remove when added to the router
-# Build info for the set-builder guest
+# Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafybeicclqbjn5ief3ycqif6wv3n3wr43szv2locrmml5h7d4fkrz4jrum"
@@ -674,7 +674,7 @@ selector = "0x242f9d5b"
 verifier = "0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104"
 estop = "0xf62AbB78d7a039a7119c002fA9a5E4709472D46C"
 unroutable = true # remove when added to the router
-# Build info for the set-builder guest
+# Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafybeicclqbjn5ief3ycqif6wv3n3wr43szv2locrmml5h7d4fkrz4jrum"
