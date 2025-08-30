@@ -25,4 +25,3 @@ library TestSetInclusionReceipt {
     bytes public constant JOURNAL = hex"6500000063000000680000006f0000005f00000074000000650000007300000074000000";
     bytes32 public constant IMAGE_ID = hex"93795eafc980e752ecb2ba6ecb8203b2ff82794c5dc1d419847fea4300d76c8f";
 }
-

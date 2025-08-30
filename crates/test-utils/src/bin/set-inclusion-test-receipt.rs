@@ -40,7 +40,7 @@ fn main() {
     let set_builder_elf = std::fs::read(&args.path).expect("Failed to read ELF file");
     let set_builder_image_id =
         risc0_zkvm::compute_image_id(&set_builder_elf).expect("Failed to compute image ID");
-    println!("Set Builder image ID: {}", set_builder_image_id);
+    println!("Set Builder image ID: {set_builder_image_id}");
     let set_inclusion_digest = SetInclusionReceiptVerifierParameters {
         image_id: set_builder_image_id,
     }
