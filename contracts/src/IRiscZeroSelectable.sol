@@ -26,7 +26,7 @@ interface IRiscZeroSelectable {
     ///
     ///      A selector is not intended to be collision resistant, in that it is possible to find
     ///      two preimages that result in the same selector. This is acceptable since it's purpose
-    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
+    ///      to route a request among a set of trusted verifiers, and to make errors of sending a
     ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
     ///      function selectors.
     function SELECTOR() external view returns (bytes4);
