@@ -149,10 +149,10 @@ where
     ///
     /// For each iteration, we query a range of blocks. If the event is not found, we move the
     /// range down and repeat until we find the event. If the event is not found after the
-    /// configured max iterations, we return an error. The default range is set to 100 blocks for
-    /// each iteration, and the default maximum number of iterations is 1000. This means that the
-    /// search will cover a maximum of 100,000 blocks (~14 days at 12s block times). Optionally,
-    /// you can specify a lower and upper bound to limit the search range.
+    /// configured max iterations, we return an error. The default range is set to 500 blocks for
+    /// each iteration, and the default maximum number of iterations is 100. This means that the
+    /// search will cover a maximum of 5,000 blocks (16 hours at 12s block times). Optionally, you
+    /// can specify a lower and upper bound to limit the search range.
     async fn query_verified_root_event(
         &self,
         root: B256,
