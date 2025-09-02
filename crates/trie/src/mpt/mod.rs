@@ -285,11 +285,9 @@ impl CachedTrie {
 
     /// Computes and returns the hash of the trie's root node.
     ///
-    /// This method may utilize cached hashes within the internal node structure (if available) to
-    /// speed up the computation. However, it does not update the cached root hash of this
-    /// `CachedTrie` instance. For optimal performance with `CachedTrie`, prefer the [`Self::hash`]
-    /// method, which manages the root hash cache. This method mirrors [`Trie::hash_slow`], and is
-    /// similarly less efficient.
+    /// This method uses cached hashes when available (both root hash and internal node caches)
+    /// but does not update them. For optimal performance, prefer [`Self::hash`] which manages
+    /// and updates all caches.
     #[inline]
     pub fn hash_slow(&self) -> B256 {
         match self.hash {
