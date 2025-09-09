@@ -61,7 +61,6 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0x5005aBa3DFf7C940fcc1e48DccCAD611a80eEB85"
 estop = "0x844D5f01161E3559d36f23d0Aa9E9620949aF782"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
