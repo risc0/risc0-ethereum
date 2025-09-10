@@ -52,6 +52,7 @@ pub enum Selector {
     SetVerifierV0_5 = 0xf2e6e6dc,
     SetVerifierV0_6 = 0x80479d24,
     SetVerifierV0_7 = 0x0f63ffd5,
+    SetVerifierV0_9 = 0x242f9d5b,
 }
 
 impl Display for Selector {
@@ -78,6 +79,7 @@ impl TryFrom<u32> for Selector {
             0xf2e6e6dc => Ok(Selector::SetVerifierV0_5),
             0x80479d24 => Ok(Selector::SetVerifierV0_6),
             0x0f63ffd5 => Ok(Selector::SetVerifierV0_7),
+            0x242f9d5b => Ok(Selector::SetVerifierV0_9),
             _ => Err(SelectorError::UnsupportedSelector),
         }
     }
@@ -137,6 +139,10 @@ impl Selector {
                 "0f63ffd5b1579bf938597f82089ca639a393341e888f58c12d0c91065eb2a3de",
             )
             .unwrap()),
+            Selector::SetVerifierV0_9 => Ok(Digest::from_hex(
+                "242f9d5b8df6e1660fd7cadeec6f213501adaadb3d03d76b2ba400cf25366e2b",
+            )
+            .unwrap()),
         }
     }
 
@@ -154,7 +160,8 @@ impl Selector {
             | Selector::SetVerifierV0_4
             | Selector::SetVerifierV0_5
             | Selector::SetVerifierV0_6
-            | Selector::SetVerifierV0_7 => SelectorType::SetVerifier,
+            | Selector::SetVerifierV0_7
+            | Selector::SetVerifierV0_9 => SelectorType::SetVerifier,
         }
     }
 
@@ -170,7 +177,7 @@ impl Selector {
     /// Returns the selector corresponding to the latest version of the set inclusion verifier (aka
     /// aggregation verifier).
     pub const fn set_inclusion_latest() -> Self {
-        Self::SetVerifierV0_7
+        Self::SetVerifierV0_9
     }
 }
 
@@ -184,8 +191,8 @@ mod tests {
         Groth16ReceiptVerifierParameters,
     };
 
-    // SetBuilder image ID v0.7.0 (built using cargo risczero build v2.0.2)
-    const SET_BUILDER_ID: &str = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa";
+    // SetBuilder image ID v0.9.0 (built using cargo risczero build v3.0.3)
+    const SET_BUILDER_ID: &str = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9";
 
     #[test]
     fn print_verifier_parameters() {
