@@ -15,7 +15,7 @@
 use risc0_aggregation::{GuestInput, GuestState};
 use risc0_zkvm::{guest::env, sha::Digestible};
 
-// Verify that the state is either the initial state, is a verified output of self_image_id.
+// Verify that the state is either the initial state, or a verified output of self_image_id.
 fn verify_state(state: &GuestState) {
     if state.is_initial() {
         return;
