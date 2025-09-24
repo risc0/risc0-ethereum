@@ -178,7 +178,6 @@ contract RiscZeroManagementScript is Script {
 ///     * MIN_DELAY minimum delay in seconds for operations
 ///     * PROPOSER address of proposer
 ///     * EXECUTOR address of executor
-///     * ADMIN address of admin (optional; leave unset to disable)
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/guides/scripting-with-solidity
@@ -198,14 +197,17 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
         executors[0] = vm.envAddress("EXECUTOR");
         console2.log("executors:", executors[0]);
 
+        // NOTE: This functionality is unused in our process. The admin is not subject to the timelock
+        // delay, which is useful e.g. for initial setup, but should not be used in production.
+        //
         // optional account to be granted admin role; disable with zero address
         // When the admin is unset, the contract is self-administered.
-        address admin = vm.envOr("ADMIN", address(0));
-        console2.log("admin:", admin);
+        //address admin = vm.envOr("ADMIN", address(0));
+        //console2.log("admin:", admin);
 
         // Deploy new contracts
         vm.broadcast(deployerAddress());
-        _timelockController = new TimelockController{salt: CREATE2_SALT}(minDelay, proposers, executors, admin);
+        _timelockController = new TimelockController{salt: CREATE2_SALT}(minDelay, proposers, executors, address(0));
         console2.log("Deployed TimelockController to", address(timelockController()));
 
         vm.broadcast(deployerAddress());

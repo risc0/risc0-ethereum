@@ -1051,3 +1051,28 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # NOTE: As of the 1.1.0-rc.2 deployment on August 21, deploying to polygon zkEVM testnet failed.
 # On Polygon zkEVM Cardona testnet, gave an error of "Failed to get EIP-1559 fees".
+
+[chains.katana-mainnet]
+
+# NOTE: Using the the `fireblocks-json-rpc` on this network requires setting `FIREBLOCKS_ASSET_ID=KATANA_ETH`.
+# At the momment, this also entails using a patched version of that CLI https://github.com/fireblocks/fireblocks-json-rpc/pull/24
+# Sending EIP-1559 transactions to Katana via Fireblocks (sometimes) fails. Use the --legacy flag with the script to make sure it works.
+
+name = "Katana Mainnet"
+id = 747474
+etherscan-url = "https://katanascan.com/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0x821C0423dfD0f70890CB9BC6718451261b1696de"
+timelock-delay = 259200
+router = "0x08C82eDBb95F0942AEDbf781a961F2910ebA3de2"
+
+[[chains.katana-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
