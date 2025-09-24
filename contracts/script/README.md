@@ -451,7 +451,7 @@ Execute the action:
 
 Use the following steps to cancel an operation that is pending on the `TimelockController`.
 
-1. Identify  the operation ID and set the environment variable.
+1. Identify the operation ID and set the environment variable.
 
     > TIP: One way to get the operation ID is to open the contract in Etherscan and look at the events.
     > On the `CallScheduled` event, the ID is labeled as `[topic1]`.
