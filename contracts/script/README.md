@@ -236,7 +236,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Finish the update
 
-After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
+After the delay on the timelock controller has passed, the operation to add the new verifier to the router can be executed.
 
 1. Dry the transaction to execute the add verifier operation:
 
@@ -451,7 +451,7 @@ Execute the action:
 
 Use the following steps to cancel an operation that is pending on the `TimelockController`.
 
-1. Identifier the operation ID and set the environment variable.
+1. Identify the operation ID and set the environment variable.
 
     > TIP: One way to get the operation ID is to open the contract in Etherscan and look at the events.
     > On the `CallScheduled` event, the ID is labeled as `[topic1]`.
