@@ -201,7 +201,7 @@ where
         }
 
         // Return error if no logs are found after all iterations
-        bail!("VerifiedRoot event not found for root {:?}", root);
+        bail!("VerifiedRoot event not found for root {root:?}");
     }
 
     /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its
@@ -226,7 +226,7 @@ where
         journal: impl Into<Vec<u8>>,
     ) -> Result<SetInclusionReceipt<ReceiptClaim>> {
         let receipt = decode_seal_with_claim(seal, claim.clone(), journal)
-            .map_err(|e| anyhow::anyhow!("Failed to decode seal: {:?}", e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to decode seal: {e:?}"))?;
 
         let set_inclusion_receipt = receipt
             .set_inclusion_receipt()
