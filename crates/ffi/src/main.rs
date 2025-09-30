@@ -102,14 +102,10 @@ fn take_stdout() -> Result<File> {
     unsafe {
         // Create a copy of stdout to use for our output.
         let dup_fd = libc::dup(handle.as_raw_fd());
-        ensure!(dup_fd >= 0, "call to libc::dup failed: {}", dup_fd);
+        ensure!(dup_fd >= 0, "call to libc::dup failed: {dup_fd}");
         // Redirect stdout to the fd we opened for /dev/null
         let dup2_result = libc::dup2(devnull.as_raw_fd(), libc::STDOUT_FILENO);
-        ensure!(
-            dup2_result >= 0,
-            "call to libc::dup2 failed: {}",
-            dup2_result
-        );
+        ensure!(dup2_result >= 0, "call to libc::dup2 failed: {dup2_result}",);
         Ok(File::from_raw_fd(dup_fd))
     }
 }
