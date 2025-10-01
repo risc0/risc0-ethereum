@@ -24,7 +24,6 @@ Steel now lives in its own repository. Check out [github.com/boundless-xyz/steel
 [RISC Zero]: https://github.com/risc0/risc0
 [Ethereum]: https://ethereum.org/
 [contracts]: ./contracts
-[examples directory]: ./examples
 [template]: https://github.com/risc0/risc0-foundry-template
 [dev.risczero.com]: https://dev.risczero.com
 [risc0-quickstart]: https://dev.risczero.com/api/zkvm/quickstart
