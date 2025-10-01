@@ -42,16 +42,24 @@ pub enum Selector {
     FakeReceipt = 0xFFFFFFFF,
     Groth16V1_1 = 0x50bd1769,
     Groth16V1_2 = 0xc101b42b,
+    #[deprecated]
     Groth16V2_0 = 0x9f39696c,
+    #[deprecated]
     Groth16V2_1 = 0xf536085a,
     Groth16V2_2 = 0xbb001d44,
     Groth16V3_0 = 0x73c457ba,
     Groth16V5_0 = 0x7f3d0102,
+    #[deprecated]
     SetVerifierV0_1 = 0xbfca9ccb,
+    #[deprecated]
     SetVerifierV0_2 = 0x16a15cc8,
+    #[deprecated]
     SetVerifierV0_4 = 0xf443ad7b,
+    #[deprecated]
     SetVerifierV0_5 = 0xf2e6e6dc,
+    #[deprecated]
     SetVerifierV0_6 = 0x80479d24,
+    #[deprecated]
     SetVerifierV0_7 = 0x0f63ffd5,
     SetVerifierV0_9 = 0x242f9d5b,
 }
@@ -65,6 +73,7 @@ impl Display for Selector {
 impl TryFrom<u32> for Selector {
     type Error = SelectorError;
 
+    #[expect(deprecated)]
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
             0xFFFFFFFF => Ok(Selector::FakeReceipt),
@@ -89,6 +98,7 @@ impl TryFrom<u32> for Selector {
 
 impl Selector {
     pub fn verifier_parameters_digest(self) -> Result<Digest, SelectorError> {
+        #[expect(deprecated)]
         match self {
             Selector::FakeReceipt => {
                 Err(SelectorError::NoVerifierParameters(Selector::FakeReceipt))
@@ -153,6 +163,7 @@ impl Selector {
     }
 
     pub fn get_type(self) -> SelectorType {
+        #[expect(deprecated)]
         match self {
             Selector::FakeReceipt => SelectorType::FakeReceipt,
             Selector::Groth16V1_1

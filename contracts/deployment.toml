@@ -113,6 +113,7 @@ estop = "0xFB4D56bdEc378e6625e6448b037EFB4E5FCE085d"
 set-builder-commit = "abd97bca9533d70302b41f67020f7fd1e41d9cf7"
 set-builder-image-id = "7d75250e86556132c0e10c05b0f1d823ae72a5e277a596039576b6578cb25260"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/QmXVv8FErxhzxQiSEYDqwDA5bWLu7wEn7ZWcFvjAsfqJdW"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -124,6 +125,7 @@ estop = "0x9852f4B6b6554E4C723914a5500Fc57156EDE3F7"
 set-builder-commit = "8eadd4812fe44ba266a0565725c4fa654e4770e5"
 set-builder-image-id = "8888bf20b2be0ca935e166325578c336cc16355f9b63e7e5279c71a0a97f4df9"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreih46jdbjosixps7l3obrmfh4xlusnunohva6pfhqqdcyobaac4w4a"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -135,6 +137,7 @@ estop = "0xb1216C4ECA3E3D69f9542Ae9b20b03c69693CC80"
 set-builder-commit = "45a77235021f21ddc023d4655db0d6fd914de402"
 set-builder-image-id = "79fd473a707e7c064af3edabf63cad6c7ab9205766fd8d8160bdef97fdd15c74"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreiggmfeaohdbdwmhhsferpnrrjrd37h43hgwmu6yobwcd3qaavut6q"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -146,6 +149,7 @@ estop = "0x1A42D5b2fF29fbc2CB684836d222c561639b0bE4"
 set-builder-commit = "f584db3428af194f244e0ff74370918a649aab76"
 set-builder-image-id = "2fcedaa205bbfab6b804dec81e99cc9a22b20dea7a9701a1a7c55c7d26ef32f6"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreifdozdfxhgdn6mcuq2mltbx7qaq5mie4iosq7kxj5rqmm4kg4qcfy"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -157,6 +161,7 @@ estop = "0x46D0322760631084bFfC10b31962A47a527Ac042"
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreicn2oingurbfxdanqgzy6nwt2gexazlnh6jhj7h3k2ot47vw6fomq"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -583,6 +588,7 @@ estop = "0xc0F0a64960187b83DcAA0e4bC2Ec05bfCbde9Fd7"
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreicn2oingurbfxdanqgzy6nwt2gexazlnh6jhj7h3k2ot47vw6fomq"
+stopped = true
 
 [[chains.base-mainnet.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -664,6 +670,7 @@ estop = "0x226B6e6b37F92a1D620Eb41b833Cc92760268D4a"
 set-builder-commit = "f584db3428af194f244e0ff74370918a649aab76"
 set-builder-image-id = "2fcedaa205bbfab6b804dec81e99cc9a22b20dea7a9701a1a7c55c7d26ef32f6"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreifdozdfxhgdn6mcuq2mltbx7qaq5mie4iosq7kxj5rqmm4kg4qcfy"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -675,6 +682,7 @@ estop = "0x5c5076c20b897F9b8dd2c5e68Bd62785BA3D319B"
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreicn2oingurbfxdanqgzy6nwt2gexazlnh6jhj7h3k2ot47vw6fomq"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
