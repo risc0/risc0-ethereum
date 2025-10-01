@@ -224,7 +224,7 @@ This is a two-step process, guarded by the `TimelockController`.
     ```
 
     > [!NOTE]
-    > As of August 21, 2025 Fireblocks has issues sending EIP-1559 transactions to Fuji.
+    > As of August 21, 2025 Fireblocks has issues sending EIP-1559 transactions to Fuji and Katana.
     > You can use the --legacy flag with the manage script to work around this.
 
 7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
