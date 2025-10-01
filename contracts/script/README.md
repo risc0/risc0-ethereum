@@ -638,27 +638,18 @@ Activate the emergency stop:
 > In order to send a transaction to the estop contract in Fireblocks, the addresses need to be added to the allow-list.
 > If this has not already been done, do this as a pre-step.
 
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry run the transaction
 
     ```sh
-    export VERIFIER_SELECTOR="0x..."
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
-    ```
-
-2. Dry run the transaction
-
-    ```sh
-    VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
+    VERIFIER_SELCTOR="0x..." \
     bash contracts/script/manage ActivateEstop
     ```
 
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
-4. Test the activation:
+3. Test the activation:
 
     ```sh
     cast call --rpc-url ${RPC_URL:?} \
