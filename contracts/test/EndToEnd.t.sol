@@ -36,7 +36,7 @@ import {
 import {ControlID, RiscZeroGroth16Verifier} from "../src/groth16/RiscZeroGroth16Verifier.sol";
 import {RiscZeroVerifierEmergencyStop} from "../src/RiscZeroVerifierEmergencyStop.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
-import {TestReceipt} from "./TestReceiptV3_0.sol";
+import {TestReceipt} from "./TestReceiptV5_0.sol";
 
 contract EndToEnd is Test {
     using OutputLib for Output;

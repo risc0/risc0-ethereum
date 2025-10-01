@@ -46,6 +46,7 @@ pub enum Selector {
     Groth16V2_1 = 0xf536085a,
     Groth16V2_2 = 0xbb001d44,
     Groth16V3_0 = 0x73c457ba,
+    Groth16V5_0 = 0x7f3d0102,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
     SetVerifierV0_4 = 0xf443ad7b,
@@ -73,6 +74,7 @@ impl TryFrom<u32> for Selector {
             0xf536085a => Ok(Selector::Groth16V2_1),
             0xbb001d44 => Ok(Selector::Groth16V2_2),
             0x73c457ba => Ok(Selector::Groth16V3_0),
+            0x7f3d0102 => Ok(Selector::Groth16V5_0),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -115,6 +117,10 @@ impl Selector {
                 "73c457ba541936f0d907daf0c7253a39a9c5c427c225ba7709e44702d3c6eedc",
             )
             .unwrap()),
+            Selector::Groth16V5_0 => Ok(Digest::from_hex(
+                "7f3d010257934206f9a66573309a40ffe017aa9efa63dcd6d9b70256a50ce30c",
+            )
+            .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
                 "bfca9ccb59eb38b8c78ddc399a734d8e0e84e8028b7d616fa54fe707a1ff1b3b",
             )
@@ -154,7 +160,8 @@ impl Selector {
             | Selector::Groth16V2_0
             | Selector::Groth16V2_1
             | Selector::Groth16V2_2
-            | Selector::Groth16V3_0 => SelectorType::Groth16,
+            | Selector::Groth16V3_0
+            | Selector::Groth16V5_0 => SelectorType::Groth16,
             Selector::SetVerifierV0_1
             | Selector::SetVerifierV0_2
             | Selector::SetVerifierV0_4
@@ -171,7 +178,7 @@ impl Selector {
 
     /// Returns the selector corresponding to the Groth16 verifier for the latest zkVM version.
     pub const fn groth16_latest() -> Self {
-        Self::Groth16V3_0
+        Self::Groth16V5_0
     }
 
     /// Returns the selector corresponding to the latest version of the set inclusion verifier (aka
