@@ -26,12 +26,16 @@ pub use alloy;
 // NOTE: Placing the cfg directly on the `pub mod` statement doesn't work when tried with Rust 1.81
 cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {
-        pub mod set_verifier;
-        pub mod event_query;
         pub mod receipt;
-        pub mod selector;
     }
 }
+
+#[cfg(feature = "set-verifier")]
+pub mod event_query;
+#[cfg(feature = "set-verifier")]
+pub mod set_verifier;
+
+pub mod selector;
 
 use core::str::FromStr;
 

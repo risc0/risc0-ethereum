@@ -37,6 +37,7 @@ doctest = false
 
 [features]
 default = []
+set-verifier = []
 unstable = [
     "dep:alloy-primitives", 
     "dep:hex", 
