@@ -26,12 +26,19 @@ pub use alloy;
 // NOTE: Placing the cfg directly on the `pub mod` statement doesn't work when tried with Rust 1.81
 cfg_if::cfg_if! {
     if #[cfg(feature = "unstable")] {
-        pub mod set_verifier;
-        pub mod event_query;
         pub mod receipt;
-        pub mod selector;
     }
 }
+
+// TODO: Remove the unstable flag usage here with the next major version bump. This is added to
+// ease the transition of packages that are currently using the unstable flag, as not to break
+// downstream users.
+#[cfg(any(feature = "set-verifier", feature = "unstable"))]
+pub mod event_query;
+#[cfg(any(feature = "set-verifier", feature = "unstable"))]
+pub mod set_verifier;
+
+pub mod selector;
 
 use core::str::FromStr;
 

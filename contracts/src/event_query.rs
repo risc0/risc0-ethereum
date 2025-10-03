@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Configuration for Ethereum event queries, as used by [set_verifier][crate::set_verifier].
+
 /// Event query configuration.
 #[derive(Clone)]
 #[non_exhaustive]
