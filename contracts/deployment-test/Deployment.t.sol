@@ -31,6 +31,7 @@ import {TestReceipt as TestReceiptV20} from "../test/TestReceiptV2_0.sol";
 import {TestReceipt as TestReceiptV21} from "../test/TestReceiptV2_1.sol";
 import {TestReceipt as TestReceiptV22} from "../test/TestReceiptV2_2.sol";
 import {TestReceipt as TestReceiptV30} from "../test/TestReceiptV3_0.sol";
+import {TestReceipt as TestReceiptV50} from "../test/TestReceiptV5_0.sol";
 import {TestSetInclusionReceipt as TestSetInclusionReceiptV07} from "../test/TestSetInclusionReceiptV0_7.sol";
 import {TestSetInclusionReceipt as TestSetInclusionReceiptV09} from "../test/TestSetInclusionReceiptV0_9.sol";
 
@@ -65,6 +66,10 @@ library TestReceipts {
         if (selector == getFirst4Bytes(TestReceiptV30.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV30.IMAGE_ID, sha256(TestReceiptV30.JOURNAL)).digest();
             return (true, RiscZeroReceipt({seal: TestReceiptV30.SEAL, claimDigest: claimDigest}));
+        }
+        if (selector == getFirst4Bytes(TestReceiptV50.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV50.IMAGE_ID, sha256(TestReceiptV50.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV50.SEAL, claimDigest: claimDigest}));
         }
         if (selector == getFirst4Bytes(TestSetInclusionReceiptV07.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(
