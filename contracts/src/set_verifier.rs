@@ -83,10 +83,13 @@ where
     pub async fn submit_merkle_root(&self, root: B256, seal: Bytes) -> Result<()> {
         tracing::debug!("Calling submitMerkleRoot({:?},{:?})", root, seal);
         let call = self.instance.submitMerkleRoot(root, seal).from(self.caller);
-        let pending_tx = call
-            .send()
-            .await
-            .map_err(IRiscZeroSetVerifierErrors::decode_error)?;
+        let pending_tx = match call.send().await {
+            Ok(tx) => tx,
+            Err(err) => match err.as_decoded_interface_error::<IRiscZeroSetVerifierErrors>() {
+                None => bail!(err),
+                Some(interface_error) => bail!("SetVerifier error: {interface_error:?}"),
+            },
+        };
         tracing::debug!("Broadcasting tx {}", pending_tx.tx_hash());
         let tx_hash = pending_tx
             .with_timeout(Some(self.tx_timeout))
