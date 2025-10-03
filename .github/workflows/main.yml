@@ -53,7 +53,7 @@ jobs:
         with:
           # Full history is required by license-check.py
           fetch-depth: 0
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
       - name: Install cargo-sort
         uses: risc0/cargo-install@b9307573043522ab0d3e3be64a51763b765b52a4
         with:
@@ -96,8 +96,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
+      - uses: risc0/risc0/.github/actions/sccache@76674c1a20d30fa901852374bddf27fc5d5785a6
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -152,12 +152,12 @@ jobs:
         with:
           submodules: recursive
       - if: matrix.feature == 'cuda'
-        uses: risc0/risc0/.github/actions/cuda@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+        uses: risc0/risc0/.github/actions/cuda@76674c1a20d30fa901852374bddf27fc5d5785a6
       # When building the prover from source (i.e. via the cuda flag, which activates the prove flag) protoc is required.
       - if: matrix.feature == 'cuda'
         uses: risc0/risc0/.github/actions/protoc@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
+      - uses: risc0/risc0/.github/actions/sccache@76674c1a20d30fa901852374bddf27fc5d5785a6
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -203,8 +203,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
-      - uses: risc0/risc0/.github/actions/sccache@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
+      - uses: risc0/risc0/.github/actions/sccache@76674c1a20d30fa901852374bddf27fc5d5785a6
         with:
           key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
@@ -234,7 +234,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -259,7 +259,7 @@ jobs:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
       - uses: actions/checkout@v4
-      - uses: risc0/risc0/.github/actions/rustup@fbe1d0bb75c21fe36cefd87bae25f424b711b291
+      - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
         with:
           # Building with docs.rs config requires the nightly toolchain.
           toolchain: ${{ env.NIGHTLY_RUST_TOOLCHAIN }}
