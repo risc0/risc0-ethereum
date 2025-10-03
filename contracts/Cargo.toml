@@ -20,7 +20,7 @@ alloy-primitives = { workspace = true, optional = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 cfg-if = { workspace = true }
-hex = { workspace = true, optional = true }
+hex = { workspace = true }
 risc0-aggregation = { workspace = true, optional = true }
 risc0-zkvm = { workspace = true }
 serde = { workspace = true, optional = true }
@@ -40,7 +40,6 @@ default = []
 set-verifier = []
 unstable = [
     "dep:alloy-primitives", 
-    "dep:hex", 
     "dep:risc0-aggregation",  
     "dep:serde",
     "risc0-aggregation/verify"
