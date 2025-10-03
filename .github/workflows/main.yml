@@ -134,7 +134,7 @@ jobs:
             device: cpu
           - os: Linux
             feature: cuda
-            device: nvidia_rtx_a5000
+            device: nvidia_rtx_4000_ada
           - os: macOS
             feature: default
             device: apple_m2_pro
