@@ -30,9 +30,12 @@ cfg_if::cfg_if! {
     }
 }
 
-#[cfg(feature = "set-verifier")]
+// TODO: Remove the unstable flag usage here with the next major version bump. This is added to
+// ease the transition of packages that are currently using the unstable flag, as not to break
+// downstream users.
+#[cfg(any(feature = "set-verifier", feature = "unstable"))]
 pub mod event_query;
-#[cfg(feature = "set-verifier")]
+#[cfg(any(feature = "set-verifier", feature = "unstable"))]
 pub mod set_verifier;
 
 pub mod selector;
