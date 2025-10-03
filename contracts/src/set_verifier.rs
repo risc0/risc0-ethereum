@@ -174,7 +174,7 @@ where
     /// each iteration, and the default maximum number of iterations is 100. This means that the
     /// search will cover a maximum of 5,000 blocks (16 hours at 12s block times). Optionally, you
     /// can specify a lower and upper bound to limit the search range.
-    async fn query_verified_root_event(
+    pub async fn query_verified_root_event(
         &self,
         root: B256,
         lower_bound: Option<u64>,
