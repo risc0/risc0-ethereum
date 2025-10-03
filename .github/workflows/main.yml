@@ -40,7 +40,7 @@ jobs:
         run: exit 1
 
   check:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU.
       matrix:
@@ -82,7 +82,7 @@ jobs:
           [ "$(grep -re 'DO[_ ]\?NOT[_ ]\?MERGE' $(git ls-tree --full-tree --name-only -r HEAD) | tee /dev/fd/2 | wc -l)" -eq "0" ]
 
   clippy:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       # Run only on Linux with CPU.
       matrix:
@@ -124,7 +124,7 @@ jobs:
       - run: sccache --show-stats
 
   test:
-    runs-on: [ self-hosted, prod, "${{ matrix.os }}", "${{ matrix.device }}" ]
+    runs-on: [ self-hosted, cluster, "${{ matrix.os }}", "${{ matrix.device }}" ]
     strategy:
       fail-fast: false
       matrix:
@@ -187,7 +187,7 @@ jobs:
   # Run the tests, including the contract integration test, using Bonsai as the prover.
   test-bonsai:
     if: ${{ startsWith(github.base_ref, 'release-') || startsWith(github.base_ref, 'refs/heads/release-') }}
-    runs-on: [ self-hosted, prod, Linux, cpu ]
+    runs-on: [ self-hosted, cluster, Linux, cpu ]
     env:
       RUST_BACKTRACE: full
       # NOTE: cfg no_auth is used by Steel to skip tests that require a real RPC URL.
@@ -221,7 +221,7 @@ jobs:
       - run: sccache --show-stats
 
   doc:
-    runs-on: [ self-hosted, prod, macOS, cpu ]
+    runs-on: [ self-hosted, cluster, macOS, cpu ]
     steps:
       # This is a workaround from: https://github.com/actions/checkout/issues/590#issuecomment-970586842
       - run: "git checkout -f $(git -c user.name=x -c user.email=x@x commit-tree $(git hash-object -t tree /dev/null) < /dev/null) || :"
@@ -243,7 +243,7 @@ jobs:
   # Run as a separate job because we need to install a different set of tools.
   # In particular, it uses nightly Rust and _does not_ install Forge or cargo risczero.
   docs-rs:
-    runs-on: [ self-hosted, prod, macOS, cpu ]
+    runs-on: [ self-hosted, cluster, macOS, cpu ]
     env:
       RUSTDOCFLAGS: "--cfg docsrs -D warnings"
       # Building with docs.rs config requires the nightly toolchain.
