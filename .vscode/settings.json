@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.check.features": [
+    "risc0-ethereum-contracts/unstable"
+  ],
+  "rust-analyzer.check.extraEnv": {
+    "RISC0_SKIP_BUILD": "1"
+  }
+}
