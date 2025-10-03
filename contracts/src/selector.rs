@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Selector associated with verifiers used by the RISC Zero Verifier Router contract.
+
 use std::fmt::{self, Display, Formatter};
 
 use hex::FromHex;
@@ -27,6 +29,7 @@ pub enum SelectorError {
     NoVerifierParameters(Selector),
 }
 
+/// The kind of receipt that a given selector corresponds to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum SelectorType {
@@ -35,6 +38,16 @@ pub enum SelectorType {
     SetVerifier,
 }
 
+/// A short identifier for a given version of a RISC Zero verifier.
+///
+/// It is used as a routing key by the RISC Zero Verifier Router. The selector is taken from the
+/// hash of the verifier parameters and uniquely identifies a particular verifier within that
+/// router.
+///
+/// A selector is not intended to be collision resistant, in that it is possible to find two
+/// preimages that result in the same selector. This is acceptable since it's purpose to a route a
+/// request among a set of trusted verifiers, and to make errors of sending a receipt to a
+/// mismatching verifiers easier to debug. It is analogous to the ABI function selectors.
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
@@ -97,6 +110,9 @@ impl TryFrom<u32> for Selector {
 }
 
 impl Selector {
+    /// Given a known [Selector], return the full verifier parameters digest.
+    ///
+    /// The first four bytes of this digest will match the selector.
     pub fn verifier_parameters_digest(self) -> Result<Digest, SelectorError> {
         #[expect(deprecated)]
         match self {
@@ -162,6 +178,7 @@ impl Selector {
         }
     }
 
+    /// Get the selector type, which identifies what kind of verifier is corresponds to.
     pub fn get_type(self) -> SelectorType {
         #[expect(deprecated)]
         match self {
