@@ -149,10 +149,10 @@ where
     ///
     /// For each iteration, we query a range of blocks. If the event is not found, we move the
     /// range down and repeat until we find the event. If the event is not found after the
-    /// configured max iterations, we return an error. The default range is set to 100 blocks for
-    /// each iteration, and the default maximum number of iterations is 1000. This means that the
-    /// search will cover a maximum of 100,000 blocks (~14 days at 12s block times). Optionally,
-    /// you can specify a lower and upper bound to limit the search range.
+    /// configured max iterations, we return an error. The default range is set to 500 blocks for
+    /// each iteration, and the default maximum number of iterations is 100. This means that the
+    /// search will cover a maximum of 5,000 blocks (16 hours at 12s block times). Optionally, you
+    /// can specify a lower and upper bound to limit the search range.
     async fn query_verified_root_event(
         &self,
         root: B256,
@@ -201,7 +201,7 @@ where
         }
 
         // Return error if no logs are found after all iterations
-        bail!("VerifiedRoot event not found for root {:?}", root);
+        bail!("VerifiedRoot event not found for root {root:?}");
     }
 
     /// Decodes a seal into a [SetInclusionReceipt] including a [risc0_zkvm::Groth16Receipt] as its
@@ -226,7 +226,7 @@ where
         journal: impl Into<Vec<u8>>,
     ) -> Result<SetInclusionReceipt<ReceiptClaim>> {
         let receipt = decode_seal_with_claim(seal, claim.clone(), journal)
-            .map_err(|e| anyhow::anyhow!("Failed to decode seal: {:?}", e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to decode seal: {e:?}"))?;
 
         let set_inclusion_receipt = receipt
             .set_inclusion_receipt()

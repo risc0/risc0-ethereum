@@ -224,7 +224,7 @@ This is a two-step process, guarded by the `TimelockController`.
     ```
 
     > [!NOTE]
-    > As of August 21, 2025 Fireblocks has issues sending EIP-1559 transactions to Fuji.
+    > As of August 21, 2025 Fireblocks has issues sending EIP-1559 transactions to Fuji and Katana.
     > You can use the --legacy flag with the manage script to work around this.
 
 7. Send the transaction for the scheduled update by running the command again with `--broadcast`.
@@ -236,7 +236,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Finish the update
 
-After the delay on the timelock controller has pass, the operation to add the new verifier to the router can be executed.
+After the delay on the timelock controller has passed, the operation to add the new verifier to the router can be executed.
 
 1. Dry the transaction to execute the add verifier operation:
 
@@ -451,7 +451,7 @@ Execute the action:
 
 Use the following steps to cancel an operation that is pending on the `TimelockController`.
 
-1. Identifier the operation ID and set the environment variable.
+1. Identify the operation ID and set the environment variable.
 
     > TIP: One way to get the operation ID is to open the contract in Etherscan and look at the events.
     > On the `CallScheduled` event, the ID is labeled as `[topic1]`.
@@ -638,27 +638,18 @@ Activate the emergency stop:
 > In order to send a transaction to the estop contract in Fireblocks, the addresses need to be added to the allow-list.
 > If this has not already been done, do this as a pre-step.
 
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol`
+1. Dry run the transaction
 
     ```sh
-    export VERIFIER_SELECTOR="0x..."
-    export VERIFIER_ESTOP=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].verifiers[] | select(.selector == \"${VERIFIER_SELECTOR:?}\") | .estop" contracts/deployment.toml | tee /dev/stderr)
-    ```
-
-2. Dry run the transaction
-
-    ```sh
-    VERIFIER_ESTOP=${VERIFIER_ESTOP:?} \
+    VERIFIER_SELCTOR="0x..." \
     bash contracts/script/manage ActivateEstop
     ```
 
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
-4. Test the activation:
+3. Test the activation:
 
     ```sh
     cast call --rpc-url ${RPC_URL:?} \

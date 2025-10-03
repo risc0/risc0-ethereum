@@ -55,6 +55,17 @@ selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
 
+[[chains.ethereum-mainnet.verifiers]]
+name = "RiscZeroSetVerifier"
+version = "0.9.0"
+selector = "0x242f9d5b"
+verifier = "0x5005aBa3DFf7C940fcc1e48DccCAD611a80eEB85"
+estop = "0x844D5f01161E3559d36f23d0Aa9E9620949aF782"
+# Build info for the set-builder guest built with cargo-risczero v3.0.3
+set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
+set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
+set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafybeicclqbjn5ief3ycqif6wv3n3wr43szv2locrmml5h7d4fkrz4jrum"
+
 ###
 
 [chains.ethereum-sepolia]
@@ -102,6 +113,7 @@ estop = "0xFB4D56bdEc378e6625e6448b037EFB4E5FCE085d"
 set-builder-commit = "abd97bca9533d70302b41f67020f7fd1e41d9cf7"
 set-builder-image-id = "7d75250e86556132c0e10c05b0f1d823ae72a5e277a596039576b6578cb25260"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/QmXVv8FErxhzxQiSEYDqwDA5bWLu7wEn7ZWcFvjAsfqJdW"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -113,6 +125,7 @@ estop = "0x9852f4B6b6554E4C723914a5500Fc57156EDE3F7"
 set-builder-commit = "8eadd4812fe44ba266a0565725c4fa654e4770e5"
 set-builder-image-id = "8888bf20b2be0ca935e166325578c336cc16355f9b63e7e5279c71a0a97f4df9"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreih46jdbjosixps7l3obrmfh4xlusnunohva6pfhqqdcyobaac4w4a"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -124,6 +137,7 @@ estop = "0xb1216C4ECA3E3D69f9542Ae9b20b03c69693CC80"
 set-builder-commit = "45a77235021f21ddc023d4655db0d6fd914de402"
 set-builder-image-id = "79fd473a707e7c064af3edabf63cad6c7ab9205766fd8d8160bdef97fdd15c74"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreiggmfeaohdbdwmhhsferpnrrjrd37h43hgwmu6yobwcd3qaavut6q"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -135,6 +149,7 @@ estop = "0x1A42D5b2fF29fbc2CB684836d222c561639b0bE4"
 set-builder-commit = "f584db3428af194f244e0ff74370918a649aab76"
 set-builder-image-id = "2fcedaa205bbfab6b804dec81e99cc9a22b20dea7a9701a1a7c55c7d26ef32f6"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreifdozdfxhgdn6mcuq2mltbx7qaq5mie4iosq7kxj5rqmm4kg4qcfy"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -146,6 +161,7 @@ estop = "0x46D0322760631084bFfC10b31962A47a527Ac042"
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreicn2oingurbfxdanqgzy6nwt2gexazlnh6jhj7h3k2ot47vw6fomq"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -153,7 +169,6 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0xcb9D14347b1e816831ECeE46EC199144F360B55c"
 estop = "0xA9aa32A5aAF3Bad63e5F25d1cb86040bbf883c5B"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -573,6 +588,7 @@ estop = "0xc0F0a64960187b83DcAA0e4bC2Ec05bfCbde9Fd7"
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreicn2oingurbfxdanqgzy6nwt2gexazlnh6jhj7h3k2ot47vw6fomq"
+stopped = true
 
 [[chains.base-mainnet.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -580,7 +596,6 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104"
 estop = "0x8607C0F600857E6f65Ac85b8ba730410D4771fA6"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -655,6 +670,7 @@ estop = "0x226B6e6b37F92a1D620Eb41b833Cc92760268D4a"
 set-builder-commit = "f584db3428af194f244e0ff74370918a649aab76"
 set-builder-image-id = "2fcedaa205bbfab6b804dec81e99cc9a22b20dea7a9701a1a7c55c7d26ef32f6"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreifdozdfxhgdn6mcuq2mltbx7qaq5mie4iosq7kxj5rqmm4kg4qcfy"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -666,6 +682,7 @@ estop = "0x5c5076c20b897F9b8dd2c5e68Bd62785BA3D319B"
 set-builder-commit = "c09ee29b386d2b1486724509868d1115db36929f" # aggregation-v0.7.0
 set-builder-image-id = "a218e889a26852fd3d57a80983c76b53ff6d5fa4b469779511dd4d99329ae7aa"
 set-builder-elf-url = "https://gateway.pinata.cloud/ipfs/bafkreicn2oingurbfxdanqgzy6nwt2gexazlnh6jhj7h3k2ot47vw6fomq"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroSetVerifier"
@@ -673,7 +690,6 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104"
 estop = "0xf62AbB78d7a039a7119c002fA9a5E4709472D46C"
-unroutable = true # remove when added to the router
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -1051,3 +1067,28 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 # NOTE: As of the 1.1.0-rc.2 deployment on August 21, deploying to polygon zkEVM testnet failed.
 # On Polygon zkEVM Cardona testnet, gave an error of "Failed to get EIP-1559 fees".
+
+[chains.katana-mainnet]
+
+# NOTE: Using the the `fireblocks-json-rpc` on this network requires setting `FIREBLOCKS_ASSET_ID=KATANA_ETH`.
+# At the momment, this also entails using a patched version of that CLI https://github.com/fireblocks/fireblocks-json-rpc/pull/24
+# Sending EIP-1559 transactions to Katana via Fireblocks (sometimes) fails. Use the --legacy flag with the script to make sure it works.
+
+name = "Katana Mainnet"
+id = 747474
+etherscan-url = "https://katanascan.com/"
+
+# Accounts
+admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+
+# Contracts
+timelock-controller = "0x821C0423dfD0f70890CB9BC6718451261b1696de"
+timelock-delay = 259200
+router = "0x08C82eDBb95F0942AEDbf781a961F2910ebA3de2"
+
+[[chains.katana-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.0.0"
+selector = "0x73c457ba"
+verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
+estop = "0x9F9994Eb4Cb5200198FEfb470f8b50301662e696"
