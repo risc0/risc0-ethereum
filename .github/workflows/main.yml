@@ -98,8 +98,6 @@ jobs:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
       - uses: risc0/risc0/.github/actions/sccache@76674c1a20d30fa901852374bddf27fc5d5785a6
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -158,8 +156,6 @@ jobs:
         uses: risc0/risc0/.github/actions/protoc@31ec8b4b5f7c802fe6aa3aa649ba65282c87da12
       - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
       - uses: risc0/risc0/.github/actions/sccache@76674c1a20d30fa901852374bddf27fc5d5785a6
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
@@ -205,8 +201,6 @@ jobs:
           submodules: recursive
       - uses: risc0/risc0/.github/actions/rustup@76674c1a20d30fa901852374bddf27fc5d5785a6
       - uses: risc0/risc0/.github/actions/sccache@76674c1a20d30fa901852374bddf27fc5d5785a6
-        with:
-          key: ${{ matrix.os }}-${{ matrix.feature }}
       - uses: ./.github/actions/cargo-risczero-install
         with:
           ref: ${{ env.RISC0_MONOREPO_REF }}
