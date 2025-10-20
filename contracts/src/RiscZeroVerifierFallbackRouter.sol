@@ -23,6 +23,7 @@ import {RiscZeroVerifierRouter} from "./RiscZeroVerifierRouter.sol";
 
 /// @notice Router for IRiscZeroVerifier, allowing multiple implementations to be accessible behind a single address
 ///         and a fallback to the canonical router.
+/// @dev Extends RiscZeroVerifierRouter to add fallback behavior.
 contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
     /// @notice The canonical RISC Zero verifier router used as fallback.
     IRiscZeroVerifier public FALLBACK_ROUTER;
