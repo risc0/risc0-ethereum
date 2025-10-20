@@ -37,7 +37,7 @@ import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {RiscZeroVerifierFallbackRouter} from "../src/RiscZeroVerifierFallbackRouter.sol";
 import {TestReceipt} from "./TestReceiptV2_1.sol";
 
-contract RiscZeroVerifierEmergencyStopTest is Test {
+contract RiscZeroVerifierFallbackRouterTest is Test {
     using OutputLib for Output;
     using ReceiptClaimLib for ReceiptClaim;
 
