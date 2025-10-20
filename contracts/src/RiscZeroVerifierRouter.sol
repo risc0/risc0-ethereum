@@ -76,7 +76,7 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     }
 
     /// @notice Get the associated verifier, reverting if the selector is unknown or removed.
-    function getVerifier(bytes4 selector) public view returns (IRiscZeroVerifier) {
+    function getVerifier(bytes4 selector) public view virtual returns (IRiscZeroVerifier) {
         IRiscZeroVerifier verifier = verifiers[selector];
         if (verifier == UNSET) {
             revert SelectorUnknown({selector: selector});
