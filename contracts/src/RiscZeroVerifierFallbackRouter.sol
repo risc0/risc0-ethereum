@@ -44,7 +44,8 @@ contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
         return FALLBACK_ROUTER;
     }
 
-    /// @notice Get the associated verifier, reverting if the selector is unknown or removed.
+    /// @notice Get the associated verifier, falling back to the canonical router if unset.
+    /// @dev Overrides the base implementation to add fallback behavior.
     function getVerifier(bytes4 selector) public view override returns (IRiscZeroVerifier) {
         IRiscZeroVerifier verifier = verifiers[selector];
         // If the verifier is unset, fall back to the canonical router.
