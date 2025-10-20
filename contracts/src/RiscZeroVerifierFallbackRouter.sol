@@ -28,6 +28,7 @@ contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
     IRiscZeroVerifier public FALLBACK_ROUTER;
 
     constructor(address owner, IRiscZeroVerifier fallbackRouter) RiscZeroVerifierRouter(owner) {
+        require(address(fallbackRouter) != address(0), "Fallback router address cannot be zero");
         FALLBACK_ROUTER = fallbackRouter;
     }
 
@@ -50,10 +51,6 @@ contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
         IRiscZeroVerifier verifier = verifiers[selector];
         // If the verifier is unset, fall back to the canonical router.
         if (verifier == UNSET) {
-            // If no fallback router is set, revert.
-            if (address(FALLBACK_ROUTER) == address(0)) {
-                revert SelectorUnknown({selector: selector});
-            }
             return FALLBACK_ROUTER;
         }
         if (verifier == TOMBSTONE) {
