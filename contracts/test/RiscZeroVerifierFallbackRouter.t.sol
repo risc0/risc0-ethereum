@@ -96,7 +96,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         vm.expectCall(address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_RECEIPT_B), 1);
         vm.expectCall(
             address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_MANGLED_RECEIPT_B), 1
-        );  
+        );
         verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
         verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);

@@ -20,7 +20,7 @@ import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.
 
 import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 
-/// @notice Router for IRiscZeroVerifier, allowing multiple implementations to be accessible behind a single address 
+/// @notice Router for IRiscZeroVerifier, allowing multiple implementations to be accessible behind a single address
 ///         and a fallback to the canonical router.
 contract RiscZeroVerifierFallbackRouter is IRiscZeroVerifier, Ownable2Step {
     /// @notice The canonical RISC Zero verifier router used as fallback.
