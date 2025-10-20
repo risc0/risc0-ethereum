@@ -16,7 +16,9 @@
 
 pragma solidity ^0.8.9;
 
-import {IRiscZeroVerifier} from "./IRiscZeroVerifier.sol";
+import {Ownable, Ownable2Step} from "openzeppelin/contracts/access/Ownable2Step.sol";
+
+import {IRiscZeroVerifier, Receipt} from "./IRiscZeroVerifier.sol";
 import {RiscZeroVerifierRouter} from "./RiscZeroVerifierRouter.sol";
 
 /// @notice Router for IRiscZeroVerifier, allowing multiple implementations to be accessible behind a single address
@@ -24,24 +26,24 @@ import {RiscZeroVerifierRouter} from "./RiscZeroVerifierRouter.sol";
 /// @dev Extends RiscZeroVerifierRouter to add fallback behavior.
 contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
     /// @notice The canonical RISC Zero verifier router used as fallback.
-    RiscZeroVerifierRouter public fallbackRouter;
+    IRiscZeroVerifier public FALLBACK_ROUTER;
 
-    constructor(address owner, RiscZeroVerifierRouter canonicalRouter) RiscZeroVerifierRouter(owner) {
-        require(address(canonicalRouter) != address(0), "Fallback router address cannot be zero");
-        fallbackRouter = canonicalRouter;
+    constructor(address owner, IRiscZeroVerifier fallbackRouter) RiscZeroVerifierRouter(owner) {
+        require(address(fallbackRouter) != address(0), "Fallback router address cannot be zero");
+        FALLBACK_ROUTER = fallbackRouter;
     }
 
     /// @notice Sets the canonical RISC Zero verifier router.
-    function setFallbackRouter(RiscZeroVerifierRouter verifier) external onlyOwner {
+    function setFallbackRouter(IRiscZeroVerifier verifier) external onlyOwner {
         if (address(verifier) == address(0)) {
             revert VerifierAddressZero();
         }
-        fallbackRouter = verifier;
+        FALLBACK_ROUTER = verifier;
     }
 
     /// @notice Gets the canonical RISC Zero verifier router.
     function getFallbackRouter() external view returns (IRiscZeroVerifier) {
-        return fallbackRouter;
+        return FALLBACK_ROUTER;
     }
 
     /// @notice Get the associated verifier, falling back to the canonical router if unset.
@@ -50,7 +52,7 @@ contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
         IRiscZeroVerifier verifier = verifiers[selector];
         // If the verifier is unset, fall back to the canonical router.
         if (verifier == UNSET) {
-            return fallbackRouter.getVerifier(selector);
+            return FALLBACK_ROUTER;
         }
         if (verifier == TOMBSTONE) {
             revert SelectorRemoved({selector: selector});

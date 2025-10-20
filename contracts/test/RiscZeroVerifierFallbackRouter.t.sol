@@ -57,7 +57,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
 
     function setUp() external {
         fallbackRouter = new RiscZeroVerifierRouter(address(this));
-        verifierRouter = new RiscZeroVerifierFallbackRouter(address(this), fallbackRouter);
+        verifierRouter = new RiscZeroVerifierFallbackRouter(address(this), IRiscZeroVerifier(address(fallbackRouter)));
 
         verifierMockA = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         verifierMockB = new RiscZeroMockVerifier(bytes4(uint32(1)));
@@ -78,7 +78,7 @@ contract RiscZeroVerifierEmergencyStopTest is Test {
         assertEq(address(verifierRouter.getFallbackRouter()), address(fallbackRouter));
 
         RiscZeroVerifierRouter newFallbackRouter = new RiscZeroVerifierRouter(address(this));
-        verifierRouter.setFallbackRouter(newFallbackRouter);
+        verifierRouter.setFallbackRouter(IRiscZeroVerifier(address(newFallbackRouter)));
 
         assertEq(address(verifierRouter.getFallbackRouter()), address(newFallbackRouter));
     }
