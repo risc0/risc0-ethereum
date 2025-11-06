@@ -24,24 +24,42 @@ import {RiscZeroVerifierRouter} from "./RiscZeroVerifierRouter.sol";
 /// @dev Extends RiscZeroVerifierRouter to add fallback behavior.
 contract RiscZeroVerifierFallbackRouter is RiscZeroVerifierRouter {
     /// @notice The canonical RISC Zero verifier router used as fallback.
-    IRiscZeroVerifier public fallbackRouter;
+    IRiscZeroVerifier public immutable fallbackRouter;
 
     constructor(address owner, IRiscZeroVerifier verifier) RiscZeroVerifierRouter(owner) {
         require(address(verifier) != address(0), "Fallback router address cannot be zero");
         fallbackRouter = verifier;
     }
 
-    /// @notice Sets the canonical RISC Zero verifier router.
-    function setFallbackRouter(IRiscZeroVerifier verifier) external onlyOwner {
-        if (address(verifier) == address(0)) {
-            revert VerifierAddressZero();
-        }
-        fallbackRouter = verifier;
-    }
-
     /// @notice Gets the canonical RISC Zero verifier router.
     function getFallbackRouter() external view returns (IRiscZeroVerifier) {
         return fallbackRouter;
+    }
+
+    /// @notice Adds a verifier to the router, such that it can receive receipt verification calls.
+    function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external override onlyOwner {
+        RiscZeroVerifierRouter router = RiscZeroVerifierRouter(address(fallbackRouter));
+        // Ensure the selector is not removed from the fallback router.
+        if (router.verifiers(selector) == TOMBSTONE) {
+            revert SelectorRemoved({selector: selector});
+        }
+        // Ensure the selector is not already in use in the fallback router.
+        if (router.verifiers(selector) != UNSET) {
+            revert SelectorInUse({selector: selector});
+        }
+        // Ensure the selector is not removed from this router.
+        if (verifiers[selector] == TOMBSTONE) {
+            revert SelectorRemoved({selector: selector});
+        }
+        // Ensure the selector is not already in use in this router.
+        if (verifiers[selector] != UNSET) {
+            revert SelectorInUse({selector: selector});
+        }
+        // Ensure the verifier address is not zero.
+        if (address(verifier) == address(0)) {
+            revert VerifierAddressZero();
+        }
+        verifiers[selector] = verifier;
     }
 
     /// @notice Get the associated verifier, falling back to the canonical router if unset.

@@ -24,6 +24,7 @@ import {
     IRiscZeroVerifier,
     Output,
     OutputLib,
+
     // Receipt needs to be renamed due to collision with type on the Test contract.
     Receipt as RiscZeroReceipt,
     ReceiptClaim,
@@ -74,18 +75,34 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
         SELECTOR_B = verifierMockB.SELECTOR();
     }
 
-    function test_FallbackRouterSetAndGet() external {
+    function test_FallbackRouterGet() external view {
         assertEq(address(verifierRouter.getFallbackRouter()), address(fallbackRouter));
+    }
 
-        RiscZeroVerifierRouter newFallbackRouter = new RiscZeroVerifierRouter(address(this));
-        verifierRouter.setFallbackRouter(IRiscZeroVerifier(address(newFallbackRouter)));
+    function test_AddSelectorExistsInFallbackRouter() external {
+        fallbackRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        assertEq(address(verifierRouter.getFallbackRouter()), address(newFallbackRouter));
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorInUse.selector, SELECTOR_A));
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockB);
+    }
+
+    function test_AddRemovedSelectorInFallbackRouter() external {
+        fallbackRouter.addVerifier(SELECTOR_A, verifierMockA);
+        fallbackRouter.removeVerifier(SELECTOR_A);
+
+        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_A));
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockB);
+    }
+
+    function test_AddSelector() external {
+        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        IRiscZeroVerifier verifier = verifierRouter.getVerifier(SELECTOR_A);
+        assertEq(address(verifier), address(verifierMockA));
     }
 
     function test_FallbackRouterVerifyIntegrity() external {
         fallbackRouter.addVerifier(SELECTOR_A, verifierMockA);
-        fallbackRouter.addVerifier(SELECTOR_B, verifierMockB);
+        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
         // Expect exactly 2 calls, to verifier A/B with TEST_RECEIPT_x and TEST_MANGLED_RECEIPT_x.
         vm.expectCall(address(verifierMockA), new bytes(0), 2);
         vm.expectCall(address(verifierMockA), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_RECEIPT_A), 1);

@@ -48,7 +48,7 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     constructor(address admin) Ownable(admin) {}
 
     /// @notice Adds a verifier to the router, such that it can receive receipt verification calls.
-    function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external onlyOwner {
+    function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external virtual onlyOwner {
         if (verifiers[selector] == TOMBSTONE) {
             revert SelectorRemoved({selector: selector});
         }
