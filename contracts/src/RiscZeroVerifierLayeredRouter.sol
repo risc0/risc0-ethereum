@@ -37,6 +37,7 @@ contract RiscZeroVerifierLayeredRouter is RiscZeroVerifierRouter {
     }
 
     /// @notice Adds a verifier to the router, such that it can receive receipt verification calls.
+    /// @dev Ensures that the selector is not already registered or removed in either this router or the parent router.
     function addVerifier(bytes4 selector, IRiscZeroVerifier verifier) external override onlyOwner {
         // Ensure the selector is not removed from the parent router.
         if (parentRouter.verifiers(selector) == TOMBSTONE) {
@@ -61,16 +62,12 @@ contract RiscZeroVerifierLayeredRouter is RiscZeroVerifierRouter {
         verifiers[selector] = verifier;
     }
 
-    /// @notice Removes verifier from the router, such that it can not receive verification calls.
-    ///         Removing a selector sets it to the tombstone value. It can never be set to any
-    ///         other value, and can never be reused for a new verifier, in order to enforce the
-    ///         property that each selector maps to at most one implementation across time.
+    /// @inheritdoc RiscZeroVerifierRouter
     function removeVerifier(bytes4 selector) external override onlyOwner {
         verifiers[selector] = TOMBSTONE;
     }
 
     /// @notice Get the associated verifier, falling back to the parent router if unset.
-    /// @dev Overrides the base implementation to add fallback behavior.
     function getVerifier(bytes4 selector) public view override returns (IRiscZeroVerifier) {
         IRiscZeroVerifier verifier = verifiers[selector];
         // If the verifier is unset, fall back to the parent router.
