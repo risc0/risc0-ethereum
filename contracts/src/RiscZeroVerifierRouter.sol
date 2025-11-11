@@ -65,7 +65,7 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     ///         Removing a selector sets it to the tombstone value. It can never be set to any
     ///         other value, and can never be reused for a new verifier, in order to enforce the
     ///         property that each selector maps to at most one implementation across time.
-    function removeVerifier(bytes4 selector) external onlyOwner {
+    function removeVerifier(bytes4 selector) external virtual onlyOwner {
         // Simple check to reduce the chance of accidents.
         // NOTE: If there ever _is_ a reason to remove a selector that has never been set, the owner
         // can call addVerifier with the tombstone address.
@@ -94,12 +94,12 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view {
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view virtual {
         getVerifier(seal).verify(seal, imageId, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) external view {
+    function verifyIntegrity(Receipt calldata receipt) external view virtual {
         getVerifier(receipt.seal).verifyIntegrity(receipt);
     }
 }

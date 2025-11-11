@@ -35,10 +35,10 @@ import {
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
-import {RiscZeroVerifierFallbackRouter} from "../src/RiscZeroVerifierFallbackRouter.sol";
+import {RiscZeroVerifierLayeredRouter} from "../src/RiscZeroVerifierLayeredRouter.sol";
 import {TestReceipt} from "./TestReceiptV2_1.sol";
 
-contract RiscZeroVerifierFallbackRouterTest is Test {
+contract RiscZeroVerifierLayeredRouterTest is Test {
     using OutputLib for Output;
     using ReceiptClaimLib for ReceiptClaim;
 
@@ -53,12 +53,12 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
 
     RiscZeroMockVerifier internal verifierMockA;
     RiscZeroMockVerifier internal verifierMockB;
-    RiscZeroVerifierRouter internal fallbackRouter;
-    RiscZeroVerifierFallbackRouter internal verifierRouter;
+    RiscZeroVerifierRouter internal parentRouter;
+    RiscZeroVerifierLayeredRouter internal layeredRouter;
 
     function setUp() external {
-        fallbackRouter = new RiscZeroVerifierRouter(address(this));
-        verifierRouter = new RiscZeroVerifierFallbackRouter(address(this), IRiscZeroVerifier(address(fallbackRouter)));
+        parentRouter = new RiscZeroVerifierRouter(address(this));
+        layeredRouter = new RiscZeroVerifierLayeredRouter(address(this), parentRouter);
 
         verifierMockA = new RiscZeroMockVerifier(bytes4(0xFFFFFFFF));
         verifierMockB = new RiscZeroMockVerifier(bytes4(uint32(1)));
@@ -75,34 +75,34 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
         SELECTOR_B = verifierMockB.SELECTOR();
     }
 
-    function test_FallbackRouterGet() external view {
-        assertEq(address(verifierRouter.getFallbackRouter()), address(fallbackRouter));
+    function test_LayeredRouterGet() external view {
+        assertEq(address(layeredRouter.getParentRouter()), address(parentRouter));
     }
 
-    function test_AddSelectorExistsInFallbackRouter() external {
-        fallbackRouter.addVerifier(SELECTOR_A, verifierMockA);
+    function test_AddSelectorExistsInParentRouter() external {
+        parentRouter.addVerifier(SELECTOR_A, verifierMockA);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorInUse.selector, SELECTOR_A));
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockB);
     }
 
-    function test_AddRemovedSelectorInFallbackRouter() external {
-        fallbackRouter.addVerifier(SELECTOR_A, verifierMockA);
-        fallbackRouter.removeVerifier(SELECTOR_A);
+    function test_AddRemovedSelectorInParentRouter() external {
+        parentRouter.addVerifier(SELECTOR_A, verifierMockA);
+        parentRouter.removeVerifier(SELECTOR_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_A));
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockB);
     }
 
     function test_AddSelector() external {
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
-        IRiscZeroVerifier verifier = verifierRouter.getVerifier(SELECTOR_A);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
+        IRiscZeroVerifier verifier = layeredRouter.getVerifier(SELECTOR_A);
         assertEq(address(verifier), address(verifierMockA));
     }
 
-    function test_FallbackRouterVerifyIntegrity() external {
-        fallbackRouter.addVerifier(SELECTOR_A, verifierMockA);
-        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
+    function test_LayeredRouterVerifyIntegrity() external {
+        parentRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_B, verifierMockB);
         // Expect exactly 2 calls, to verifier A/B with TEST_RECEIPT_x and TEST_MANGLED_RECEIPT_x.
         vm.expectCall(address(verifierMockA), new bytes(0), 2);
         vm.expectCall(address(verifierMockA), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_RECEIPT_A), 1);
@@ -114,13 +114,13 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
         vm.expectCall(
             address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_MANGLED_RECEIPT_B), 1
         );
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_B);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
     }
 
     function test_EmptyRouterVerifyIntegrity() external {
@@ -130,10 +130,10 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
 
         // Empty router should always revert with selector unknown.
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_B);
     }
 
     function test_SingleVerifierVerifyIntegrity() external {
@@ -145,14 +145,14 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
         );
         vm.expectCall(address(verifierMockB), new bytes(0), 0);
 
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_B);
     }
 
     function test_TwoVerifiersVerifyIntegrity() external {
@@ -168,16 +168,16 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
             address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_MANGLED_RECEIPT_B), 1
         );
 
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
-        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_B);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
     }
 
     function test_RemoveVerifierVerifyIntegrity() external {
@@ -194,25 +194,25 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
             address(verifierMockB), abi.encodeCall(IRiscZeroVerifier.verifyIntegrity, TEST_MANGLED_RECEIPT_B), 1
         );
 
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
-        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_B);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_B);
 
-        verifierRouter.removeVerifier(SELECTOR_B);
+        layeredRouter.removeVerifier(SELECTOR_B);
 
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_A);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
+        layeredRouter.verifyIntegrity(TEST_MANGLED_RECEIPT_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_B));
-        verifierRouter.verifyIntegrity(TEST_RECEIPT_B);
+        layeredRouter.verifyIntegrity(TEST_RECEIPT_B);
     }
 
     function test_EmptyRouterVerify() external {
@@ -222,10 +222,10 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
 
         // Empty router should always revert with selector unknown.
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_SingleVerifierVerify() external {
@@ -245,14 +245,14 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
         );
         vm.expectCall(address(verifierMockB), new bytes(0), 0);
 
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_B));
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_TwoVerifiersVerify() external {
@@ -284,16 +284,16 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
             1
         );
 
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
-        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_RemoveVerifierVerify() external {
@@ -326,81 +326,80 @@ contract RiscZeroVerifierFallbackRouterTest is Test {
             1
         );
 
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
-        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_B, verifierMockB);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_MANGLED_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
-        verifierRouter.removeVerifier(SELECTOR_B);
+        layeredRouter.removeVerifier(SELECTOR_B);
 
-        verifierRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
         vm.expectRevert(VerificationFailed.selector);
-        verifierRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_MANGLED_RECEIPT_A.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_B));
-        verifierRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
+        layeredRouter.verify(TEST_RECEIPT_B.seal, TestReceipt.IMAGE_ID, TEST_JOURNAL_DIGEST);
     }
 
     function test_OnlyOwnerCanAddVerifier() external {
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierRouter.renounceOwnership();
+        layeredRouter.renounceOwnership();
 
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this)));
-        verifierRouter.addVerifier(SELECTOR_B, verifierMockB);
+        layeredRouter.addVerifier(SELECTOR_B, verifierMockB);
     }
 
     function test_OnlyOwnerCanRemoveVerifier() external {
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
 
-        verifierRouter.renounceOwnership();
+        layeredRouter.renounceOwnership();
 
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(this)));
-        verifierRouter.removeVerifier(SELECTOR_A);
+        layeredRouter.removeVerifier(SELECTOR_A);
     }
 
     function test_VerifierCanOnlyBeAddedOnce() external {
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorInUse.selector, SELECTOR_A));
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
     }
 
     function test_VerifierCannotBeAddedAfterRemove() external {
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
-        verifierRouter.removeVerifier(SELECTOR_A);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.removeVerifier(SELECTOR_A);
 
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorRemoved.selector, SELECTOR_A));
-        verifierRouter.addVerifier(SELECTOR_A, verifierMockA);
+        layeredRouter.addVerifier(SELECTOR_A, verifierMockA);
     }
 
-    function test_UnsetVerifierCannotBeRemoved() external {
-        vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.SelectorUnknown.selector, SELECTOR_A));
-        verifierRouter.removeVerifier(SELECTOR_A);
+    function test_UnsetVerifierCanBeRemoved() external {
+        layeredRouter.removeVerifier(SELECTOR_A);
     }
 
     function test_TransferRouterOwnership() external {
         address newOwner = address(0xc0ffee);
 
-        verifierRouter.transferOwnership(newOwner);
-        assertEq(verifierRouter.pendingOwner(), newOwner);
-        assertEq(verifierRouter.owner(), address(this));
+        layeredRouter.transferOwnership(newOwner);
+        assertEq(layeredRouter.pendingOwner(), newOwner);
+        assertEq(layeredRouter.owner(), address(this));
 
         vm.startPrank(newOwner);
-        verifierRouter.acceptOwnership();
+        layeredRouter.acceptOwnership();
         vm.stopPrank();
 
-        assertEq(verifierRouter.owner(), newOwner);
+        assertEq(layeredRouter.owner(), newOwner);
     }
 
     function test_CannotAddZeroAddressVerifier() external {
         vm.expectRevert(abi.encodeWithSelector(RiscZeroVerifierRouter.VerifierAddressZero.selector));
-        verifierRouter.addVerifier(SELECTOR_A, IRiscZeroVerifier(address(0)));
+        layeredRouter.addVerifier(SELECTOR_A, IRiscZeroVerifier(address(0)));
     }
 }
