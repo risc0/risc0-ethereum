@@ -24,7 +24,6 @@ import {
     IRiscZeroVerifier,
     Output,
     OutputLib,
-
     // Receipt needs to be renamed due to collision with type on the Test contract.
     Receipt as RiscZeroReceipt,
     ReceiptClaim,
