@@ -1053,7 +1053,7 @@ estop = "0xf0BF916fCC8581C1c2EfA480444feDf9BdbE8A4c"
 
 ###
 
-# NOTE: This is the Cardona testnet, which uses Sepolia ETH as it's native currency.
+# NOTE: This is the Cardona testnet, which uses Sepolia ETH as its native currency.
 [chains.polygon-zkevm-testnet]
 name = "Polygon zkEVM Testnet"
 id = 2442
@@ -1070,8 +1070,8 @@ admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
 
 [chains.katana-mainnet]
 
-# NOTE: Using the the `fireblocks-json-rpc` on this network requires setting `FIREBLOCKS_ASSET_ID=KATANA_ETH`.
-# At the momment, this also entails using a patched version of that CLI https://github.com/fireblocks/fireblocks-json-rpc/pull/24
+# NOTE: Using the `fireblocks-json-rpc` on this network requires setting `FIREBLOCKS_ASSET_ID=KATANA_ETH`.
+# At the moment, this also entails using a patched version of that CLI https://github.com/fireblocks/fireblocks-json-rpc/pull/24
 # Sending EIP-1559 transactions to Katana via Fireblocks (sometimes) fails. Use the --legacy flag with the script to make sure it works.
 
 name = "Katana Mainnet"

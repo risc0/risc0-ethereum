@@ -14,7 +14,7 @@ Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
 
 Commands in this guide use `yq` to parse the TOML config files.
 
-You can install `yq` by following the [direction on GitHub][yq-install], or using `go install`.
+You can install `yq` by following the [directions on GitHub][yq-install], or using `go install`.
 
 ```sh
 go install github.com/mikefarah/yq/v4@latest
@@ -329,7 +329,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Finish the update
 
-After the delay on the timelock controller has pass, the operation to add the new set verifier to the router can be executed.
+After the delay on the timelock controller has passed, the operation to add the new set verifier to the router can be executed.
 
 1. Set the verifier selector and estop address for the set verifier:
 
