@@ -162,7 +162,7 @@ contract DeploymentTest is Test {
                 try router.getVerifier(verifierConfig.selector) {
                     revert("expected router.getVerifier to revert");
                 } catch (bytes memory err) {
-                    // NOTE: We could allow SelectorRemoved as well here.
+                    // Required that the revert was either SelectorUnknown or SelectorRemoved.
                     require(
                         keccak256(err)
                             == keccak256(
@@ -170,6 +170,12 @@ contract DeploymentTest is Test {
                                     RiscZeroVerifierRouter.SelectorUnknown.selector, verifierConfig.selector
                                 )
                             )
+                            || keccak256(err)
+                                == keccak256(
+                                    abi.encodeWithSelector(
+                                        RiscZeroVerifierRouter.SelectorRemoved.selector, verifierConfig.selector
+                                    )
+                                )
                     );
                     console2.log(
                         "Verifier with selector %x is unroutable, as configured",
