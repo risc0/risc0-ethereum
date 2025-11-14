@@ -19,7 +19,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{anyhow, bail, Context, Result};
 use risc0_build::GuestListEntry;
 
 const SOL_HEADER: &str = r#"// Copyright 2024 RISC Zero, Inc.

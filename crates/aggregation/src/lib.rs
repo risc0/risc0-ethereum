@@ -20,10 +20,10 @@ extern crate alloc;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 
-use alloy_primitives::{Keccak256, U256, uint};
+use alloy_primitives::{uint, Keccak256, U256};
 use risc0_zkvm::{
+    sha::{Digest, DIGEST_BYTES},
     ReceiptClaim,
-    sha::{DIGEST_BYTES, Digest},
 };
 use serde::{Deserialize, Serialize};
 
@@ -32,12 +32,12 @@ mod receipt;
 
 #[cfg(feature = "verify")]
 pub use receipt::{
-    RecursionVerifierParameters, SetInclusionDecodingError,
+    decode_set_inclusion_seal, RecursionVerifierParameters, SetInclusionDecodingError,
     /* TODO(#353)
     SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH,
     */
     SetInclusionEncodingError, SetInclusionReceipt, SetInclusionReceiptVerifierParameters,
-    VerificationError, decode_set_inclusion_seal,
+    VerificationError,
 };
 
 alloy_sol_types::sol! {

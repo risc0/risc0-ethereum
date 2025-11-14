@@ -14,10 +14,10 @@
 
 use alloy_primitives::Bytes;
 use risc0_aggregation::{
-    SetInclusionDecodingError, SetInclusionEncodingError, SetInclusionReceipt,
-    decode_set_inclusion_seal,
+    decode_set_inclusion_seal, SetInclusionDecodingError, SetInclusionEncodingError,
+    SetInclusionReceipt,
 };
-use risc0_zkvm::{FakeReceipt, InnerReceipt, ReceiptClaim, sha::Digest};
+use risc0_zkvm::{sha::Digest, FakeReceipt, InnerReceipt, ReceiptClaim};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
