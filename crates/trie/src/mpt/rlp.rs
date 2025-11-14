@@ -262,7 +262,7 @@ impl<M: Memoization> Decodable for Node<M> {
                 // leaf or extension node: 2-item node [ encodedPath, v ]
                 // they are distinguished by a flag in the first nibble of the encodedPath
                 2 => {
-                    let [mut encode_path, mut v] = items.as_slice() else { unreachable!() };
+                    let &[mut encode_path, mut v] = items.as_slice() else { unreachable!() };
                     let (path, is_leaf) = decode_path(&mut encode_path)?;
                     if is_leaf {
                         Ok(Node::Leaf(path, Bytes::decode(&mut v)?, M::default()))
@@ -359,7 +359,7 @@ impl NodeRef<'_> {
     fn hash(&self) -> B256 {
         match self {
             NodeRef::Empty => EMPTY_ROOT_HASH,
-            NodeRef::Digest(&digest) => digest,
+            NodeRef::Digest(digest) => **digest,
             NodeRef::Cached(rlp_node) => rlp_node.hash(),
             NodeRef::Rlp(rlp) => keccak256(rlp),
         }
