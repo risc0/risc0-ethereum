@@ -14,12 +14,12 @@
 
 use alloy_sol_types::SolValue;
 use anyhow::Result;
-use risc0_zkvm::{sha::Digestible, Groth16ReceiptVerifierParameters};
+use risc0_zkvm::{Groth16ReceiptVerifierParameters, sha::Digestible};
 
 #[cfg(feature = "unstable")]
 use alloy_primitives::Bytes;
 #[cfg(feature = "unstable")]
-use risc0_zkvm::{sha::Digest, Groth16Receipt, MaybePruned, Receipt, ReceiptClaim};
+use risc0_zkvm::{Groth16Receipt, MaybePruned, Receipt, ReceiptClaim, sha::Digest};
 
 #[cfg(feature = "unstable")]
 alloy_sol_types::sol!(

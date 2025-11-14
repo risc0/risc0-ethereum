@@ -18,12 +18,11 @@ use super::{
     node::Node,
 };
 use alloy_primitives::{
-    hex, keccak256,
+    B256, Bytes, hex, keccak256,
     map::{B256HashMap, B256Map},
-    Bytes, B256,
 };
-use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
-use alloy_trie::{nodes::encode_path_leaf, Nibbles, EMPTY_ROOT_HASH};
+use alloy_rlp::{BufMut, Decodable, EMPTY_STRING_CODE, Encodable, Header, PayloadView};
+use alloy_trie::{EMPTY_ROOT_HASH, Nibbles, nodes::encode_path_leaf};
 use arrayvec::ArrayVec;
 use std::fmt;
 
