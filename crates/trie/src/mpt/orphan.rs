@@ -19,8 +19,8 @@
 //! valid to proof inclusion if the trie is not modified.
 
 use crate::{
-    mpt::{memoize::Memoization, nibbles::NibbleSlice, node::Node},
     CachedTrie, Trie,
+    mpt::{memoize::Memoization, nibbles::NibbleSlice, node::Node},
 };
 use alloy_primitives::{keccak256, map::B256Map};
 use alloy_trie::Nibbles;
@@ -225,8 +225,8 @@ impl<M: Memoization + Clone> Node<M> {
 mod tests {
     use super::*;
     use crate::Trie;
-    use alloy_primitives::{Bytes, B256};
-    use alloy_trie::{proof::ProofRetainer, HashBuilder, Nibbles};
+    use alloy_primitives::{B256, Bytes};
+    use alloy_trie::{HashBuilder, Nibbles, proof::ProofRetainer};
     use std::{borrow::Borrow, panic};
 
     fn create_eip1186_proof<K, V>(
