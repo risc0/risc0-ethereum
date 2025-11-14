@@ -16,9 +16,9 @@ use alloy::node_bindings::Anvil;
 use anyhow::Context;
 use risc0_ethereum_test_utils::{prove_echo, test_ctx_with};
 use risc0_ethereum_test_utils_guests::ECHO_ID;
-use risc0_zkvm::ProverOpts;
 use risc0_zkvm::sha::Sha256;
-use risc0_zkvm::{VerifierContext, sha};
+use risc0_zkvm::ProverOpts;
+use risc0_zkvm::{sha, VerifierContext};
 use tokio::sync::Mutex;
 
 #[tokio::test]

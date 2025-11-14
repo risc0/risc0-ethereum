@@ -17,7 +17,7 @@ use super::{
     memoize::Memoization,
     nibbles::NibbleSlice,
 };
-use alloy_primitives::{B256, Bytes};
+use alloy_primitives::{Bytes, B256};
 use alloy_trie::Nibbles;
 use std::mem;
 

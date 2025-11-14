@@ -14,9 +14,9 @@
 
 #![allow(missing_docs)]
 
-use alloy_primitives::{B256, Bytes, bytes, keccak256};
+use alloy_primitives::{bytes, keccak256, Bytes, B256};
 use alloy_trie::{HashBuilder, Nibbles};
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use risc0_ethereum_trie::{CachedTrie, Trie};
 use std::{collections::BTreeMap, hint::black_box};
 

@@ -20,11 +20,11 @@ use std::{
 };
 
 use alloy::sol_types::SolValue;
-use anyhow::{Context, Result, ensure};
+use anyhow::{ensure, Context, Result};
 use clap::Parser;
 use risc0_ethereum_contracts::encode_seal;
 use risc0_forge_ffi::JournalSeal;
-use risc0_zkvm::{ExecutorEnv, ProverOpts, VerifierContext, default_prover};
+use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
