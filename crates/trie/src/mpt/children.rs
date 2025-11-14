@@ -127,7 +127,7 @@ impl<M> Children<M> {
 
     #[inline]
     pub(super) unsafe fn get_unchecked(&self, idx: u8) -> Option<&Node<M>> {
-        self.0.get_unchecked(idx as usize).as_deref()
+        unsafe { self.0.get_unchecked(idx as usize).as_deref() }
     }
 
     #[inline]

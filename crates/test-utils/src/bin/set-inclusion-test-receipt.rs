@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use risc0_aggregation::{GuestState, SetInclusionReceipt, SetInclusionReceiptVerifierParameters};
 use risc0_ethereum_test_utils_guests::{ECHO_ELF, ECHO_ID};
-use risc0_zkvm::{default_prover, sha::Digestible, Digest, ExecutorEnv, ProverOpts, ReceiptClaim};
+use risc0_zkvm::{Digest, ExecutorEnv, ProverOpts, ReceiptClaim, default_prover, sha::Digestible};
 
 #[derive(Parser, Clone, Debug)]
 struct MainArgs {

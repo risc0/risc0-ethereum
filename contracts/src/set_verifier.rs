@@ -19,21 +19,21 @@
 use core::time::Duration;
 
 use crate::{
-    event_query::EventQueryConfig,
-    receipt::{decode_seal, decode_seal_with_claim},
     IRiscZeroSetVerifier::{self, IRiscZeroSetVerifierErrors, IRiscZeroSetVerifierInstance},
     IRiscZeroVerifier,
+    event_query::EventQueryConfig,
+    receipt::{decode_seal, decode_seal_with_claim},
 };
 use alloy::{
     network::Ethereum,
-    primitives::{Address, Bytes, B256},
+    primitives::{Address, B256, Bytes},
     providers::Provider,
 };
-use anyhow::{bail, Context, Result};
-use risc0_aggregation::{merkle_path_root, GuestState, MerkleMountainRange, SetInclusionReceipt};
+use anyhow::{Context, Result, bail};
+use risc0_aggregation::{GuestState, MerkleMountainRange, SetInclusionReceipt, merkle_path_root};
 use risc0_zkvm::{
-    sha::{Digest, Digestible},
     ReceiptClaim,
+    sha::{Digest, Digestible},
 };
 
 const TXN_CONFIRM_TIMEOUT: Duration = Duration::from_secs(45);
@@ -258,7 +258,7 @@ where
             .fetch_verified_root_seal(<[u8; 32]>::from(root).into())
             .await?;
 
-        let set_builder_id = Digest::from_bytes(self.image_info().await?.0 .0);
+        let set_builder_id = Digest::from_bytes(self.image_info().await?.0.0);
         let state = GuestState {
             self_image_id: set_builder_id,
             mmr: MerkleMountainRange::new_finalized(root),

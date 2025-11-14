@@ -18,12 +18,11 @@ use super::{
     node::Node,
 };
 use alloy_primitives::{
-    hex, keccak256,
+    B256, Bytes, hex, keccak256,
     map::{B256HashMap, B256Map},
-    Bytes, B256,
 };
-use alloy_rlp::{BufMut, Decodable, Encodable, Header, PayloadView, EMPTY_STRING_CODE};
-use alloy_trie::{nodes::encode_path_leaf, Nibbles, EMPTY_ROOT_HASH};
+use alloy_rlp::{BufMut, Decodable, EMPTY_STRING_CODE, Encodable, Header, PayloadView};
+use alloy_trie::{EMPTY_ROOT_HASH, Nibbles, nodes::encode_path_leaf};
 use arrayvec::ArrayVec;
 use std::fmt;
 
@@ -263,7 +262,7 @@ impl<M: Memoization> Decodable for Node<M> {
                 // leaf or extension node: 2-item node [ encodedPath, v ]
                 // they are distinguished by a flag in the first nibble of the encodedPath
                 2 => {
-                    let [mut encode_path, mut v] = items.as_slice() else { unreachable!() };
+                    let &[mut encode_path, mut v] = items.as_slice() else { unreachable!() };
                     let (path, is_leaf) = decode_path(&mut encode_path)?;
                     if is_leaf {
                         Ok(Node::Leaf(path, Bytes::decode(&mut v)?, M::default()))
@@ -360,7 +359,7 @@ impl NodeRef<'_> {
     fn hash(&self) -> B256 {
         match self {
             NodeRef::Empty => EMPTY_ROOT_HASH,
-            NodeRef::Digest(&digest) => digest,
+            NodeRef::Digest(digest) => **digest,
             NodeRef::Cached(rlp_node) => rlp_node.hash(),
             NodeRef::Rlp(rlp) => keccak256(rlp),
         }

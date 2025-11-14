@@ -13,11 +13,11 @@
 // limitations under the License.
 
 use guest_set_builder::{SET_BUILDER_ELF, SET_BUILDER_ID};
-use rand::{rng, Rng};
-use risc0_aggregation::{merkle_root, GuestState};
+use rand::{Rng, rng};
+use risc0_aggregation::{GuestState, merkle_root};
 use risc0_zkvm::{
-    default_executor, sha::Digestible, ExecutorEnv, FakeReceipt, InnerReceipt, MaybePruned,
-    ReceiptClaim,
+    ExecutorEnv, FakeReceipt, InnerReceipt, MaybePruned, ReceiptClaim, default_executor,
+    sha::Digestible,
 };
 
 fn random_claim() -> ReceiptClaim {
@@ -222,9 +222,10 @@ fn rejects_no_claim_receipt_provided() {
     let err = default_executor()
         .execute(env, SET_BUILDER_ELF)
         .unwrap_err();
-    assert!(err
-        .to_string()
-        .contains("no receipt found to resolve assumption"));
+    assert!(
+        err.to_string()
+            .contains("no receipt found to resolve assumption")
+    );
 }
 
 #[test]
@@ -254,7 +255,8 @@ fn rejects_no_set_builder_receipt_provided() {
     let err = default_executor()
         .execute(env, SET_BUILDER_ELF)
         .unwrap_err();
-    assert!(err
-        .to_string()
-        .contains("no receipt found to resolve assumption"));
+    assert!(
+        err.to_string()
+            .contains("no receipt found to resolve assumption")
+    );
 }

@@ -16,15 +16,15 @@ use super::{
     memoize::{Cache, Memoization},
     node::Node,
 };
-use alloy_primitives::{Bytes, B256};
+use alloy_primitives::{B256, Bytes};
 use alloy_trie::nybbles::Nibbles;
 use itertools::Itertools;
 use rkyv::{
+    Archive, Archived, Deserialize, Place, Serialize,
     rancor::{Fallible, Source},
     ser::{Allocator, Writer},
     vec::{ArchivedVec, VecResolver},
     with::{ArchiveWith, DeserializeWith, SerializeWith},
-    Archive, Archived, Deserialize, Place, Serialize,
 };
 
 /// Wrapper to encode a [B256] as an `[u8; 32]`.

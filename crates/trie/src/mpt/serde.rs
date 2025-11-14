@@ -22,7 +22,7 @@ pub(crate) mod rlp_nodes {
     use crate::mpt::{memoize::Memoization, node::Node};
     use alloy_primitives::Bytes;
     use itertools::Itertools;
-    use serde::{de, ser::SerializeSeq, Deserialize, Deserializer, Serializer};
+    use serde::{Deserialize, Deserializer, Serializer, de, ser::SerializeSeq};
 
     #[inline]
     pub(crate) fn serialize<S, M>(trie: &Node<M>, serializer: S) -> Result<S::Ok, S::Error>
@@ -55,7 +55,7 @@ pub(crate) mod rlp_nodes {
 #[cfg(test)]
 mod tests {
     use crate::Trie;
-    use alloy_primitives::{keccak256, Bytes};
+    use alloy_primitives::{Bytes, keccak256};
 
     const N: usize = 512;
 
