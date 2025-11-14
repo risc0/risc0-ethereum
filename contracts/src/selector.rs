@@ -222,8 +222,8 @@ mod tests {
     use hex::FromHex;
     use risc0_aggregation::SetInclusionReceiptVerifierParameters;
     use risc0_zkvm::{
-        sha::{Digest, Digestible},
         Groth16ReceiptVerifierParameters,
+        sha::{Digest, Digestible},
     };
 
     // SetBuilder image ID v0.9.0 (built using cargo risczero build v3.0.3)
