@@ -96,7 +96,7 @@ impl TryFrom<u32> for Selector {
             0xf536085a => Ok(Selector::Groth16V2_1),
             0xbb001d44 => Ok(Selector::Groth16V2_2),
             0x73c457ba => Ok(Selector::Groth16V3_0),
-            0x7f3d0102 => Ok(Selector::Groth16V5_0),
+            0xa7b87ed1 => Ok(Selector::Groth16V5_0),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -144,7 +144,7 @@ impl Selector {
             )
             .unwrap()),
             Selector::Groth16V5_0 => Ok(Digest::from_hex(
-                "7f3d010257934206f9a66573309a40ffe017aa9efa63dcd6d9b70256a50ce30c",
+                "a7b87ed1f2ce393df48caffeed4c466126fb7a094d8bf0d51939100e30efd846",
             )
             .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
