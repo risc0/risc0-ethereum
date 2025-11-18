@@ -17,7 +17,7 @@ use std::sync::Arc;
 use alloy::{
     network::EthereumWallet,
     node_bindings::{Anvil, AnvilInstance},
-    primitives::{FixedBytes, B256},
+    primitives::{B256, FixedBytes},
     providers::{DynProvider, Provider, ProviderBuilder},
     signers::local::PrivateKeySigner,
     sol,
@@ -25,7 +25,7 @@ use alloy::{
 use anyhow::Context;
 use risc0_ethereum_contracts::IRiscZeroVerifier::{self, IRiscZeroVerifierInstance};
 use risc0_ethereum_test_utils_guests::ECHO_ELF;
-use risc0_zkvm::{default_prover, ExecutorEnv, ProveInfo, ProverOpts, VerifierContext};
+use risc0_zkvm::{ExecutorEnv, ProveInfo, ProverOpts, VerifierContext, default_prover};
 use tokio::sync::Mutex;
 
 // Import the Solidity contracts using alloy's sol! macro

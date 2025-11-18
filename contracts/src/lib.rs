@@ -42,8 +42,8 @@ pub mod selector;
 
 use core::str::FromStr;
 
-use anyhow::{bail, Result};
-use risc0_zkvm::{sha::Digestible, InnerReceipt};
+use anyhow::{Result, bail};
+use risc0_zkvm::{InnerReceipt, sha::Digestible};
 
 #[cfg(not(target_os = "zkvm"))]
 use alloy::{primitives::Bytes, sol_types::SolInterface, transports::TransportError};

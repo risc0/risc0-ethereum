@@ -16,15 +16,14 @@ use alloc::vec::Vec;
 
 use alloy_primitives::B256;
 use alloy_sol_types::SolValue;
-use risc0_binfmt::{tagged_struct, Digestible};
+use risc0_binfmt::{Digestible, tagged_struct};
 use risc0_zkvm::{
-    sha,
-    sha::{Digest, Sha256, DIGEST_BYTES},
-    InnerReceipt, MaybePruned, Receipt, ReceiptClaim, VerifierContext,
+    InnerReceipt, MaybePruned, Receipt, ReceiptClaim, VerifierContext, sha,
+    sha::{DIGEST_BYTES, Digest, Sha256},
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{merkle_path_root, GuestState, MerkleMountainRange, Seal};
+use crate::{GuestState, MerkleMountainRange, Seal, merkle_path_root};
 
 // TODO(#353)
 //pub use guest_set_builder::{SET_BUILDER_ELF, SET_BUILDER_ID, SET_BUILDER_PATH};
@@ -67,7 +66,9 @@ where
 pub enum VerificationError {
     #[error("{0}")]
     Base(risc0_zkp::verify::VerificationError),
-    #[error("root receipt claim does not match expected set builder claim: {claim_digest} != {expected}")]
+    #[error(
+        "root receipt claim does not match expected set builder claim: {claim_digest} != {expected}"
+    )]
     ClaimDigestDoesNotMatch {
         claim_digest: Digest,
         expected: Digest,

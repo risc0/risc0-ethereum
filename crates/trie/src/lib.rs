@@ -19,6 +19,6 @@ mod mpt;
 
 #[cfg(feature = "orphan")]
 pub use mpt::orphan;
-pub use mpt::{CachedTrie, Trie, EMPTY_ROOT_HASH};
+pub use mpt::{CachedTrie, EMPTY_ROOT_HASH, Trie};
 
 pub use alloy_trie::Nibbles;
