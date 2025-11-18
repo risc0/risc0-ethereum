@@ -94,12 +94,12 @@ contract RiscZeroVerifierRouter is IRiscZeroVerifier, Ownable2Step {
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external virtual view {
+    function verify(bytes calldata seal, bytes32 imageId, bytes32 journalDigest) external view virtual {
         getVerifier(seal).verify(seal, imageId, journalDigest);
     }
 
     /// @inheritdoc IRiscZeroVerifier
-    function verifyIntegrity(Receipt calldata receipt) external virtual view {
+    function verifyIntegrity(Receipt calldata receipt) external view virtual {
         getVerifier(receipt.seal).verifyIntegrity(receipt);
     }
 }
