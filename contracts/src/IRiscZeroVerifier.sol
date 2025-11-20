@@ -102,13 +102,13 @@ library ReceiptClaimLib {
 
 /// @notice Commitment to the memory state and program counter (pc) of the zkVM.
 /// @dev The "pre" and "post" fields of the ReceiptClaim are digests of the system state at the
-///      start are stop of execution. Programs are loaded into the zkVM by creating a memory image
+///      start and stop of execution. Programs are loaded into the zkVM by creating a memory image
 ///      of the loaded program, and creating a system state for initializing the zkVM. This is
 ///      known as the "image ID".
 struct SystemState {
     /// @notice Program counter.
     uint32 pc;
-    /// @notice Root hash of a merkle tree which confirms the integrity of the memory image.
+    /// @notice Root hash of a Merkle tree which confirms the integrity of the memory image.
     bytes32 merkle_root;
 }
 
