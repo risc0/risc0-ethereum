@@ -66,7 +66,7 @@ mod enumeration {
         Groth16V2_1 = 0xf536085a,
         Groth16V2_2 = 0xbb001d44,
         Groth16V3_0 = 0x73c457ba,
-        Groth16V5_0 = 0xa7b87ed1,
+        Groth16V5_0 = 0x8875b7f3,
         #[deprecated]
         SetVerifierV0_1 = 0xbfca9ccb,
         #[deprecated]
@@ -104,7 +104,7 @@ impl TryFrom<u32> for Selector {
             0xf536085a => Ok(Selector::Groth16V2_1),
             0xbb001d44 => Ok(Selector::Groth16V2_2),
             0x73c457ba => Ok(Selector::Groth16V3_0),
-            0xa7b87ed1 => Ok(Selector::Groth16V5_0),
+            0x8875b7f3 => Ok(Selector::Groth16V5_0),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -233,6 +233,7 @@ mod tests {
         Groth16ReceiptVerifierParameters,
         sha::{Digest, Digestible},
     };
+    use strum::IntoEnumIterator;
 
     // SetBuilder image ID v0.9.0 (built using cargo risczero build v3.0.3)
     const SET_BUILDER_ID: &str = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9";
@@ -260,5 +261,19 @@ mod tests {
                 .verifier_parameters_digest()
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn selector_consistency() {
+        for selector in Selector::iter() {
+            println!("Checking consistency of {selector:?}");
+            assert_eq!(Selector::try_from(selector as u32).unwrap(), selector);
+            if selector != Selector::FakeReceipt {
+                assert_eq!(
+                    selector as u32,
+                    selector.verifier_parameters_digest().unwrap().as_words()[0].to_be()
+                );
+            }
+        }
     }
 }
