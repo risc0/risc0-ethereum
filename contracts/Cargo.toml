@@ -11,8 +11,18 @@ repository = { workspace = true }
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
-[build-dependencies]
-anyhow = "1.0"
+[lib]
+doctest = false
+
+[features]
+default = []
+set-verifier = []
+unstable = [
+    "dep:alloy-primitives",
+    "dep:risc0-aggregation",
+    "dep:serde",
+    "risc0-aggregation/verify",
+]
 
 [dependencies]
 alloy = { workspace = true, features = ["contract"] }
@@ -24,23 +34,14 @@ hex = { workspace = true }
 risc0-aggregation = { workspace = true, optional = true }
 risc0-zkvm = { workspace = true }
 serde = { workspace = true, optional = true }
+strum = { version = "0.27.2", default-features = false, features = ["derive"] }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
+
+[build-dependencies]
+anyhow = "1.0"
 
 [dev-dependencies]
 hex = { workspace = true }
 regex = "1.10"
 tokio = { workspace = true, features = ["macros", "rt"] }
-
-[lib]
-doctest = false
-
-[features]
-default = []
-set-verifier = []
-unstable = [
-    "dep:alloy-primitives", 
-    "dep:risc0-aggregation",  
-    "dep:serde",
-    "risc0-aggregation/verify"
-]
