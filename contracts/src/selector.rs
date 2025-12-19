@@ -38,44 +38,52 @@ pub enum SelectorType {
     SetVerifier,
 }
 
-/// A short identifier for a given version of a RISC Zero verifier.
-///
-/// It is used as a routing key by the RISC Zero Verifier Router. The selector is taken from the
-/// hash of the verifier parameters and uniquely identifies a particular verifier within that
-/// router.
-///
-/// A selector is not intended to be collision resistant, in that it is possible to find two
-/// preimages that result in the same selector. This is acceptable since it's purpose to a route a
-/// request among a set of trusted verifiers, and to make errors of sending a receipt to a
-/// mismatching verifiers easier to debug. It is analogous to the ABI function selectors.
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum Selector {
-    FakeReceipt = 0xFFFFFFFF,
-    Groth16V1_1 = 0x50bd1769,
-    Groth16V1_2 = 0xc101b42b,
-    #[deprecated]
-    Groth16V2_0 = 0x9f39696c,
-    #[deprecated]
-    Groth16V2_1 = 0xf536085a,
-    Groth16V2_2 = 0xbb001d44,
-    Groth16V3_0 = 0x73c457ba,
-    Groth16V5_0 = 0x7f3d0102,
-    #[deprecated]
-    SetVerifierV0_1 = 0xbfca9ccb,
-    #[deprecated]
-    SetVerifierV0_2 = 0x16a15cc8,
-    #[deprecated]
-    SetVerifierV0_4 = 0xf443ad7b,
-    #[deprecated]
-    SetVerifierV0_5 = 0xf2e6e6dc,
-    #[deprecated]
-    SetVerifierV0_6 = 0x80479d24,
-    #[deprecated]
-    SetVerifierV0_7 = 0x0f63ffd5,
-    SetVerifierV0_9 = 0x242f9d5b,
+// NOTE: A module is used to allow silencing deprecation notice from macro-generated code.
+#[expect(deprecated)]
+mod enumeration {
+    use strum::EnumIter;
+
+    /// A short identifier for a given version of a RISC Zero verifier.
+    ///
+    /// It is used as a routing key by the RISC Zero Verifier Router. The selector is taken from the
+    /// hash of the verifier parameters and uniquely identifies a particular verifier within that
+    /// router.
+    ///
+    /// A selector is not intended to be collision resistant, in that it is possible to find two
+    /// preimages that result in the same selector. This is acceptable since it's purpose to a route a
+    /// request among a set of trusted verifiers, and to make errors of sending a receipt to a
+    /// mismatching verifiers easier to debug. It is analogous to the ABI function selectors.
+    #[repr(u32)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter)]
+    #[non_exhaustive]
+    pub enum Selector {
+        FakeReceipt = 0xFFFFFFFF,
+        Groth16V1_1 = 0x50bd1769,
+        Groth16V1_2 = 0xc101b42b,
+        #[deprecated]
+        Groth16V2_0 = 0x9f39696c,
+        #[deprecated]
+        Groth16V2_1 = 0xf536085a,
+        Groth16V2_2 = 0xbb001d44,
+        Groth16V3_0 = 0x73c457ba,
+        Groth16V5_0 = 0x8875b7f3,
+        #[deprecated]
+        SetVerifierV0_1 = 0xbfca9ccb,
+        #[deprecated]
+        SetVerifierV0_2 = 0x16a15cc8,
+        #[deprecated]
+        SetVerifierV0_4 = 0xf443ad7b,
+        #[deprecated]
+        SetVerifierV0_5 = 0xf2e6e6dc,
+        #[deprecated]
+        SetVerifierV0_6 = 0x80479d24,
+        #[deprecated]
+        SetVerifierV0_7 = 0x0f63ffd5,
+        SetVerifierV0_9 = 0x242f9d5b,
+    }
 }
+
+pub use enumeration::*;
 
 impl Display for Selector {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -96,7 +104,7 @@ impl TryFrom<u32> for Selector {
             0xf536085a => Ok(Selector::Groth16V2_1),
             0xbb001d44 => Ok(Selector::Groth16V2_2),
             0x73c457ba => Ok(Selector::Groth16V3_0),
-            0xa7b87ed1 => Ok(Selector::Groth16V5_0),
+            0x8875b7f3 => Ok(Selector::Groth16V5_0),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -144,7 +152,7 @@ impl Selector {
             )
             .unwrap()),
             Selector::Groth16V5_0 => Ok(Digest::from_hex(
-                "a7b87ed1f2ce393df48caffeed4c466126fb7a094d8bf0d51939100e30efd846",
+                "8875b7f36ef44aa19ac6781c6d919e5c3ba9c78f3ba80eac05d5dede822afef6",
             )
             .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
@@ -225,6 +233,7 @@ mod tests {
         Groth16ReceiptVerifierParameters,
         sha::{Digest, Digestible},
     };
+    use strum::IntoEnumIterator;
 
     // SetBuilder image ID v0.9.0 (built using cargo risczero build v3.0.3)
     const SET_BUILDER_ID: &str = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9";
@@ -252,5 +261,19 @@ mod tests {
                 .verifier_parameters_digest()
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn selector_consistency() {
+        for selector in Selector::iter() {
+            println!("Checking consistency of {selector:?}");
+            assert_eq!(Selector::try_from(selector as u32).unwrap(), selector);
+            if selector != Selector::FakeReceipt {
+                assert_eq!(
+                    selector as u32,
+                    selector.verifier_parameters_digest().unwrap().as_words()[0].to_be()
+                );
+            }
+        }
     }
 }
