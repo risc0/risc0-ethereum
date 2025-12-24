@@ -94,7 +94,7 @@
 
    3. Run the deployment tests to confirm that the state recorded in `deployment.toml` matches the state of the contracts deployed on-chain.
 
-      You can run the tests against a single chain with the following command, with `RPC_URL` set to an Ethereum RPC provider such as Alchemy, with you API key:
+      You can run the tests against a single chain with the following command, with `RPC_URL` set to an Ethereum RPC provider such as Alchemy, with your API key:
 
       ```sh
       # In the contracts directory.
