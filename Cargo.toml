@@ -41,7 +41,7 @@ alloy-sol-types = { version = "1.3" }
 
 # Alloy host dependencies
 alloy = { version = "1.0", default-features = false }
-alloy-trie = { version = "0.8" }
+alloy-trie = { version = "0.9" }
 
 # Beacon chain support
 ethereum-consensus = { git = "https://github.com/ralexstokes/ethereum-consensus.git", rev = "ade5ce6c4a19107c1059e5338d8f18855bd2d931" }
