@@ -200,6 +200,8 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
+
+<!-- TODO is this needed -->
 3. Verify the contracts on Etherscan.
 
     > The verify functionality of forge script appears to be broken, see #393
@@ -239,7 +241,7 @@ This is a two-step process, guarded by the `TimelockController`.
 
 After the delay on the timelock controller has passed, the operation to add the new verifier to the router can be executed.
 
-1. Dry the transaction to execute the add verifier operation:
+1. Dry run the transaction to execute the add verifier operation:
 
     ```sh
     VERIFIER_SELECTOR="0x..." contracts/script/manage FinishAddVerifier
@@ -304,12 +306,13 @@ This is a two-step process, guarded by the `TimelockController`.
     > When using Fireblocks, sending a transaction to a particular address may require allow-listing it.
     > In order to ensure that estop operations are possible, make sure to allow-list the new estop contract.
 
+<!-- TODO does verify work now -->
+
 4. ~~Verify the contracts on Etherscan (or its equivalent) by running the command again without `--broadcast` and add `--verify`.~~
 
     > [!WARNING]
     > The verify functionality appears to be broken see #393
 
-<<<<<<< HEAD
 5. Test the deployment.
 
     ```sh
@@ -333,25 +336,19 @@ This is a two-step process, guarded by the `TimelockController`.
 
 After the delay on the timelock controller has passed, the operation to add the new set verifier to the router can be executed.
 
-1. Set the verifier selector and estop address for the set verifier:
+1. Dry run the transaction to execute the add verifier operation:
 
     ```sh
-    export VERIFIER_SELECTOR=$(contracts/script/manage SetVerifierSelector | grep selector | awk -F': ' '{print $2}' | tee /dev/stderr)
+    VERIFIER_SELECTOR="0x..." contracts/script/manage FinishAddVerifier
     ```
 
-2. Dry the transaction to execute the add verifier operation:
-
-    ```sh
-    contracts/script/manage FinishAddVerifier
-    ```
-
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
-4. Remove the `unroutable` field from the selected verifier.
+3. Remove the `unroutable` field from the selected verifier.
 
-5. Test the deployment.
+4. Test the deployment.
 
     ```sh
     contracts/script/test
@@ -363,49 +360,31 @@ This is a two-step process, guarded by the `TimelockController`.
 
 ### Schedule the update
 
-1. Set the verifier selector and estop address for the verifier:
-
-    <!-- TODO: Is there another way -->
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier` or you can run `bash contracts/script/manage SetVerifierSelector` for the `RiscZeroSetVerifier`.
+1. Dry run the transaction to schedule the remove verifier operation:
 
     ```sh
-    export VERIFIER_SELECTOR="0x..."
+    VERIFIER_SELECTOR="0x..." contracts/script/manage ScheduleRemoveVerifier
     ```
 
-2. Dry the transaction to schedule the remove verifier operation:
-
-    ```sh
-    contracts/script/manage ScheduleRemoveVerifier
-    ```
-
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
 ### Finish the update
 
-1. Set the verifier selector and estop address for the verifier:
-
-    > TIP: One place to find this information is in `./contracts/test/RiscZeroGroth16Verifier.t.sol` for the `RiscZeroGroth16Verifier` or you can run `contracts/script/manage SetVerifierSelector` for the `RiscZeroSetVerifier`.
+1. Dry run the transaction to execute the remove verifier operation:
 
     ```sh
-    export VERIFIER_SELECTOR="0x..."
+    VERIFIER_SELECTOR="0x..." contracts/script/manage FinishRemoveVerifier
     ```
 
-2. Dry the transaction to execute the remove verifier operation:
-
-    ```sh
-    contracts/script/manage FinishRemoveVerifier
-    ```
-
-3. Run the command again with `--broadcast`
+2. Run the command again with `--broadcast`
 
     This will send one transaction from the admin address.
 
-4. Update `deployment.toml` and set `unroutable = true` on the removed verifier.
+3. Update `deployment.toml` and set `unroutable = true` on the removed verifier.
 
-5. Test the deployment.
+4. Test the deployment.
 
     ```sh
     contracts/script/test
@@ -468,7 +447,7 @@ Use the following steps to cancel an operation that is pending on the `TimelockC
     export OPERATION_ID="0x..." \
     ```
 
-2. Dry the transaction to cancel the operation.
+2. Dry run the transaction to cancel the operation.
 
     ```sh
     contracts/script/manage CancelOperation -f
