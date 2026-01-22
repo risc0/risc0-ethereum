@@ -2,6 +2,10 @@
 # vim: syntax=bash
 export LANG=en_US.UTF-8
 
+# This is s utility script used to run an action targeting each chain with a deployment of the RISC Zero verifier contracts.
+# For each chain, it runs the given command, setting the CHAIN_KEY env var to the appropriate value.
+# It also set some extra env vars depending on the chain, to handle difference and known issues for that chain (e.g. setting the EVM version for Linea).
+
 set -eo pipefail
 
 # Global variables for signal handling
@@ -76,7 +80,7 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  $0 testnet -- cast send 0x123..."
-    echo "  $0 mainnet -y -- cast call 0x456..."
+    echo "  $0 mainnet -y -- contracs/script/test"
     echo "  $0 ethereum-sepolia -- forge script ..."
     echo ""
     echo "Available testnet chains: ${TESTNET_CHAINS[*]}"

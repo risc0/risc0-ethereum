@@ -2,6 +2,8 @@
 # vim: syntax=bash
 export LANG=en_US.UTF-8
 
+# This script runs the deployment tests, which verify that the state of contracts on the target chain match what is specified in deployment.toml
+
 set -eo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
