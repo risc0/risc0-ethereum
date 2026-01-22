@@ -51,7 +51,6 @@ anvil -a 10 --block-time 1 --host 0.0.0.0 --port 8545
 Set your RPC URL, as well as your public and private key:
 
 ```sh
-export RPC_URL="http://localhost:8545"
 export DEPLOYER_ADDRESS="0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 export DEPLOYER_PRIVATE_KEY="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 export CHAIN_KEY="anvil"
