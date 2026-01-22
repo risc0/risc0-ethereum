@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# vim: syntax=bash
+export LANG=en_US.UTF-8
+
+# This script runs the deployment tests, which verify that the state of contracts on the target chain match what is specified in deployment.toml
 
 set -eo pipefail
 

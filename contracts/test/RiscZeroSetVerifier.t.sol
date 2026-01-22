@@ -1,4 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
+// Copyright 2026 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {TestUtils} from "./TestUtils.sol";
 import {
-    IRiscZeroVerifier, Receipt as RiscZeroReceipt, ReceiptClaimLib, ReceiptClaim
+    IRiscZeroVerifier,
+    Receipt as RiscZeroReceipt,
+    ReceiptClaimLib,
+    ReceiptClaim
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroSetVerifier} from "../src/IRiscZeroSetVerifier.sol";

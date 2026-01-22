@@ -1,4 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
+// Copyright 2026 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ fn main() {
     let env = ExecutorEnv::builder()
         .write_slice(&encoded_input)
         .add_assumption(receipt)
+        .unwrap()
         .build()
         .expect("Failed to build executor environment");
     let root_receipt = default_prover()
