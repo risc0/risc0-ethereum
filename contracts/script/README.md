@@ -632,22 +632,16 @@ Activate the emergency stop:
 
     This will send one transaction from the admin address.
 
-3. Test the activation:
+3. Add `stopped = true` to `./deployments.toml` for the affected contract.
 
-    ```sh
-    cast call --rpc-url ${RPC_URL:?} \
-        ${VERIFIER_ESTOP:?} \
-        'paused()(bool)'
-    true
-    ```
-
-4. Add `stopped = true` to `./deployments.toml` for the affected contract.
-
-5. Run the deployment tests.
+4. Run the deployment tests.
 
     ```sh
     contracts/script/test
     ```
+
+    > [!IMPORTANT]
+    > Double check the logs from the test to double-check that the estop took effect.
 
 [yq-install]: https://github.com/mikefarah/yq?tab=readme-ov-file#install
 [alloy-chains]: https://github.com/alloy-rs/chains/blob/main/src/named.rs
