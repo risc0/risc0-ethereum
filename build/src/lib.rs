@@ -229,7 +229,6 @@ contract Counter {
 count-=1;
     }
 }
-
 "#;
 
     #[test]
