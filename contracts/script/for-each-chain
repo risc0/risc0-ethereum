@@ -1,0 +1,387 @@
+#!/usr/bin/env bash
+# vim: syntax=bash
+export LANG=en_US.UTF-8
+
+set -eo pipefail
+
+# Global variables for signal handling
+CURRENT_CHAIN=""
+COMMAND_RUNNING=false
+INTERRUPT_REQUESTED=false
+
+# Signal handler for SIGINT (Ctrl-C)
+handle_sigint() {
+    if [[ "$COMMAND_RUNNING" == "true" ]]; then
+        if [[ "$INTERRUPT_REQUESTED" == "false" ]]; then
+            echo ""
+            echo "⚠️  Interrupted command on $CURRENT_CHAIN"
+        fi
+        INTERRUPT_REQUESTED=true
+    else
+        echo ""
+        echo "Exiting..."
+        exit 130
+    fi
+}
+
+# Set up signal handler
+trap handle_sigint SIGINT
+
+# List of testnet chains
+TESTNET_CHAINS=(
+    "ethereum-sepolia"
+    "ethereum-hoodi"
+    "arbitrum-sepolia"
+    "avalanche-fuji"
+    "base-sepolia"
+    "optimism-sepolia"
+    "linea-sepolia"
+)
+
+# List of mainnet chains
+MAINNET_CHAINS=(
+    "ethereum-mainnet"
+    "arbitrum-mainnet"
+    "avalanche-mainnet"
+    "base-mainnet"
+    "optimism-mainnet"
+    "polygon-mainnet"
+    "linea-mainnet"
+    "polygon-zkevm-mainnet"
+    "katana-mainnet"
+)
+
+# Convenience array for validating chain slugs
+ALL_CHAINS=(
+    "${TESTNET_CHAINS[@]}"
+    "${MAINNET_CHAINS[@]}"
+)
+
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 <testnet|mainnet|chain-name> [-y] -- <command>"
+    echo ""
+    echo "Options:"
+    echo "  -y, --yes    Skip confirmation prompts and run on all chains"
+    echo "  -h, --help   Show this help text"
+    echo ""
+    echo "Target arguments:"
+    echo "  testnet/mainnet    Iterate through the full predefined list"
+    echo "  chain-name         Run the command only on the specific chain slug"
+    echo ""
+    echo "Prompt options:"
+    echo "  y     Run command on this chain"
+    echo "  N     Skip this chain (default)"
+    echo "  a     Run on this chain and all remaining chains without further prompts"
+    echo ""
+    echo "Examples:"
+    echo "  $0 testnet -- cast send 0x123..."
+    echo "  $0 mainnet -y -- cast call 0x456..."
+    echo "  $0 ethereum-sepolia -- forge script ..."
+    echo ""
+    echo "Available testnet chains: ${TESTNET_CHAINS[*]}"
+    echo "Available mainnet chains: ${MAINNET_CHAINS[*]}"
+    echo ""
+    echo "Available single-chain targets: ${ALL_CHAINS[*]}"
+}
+
+prompt_continue_after_interrupt() {
+    while true; do
+        printf "Continue with next chain? [Y/n]: "
+        if ! read -r continue_response; then
+            echo ""
+            echo "Exiting..."
+            exit 130
+        fi
+        
+        case "$continue_response" in
+            ""|[yY]|[yY][eE][sS])
+                echo "Continuing with next chain..."
+                return 0
+                ;;
+            [nN]|[nN][oO])
+                echo "Exiting..."
+                exit 130
+                ;;
+            *)
+                echo "Please answer 'y' or 'n'."
+                ;;
+        esac
+    done
+}
+
+run_command_for_chain() {
+    set +e
+    "${COMMAND_ARGS[@]}"
+    local exit_code=$?
+    set -e
+    return "$exit_code"
+}
+
+# Parse options / target prior to command separator
+SKIP_PROMPTS=false
+TARGET_INPUT=""
+FOUND_SEPARATOR=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -y|--yes)
+            SKIP_PROMPTS=true
+            shift
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        --)
+            FOUND_SEPARATOR=true
+            shift
+            break
+            ;;
+        -*)
+            echo "Error: Unknown option '$1'"
+            show_usage
+            exit 1
+            ;;
+        *)
+            if [[ -z "$TARGET_INPUT" ]]; then
+                TARGET_INPUT="$1"
+                shift
+            else
+                echo "Error: Multiple targets provided ('$TARGET_INPUT' and '$1')"
+                show_usage
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+if [[ -z "$TARGET_INPUT" ]]; then
+    echo "Error: Target not provided"
+    show_usage
+    exit 1
+fi
+
+if [[ "$FOUND_SEPARATOR" == "false" ]]; then
+    echo "Error: Command separator '--' not found"
+    show_usage
+    exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+    echo "Error: No command provided after '--'"
+    show_usage
+    exit 1
+fi
+
+COMMAND_ARGS=("$@")
+COMMAND_STRING="${COMMAND_ARGS[*]}"
+
+# Validate target and set chains array
+TARGET_LABEL="$TARGET_INPUT"
+SINGLE_CHAIN_MODE=false
+case "$TARGET_INPUT" in
+    "testnet")
+        CHAINS=("${TESTNET_CHAINS[@]}")
+        TARGET_LABEL="testnet chains"
+        ;;
+    "mainnet")
+        CHAINS=("${MAINNET_CHAINS[@]}")
+        TARGET_LABEL="mainnet chains"
+        ;;
+    *)
+        FOUND_CHAIN=""
+        for KNOWN_CHAIN in "${ALL_CHAINS[@]}"; do
+            if [[ "$TARGET_INPUT" == "$KNOWN_CHAIN" ]]; then
+                FOUND_CHAIN="$KNOWN_CHAIN"
+                break
+            fi
+        done
+        
+        if [[ -z "$FOUND_CHAIN" ]]; then
+            echo "Error: Invalid target '$TARGET_INPUT'"
+            echo "Must be 'testnet', 'mainnet', or one of: ${ALL_CHAINS[*]}"
+            show_usage
+            exit 1
+        fi
+        
+        CHAINS=("$FOUND_CHAIN")
+        TARGET_LABEL="single chain: $FOUND_CHAIN"
+        SINGLE_CHAIN_MODE=true
+        ;;
+esac
+
+echo "Target: $TARGET_LABEL"
+if [[ "$SKIP_PROMPTS" == "true" ]]; then
+    echo "Auto-confirm mode: Will run on all selected chains"
+elif [[ "$SINGLE_CHAIN_MODE" == "true" ]]; then
+    echo "Single-chain mode: Skipping confirmation prompts"
+fi
+echo "Will execute command: $COMMAND_STRING"
+echo "On chains: ${CHAINS[*]}"
+echo ""
+
+# Arrays to track results for summary
+SUCCESSFUL_CHAINS=()
+FAILED_CHAINS=()
+INTERRUPTED_CHAINS=()
+TOTAL_ATTEMPTED=0
+RUN_ALL_REMAINING=false
+
+# Iterate through each chain
+for CHAIN in "${CHAINS[@]}"; do
+    SHOULD_RUN=false
+    
+    if [[ "$SKIP_PROMPTS" == "true" || "$RUN_ALL_REMAINING" == "true" || "$SINGLE_CHAIN_MODE" == "true" ]]; then
+        SHOULD_RUN=true
+        echo "Running '$COMMAND_STRING' on $CHAIN..."
+    else
+        printf "Run '%s' on %s ? [y/N/a]: " "$COMMAND_STRING" "$CHAIN"
+        if ! read -r response; then
+            echo ""
+            echo "Exiting..."
+            exit 130
+        fi
+        
+        case "$response" in
+            [yY]|[yY][eE][sS])
+                SHOULD_RUN=true
+                echo "Executing on $CHAIN..."
+                ;;
+            [aA]|[aA][lL][lL])
+                SHOULD_RUN=true
+                RUN_ALL_REMAINING=true
+                echo "Running on $CHAIN and all remaining chains..."
+                ;;
+            *)
+                echo "Skipping $CHAIN"
+                echo ""
+                ;;
+        esac
+    fi
+
+    if [[ "$SHOULD_RUN" == "true" ]]; then
+        TOTAL_ATTEMPTED=$((TOTAL_ATTEMPTED + 1))
+        export CHAIN_KEY="$CHAIN"
+        CURRENT_CHAIN="$CHAIN"
+        COMMAND_RUNNING=true
+        INTERRUPT_REQUESTED=false
+        
+        unset FOUNDRY_EVM_VERSION
+        unset FIREBLOCKS_RPC_FLAGS
+        unset FORGE_SCRIPT_FLAGS
+
+        case "$CHAIN" in
+            "linea-sepolia"|"linea-mainnet")
+                export FOUNDRY_EVM_VERSION="london"
+                echo "Setting FOUNDRY_EVM_VERSION=${FOUNDRY_EVM_VERSION:?}"
+                if [[ "$CHAIN" == "linea-sepolia" ]]; then
+                    # As of Oct 2025, there is an issue in Fireblocks where Linea Sepolia is not recognized.
+                    # NOTE: This flag only exists on a patched version of the fireblocks-json-rpc
+                    # See https://github.com/fireblocks/fireblocks-json-rpc/pull/24
+                    export FIREBLOCKS_RPC_FLAGS="--assetId LINEA_SEPOLIA_TEST"
+                    echo "Setting FIREBLOCKS_RPC_FLAGS=${FIREBLOCKS_RPC_FLAGS:?}"
+                fi
+                ;;
+            "polygon-zkevm-testnet"|"polygon-zkevm-mainnet")
+                export FOUNDRY_EVM_VERSION="shanghai"
+                echo "Setting FOUNDRY_EVM_VERSION=${FOUNDRY_EVM_VERSION:?}"
+                ;;
+            "avalanche-fuji"|"optimism-mainnet")
+                # As of Oct 2025, there is an issue in Fireblocks where Avalanche Fuji transactions fail due to gas issues.
+                export FORGE_SCRIPT_FLAGS="--legacy"
+                echo "Setting FORGE_SCRIPT_FLAGS=${FORGE_SCRIPT_FLAGS:?}"
+                ;;
+        esac
+
+        if run_command_for_chain; then
+            COMMAND_EXIT_CODE=0
+        else
+            COMMAND_EXIT_CODE=$?
+        fi
+
+        COMMAND_RUNNING=false
+        
+        if [[ $COMMAND_EXIT_CODE -eq 0 ]]; then
+            echo "✓ Success on $CHAIN"
+            SUCCESSFUL_CHAINS+=("$CHAIN")
+        elif [[ $COMMAND_EXIT_CODE -eq 130 || "$INTERRUPT_REQUESTED" == "true" ]]; then
+            echo "⚠️  Interrupted on $CHAIN"
+            INTERRUPTED_CHAINS+=("$CHAIN")
+            prompt_continue_after_interrupt
+        else
+            echo "✗ Failed on $CHAIN (exit code: $COMMAND_EXIT_CODE)"
+            FAILED_CHAINS+=("$CHAIN")
+        fi
+        
+        INTERRUPT_REQUESTED=false
+        echo ""
+    fi
+done
+
+# Print summary based on how many chains actually ran
+ATTEMPTED_COUNT=$(( ${#SUCCESSFUL_CHAINS[@]} + ${#FAILED_CHAINS[@]} + ${#INTERRUPTED_CHAINS[@]} ))
+EXIT_STATUS=0
+if [[ ${#FAILED_CHAINS[@]} -gt 0 ]]; then
+    EXIT_STATUS=1
+fi
+
+if (( ATTEMPTED_COUNT > 1 )); then
+    echo "========================================="
+    echo "EXECUTION SUMMARY"
+    echo "========================================="
+    echo "Command: $COMMAND_STRING"
+    echo "Target: $TARGET_LABEL"
+    echo ""
+    
+    if [[ ${#SUCCESSFUL_CHAINS[@]} -gt 0 ]]; then
+        echo "✓ Successful (${#SUCCESSFUL_CHAINS[@]}/$ATTEMPTED_COUNT):"
+        for chain in "${SUCCESSFUL_CHAINS[@]}"; do
+            echo "  - $chain"
+        done
+        echo ""
+    fi
+    
+    if [[ ${#FAILED_CHAINS[@]} -gt 0 ]]; then
+        echo "✗ Failed (${#FAILED_CHAINS[@]}/$ATTEMPTED_COUNT):"
+        for chain in "${FAILED_CHAINS[@]}"; do
+            echo "  - $chain"
+        done
+        echo ""
+    fi
+    
+    if [[ ${#INTERRUPTED_CHAINS[@]} -gt 0 ]]; then
+        echo "⚠️  Interrupted (${#INTERRUPTED_CHAINS[@]}/$ATTEMPTED_COUNT):"
+        for chain in "${INTERRUPTED_CHAINS[@]}"; do
+            echo "  - $chain"
+        done
+        echo ""
+    fi
+    
+    if [[ ${#FAILED_CHAINS[@]} -eq 0 && ${#INTERRUPTED_CHAINS[@]} -eq 0 ]]; then
+        echo "🎉 All chains completed successfully!"
+    elif [[ ${#FAILED_CHAINS[@]} -gt 0 && ${#SUCCESSFUL_CHAINS[@]} -gt 0 ]]; then
+        echo "⚠️  Mixed results: ${#SUCCESSFUL_CHAINS[@]} succeeded, ${#FAILED_CHAINS[@]} failed"
+    elif [[ ${#FAILED_CHAINS[@]} -gt 0 ]]; then
+        echo "❌ All attempted chains failed!"
+    else
+        echo "⚠️  All attempted chains were interrupted."
+    fi
+elif (( ATTEMPTED_COUNT == 1 )); then
+    echo "-----------------------------------------"
+    echo "SINGLE-CHAIN RESULT"
+    echo "-----------------------------------------"
+    if [[ ${#SUCCESSFUL_CHAINS[@]} -eq 1 ]]; then
+        echo "✓ ${SUCCESSFUL_CHAINS[0]} completed successfully."
+    elif [[ ${#FAILED_CHAINS[@]} -eq 1 ]]; then
+        echo "✗ ${FAILED_CHAINS[0]} failed."
+        EXIT_STATUS=1
+    else
+        echo "⚠️  ${INTERRUPTED_CHAINS[0]} was interrupted."
+    fi
+elif (( ATTEMPTED_COUNT == 0 )); then
+    echo "No chains were executed."
+fi
+
+echo "Done!"
+exit "$EXIT_STATUS"
