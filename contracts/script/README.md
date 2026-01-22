@@ -12,7 +12,7 @@ Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
 > [!NOTE]
 > Running the `manage` commands will run in simulation mode (i.e. will not send transactions) unless the `--broadcast` flag is passed.
 
-Commands in this guide use `yq` to parse the TOML config files.
+Some scripts in this guide use `yq` to parse the TOML config files.
 
 You can install `yq` by following the [directions on GitHub][yq-install], or using `go install`.
 
@@ -656,6 +656,14 @@ Activate the emergency stop:
         ${VERIFIER_ESTOP:?} \
         'paused()(bool)'
     true
+    ```
+
+4. Add `stopped = true` to `./deployments.toml` for the affected contract.
+
+5. Run the deployment tests.
+
+    ```sh
+    bash contracts/script/test
     ```
 
 [yq-install]: https://github.com/mikefarah/yq?tab=readme-ov-file#install
