@@ -40,11 +40,7 @@ library StructHash {
     }
 
     // @notice Compute the struct digest with the given tag digest, digest fields down, and data.
-    function taggedStruct(bytes32 tagDigest, bytes32[] memory down, bytes memory data)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function taggedStruct(bytes32 tagDigest, bytes32[] memory down, bytes memory data) internal pure returns (bytes32) {
         uint16 downLen = down.length.toUint16();
         // swap the byte order to encode as little-endian.
         bytes2 downLenLE = bytes2((downLen << 8) | (downLen >> 8));

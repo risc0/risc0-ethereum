@@ -22,7 +22,10 @@ import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {
-    IRiscZeroVerifier, Receipt as RiscZeroReceipt, ReceiptClaim, ReceiptClaimLib
+    IRiscZeroVerifier,
+    Receipt as RiscZeroReceipt,
+    ReceiptClaim,
+    ReceiptClaimLib
 } from "../src/IRiscZeroVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
@@ -73,14 +76,14 @@ library TestReceipts {
         }
         if (selector == getFirst4Bytes(TestSetInclusionReceiptV07.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(
-                TestSetInclusionReceiptV07.IMAGE_ID, sha256(TestSetInclusionReceiptV07.JOURNAL)
-            ).digest();
+                    TestSetInclusionReceiptV07.IMAGE_ID, sha256(TestSetInclusionReceiptV07.JOURNAL)
+                ).digest();
             return (true, RiscZeroReceipt({seal: TestSetInclusionReceiptV07.SEAL, claimDigest: claimDigest}));
         }
         if (selector == getFirst4Bytes(TestSetInclusionReceiptV09.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(
-                TestSetInclusionReceiptV09.IMAGE_ID, sha256(TestSetInclusionReceiptV09.JOURNAL)
-            ).digest();
+                    TestSetInclusionReceiptV09.IMAGE_ID, sha256(TestSetInclusionReceiptV09.JOURNAL)
+                ).digest();
             return (true, RiscZeroReceipt({seal: TestSetInclusionReceiptV09.SEAL, claimDigest: claimDigest}));
         }
         return (false, RiscZeroReceipt({seal: new bytes(0), claimDigest: bytes32(0)}));
@@ -165,11 +168,11 @@ contract DeploymentTest is Test {
                     // Required that the revert was either SelectorUnknown or SelectorRemoved.
                     require(
                         keccak256(err)
-                            == keccak256(
-                                abi.encodeWithSelector(
-                                    RiscZeroVerifierRouter.SelectorUnknown.selector, verifierConfig.selector
+                                == keccak256(
+                                    abi.encodeWithSelector(
+                                        RiscZeroVerifierRouter.SelectorUnknown.selector, verifierConfig.selector
+                                    )
                                 )
-                            )
                             || keccak256(err)
                                 == keccak256(
                                     abi.encodeWithSelector(

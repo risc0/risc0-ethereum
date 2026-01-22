@@ -20,7 +20,10 @@ import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {TestUtils} from "./TestUtils.sol";
 import {
-    IRiscZeroVerifier, Receipt as RiscZeroReceipt, ReceiptClaimLib, ReceiptClaim
+    IRiscZeroVerifier,
+    Receipt as RiscZeroReceipt,
+    ReceiptClaimLib,
+    ReceiptClaim
 } from "../src/IRiscZeroVerifier.sol";
 import {RiscZeroMockVerifier} from "../src/test/RiscZeroMockVerifier.sol";
 import {IRiscZeroSetVerifier} from "../src/IRiscZeroSetVerifier.sol";
