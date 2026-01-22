@@ -210,6 +210,8 @@ This is a two-step process, guarded by the `TimelockController`.
 
 4. Add the addresses for the newly deployed contract to the `deployment.toml` file.
 
+    The Forge script outputs a TOML block that you can copy into the `deployment.toml` file.
+
 5. Test the deployment.
 
     ```sh
