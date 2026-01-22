@@ -62,7 +62,7 @@ fn proves_one_step() {
             .unwrap();
         for claim in claims.iter() {
             let receipt = InnerReceipt::Fake(FakeReceipt::new(claim.clone()));
-            env_builder.add_assumption(receipt);
+            env_builder.add_assumption(receipt).unwrap();
         }
         let env = env_builder.build().unwrap();
 
@@ -98,7 +98,7 @@ fn proves_two_step() {
             .unwrap();
         for claim in claims.iter() {
             let receipt = InnerReceipt::Fake(FakeReceipt::new(claim.clone()));
-            env_builder.add_assumption(receipt);
+            env_builder.add_assumption(receipt).unwrap();
         }
         let env = env_builder.build().unwrap();
 
@@ -112,10 +112,11 @@ fn proves_two_step() {
         env_builder
             .write(&state.into_input(vec![], true).unwrap())
             .unwrap()
-            .add_assumption(session_info.receipt_claim.unwrap());
+            .add_assumption(session_info.receipt_claim.unwrap())
+            .unwrap();
         for claim in claims.iter() {
             let receipt = InnerReceipt::Fake(FakeReceipt::new(claim.clone()));
-            env_builder.add_assumption(receipt);
+            env_builder.add_assumption(receipt).unwrap();
         }
         let env = env_builder.build().unwrap();
 
@@ -153,11 +154,11 @@ fn proves_incremental() {
                 .unwrap();
             for claim in chunk.iter() {
                 let receipt = InnerReceipt::Fake(FakeReceipt::new(claim.clone()));
-                env_builder.add_assumption(receipt);
+                env_builder.add_assumption(receipt).unwrap();
             }
             if let Some(set_builder_claim) = set_builder_claim {
                 let receipt = InnerReceipt::Fake(FakeReceipt::new(set_builder_claim));
-                env_builder.add_assumption(receipt);
+                env_builder.add_assumption(receipt).unwrap();
             }
             let env = env_builder.build().unwrap();
 
@@ -186,6 +187,7 @@ fn proves_incremental() {
             .add_assumption(InnerReceipt::Fake(FakeReceipt::new(
                 set_builder_claim.unwrap(),
             )))
+            .unwrap()
             .build()
             .unwrap();
 
@@ -239,6 +241,7 @@ fn rejects_no_set_builder_receipt_provided() {
         )
         .unwrap()
         .add_assumption(InnerReceipt::Fake(FakeReceipt::new(claim)))
+        .unwrap()
         .build()
         .unwrap();
 

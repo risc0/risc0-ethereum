@@ -69,6 +69,7 @@ fn main() {
     let env = ExecutorEnv::builder()
         .write_slice(&encoded_input)
         .add_assumption(receipt)
+        .unwrap()
         .build()
         .expect("Failed to build executor environment");
     let root_receipt = default_prover()
