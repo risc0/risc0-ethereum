@@ -1,4 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
+// Copyright 2026 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 pragma solidity ^0.8.9;
 
 library ControlID {
-    bytes32 public constant CONTROL_ROOT = hex"ab0e9172f4306b6a3b2250055036565c2421683b39ee6c20366d17350756ad19";
+    bytes32 public constant CONTROL_ROOT = hex"b1f64013f70bbb386a8b3a3d63552c5cb5ea4a549ec7fb1ecc2a031dbf488167";
     // NOTE: This has the opposite byte order to the value in the risc0 repository.
     bytes32 public constant BN254_CONTROL_ID = hex"04446e66d300eb7fb45c9726bb53c793dda407a62e9601618bb43c5c14657ac0";
 }
