@@ -92,6 +92,10 @@ Also requires that you have a [Fireblocks API account](https://developers.firebl
 Set your public key, your Etherscan API key, and the necessary parameters for Fireblocks:
 
 > [!NOTE]
+> Deployment to Linea Sepolia requires the following patch
+> [fireblocks-json-rpc/pull/24](https://github.com/fireblocks/fireblocks-json-rpc/pull/24)
+
+> [!NOTE]
 > Fireblocks only supports RSA for API request signing.
 > `FIREBLOCKS_API_PRIVATE_KEY_PATH` can be the key itself, rather than a path.
 
