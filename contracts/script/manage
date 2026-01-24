@@ -59,21 +59,21 @@ echo "Loading environment variables from deployment_secrets.toml"
 if [ -z "$RPC_URL" ]; then
     echo 'RPC_URL from deployment_secrets.toml'
     export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" $CONTRACTS_DIR/deployment_secrets.toml)
-    [ -n "$RPC_URL" ] || exit 1
+    [ -n "$RPC_URL" ] && [ "$RPC_URL" != "null" ] || exit 1
 else
     echo "RPC_URL from env $RPC_URL"
 fi
 if [ -z "$ETHERSCAN_URL" ]; then
     echo 'ETHERSCAN_URL from deployment.toml'
     export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" $CONTRACTS_DIR/deployment.toml)
-    [ -n "$ETHERSCAN_URL" ] || exit 1
+    [ -n "$ETHERSCAN_URL" ] && [ "$ETHERSCAN_URL" != "null" ] || exit 1
 else
     echo "ETHERSCAN_URL from env $ETHERSCAN_URL"
 fi
 if [ -z "$ETHERSCAN_API_KEY" ]; then
     echo -n 'ETHERSCAN_API_KEY from deployment_secrets.toml'
     export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" $CONTRACTS_DIR/deployment_secrets.toml)
-    [ -n "$ETHERSCAN_API_KEY" ] || exit 1
+    [ -n "$ETHERSCAN_API_KEY" ] && [ "$ETHERSCAN_API_KEY" != "null" ] || exit 1
 else
     echo "ETHERSCAN_API_KEY from env $ETHERSCAN_API_KEY"
 fi
