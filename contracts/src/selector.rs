@@ -1,4 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
+// Copyright 2026 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ mod enumeration {
         Groth16V2_1 = 0xf536085a,
         Groth16V2_2 = 0xbb001d44,
         Groth16V3_0 = 0x73c457ba,
-        Groth16V5_0 = 0x8875b7f3,
+        Groth16V5_0 = 0xc27d1bc0,
         #[deprecated]
         SetVerifierV0_1 = 0xbfca9ccb,
         #[deprecated]
@@ -104,7 +104,7 @@ impl TryFrom<u32> for Selector {
             0xf536085a => Ok(Selector::Groth16V2_1),
             0xbb001d44 => Ok(Selector::Groth16V2_2),
             0x73c457ba => Ok(Selector::Groth16V3_0),
-            0x8875b7f3 => Ok(Selector::Groth16V5_0),
+            0xc27d1bc0 => Ok(Selector::Groth16V5_0),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -152,7 +152,7 @@ impl Selector {
             )
             .unwrap()),
             Selector::Groth16V5_0 => Ok(Digest::from_hex(
-                "8875b7f36ef44aa19ac6781c6d919e5c3ba9c78f3ba80eac05d5dede822afef6",
+                "c27d1bc08c9adc5820848451eb66a7c38d57a9dfb665b8e68e2f963106bd138c",
             )
             .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
