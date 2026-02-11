@@ -92,10 +92,6 @@ Also requires that you have a [Fireblocks API account](https://developers.firebl
 Set your public key, your Etherscan API key, and the necessary parameters for Fireblocks:
 
 > [!NOTE]
-> Deployment to Linea Sepolia requires the following patch
-> [fireblocks-json-rpc/pull/24](https://github.com/fireblocks/fireblocks-json-rpc/pull/24)
-
-> [!NOTE]
 > Fireblocks only supports RSA for API request signing.
 > `FIREBLOCKS_API_PRIVATE_KEY_PATH` can be the key itself, rather than a path.
 
@@ -105,9 +101,6 @@ Set your public key, your Etherscan API key, and the necessary parameters for Fi
 ```sh
 export FIREBLOCKS_API_KEY="..."
 export FIREBLOCKS_API_PRIVATE_KEY_PATH="..."
-
-# IF YOU ARE IN A SANDBOX ENVIRONMENT, be sure to also set this:
-export FIREBLOCKS_API_BASE_URL="https://sandbox-api.fireblocks.io"
 ```
 
 Then, in the instructions below, pass the `--fireblocks` (`-f`) flag to the `manage` script.
@@ -634,9 +627,7 @@ Activate the emergency stop:
 1. Dry run the transaction
 
     ```sh
-    VERIFIER_SELCTOR="0x..." \
-    CHAIN_KEY="..." \
-    contracts/script/manage ActivateEstop
+    VERIFIER_SELCTOR="0x..." CHAIN_KEY="..." contracts/script/manage ActivateEstop
     ```
 
 2. Run the command again with `--broadcast`
