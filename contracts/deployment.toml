@@ -215,6 +215,14 @@ selector = "0x73c457ba"
 verifier = "0x2a098988600d87650Fb061FfAff08B97149Fa84D"
 estop = "0x724d375B5b622e15f0E64e9Deb76a4cB17877797"
 
+// From a test-run of the deployment scripts on Feb 3, 2026
+[[chains.ethereum-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "5.0.0-rc.1"
+selector = "0x3dfd9e0e"
+verifier = "0x6785ffd4271C39B379F8333c7D1E7cDdD621c61d"
+estop = "0x409738EBdde20cfAe8552094Da231f0A8208B9dc"
+stopped = true
 ###
 
 [chains.ethereum-hoodi]
