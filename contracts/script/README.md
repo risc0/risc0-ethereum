@@ -645,5 +645,53 @@ Activate the emergency stop:
     > [!IMPORTANT]
     > Double check the logs from the test to double-check that the estop took effect.
 
+## Check TimelockController roles across chains
+
+The `CheckTimelockRoles` script reports whether a given account holds the `proposer`,
+`executor`, and `canceller` roles on the `TimelockController` deployed on every chain
+configured in `deployment.toml`. It hardcodes free public RPC endpoints (Tenderly
+gateways where available), so no `deployment_secrets.toml` entry is required.
+
+Run from the `contracts/` directory (forge script does not work from the repo root):
+
+```sh
+cd contracts
+
+# Check mainnets (default).
+ACCOUNT="0x..." \
+    forge script --tc CheckTimelockRoles script/CheckTimelockRoles.s.sol
+
+# Check testnets.
+ACCOUNT="0x..." NETWORK_TYPE=testnet \
+    forge script --tc CheckTimelockRoles script/CheckTimelockRoles.s.sol
+
+# Check both.
+ACCOUNT="0x..." NETWORK_TYPE=all \
+    forge script --tc CheckTimelockRoles script/CheckTimelockRoles.s.sol
+```
+
+`NETWORK_TYPE` accepts `mainnet` (default), `testnet`, or `all`. Chains whose RPC
+endpoint is unreachable are reported as `[ERR]` and do not fail the run.
+
+### Quick single-chain check with `cast`
+
+To verify a single role on a single chain without running the script, query the role
+constant on the timelock and then call `hasRole`. For example, to check that
+`$ACCOUNT` has the `executor` role:
+
+```sh
+# Get the role code (one of: PROPOSER_ROLE, EXECUTOR_ROLE, CANCELLER_ROLE).
+ROLE=$(cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
+    'EXECUTOR_ROLE()(bytes32)')
+
+# Returns true / false.
+cast call --rpc-url ${RPC_URL:?} \
+    ${TIMELOCK_CONTROLLER:?} \
+    'hasRole(bytes32,address)(bool)' \
+    ${ROLE:?} \
+    ${ACCOUNT:?}
+```
+
 [yq-install]: https://github.com/mikefarah/yq?tab=readme-ov-file#install
 [alloy-chains]: https://github.com/alloy-rs/chains/blob/main/src/named.rs
