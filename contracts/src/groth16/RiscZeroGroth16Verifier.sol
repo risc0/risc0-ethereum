@@ -79,9 +79,9 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Grot
     ///      part of the RISC Zero versioning mechanism.
     ///
     ///      A selector is not intended to be collision resistant, in that it is possible to find
-    ///      two preimages that result in the same selector. This is acceptable since it's purpose
-    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
-    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
+    ///      two preimages that result in the same selector. This is acceptable since its purpose
+    ///      is to route a request among a set of trusted verifiers, and to make errors of sending a
+    ///      receipt to mismatching verifiers easier to debug. It is analogous to the ABI
     ///      function selectors.
     bytes4 public immutable SELECTOR;
 
@@ -176,7 +176,7 @@ contract RiscZeroGroth16Verifier is IRiscZeroVerifier, IRiscZeroSelectable, Grot
             ]
         );
 
-        // Revert is verification failed.
+        // Revert if verification failed.
         if (!verified) {
             revert VerificationFailed();
         }
