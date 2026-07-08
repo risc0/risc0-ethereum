@@ -53,6 +53,25 @@ fn basic_usage() {
     assert_eq!(expect_seal, seal.to_vec());
 }
 
+#[test]
+fn missing_guest_binary_returns_error() {
+    let exe_path = env!("CARGO_BIN_EXE_risc0-forge-ffi");
+    let output = Command::new(exe_path)
+        .env_clear()
+        .arg("prove")
+        .arg("/tmp/risc0-forge-ffi-missing-guest")
+        .arg("0xdeadbeef")
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("failed to read guest ELF at /tmp/risc0-forge-ffi-missing-guest"),
+        "unexpected stderr: {stderr}",
+    );
+}
+
 // It's important that `risc0-forge-ffi` only send to stdout the output to be consumed by forge
 // with the FFI cheatcode. If any extra output is sent, ABI decoding will fail.
 #[test]
