@@ -645,6 +645,33 @@ Activate the emergency stop:
     > [!IMPORTANT]
     > Double check the logs from the test to double-check that the estop took effect.
 
+## Accept ownership of emergency stop contracts
+
+The `RiscZeroVerifierEmergencyStop` contracts use two-step ownership transfer.
+After the current owner calls `transferOwnership(newOwner)`, the new owner must call `acceptOwnership()` on each contract.
+
+The `AcceptEstopOwnership` action walks every verifier in `deployment.toml` for the chain and accepts ownership of each estop whose pending owner is the admin address.
+Estops already owned by the admin, or with a different pending owner, are skipped.
+
+1. Dry run:
+
+    ```sh
+    CHAIN_KEY="..." contracts/script/manage AcceptEstopOwnership
+    ```
+
+    > [!TIP]
+    > Set `VERIFIER_SELECTOR="0x..."` to restrict the action to a single estop.
+
+2. Run the command again with `--broadcast`.
+
+    This will send one transaction from the admin address per estop accepted.
+
+3. Test the deployment.
+
+    ```sh
+    CHAIN_KEY="..." contracts/script/test
+    ```
+
 ## Check TimelockController roles across chains
 
 The `CheckTimelockRoles` script reports whether a given account holds the `proposer`,
