@@ -645,3 +645,54 @@ contract ActivateEstop is RiscZeroManagementScript {
         require(verifierEstop().paused(), "verifier is not stopped after calling estop");
     }
 }
+
+/// @notice Accept ownership of every RiscZeroVerifierEmergencyStop in the deployment config
+///         whose pending owner is the admin address. Used to complete an Ownable2Step transfer.
+contract AcceptEstopOwnership is RiscZeroManagementScript {
+    function run() external withConfig {
+        address admin = adminAddress();
+        console2.log("Accepting estop ownership as admin", admin);
+
+        // Optionally restrict to a single verifier, identified by its selector.
+        bytes4 onlySelector;
+        bytes memory selectorEnv = vm.envOr("VERIFIER_SELECTOR", bytes(""));
+        if (selectorEnv.length > 0) {
+            onlySelector = bytes4(vm.envBytes("VERIFIER_SELECTOR"));
+            console2.log("Restricting to verifier with selector %x", uint256(uint32(onlySelector)));
+        }
+
+        uint256 accepted = 0;
+        for (uint256 i = 0; i < deployment.verifiers.length; i++) {
+            VerifierDeployment memory v = deployment.verifiers[i];
+            if (v.estop == address(0)) {
+                continue;
+            }
+            if (selectorEnv.length > 0 && v.selector != onlySelector) {
+                continue;
+            }
+            RiscZeroVerifierEmergencyStop estop = RiscZeroVerifierEmergencyStop(v.estop);
+            address owner = estop.owner();
+            address pending = estop.pendingOwner();
+            if (owner == admin) {
+                console2.log("estop %s (selector %x): already owned by admin", v.estop, uint256(uint32(v.selector)));
+                continue;
+            }
+            if (pending != admin) {
+                console2.log(
+                    "estop %s (selector %x): pending owner is not admin, skipping", v.estop, uint256(uint32(v.selector))
+                );
+                console2.log("  owner: %s pendingOwner: %s", owner, pending);
+                continue;
+            }
+            console2.log(
+                "estop %s (selector %x): accepting ownership from %s", v.estop, uint256(uint32(v.selector)), owner
+            );
+
+            vm.broadcast(admin);
+            estop.acceptOwnership();
+            require(estop.owner() == admin, "owner is not admin after acceptOwnership");
+            accepted++;
+        }
+        console2.log("Accepted ownership of %d estop contracts", accepted);
+    }
+}
