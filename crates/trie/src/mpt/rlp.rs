@@ -422,7 +422,14 @@ fn decode_path(buf: &mut &[u8]) -> alloy_rlp::Result<(Nibbles, bool)> {
         0b0011 => (true, true),
         _ => return Err(alloy_rlp::Error::Custom("node is not an extension or leaf")),
     };
-    let prefix = if odd_nibbles { &path[1..] } else { &path[2..] };
+    let prefix = if odd_nibbles {
+        &path[1..]
+    } else {
+        if path[1] != 0 {
+            return Err(alloy_rlp::Error::Custom("non-canonical hex-prefix path"));
+        }
+        &path[2..]
+    };
     Ok((Nibbles::from_nibbles_unchecked(prefix), is_leaf))
 }
 
