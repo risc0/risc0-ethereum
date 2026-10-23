@@ -223,6 +223,14 @@ selector = "0x3dfd9e0e"
 verifier = "0x6785ffd4271C39B379F8333c7D1E7cDdD621c61d"
 estop = "0x409738EBdde20cfAe8552094Da231f0A8208B9dc"
 stopped = true
+
+[[chains.ethereum-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0x8b38038c"
+verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
+estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+
 ###
 
 [chains.ethereum-hoodi]

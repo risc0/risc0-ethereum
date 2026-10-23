@@ -11,6 +11,23 @@ An operations guide for the RISC Zero Ethereum contracts.
 
 Requires [Foundry](https://book.getfoundry.sh/getting-started/installation).
 
+> [!WARNING]
+> Use forge 1.5.x for deployments. With forge 1.8.3, `DeployEstopGroth16Verifier` on the OP-stack
+> chains (Base Sepolia, OP Sepolia) silently turned the `CREATE2` deployments into plain `CREATE`
+> transactions (the dry run shows `CREATE` instead of `CREATE2` in `broadcast/*/dry-run/run-latest.json`
+> and a different verifier address than on other chains). forge 1.5.0 routes them through the
+> deterministic deployer as expected. Install a pinned copy with `FOUNDRY_DIR=<dir> foundryup -i 1.5.0`.
+> Always check the transaction types in the dry-run JSON before broadcasting on a new chain.
+
+> [!WARNING]
+> On chains that have activated Glamsterdam (Sepolia since 2026-10-06, Hoodi scheduled 2026-10-26,
+> mainnet TBD), EIP-8037 repriced state creation and a verifier deployment costs about 8.6M gas
+> instead of 1.3M. forge's EVM does not model this, so its 1.3x gas buffer is far too small and the
+> inner `CREATE2` fails with "contract creation code storage out of gas" (one such failure cost
+> 1.6M gas on Sepolia). Compare `cast estimate --from <deployer> 0x4e59b4...4956C <calldata from the
+> dry-run JSON>` against the planned `gas` in the dry-run JSON, and pass
+> `--gas-estimate-multiplier <percent>` (`-g 700` was enough on Sepolia) to `manage` when needed.
+
 Some scripts in this guide use `yq` to parse the TOML config files.
 
 You can install `yq` by following the [directions on GitHub][yq-install], or using `go install`.
