@@ -63,7 +63,8 @@ pub fn main() -> Result<()> {
 
 /// Prints on stdio the Ethereum ABI and hex-encoded proof.
 fn prove_ffi(elf_path: String, input: Vec<u8>) -> Result<Vec<u8>> {
-    let elf = std::fs::read(elf_path).expect("failed to read guest ELF");
+    let elf = std::fs::read(&elf_path)
+        .with_context(|| format!("failed to read guest ELF at {elf_path}"))?;
     let (journal, seal) = prove(&elf, &input)?;
     let calldata = JournalSeal {
         journal: journal.into(),
