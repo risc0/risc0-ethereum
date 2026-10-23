@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# vim: syntax=bash
+export LANG=en_US.UTF-8
 
 set -eo pipefail
 
@@ -8,7 +10,14 @@ SCRIPT_FILE="${SCRIPT_DIR}/Manage.s.sol"
 FIREBLOCKS=0
 
 POSITIONAL_ARGS=()
-FORGE_SCRIPT_FLAGS=()
+
+# Make an array of FORGE_SCRIPT_FLAGS from FORGE_SCRIPT_FLAGS, defaulting to empty if not provided.
+FORGE_SCRIPT_FLAGS_STR="${FORGE_SCRIPT_FLAGS}"
+IFS=' ' read -r -a FORGE_SCRIPT_FLAGS <<< "${FORGE_SCRIPT_FLAGS_STR:-}"
+
+# Make an array of FIREBLOCKS_RPC_FLAGS from FIREBLOCKS_RPC_FLAGS, defaulting to empty if not provided.
+FIREBLOCKS_RPC_FLAGS_STR="${FIREBLOCKS_RPC_FLAGS}"
+IFS=' ' read -r -a FIREBLOCKS_RPC_FLAGS <<< "${FIREBLOCKS_RPC_FLAGS_STR:-}"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -28,6 +37,11 @@ while [[ $# -gt 0 ]]; do
         FORGE_SCRIPT_FLAGS+=("$1") 
         shift
         ;;
+    --assetId)
+        FIREBLOCKS_RPC_FLAGS+=("$1") 
+        FIREBLOCKS_RPC_FLAGS+=("${2:?}") 
+        shift
+        ;;
     -*|--*)
         echo "Unknown option $1"
         exit 1
@@ -43,25 +57,25 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 echo "Loading environment variables from deployment_secrets.toml"
 if [ -z "$RPC_URL" ]; then
-    echo -n 'RPC_URL from deployment_secrets.toml: ' > /dev/stderr
+    echo 'RPC_URL from deployment_secrets.toml'
     export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" $CONTRACTS_DIR/deployment_secrets.toml)
-    [ -n "$RPC_URL" ] || exit 1
+    [ -n "$RPC_URL" ] && [ "$RPC_URL" != "null" ] || exit 1
 else
-    echo -n "RPC_URL from env $RPC_URL"
+    echo "RPC_URL from env $RPC_URL"
 fi
 if [ -z "$ETHERSCAN_URL" ]; then
-    echo -n 'ETHERSCAN_URL from deployment.toml: ' > /dev/stderr
+    echo 'ETHERSCAN_URL from deployment.toml'
     export ETHERSCAN_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-url" $CONTRACTS_DIR/deployment.toml)
-    [ -n "$ETHERSCAN_URL" ] || exit 1
+    [ -n "$ETHERSCAN_URL" ] && [ "$ETHERSCAN_URL" != "null" ] || exit 1
 else
-    echo -n "ETHERSCAN_URL from env $ETHERSCAN_URL"
+    echo "ETHERSCAN_URL from env $ETHERSCAN_URL"
 fi
 if [ -z "$ETHERSCAN_API_KEY" ]; then
-    echo -n 'ETHERSCAN_API_KEY from deployment_secrets.toml: ' > /dev/stderr
+    echo -n 'ETHERSCAN_API_KEY from deployment_secrets.toml'
     export ETHERSCAN_API_KEY=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].etherscan-api-key" $CONTRACTS_DIR/deployment_secrets.toml)
-    [ -n "$ETHERSCAN_API_KEY" ] || exit 1
+    [ -n "$ETHERSCAN_API_KEY" ] && [ "$ETHERSCAN_API_KEY" != "null" ] || exit 1
 else
-    echo -n "ETHERSCAN_API_KEY from env $ETHERSCAN_API_KEY"
+    echo "ETHERSCAN_API_KEY from env $ETHERSCAN_API_KEY"
 fi
 
 # Set our function. If the function is "help", or if the function is
@@ -94,9 +108,13 @@ if [ $FIREBLOCKS -gt 0 ]; then
     fi
 
     # Run forge via fireblocks
-    fireblocks-json-rpc --verbose --rpcUrl ${RPC_URL:?} --http --apiKey ${FIREBLOCKS_API_KEY:?} -- \
+    fireblocks-json-rpc \
+        --rpcUrl ${RPC_URL:?} \
+        --http --apiKey ${FIREBLOCKS_API_KEY:?} \
+        ${FIREBLOCKS_RPC_FLAGS[@]} -- \
         forge script ${SCRIPT_FILE:?}:${SCRIPT_FUNCTION:?} \
-        --slow --unlocked ${FORGE_DEPLOY_FLAGS} ${FORGE_SCRIPT_FLAGS[@]} \
+        --slow --unlocked ${FORGE_DEPLOY_FLAGS} \
+        ${FORGE_SCRIPT_FLAGS[@]} \
         --rpc-url {}
 else
     # Run forge

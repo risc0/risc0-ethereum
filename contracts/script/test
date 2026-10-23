@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# vim: syntax=bash
+export LANG=en_US.UTF-8
+
+# This script runs the deployment tests, which verify that the state of contracts on the target chain match what is specified in deployment.toml
 
 set -eo pipefail
 
@@ -9,7 +13,7 @@ echo "Loading environment variables from deployment_secrets.toml"
 if [ -z "$RPC_URL" ]; then
     echo -n 'RPC_URL from deployment_secrets.toml: ' > /dev/stderr
     export RPC_URL=$(yq eval -e ".chains[\"${CHAIN_KEY:?}\"].rpc-url" $CONTRACTS_DIR/deployment_secrets.toml)
-    [ -n "$RPC_URL" ] || exit 1
+    [ -n "$RPC_URL" ] && [ "$RPC_URL" != "null" ] || exit 1
 else
     echo -n "RPC_URL from env $RPC_URL"
 fi
