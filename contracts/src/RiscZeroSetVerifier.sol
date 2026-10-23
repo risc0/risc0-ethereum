@@ -66,9 +66,9 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     ///      implementations. This is used as part of the RISC Zero versioning mechanism.
     ///
     ///      A selector is not intended to be collision resistant, in that it is possible to find
-    ///      two preimages that result in the same selector. This is acceptable since it's purpose
-    ///      to a route a request among a set of trusted verifiers, and to make errors of sending a
-    ///      receipt to a mismatching verifiers easier to debug. It is analogous to the ABI
+    ///      two preimages that result in the same selector. This is acceptable since its purpose
+    ///      is to route a request among a set of trusted verifiers, and to make errors of sending a
+    ///      receipt to mismatching verifiers easier to debug. It is analogous to the ABI
     ///      function selectors.
     bytes4 public immutable SELECTOR;
 
@@ -102,7 +102,7 @@ contract RiscZeroSetVerifier is IRiscZeroSetVerifier {
     function _verifyIntegrity(bytes calldata seal, bytes32 claimDigest) internal view {
         Seal memory setVerifierSeal;
 
-        // Check that the seal has a matching selector. Mismatch generally  indicates that the
+        // Check that the seal has a matching selector. Mismatch generally indicates that the
         // prover and this verifier are using different parameters, and so the verification
         // will not succeed.
         if (SELECTOR != bytes4(seal[:4])) {
