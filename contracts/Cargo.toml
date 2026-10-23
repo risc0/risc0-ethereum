@@ -34,7 +34,7 @@ hex = { workspace = true }
 risc0-aggregation = { workspace = true, optional = true }
 risc0-zkvm = { workspace = true }
 serde = { workspace = true, optional = true }
-strum = { version = "0.27.2", default-features = false, features = ["derive"] }
+strum = { version = "0.28.0", default-features = false, features = ["derive"] }
 thiserror = { workspace = true, features = ["default"] }
 tracing = { workspace = true }
 
