@@ -1,4 +1,4 @@
-// Copyright 2025 RISC Zero, Inc.
+// Copyright 2026 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -90,8 +90,15 @@ contract RiscZeroManagementScript is Script {
     /// @notice Returns the address of the contract admin, set in the ADMIN_ADDRESS env var.
     /// @dev This admin address will be set as the owner of the estop contracts, and the proposer
     ///      of for the timelock controller. Note that it is not the "admin" on the timelock.
-    function adminAddress() internal view returns (address) {
-        return vm.envOr("ADMIN_ADDRESS", deployment.admin);
+    function adminAddress() internal returns (address) {
+        address admin = vm.envOr("ADMIN_ADDRESS", deployment.admin);
+        // If the admin private key is provided (e.g. when this is an Anvil testnet), remember it.
+        uint256 adminKey = vm.envOr("ADMIN_PRIVATE_KEY", uint256(0));
+        if (adminKey != 0) {
+            require(vm.addr(adminKey) == admin, "ADMIN_ADDRESS and ADMIN_PRIVATE_KEY are inconsistent");
+            vm.rememberKey(adminKey);
+        }
+        return admin;
     }
 
     /// @notice Determines the contract address of TimelockController from the environment.
@@ -178,7 +185,6 @@ contract RiscZeroManagementScript is Script {
 ///     * MIN_DELAY minimum delay in seconds for operations
 ///     * PROPOSER address of proposer
 ///     * EXECUTOR address of executor
-///     * ADMIN address of admin (optional; leave unset to disable)
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/guides/scripting-with-solidity
@@ -198,14 +204,17 @@ contract DeployTimelockRouter is RiscZeroManagementScript {
         executors[0] = vm.envAddress("EXECUTOR");
         console2.log("executors:", executors[0]);
 
+        // NOTE: This functionality is unused in our process. The admin is not subject to the timelock
+        // delay, which is useful e.g. for initial setup, but should not be used in production.
+        //
         // optional account to be granted admin role; disable with zero address
         // When the admin is unset, the contract is self-administered.
-        address admin = vm.envOr("ADMIN", address(0));
-        console2.log("admin:", admin);
+        //address admin = vm.envOr("ADMIN", address(0));
+        //console2.log("admin:", admin);
 
         // Deploy new contracts
         vm.broadcast(deployerAddress());
-        _timelockController = new TimelockController{salt: CREATE2_SALT}(minDelay, proposers, executors, admin);
+        _timelockController = new TimelockController{salt: CREATE2_SALT}(minDelay, proposers, executors, address(0));
         console2.log("Deployed TimelockController to", address(timelockController()));
 
         vm.broadcast(deployerAddress());
