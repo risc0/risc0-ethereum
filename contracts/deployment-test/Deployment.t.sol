@@ -22,7 +22,10 @@ import {Pausable} from "openzeppelin/contracts/utils/Pausable.sol";
 import {TimelockController} from "openzeppelin/contracts/governance/TimelockController.sol";
 import {RiscZeroVerifierRouter} from "../src/RiscZeroVerifierRouter.sol";
 import {
-    IRiscZeroVerifier, Receipt as RiscZeroReceipt, ReceiptClaim, ReceiptClaimLib
+    IRiscZeroVerifier,
+    Receipt as RiscZeroReceipt,
+    ReceiptClaim,
+    ReceiptClaimLib
 } from "../src/IRiscZeroVerifier.sol";
 import {ConfigLoader, Deployment, DeploymentLib, VerifierDeployment} from "../src/config/Config.sol";
 import {IRiscZeroSelectable} from "../src/IRiscZeroSelectable.sol";
@@ -33,6 +36,7 @@ import {TestReceipt as TestReceiptV22} from "../test/TestReceiptV2_2.sol";
 import {TestReceipt as TestReceiptV30} from "../test/TestReceiptV3_0.sol";
 import {TestSetInclusionReceipt as TestSetInclusionReceiptV07} from "../test/TestSetInclusionReceiptV0_7.sol";
 import {TestSetInclusionReceipt as TestSetInclusionReceiptV09} from "../test/TestSetInclusionReceiptV0_9.sol";
+import {TestReceipt as TestReceiptV31} from "../test/TestReceiptV3_1.sol";
 
 // TODO: Check the image ID and ELF URL on the set verifier contract.
 
@@ -68,15 +72,21 @@ library TestReceipts {
         }
         if (selector == getFirst4Bytes(TestSetInclusionReceiptV07.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(
-                TestSetInclusionReceiptV07.IMAGE_ID, sha256(TestSetInclusionReceiptV07.JOURNAL)
-            ).digest();
+                    TestSetInclusionReceiptV07.IMAGE_ID, sha256(TestSetInclusionReceiptV07.JOURNAL)
+                )
+                .digest();
             return (true, RiscZeroReceipt({seal: TestSetInclusionReceiptV07.SEAL, claimDigest: claimDigest}));
         }
         if (selector == getFirst4Bytes(TestSetInclusionReceiptV09.SEAL)) {
             bytes32 claimDigest = ReceiptClaimLib.ok(
-                TestSetInclusionReceiptV09.IMAGE_ID, sha256(TestSetInclusionReceiptV09.JOURNAL)
-            ).digest();
+                    TestSetInclusionReceiptV09.IMAGE_ID, sha256(TestSetInclusionReceiptV09.JOURNAL)
+                )
+                .digest();
             return (true, RiscZeroReceipt({seal: TestSetInclusionReceiptV09.SEAL, claimDigest: claimDigest}));
+        }
+        if (selector == getFirst4Bytes(TestReceiptV31.SEAL)) {
+            bytes32 claimDigest = ReceiptClaimLib.ok(TestReceiptV31.IMAGE_ID, sha256(TestReceiptV31.JOURNAL)).digest();
+            return (true, RiscZeroReceipt({seal: TestReceiptV31.SEAL, claimDigest: claimDigest}));
         }
         return (false, RiscZeroReceipt({seal: new bytes(0), claimDigest: bytes32(0)}));
     }
