@@ -87,7 +87,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -360,7 +359,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -503,7 +501,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -670,7 +667,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -846,7 +842,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -992,7 +987,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0xC5566ad2801778041BAc4daE1EEDd2f24639fffB"
 estop = "0xDbCa31581Cc666282675776A49A9d629295f48D3"
-unroutable = true # remove when added to the router
 
 ###
 
@@ -1102,7 +1096,6 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
-unroutable = true # remove when added to the router
 
 ###
 
