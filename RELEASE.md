@@ -5,7 +5,7 @@
    Release branches are initialized with a commit from `main`, and named `release-x.y` where `x.y` is the major and minor version.
    Patch version changes are committed to the release branch matching their major and minor version.
 
-2. Make sure that the [Selector](./contracts/src/selector.rs) are up-to-date. 
+2. Make sure that the [selectors](./contracts/src/selector.rs) are up-to-date.
 
    If any of the parameters affecting `Groth16ReceiptVerifierParameters` or the `SetInclusionReceiptVerifierParameters` changed, run this command and use the output to update them (this should be done for the main branch and only backport it if necessary):
 
@@ -19,32 +19,22 @@
 
    * One PR should be to the `release-x.y` branch and do the following:
 
-     <!-- TODO: Write a script (e.g. in Python) to automate as many of these steps as possible. -->
-     * Bump the version of all crates in the workspace to `x.y.z`. Workspace crate versions are specified in `./Cargo.toml`.
-
-       > Here is a command to help find all the Cargo.toml files that need to be updated
-       >
-       > ```
-       > grep -rl '^version = "' --include=Cargo.toml --exclude-dir='./lib' --exclude-dir='./examples' --exclude-dir='./crates/ffi/guests' --exclude-dir='./target' .
-       > ```
-
+     * Bump the version of the crates to `x.y.z`: `version` under `[workspace.package]` in `./Cargo.toml`, along with the intra-workspace dependency versions in the same file.
      * Update the version string in contracts that contain it:
-       * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
+       * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`: set to the version of the `risc0-zkvm` crate.
        * `contracts/src/RiscZeroSetVerifier.sol`
-     * Update references to the `main` branch
-       * Search for `risc0/risc0-ethereum/refs/heads/main`
      * Remove the note at the top of `README.md` about being on the `main` branch.
      * Update `risc0` crate dependencies. In all workspaces:
 
-         >  You can find the workspaces with `grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib`
+         > You can find the workspaces with `grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib .`
 
-         * Change the reference for `risc0` crates (e.g. `risc0-zkvm`, `bonsai-sdk`) to the latest monorepo release.
-         * Run `cargo update`. You can use `.github/scripts/cargo-update.sh` to do this.
+         * Change the `risc0` crates (e.g. `risc0-zkvm`, `risc0-build`) from `branch = "main"` git dependencies to the latest monorepo release on crates.io.
+         * Run `cargo update` in each workspace.
 
          > Here is a nifty oneliner to do that
          >
          > ```
-         > grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib | sort -u | xargs -n1 cargo check --manifest-path
+         > grep -rl --include="Cargo.toml" '\[workspace\]' --exclude-dir=./lib . | sort -u | xargs -n1 cargo update --manifest-path
          > ```
 
      * Remove `Cargo.lock` from `.gitignore` and commit all lock files.
@@ -55,17 +45,29 @@
        * `contracts/src/groth16/RiscZeroGroth16Verifier.sol`
        * `contracts/src/RiscZeroSetVerifier.sol`
 
-4. Tag the release as `vX.Y.Z`, and add release on GitHub.
+4. Run the checks on the release branch.
 
-   Also tag the release as `aggregation-v0.X.Y`, as long as `risc0-aggregation` is pre-1.0 and so on a different version than the rest of the crates.
+   There is no CI in this repository, so run these locally before tagging.
+   They require `cargo risczero`, `r0vm`, and the RISC Zero toolchains matching the `risc0` release, and [Foundry](https://getfoundry.sh/).
+
+   ```sh
+   cargo fmt --all --check
+   (cd contracts && forge fmt --check)
+   # risc0-ethereum-test-utils needs the built contract artifacts.
+   forge build
+   cargo clippy --locked --workspace --all-targets --all-features -- -Dwarnings
+   cargo test --locked --workspace --all-features
+   (cd contracts && forge test -vvv)
+   ```
+
+5. Tag the release as `vX.Y.Z`, and add release on GitHub.
 
    Include a summary of the changes in the release notes.
 
-5. Publish crates to `crates.io`
+6. Publish crates to `crates.io`
 
    Crates currently published to `crates.io` are:
 
-   * `risc0-aggregation`
    * `risc0-build-ethereum`
    * `risc0-ethereum-contracts`
 
@@ -84,7 +86,7 @@
 
    See the [Cargo docs](https://doc.rust-lang.org/cargo/reference/publishing.html) for more details.
 
-6. When changes have been made to the verifier contract, deploy a new verifier contract and add it to the verifier router on each supported chain.
+7. When changes have been made to the verifier contract, deploy a new verifier contract and add it to the verifier router on each supported chain.
 
    Refer to [contracts/script/README.md](./contracts/script/README.md) for instructions on the steps involved.
 
@@ -108,12 +110,8 @@
       for rpcurl in $(yq eval -e ".chains[].rpc-url" deployment_secrets.toml); do FOUNDRY_PROFILE=deployment-test forge test -vv --fork-url="$rpcurl"; done
       ```
 
-   4. Document the new addresses and version in the `dev.risczero.com` docs.
+   4. Document the new addresses and version in the [dev.risczero.com docs](https://dev.risczero.com/api/blockchain-integration/contracts/verifier).
 
-     Use [contracts/generate_contract_address_table.py] to generate the tables. Python 3.11+ is required.
+      Use [contracts/generate_contract_address_table.py](./contracts/generate_contract_address_table.py) to generate the tables. Python 3.11+ is required.
 
-     Also update https://docs.beboundless.xyz/developers/smart-contracts/reference
-
-     [https://dev.risczero.com/api/blockchain-integration/contracts/verifier](https://dev.risczero.com/api/blockchain-integration/contracts/verifier)
-
-7. Open a PR to [risc0-foundry-template](https://github.com/risc0/risc0-foundry-template) updating the references in `Cargo.toml` and in the `lib/risc0` submodule to point to the new release branch.
+      Also update https://docs.boundless.network/developers/smart-contracts/deployments
