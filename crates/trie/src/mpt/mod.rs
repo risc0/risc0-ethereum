@@ -559,6 +559,22 @@ mod tests {
     }
 
     #[test]
+    fn rejects_noncanonical_even_hex_prefix_paths() {
+        let canonical_leaf = [0xc2, 0x20, 0x76];
+        let noncanonical_leaf = [0xc2, 0x2f, 0x76];
+        assert!(CachedTrie::from_rlp([canonical_leaf]).is_ok());
+        assert!(CachedTrie::from_rlp([noncanonical_leaf]).is_err());
+
+        let extension = |prefix: u8| {
+            let mut rlp = vec![0xe4, 0x82, prefix, 0xab, 0xa0];
+            rlp.extend([0; 32]);
+            rlp
+        };
+        assert!(CachedTrie::from_rlp([extension(0x00)]).is_ok());
+        assert!(CachedTrie::from_rlp([extension(0x0f)]).is_err());
+    }
+
+    #[test]
     #[should_panic]
     fn get_digest() {
         let trie = Trie(Node::Digest(B256::ZERO));
