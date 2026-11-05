@@ -46,7 +46,7 @@ pub enum Selector {
     Groth16V2_1 = 0xf536085a,
     Groth16V2_2 = 0xbb001d44,
     Groth16V3_0 = 0x73c457ba,
-    Groth16V3_1 = 0x8b38038c,
+    Groth16V3_1 = 0xe71e6620,
     SetVerifierV0_1 = 0xbfca9ccb,
     SetVerifierV0_2 = 0x16a15cc8,
     SetVerifierV0_4 = 0xf443ad7b,
@@ -74,7 +74,7 @@ impl TryFrom<u32> for Selector {
             0xf536085a => Ok(Selector::Groth16V2_1),
             0xbb001d44 => Ok(Selector::Groth16V2_2),
             0x73c457ba => Ok(Selector::Groth16V3_0),
-            0x8b38038c => Ok(Selector::Groth16V3_1),
+            0xe71e6620 => Ok(Selector::Groth16V3_1),
             0xbfca9ccb => Ok(Selector::SetVerifierV0_1),
             0x16a15cc8 => Ok(Selector::SetVerifierV0_2),
             0xf443ad7b => Ok(Selector::SetVerifierV0_4),
@@ -118,7 +118,7 @@ impl Selector {
             )
             .unwrap()),
             Selector::Groth16V3_1 => Ok(Digest::from_hex(
-                "8b38038c70b332b7d03be602a60f28a53632eca5d5a4abfa50cfbd04503d70a3",
+                "e71e6620a834f4d8dc1998476b865a9a6437a14474f9442cf8664f9ec22a5eee",
             )
             .unwrap()),
             Selector::SetVerifierV0_1 => Ok(Digest::from_hex(
