@@ -88,6 +88,14 @@ selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
 
+[[chains.ethereum-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
+unroutable = true # remove when added to the router
+
 ###
 
 [chains.ethereum-sepolia]
@@ -238,6 +246,13 @@ selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
 
+[[chains.ethereum-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0xA1DCB16cb765b3CA71605339F0C37Bfe0F60bA29"
+
 ###
 
 [chains.ethereum-hoodi]
@@ -289,6 +304,13 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+
+[[chains.ethereum-hoodi.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0xA1DCB16cb765b3CA71605339F0C37Bfe0F60bA29"
 
 ###
 
@@ -360,6 +382,14 @@ selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
 
+[[chains.arbitrum-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
+unroutable = true # remove when added to the router
+
 ###
 
 [chains.arbitrum-sepolia]
@@ -429,6 +459,13 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+
+[[chains.arbitrum-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0xA1DCB16cb765b3CA71605339F0C37Bfe0F60bA29"
 
 ###
 
@@ -502,6 +539,14 @@ selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
 
+[[chains.avalanche-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
+unroutable = true # remove when added to the router
+
 ###
 
 [chains.avalanche-fuji]
@@ -574,6 +619,13 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+
+[[chains.avalanche-fuji.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0xA1DCB16cb765b3CA71605339F0C37Bfe0F60bA29"
 
 ###
 
@@ -667,6 +719,14 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+
+[[chains.base-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
+unroutable = true # remove when added to the router
 
 ###
 
@@ -773,6 +833,13 @@ selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
 
+[[chains.base-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0xA1DCB16cb765b3CA71605339F0C37Bfe0F60bA29"
+
 ###
 
 [chains.optimism-mainnet]
@@ -842,6 +909,14 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+
+[[chains.optimism-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
+unroutable = true # remove when added to the router
 
 ###
 
@@ -914,6 +989,13 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+
+[[chains.optimism-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0xA1DCB16cb765b3CA71605339F0C37Bfe0F60bA29"
 
 ###
 
@@ -988,6 +1070,14 @@ selector = "0x8b38038c"
 verifier = "0xC5566ad2801778041BAc4daE1EEDd2f24639fffB"
 estop = "0xDbCa31581Cc666282675776A49A9d629295f48D3"
 
+[[chains.linea-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0xfBD966F11DfE6568c3937e115C170aAB6F0A75eE"
+estop = "0x8ac4A362717578952e1c7A4699177b04DfddFd4b"
+unroutable = true # remove when added to the router
+
 ###
 
 [chains.linea-sepolia]
@@ -1061,6 +1151,13 @@ selector = "0x8b38038c"
 verifier = "0xC5566ad2801778041BAc4daE1EEDd2f24639fffB"
 estop = "0xc02D15735D2504DE26C3db45761DbB3b9945580A"
 
+[[chains.linea-sepolia.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0xfBD966F11DfE6568c3937e115C170aAB6F0A75eE"
+estop = "0x5c5c70603de9D149CEB97c603b588ca1523eDf80"
+
 ###
 
 [chains.polygon-mainnet]
@@ -1096,6 +1193,14 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+
+[[chains.polygon-mainnet.verifiers]]
+name = "RiscZeroGroth16Verifier"
+version = "3.1.0"
+selector = "0xe71e6620"
+verifier = "0x8c915b5071206C6E328BC18529586c513408aB3b"
+estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
+unroutable = true # remove when added to the router
 
 ###
 
