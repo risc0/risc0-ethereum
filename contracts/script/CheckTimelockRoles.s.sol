@@ -69,7 +69,7 @@ contract CheckTimelockRoles is Script {
     }
 
     function _chains() internal pure returns (ChainEntry[] memory chains) {
-        chains = new ChainEntry[](16);
+        chains = new ChainEntry[](15);
         uint256 i = 0;
 
         // Mainnets.
@@ -96,8 +96,6 @@ contract CheckTimelockRoles is Script {
             ChainEntry({chainKey: "linea-mainnet", rpcUrl: "https://linea.gateway.tenderly.co", isMainnet: true});
         chains[i++] =
             ChainEntry({chainKey: "polygon-mainnet", rpcUrl: "https://polygon.gateway.tenderly.co", isMainnet: true});
-        chains[i++] =
-            ChainEntry({chainKey: "polygon-zkevm-mainnet", rpcUrl: "https://zkevm-rpc.com", isMainnet: true});
         chains[i++] = ChainEntry({chainKey: "katana-mainnet", rpcUrl: "https://rpc.katana.network", isMainnet: true});
 
         // Testnets.

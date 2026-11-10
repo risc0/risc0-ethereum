@@ -83,11 +83,6 @@ def main(toml_file, risc0_version, risc0_eth_version):
 
     # Process each chain
     for chain_key, chain_data in config.get("chains", {}).items():
-        # Skip generation of the table chains where deployment did not succeed.
-        # See notes in deployment.toml.
-        if chain_key in ("polygon-zkevm-testnet",):
-            continue
-
         # Generate markdown content for the chain
         md_content = generate_table_for_chain(chain_key, chain_data, risc0_version)
         all_md_content += md_content + "\n<br/>\n\n"

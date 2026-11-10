@@ -51,7 +51,6 @@ MAINNET_CHAINS=(
     "optimism-mainnet"
     "polygon-mainnet"
     "linea-mainnet"
-    "polygon-zkevm-mainnet"
     "katana-mainnet"
 )
 
@@ -286,10 +285,6 @@ for CHAIN in "${CHAINS[@]}"; do
                     export FIREBLOCKS_RPC_FLAGS="--assetId LINEA_SEPOLIA_TEST"
                     echo "Setting FIREBLOCKS_RPC_FLAGS=${FIREBLOCKS_RPC_FLAGS:?}"
                 fi
-                ;;
-            "polygon-zkevm-testnet"|"polygon-zkevm-mainnet")
-                export FOUNDRY_EVM_VERSION="shanghai"
-                echo "Setting FOUNDRY_EVM_VERSION=${FOUNDRY_EVM_VERSION:?}"
                 ;;
             "avalanche-fuji"|"optimism-mainnet")
                 # As of Oct 2025, there is an issue in Fireblocks where Avalanche Fuji transactions fail due to gas issues.
