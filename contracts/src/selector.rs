@@ -178,7 +178,7 @@ impl Selector {
 
     /// Returns the selector corresponding to the Groth16 verifier for the latest zkVM version.
     pub const fn groth16_latest() -> Self {
-        Self::Groth16V3_0
+        Self::Groth16V3_1
     }
 
     /// Returns the selector corresponding to the latest version of the set inclusion verifier (aka
