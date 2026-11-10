@@ -1201,9 +1201,11 @@ estop = "0x5144A37e65fd032F628663Cb21E16490378a8630"
 name = "Polygon zkEVM Mainnet"
 id = 1101
 etherscan-url = "https://zkevm.polygonscan.com/"
+# Halted on Jul 3, 2026 by the Polygon zkEVM sunset; the state below is final
+halted = true
 
 # Accounts
-admin = "0xF616A4f81857CFEe54A4A049Ec187172574bd412"
+admin = "0x2E5bcc9959dB5F5016F830E47943b07242CB2609"
 
 # Contracts
 timelock-controller = "0xdc986a09728f76110ff666ee7b20d99086501d15"
@@ -1261,21 +1263,6 @@ verifier = "0xBdbFbF4500fced0d5511feEc1BB6a62EEf5Cd028"
 estop = "0xf0BF916fCC8581C1c2EfA480444feDf9BdbE8A4c"
 
 ###
-
-# NOTE: This is the Cardona testnet, which uses Sepolia ETH as its native currency.
-[chains.polygon-zkevm-testnet]
-name = "Polygon zkEVM Testnet"
-id = 2442
-etherscan-url = "https://cardona-zkevm.polygonscan.com/"
-
-# Accounts
-admin = "0x3a54A45E44a71020Bd0Af42063B9f23e8b9E387D"
-
-# Contracts
-# TODO: Deploy TimelockController and router here?
-
-# NOTE: As of the 1.1.0-rc.2 deployment on August 21, deploying to polygon zkEVM testnet failed.
-# On Polygon zkEVM Cardona testnet, gave an error of "Failed to get EIP-1559 fees".
 
 [chains.katana-mainnet]
 
