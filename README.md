@@ -1,6 +1,5 @@
-> [!IMPORTANT]
-> `main` is the development branch.
-> Application developers should use the [latest release](https://github.com/risc0/risc0-ethereum/releases) instead.
+> [!WARNING]
+> This branch is no longer maintained. The current code is on [`main`](https://github.com/risc0/risc0-ethereum/tree/main).
 
 # RISC Zero Ethereum
 
