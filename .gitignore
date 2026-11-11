@@ -17,6 +17,7 @@ out/
 
 # Ignores development broadcast logs
 /broadcast
+contracts/broadcast/
 
 # Devnet logs
 /logs
