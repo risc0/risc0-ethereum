@@ -76,6 +76,7 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0x5005aBa3DFf7C940fcc1e48DccCAD611a80eEB85"
 estop = "0x844D5f01161E3559d36f23d0Aa9E9620949aF782"
+stopped = true
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -87,6 +88,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+stopped = true
 
 [[chains.ethereum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -202,6 +204,7 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0xcb9D14347b1e816831ECeE46EC199144F360B55c"
 estop = "0xA9aa32A5aAF3Bad63e5F25d1cb86040bbf883c5B"
+stopped = true
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -244,6 +247,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+stopped = true
 
 [[chains.ethereum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -303,6 +307,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+stopped = true
 
 [[chains.ethereum-hoodi.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -380,6 +385,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+stopped = true
 
 [[chains.arbitrum-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -457,6 +463,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+stopped = true
 
 [[chains.arbitrum-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -536,6 +543,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+stopped = true
 
 [[chains.avalanche-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -616,6 +624,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+stopped = true
 
 [[chains.avalanche-fuji.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -683,6 +692,7 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104"
 estop = "0x8607C0F600857E6f65Ac85b8ba730410D4771fA6"
+stopped = true
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -716,6 +726,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+stopped = true
 
 [[chains.base-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -795,6 +806,7 @@ version = "0.9.0"
 selector = "0x242f9d5b"
 verifier = "0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104"
 estop = "0xf62AbB78d7a039a7119c002fA9a5E4709472D46C"
+stopped = true
 # Build info for the set-builder guest built with cargo-risczero v3.0.3
 set-builder-commit = "87457958a321d0f64dca3ed41309f990ea806b1e" # aggregation-v0.9.0
 set-builder-image-id = "70909b25db0db00f1d4b4016aeb876f53568a3e5a8e6397cb562d79947a02cc9"
@@ -828,6 +840,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+stopped = true
 
 [[chains.base-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -905,6 +918,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+stopped = true
 
 [[chains.optimism-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -984,6 +998,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x550D4545641737d849509927798DFe6daAb8AE3c"
+stopped = true
 
 [[chains.optimism-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -1064,6 +1079,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0xC5566ad2801778041BAc4daE1EEDd2f24639fffB"
 estop = "0xDbCa31581Cc666282675776A49A9d629295f48D3"
+stopped = true
 
 [[chains.linea-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -1144,6 +1160,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0xC5566ad2801778041BAc4daE1EEDd2f24639fffB"
 estop = "0xc02D15735D2504DE26C3db45761DbB3b9945580A"
+stopped = true
 
 [[chains.linea-sepolia.verifiers]]
 name = "RiscZeroGroth16Verifier"
@@ -1187,6 +1204,7 @@ version = "3.1.0"
 selector = "0x8b38038c"
 verifier = "0x953814e6dfC46d007557B511Dc4F2954dAaf2c9e"
 estop = "0x9660bD6dCDf455DCFb30c07c642Ab22E7Cb89F50"
+stopped = true
 
 [[chains.polygon-mainnet.verifiers]]
 name = "RiscZeroGroth16Verifier"
