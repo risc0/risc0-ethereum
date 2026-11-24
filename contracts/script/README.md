@@ -644,7 +644,7 @@ Activate the emergency stop:
 1. Dry run the transaction
 
     ```sh
-    VERIFIER_SELCTOR="0x..." CHAIN_KEY="..." contracts/script/manage ActivateEstop
+    VERIFIER_SELECTOR="0x..." CHAIN_KEY="..." contracts/script/manage ActivateEstop
     ```
 
 2. Run the command again with `--broadcast`
