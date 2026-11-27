@@ -617,7 +617,7 @@ If your private key is compromised, you can renounce your role(s) without waitin
 
 2. Run the command again with `--broadcast`
 
-    This will send one transaction from the admin address.
+    This will send one transaction from `RENOUNCE_ADDRESS`, the account that gives up the role.
 
 3. Confirm:
 
