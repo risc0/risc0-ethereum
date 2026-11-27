@@ -624,7 +624,7 @@ contract RenounceRole is RiscZeroManagementScript {
         console2.logBytes32(role);
 
         vm.broadcast(renouncer);
-        timelockController().renounceRole(role, msg.sender);
+        timelockController().renounceRole(role, renouncer);
     }
 }
 
